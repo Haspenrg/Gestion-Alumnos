@@ -1,0 +1,100 @@
+/* 1. Configuración general (fuente y fondo) */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5; /* Un gris muy clarito */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* 2. Caja del formulario */
+.login-container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* 3. Títulos y textos */
+h2 {
+    color: #1a73e8; /* Azul institucional */
+    margin-bottom: 10px;
+}
+
+p {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+/* 4. Estilo de los campos de entrada (Inputs) */
+.input-group {
+    text-align: left;
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box; /* Para que el padding no agrande el ancho */
+    font-size: 16px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #1a73e8; /* Azul al hacer clic */
+}
+
+/* 5. El botón de ingreso */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background-color: #1557b0;
+}
+
+/* 6. Link de recuperación */
+.forgot-pass {
+    display: block;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #1a73e8;
+    text-decoration: none;
+}
+.logo-colegio {
+    width: 400px; /* Tamaño del logo */
+    height: auto;
+    margin-bottom: 10px;
+}
+
+h3 {
+    color: #555;
+    margin-top: -10px; /* Lo pega al título de arriba */
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
