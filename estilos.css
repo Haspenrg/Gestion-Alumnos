@@ -1,37 +1,49 @@
-/* 1. Configuración general (fuente y fondo) */
+/* Configuración General */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5; /* Un gris muy clarito */
+    background-color: #f0f2f5;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
+    min-height: 100vh;
+    padding: 20px;
 }
 
-/* 2. Caja del formulario */
-.login-container {
+/* Contenedores */
+.login-container, .panel-container {
     background-color: white;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     width: 100%;
     max-width: 400px;
     text-align: center;
 }
 
-/* 3. Títulos y textos */
-h2 {
-    color: #1a73e8; /* Azul institucional */
-    margin-bottom: 10px;
+.panel-container {
+    max-width: 900px; /* El panel se ensancha en PC */
 }
 
-p {
-    color: #666;
-    margin-bottom: 25px;
+/* Logo adaptable */
+.logo-colegio {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    margin-bottom: 15px;
 }
 
-/* 4. Estilo de los campos de entrada (Inputs) */
+/* Tipografía */
+h2 { color: #1a73e8; margin-bottom: 5px; }
+h3 { color: #555; font-weight: 500; margin-bottom: 20px; }
+p { color: #777; margin-bottom: 20px; }
+
+/* Formulario */
 .input-group {
     text-align: left;
     margin-bottom: 15px;
@@ -48,53 +60,66 @@ input {
     width: 100%;
     padding: 12px;
     border: 1px solid #ddd;
-    border-radius: 5px;
-    box-sizing: border-box; /* Para que el padding no agrande el ancho */
+    border-radius: 8px;
     font-size: 16px;
 }
 
-input:focus {
-    outline: none;
-    border-color: #1a73e8; /* Azul al hacer clic */
-}
-
-/* 5. El botón de ingreso */
-button {
+/* Botones */
+.btn-principal, .btn-salir {
     width: 100%;
     padding: 12px;
     background-color: #1a73e8;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 16px;
     cursor: pointer;
-    margin-top: 10px;
     transition: background 0.3s;
 }
 
-button:hover {
-    background-color: #1557b0;
+.btn-salir { background-color: #d93025; margin-top: 30px; }
+.btn-principal:hover { background-color: #1557b0; }
+
+/* Grid de Módulos */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1 columna en celular */
+    gap: 15px;
 }
 
-/* 6. Link de recuperación */
-.forgot-pass {
-    display: block;
-    margin-top: 15px;
+.modulo-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modulo-card:hover {
+    background: #e8f0fe;
+    transform: translateY(-3px);
+}
+
+.icon { font-size: 40px; display: block; margin-bottom: 10px; }
+
+/* Mensajes de error */
+.mensaje-alerta {
+    min-height: 25px;
     font-size: 14px;
-    color: #1a73e8;
-    text-decoration: none;
-}
-.logo-colegio {
-    width: 400px; /* Tamaño del logo */
-    height: auto;
     margin-bottom: 10px;
+    font-weight: bold;
 }
 
-h3 {
-    color: #555;
-    margin-top: -10px; /* Lo pega al título de arriba */
-    margin-bottom: 20px;
-    font-size: 1.2rem;
-    font-weight: 500;
+/* MEDIA QUERIES (Ajustes para PC) */
+@media (min-width: 600px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr; /* 2 columnas en tablets */
+    }
 }
 
+@media (min-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas en PC */
+    }
+}
