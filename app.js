@@ -1,25 +1,33 @@
-// 1. Seleccionamos el formulario del HTML
 const formulario = document.getElementById('loginForm');
+const contenedorMensaje = document.getElementById('mensaje');
 
-// 2. Escuchamos cuando el usuario haga clic en el botón de ingresar
 formulario.addEventListener('submit', function(evento) {
-    
-    // Evitamos que la página se refresque (comportamiento por defecto)
     evento.preventDefault();
 
-    // 3. Capturamos los datos que escribió el usuario
-    const usuario = document.getElementById('usuario').value;
+    // Capturamos valores
+    const usuario = document.getElementById('usuario').value.toLowerCase();
     const clave = document.getElementById('password').value;
 
-    // 4. Lógica de prueba (Simulación)
-    // Por ahora, vamos a validar con un usuario de prueba
+    // Limpiamos mensajes anteriores
+    contenedorMensaje.textContent = "";
+    contenedorMensaje.style.color = "red";
+
+    // Validación
     if (usuario === "admin" && clave === "1234") {
-        alert("¡Bienvenido al Sistema del Colegio HASPEN, Administrador!");
+        // En lugar de cartel, mensaje de éxito rápido y redirección
+        contenedorMensaje.style.color = "green";
+        contenedorMensaje.textContent = "¡Acceso concedido! Entrando...";
         
-        // Aquí es donde luego lo mandaremos al panel principal
-        // window.location.href = "panel.html"; 
+        setTimeout(() => {
+            window.location.href = "panel.html";
+        }, 1000); // Espera 1 segundo para que el usuario vea el mensaje verde
         
     } else {
-        alert("Usuario o contraseña incorrectos. Intentá de nuevo.");
+        // Si ingresa mal, solo mostramos el texto en rojo
+        contenedorMensaje.textContent = "Usuario o contraseña incorrectos";
+        
+        // Limpiamos solo la contraseña para que intente de nuevo
+        document.getElementById('password').value = "";
     }
 });
+
