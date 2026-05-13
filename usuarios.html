@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Colegio HASPEN</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Estilos específicos para esta página */
+        .tabla-container {
+            width: 100%;
+            overflow-x: auto; /* Para que en celular se pueda deslizar la tabla */
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            font-size: 14px;
+        }
+        th { background-color: #1a73e8; color: white; }
+        .rol-tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+        .btn-accion {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            color: white;
+        }
+        .btn-editar { background-color: #f1c40f; }
+        .btn-baja { background-color: #e74c3c; }
+        .form-alta {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel-container" style="max-width: 900px;">
+        <header>
+            <h1>👥 Gestión de Usuarios</h1>
+            <p>Alta, Baja y Modificación de personal</p>
+        </header>
+
+        <!-- Formulario de Alta -->
+        <section class="form-alta">
+            <h3>Registrar Nuevo Usuario</h3>
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;">
+                <input type="text" id="nuevoNombre" placeholder="Nombre completo">
+                <input type="text" id="nuevoUser" placeholder="Usuario">
+                <select id="nuevoRol" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="Administrador">Administrador</option>
+                    <option value="Preceptor">Preceptor</option>
+                    <option value="Profesor">Profesor</option>
+                </select>
+                <button class="btn-principal" style="margin-top: 0;">Guardar</button>
+            </div>
+        </section>
+
+        <!-- Tabla de Usuarios -->
+        <div class="tabla-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ignacio (Admin)</td>
+                        <td>admin</td>
+                        <td><span class="rol-tag">Administrador</span></td>
+                        <td>
+                            <button class="btn-accion btn-editar">⚙️</button>
+                            <button class="btn-accion btn-baja">🗑️</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Juan Preceptor</td>
+                        <td>juan.haspen</td>
+                        <td><span class="rol-tag">Preceptor</span></td>
+                        <td>
+                            <button class="btn-accion btn-editar">⚙️</button>
+                            <button class="btn-accion btn-baja">🗑️</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn-salir" style="background-color: #555;" onclick="window.location.href='panel.html'">Volver al Menú</button>
+    </div>
+</body>
+</html>
