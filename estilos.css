@@ -123,3 +123,75 @@ input {
         grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas en PC */
     }
 }
+/* --- ESTILOS DE LA VENTANA MODAL (RECUPERACIÓN) --- */
+.modal-contenedor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-contenedor.mostrar-modal {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-contenido {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+}
+
+.modal-contenido h3 {
+    margin-top: 0;
+    color: #333333;
+    font-size: 1.4rem;
+}
+
+.modal-contenido p {
+    color: #666666;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.modal-botones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-secundario {
+    background-color: #e0e0e0;
+    color: #333333;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-secundario:hover {
+    background-color: #d4d4d4;
+}
+/* Fuerza el título en una sola línea y adapta su tamaño */
+.titulo-principal {
+    white-space: nowrap !important; /* Prohíbe el salto de línea de forma estricta */
+    font-size: 1.35rem !important;  /* Reduce ligeramente el tamaño para que entre horizontalmente */
+    display: block;
+    width: 100%;
+    text-align: center;
+}

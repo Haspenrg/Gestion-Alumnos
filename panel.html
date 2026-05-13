@@ -9,56 +9,126 @@
 <body>
     <div class="panel-container">
         <header class="header-dashboard">
-            <h1>Sistema HASPEN</h1>
-            <p>Panel de Administración Principal</p>
+            <h1 id="saludo-usuario">Sistema HASPEN</h1>
+            <p id="rol-usuario">Panel de Administración Principal</p>
         </header>
 
         <div class="dashboard-grid">
             <!-- Gestión de Usuarios -->
-            <div class="modulo-card" onclick="window.location.href='usuarios.html'">
+            <div id="mod-usuarios" class="modulo-card" onclick="window.location.href='usuarios.html'">
                 <span class="icon">👥</span>
                 <h4>Gestión de Usuarios</h4>
             </div>
             
             <!-- Inscripción Alumnos -->
-            <div class="modulo-card" onclick="alert('Próximamente: Inscripciones')">
+            <div id="mod-inscripcion" class="modulo-card" onclick="alert('Próximamente: Inscripciones')">
                 <span class="icon">📝</span>
                 <h4>Inscripción Alumnos</h4>
             </div>
             
             <!-- Crear Cursos -->
-            <div class="modulo-card" onclick="alert('Próximamente: Cursos')">
+            <div id="mod-cursos" class="modulo-card" onclick="alert('Próximamente: Crear Cursos')">
                 <span class="icon">🏫</span>
                 <h4>Crear Cursos</h4>
             </div>
             
             <!-- Materias -->
-            <div class="modulo-card" onclick="alert('Próximamente: Materias')">
+            <div id="mod-materias" class="modulo-card" onclick="alert('Próximamente: Materias')">
                 <span class="icon">📚</span>
                 <h4>Materias</h4>
             </div>
 
             <!-- Calificaciones y Boletín -->
-            <div class="modulo-card" onclick="alert('Próximamente: Calificaciones y Boletín')">
+            <div id="mod-calificaciones" class="modulo-card" onclick="alert('Próximamente: Calificaciones y Boletín')">
                 <span class="icon">📊</span>
                 <h4>Calificaciones y Boletín</h4>
             </div>
 
             <!-- Control de Previas -->
-            <div class="modulo-card" onclick="alert('Próximamente: Control de Previas')">
+            <div id="mod-previas" class="modulo-card" onclick="alert('Próximamente: Control de Previas')">
                 <span class="icon">⚠️</span>
                 <h4>Control de Previas</h4>
             </div>
 
             <!-- Estadísticas -->
-            <div class="modulo-card" onclick="alert('Próximamente: Estadísticas')">
+            <div id="mod-estadisticas" class="modulo-card" onclick="alert('Próximamente: Estadísticas')">
                 <span class="icon">📈</span>
                 <h4>Estadísticas</h4>
             </div>
         </div>
 
-        <button class="btn-salir" onclick="window.location.href='index.html'">Cerrar Sesión</button>
+        <button class="btn-salir" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
+
+    <!-- SCRIPT DE CONTROL DE ROLES Y PERMISOS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Validamos que exista un usuario logueado en el sistema
+            const datosSesion = localStorage.getItem('usuarioActivo');
+            if (!datosSesion) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const usuario = JSON.parse(datosSesion);
+            
+            // 2. Personalizamos los textos de bienvenida del encabezado
+            document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
+            document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol}`;
+
+            // 3. Aplicamos la lógica estricta de permisos según reglas de negocio
+            const rol = usuario.rol;
+
+            if (rol === "Coordinación") {
+                // Coordinación: Solo accede a Calificaciones y Estadísticas
+                bloquearModulo("mod-usuarios");
+                bloquearModulo("mod-inscripcion");
+                bloquearModulo("mod-cursos");
+                bloquearModulo("mod-materias");
+                bloquearModulo("mod-previas");
+            } 
+            else if (rol === "Directivo") {
+                // Directivo: Acceso a todo el panel principal excepto Usuarios
+                bloquearModulo("mod-usuarios");
+            } 
+            else if (rol === "Preceptor") {
+                // Preceptor: Acceso operativo general, no ingresa a Usuarios
+                bloquearModulo("mod-usuarios");
+            } 
+            else if (rol === "Profesor") {
+                // Profesor: Perfil pedagógico limitado (se bloquearán los módulos administrativos)
+                bloquearModulo("mod-usuarios");
+                bloquearModulo("mod-inscripcion");
+                bloquearModulo("mod-cursos");
+                bloquearModulo("mod-materias");
+                bloquearModulo("mod-previas");
+            }
+            // El rol "Administrador" mantiene control total, no se le bloquea ningún módulo
+        });
+
+        // Función auxiliar para deshabilitar módulos visual y operativamente
+        function bloquearModulo(idModulo) {
+            const elemento = document.getElementById(idModulo);
+            if (elemento) {
+                elemento.style.opacity = "0.4"; // Se muestra atenuado
+                elemento.style.cursor = "not-allowed"; // Cambia el cursor a denegado
+                elemento.removeAttribute("onclick"); // Elimina la acción de redirección o alerta
+                
+                // Agregamos un aviso en caso de que intenten hacer clic
+                elemento.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert("Acceso denegado: Su rol no posee permisos para ingresar a este módulo.");
+                });
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioActivo');
+            window.location.href = "index.html";
+        }
+    </script>
 </body>
 </html>
+
 
