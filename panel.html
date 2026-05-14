@@ -12,7 +12,7 @@
             <h1 id="saludo-usuario">Sistema HASPEN</h1>
             <p id="rol-usuario">Panel de Administración Principal</p>
         </header>
-
+        
         <div class="dashboard-grid">
             <!-- Gestión de Usuarios -->
             <div id="mod-usuarios" class="modulo-card" onclick="window.location.href='usuarios.html'">
@@ -20,8 +20,8 @@
                 <h4>Gestión de Usuarios</h4>
             </div>
             
-            <!-- Inscripción Alumnos -->
-            <div id="mod-inscripcion" class="modulo-card" onclick="alert('Próximamente: Inscripciones')">
+            <!-- Inscripción Alumnos (Corregido con redirección nativa) -->
+            <div id="mod-inscripcion" class="modulo-card" onclick="window.location.href='inscripcion.html'">
                 <span class="icon">📝</span>
                 <h4>Inscripción Alumnos</h4>
             </div>
@@ -37,26 +37,26 @@
                 <span class="icon">📚</span>
                 <h4>Materias</h4>
             </div>
-
+            
             <!-- Calificaciones y Boletín -->
             <div id="mod-calificaciones" class="modulo-card" onclick="alert('Próximamente: Calificaciones y Boletín')">
                 <span class="icon">📊</span>
                 <h4>Calificaciones y Boletín</h4>
             </div>
-
+            
             <!-- Control de Previas -->
             <div id="mod-previas" class="modulo-card" onclick="alert('Próximamente: Control de Previas')">
                 <span class="icon">⚠️</span>
                 <h4>Control de Previas</h4>
             </div>
-
+            
             <!-- Estadísticas -->
             <div id="mod-estadisticas" class="modulo-card" onclick="alert('Próximamente: Estadísticas')">
                 <span class="icon">📈</span>
                 <h4>Estadísticas</h4>
             </div>
         </div>
-
+        
         <button class="btn-salir" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
 
@@ -69,24 +69,21 @@
                 window.location.href = "index.html";
                 return;
             }
-
             const usuario = JSON.parse(datosSesion);
-            
+
             // 2. Personalizamos los textos de bienvenida del encabezado
             document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
             document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol}`;
 
             // 3. Aplicamos la lógica estricta de permisos según reglas de negocio
             const rol = usuario.rol;
-
             if (rol === "Coordinación") {
                 // Coordinación: Accede a Calificaciones, Estadísticas y Control de Previas
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-inscripcion");
                 bloquearModulo("mod-cursos");
                 bloquearModulo("mod-materias");
-            } 
-            else if (rol === "Prosecretario") {
+            } else if (rol === "Prosecretario") {
                 // Prosecretario: Accede única y exclusivamente a Inscripción Alumnos
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-cursos");
@@ -94,31 +91,27 @@
                 bloquearModulo("mod-calificaciones");
                 bloquearModulo("mod-previas");
                 bloquearModulo("mod-estadisticas");
-            }
-            else if (rol === "Directivo") {
+            } else if (rol === "Directivo") {
                 // Directivo: Acceso a todo el panel principal excepto Usuarios
                 bloquearModulo("mod-usuarios");
-            } 
-            else if (rol === "Preceptor") {
+            } else if (rol === "Preceptor") {
                 // Preceptor: Acceso a Inscripciones y Calificaciones en Modo LECTURA para sus cursos
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-cursos");
                 bloquearModulo("mod-materias");
                 bloquearModulo("mod-previas");
                 bloquearModulo("mod-estadisticas");
-
-                // Configuramos el comportamiento visual y de alertas para sus accesos de Solo Lectura
-                configurarModoSoloLectura("mod-inscripcion", "Inscripción de Alumnos");
-                configurarModoSoloLectura("mod-calificaciones", "Calificaciones y Boletín");
-            } 
-            else if (rol === "Profesor") {
+                // Configuramos el comportamiento visual y operativo para sus accesos de Solo Lectura
+                configurarModoSoloLectura("mod-inscripcion", "Inscripción de Alumnos", "inscripcion.html");
+                configurarModoSoloLectura("mod-calificaciones", "Calificaciones y Boletín", "");
+            } else if (rol === "Profesor") {
                 // Profesor: Acceso exclusivo a Calificaciones. Se bloquean los otros 6 módulos.
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-inscripcion");
                 bloquearModulo("mod-cursos");
                 bloquearModulo("mod-materias");
                 bloquearModulo("mod-previas");
-                bloquearModulo("mod-estadisticas"); // <-- AGREGADO EL BLOQUEO DE ESTADÍSTICAS AQUÍ
+                bloquearModulo("mod-estadisticas");
             }
         });
 
@@ -129,7 +122,6 @@
                 elemento.style.opacity = "0.4"; // Se muestra atenuado
                 elemento.style.cursor = "not-allowed"; // Cambia el cursor a denegado
                 elemento.removeAttribute("onclick"); // Elimina la acción de redirección o alerta
-                
                 elemento.addEventListener("click", function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -139,18 +131,24 @@
         }
 
         // Función para establecer permisos de Solo Lectura limitados a los cursos asignados
-        function configurarModoSoloLectura(idModulo, nombreModulo) {
+        function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
             const elemento = document.getElementById(idModulo);
             if (elemento) {
                 // Modificación visual sutil para indicar un permiso especial/limitado
-                elemento.style.borderLeft = "5px solid #1a73e8"; 
+                elemento.style.borderLeft = "5px solid #1a73e8";
                 elemento.removeAttribute("onclick");
-
                 elemento.addEventListener("click", function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     // Mensaje informativo e institucional que respeta la regla de negocio
                     alert(`Acceso de SOLO LECTURA a [${nombreModulo}].\nUsted operará únicamente sobre sus 2 cursos asignados sin permisos de modificación.`);
+                    
+                    // Si el módulo cuenta con una página web asignada, redirige de forma segura
+                    if (urlRedireccion) {
+                        window.location.href = urlRedireccion;
+                    } else {
+                        alert(`Próximamente: ${nombreModulo}`);
+                    }
                 });
             }
         }
