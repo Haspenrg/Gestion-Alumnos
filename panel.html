@@ -100,18 +100,26 @@
                 bloquearModulo("mod-usuarios");
             } 
             else if (rol === "Preceptor") {
-                // Preceptor: Acceso operativo general, no ingresa a Usuarios
+                // Preceptor: Acceso a Inscripciones y Calificaciones en Modo LECTURA para sus cursos
                 bloquearModulo("mod-usuarios");
+                bloquearModulo("mod-cursos");
+                bloquearModulo("mod-materias");
+                bloquearModulo("mod-previas");
+                bloquearModulo("mod-estadisticas");
+
+                // Configuramos el comportamiento visual y de alertas para sus accesos de Solo Lectura
+                configurarModoSoloLectura("mod-inscripcion", "Inscripción de Alumnos");
+                configurarModoSoloLectura("mod-calificaciones", "Calificaciones y Boletín");
             } 
             else if (rol === "Profesor") {
-                // Profesor: Perfil pedagógico limitado (se bloquearán los módulos administrativos)
+                // Profesor: Acceso exclusivo a Calificaciones. Se bloquean los otros 6 módulos.
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-inscripcion");
                 bloquearModulo("mod-cursos");
                 bloquearModulo("mod-materias");
                 bloquearModulo("mod-previas");
+                bloquearModulo("mod-estadisticas"); // <-- AGREGADO EL BLOQUEO DE ESTADÍSTICAS AQUÍ
             }
-            // El rol "Administrador" mantiene control total, no se le bloquea ningún módulo
         });
 
         // Función auxiliar para deshabilitar módulos visual y operativamente
@@ -122,11 +130,27 @@
                 elemento.style.cursor = "not-allowed"; // Cambia el cursor a denegado
                 elemento.removeAttribute("onclick"); // Elimina la acción de redirección o alerta
                 
-                // Agregamos un aviso en caso de que intenten hacer clic
                 elemento.addEventListener("click", function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     alert("Acceso denegado: Su rol no posee permisos para ingresar a este módulo.");
+                });
+            }
+        }
+
+        // Función para establecer permisos de Solo Lectura limitados a los cursos asignados
+        function configurarModoSoloLectura(idModulo, nombreModulo) {
+            const elemento = document.getElementById(idModulo);
+            if (elemento) {
+                // Modificación visual sutil para indicar un permiso especial/limitado
+                elemento.style.borderLeft = "5px solid #1a73e8"; 
+                elemento.removeAttribute("onclick");
+
+                elemento.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Mensaje informativo e institucional que respeta la regla de negocio
+                    alert(`Acceso de SOLO LECTURA a [${nombreModulo}].\nUsted operará únicamente sobre sus 2 cursos asignados sin permisos de modificación.`);
                 });
             }
         }

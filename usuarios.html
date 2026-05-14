@@ -6,7 +6,6 @@
     <title>Gestión de Usuarios - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
     <style>
-        /* Estilos específicos para la grilla interna del formulario administrativo */
         .grid-formulario {
             display: grid;
             grid-template-columns: 1fr;
@@ -25,10 +24,18 @@
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             margin-top: 20px;
+            position: relative;
         }
         th, td {
             padding: 12px 10px;
             text-align: left;
+        }
+        .fila-usuario {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .fila-usuario:hover {
+            background: #f1f5f9 !important;
         }
         .badge-rol {
             background: #e0e8f5;
@@ -39,6 +46,34 @@
             font-weight: bold;
             display: inline-block;
         }
+        .btn-accion {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 2px;
+            transition: background 0.2s;
+        }
+        .btn-accion:hover { background: #5a6268; }
+        .btn-modificar { background: #1a73e8; }
+        .btn-modificar:hover { background: #1557b0; }
+        .btn-eliminar { background: #d93025; }
+        .btn-eliminar:hover { background: #b52218; }
+        .indicador-edicion {
+            display: none;
+            background: #fef3c7;
+            color: #d97706;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #fcd34d;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -48,10 +83,17 @@
             <p>Administración de accesos y roles del sistema</p>
         </header>
 
-        <!-- Sección 1: Formulario para registrar un nuevo usuario -->
+        <!-- Sección 1: Formulario para registrar o editar un usuario -->
         <div class="form-registro-usuario">
-            <h3>Registrar Nuevo Usuario</h3>
+            <div id="bannerEdicion" class="indicador-edicion">
+                <strong>Modo Edición Activo:</strong> Modificando los datos del usuario. Al finalizar, haga clic en "Actualizar Usuario" o presione "Cancelar".
+                <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
+            </div>
+            <h3 id="formTitulo">Registrar Nuevo Usuario</h3>
+            
             <form id="formUsuario">
+                <input type="hidden" id="dniOriginalEdicion" value="">
+
                 <div class="grid-formulario">
                     <div class="input-group">
                         <label for="nombreApellido">Nombre y Apellido</label>
@@ -86,23 +128,15 @@
                             <div>
                                 <label style="font-size: 13px; margin-bottom: 3px; display:block;">Primer Curso</label>
                                 <div style="display: flex; gap: 10px;">
-                                    <select class="select-anio-prep" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
+                                    <select id="altaAnio1" class="select-anio-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
                                         <option value="" disabled selected>Año...</option>
-                                        <option value="1º">1º Año</option>
-                                        <option value="2º">2º Año</option>
-                                        <option value="3º">3º Año</option>
-                                        <option value="4º">4º Año</option>
-                                        <option value="5º">5º Año</option>
-                                        <option value="6º">6º Año</option>
+                                        <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
+                                        <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
                                     </select>
-                                    <select class="select-div-prep" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
+                                    <select id="altaDiv1" class="select-div-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
                                         <option value="" disabled selected>División...</option>
-                                        <option value="A">Div. A</option>
-                                        <option value="B">Div. B</option>
-                                        <option value="C">Div. C</option>
-                                        <option value="D">Div. D</option>
-                                        <option value="E">Div. E</option>
-                                        <option value="F">Div. F</option>
+                                        <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
+                                        <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
                                     </select>
                                 </div>
                             </div>
@@ -111,23 +145,15 @@
                             <div>
                                 <label style="font-size: 13px; margin-bottom: 3px; display:block;">Segundo Curso</label>
                                 <div style="display: flex; gap: 10px;">
-                                    <select class="select-anio-prep" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
+                                    <select id="altaAnio2" class="select-anio-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
                                         <option value="" disabled selected>Año...</option>
-                                        <option value="1º">1º Año</option>
-                                        <option value="2º">2º Año</option>
-                                        <option value="3º">3º Año</option>
-                                        <option value="4º">4º Año</option>
-                                        <option value="5º">5º Año</option>
-                                        <option value="6º">6º Año</option>
+                                        <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
+                                        <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
                                     </select>
-                                    <select class="select-div-prep" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
+                                    <select id="altaDiv2" class="select-div-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
                                         <option value="" disabled selected>División...</option>
-                                        <option value="A">Div. A</option>
-                                        <option value="B">Div. B</option>
-                                        <option value="C">Div. C</option>
-                                        <option value="D">Div. D</option>
-                                        <option value="E">Div. E</option>
-                                        <option value="F">Div. F</option>
+                                        <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
+                                        <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
                                     </select>
                                 </div>
                             </div>
@@ -142,24 +168,16 @@
                                 <label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Año</label>
                                 <select id="anioProfesor" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
                                     <option value="" disabled selected>Seleccione...</option>
-                                    <option value="1º">1º Año</option>
-                                    <option value="2º">2º Año</option>
-                                    <option value="3º">3º Año</option>
-                                    <option value="4º">4º Año</option>
-                                    <option value="5º">5º Año</option>
-                                    <option value="6º">6º Año</option>
+                                    <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
+                                    <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
                                 </select>
                             </div>
                             <div>
                                 <label for="divProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">División</label>
                                 <select id="divProfesor" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
                                     <option value="" disabled selected>Seleccione...</option>
-                                    <option value="A">Div. A</option>
-                                    <option value="B">Div. B</option>
-                                    <option value="C">Div. C</option>
-                                    <option value="D">Div. D</option>
-                                    <option value="E">Div. E</option>
-                                    <option value="F">Div. F</option>
+                                    <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
+                                    <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
                                 </select>
                             </div>
                             <div>
@@ -174,38 +192,36 @@
                                 <button type="button" id="btnAgregarCatedra" style="width: 100%; height: 38px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">+ Agregar</button>
                             </div>
                         </div>
-                        <!-- Lista visual donde se acumularán las cátedras agregadas -->
                         <div id="listaCatedrasProfesor" style="margin-top: 15px; background: white; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 4px; min-height: 40px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                             <span style="color: #94a3b8; font-size: 13px;" id="sinCatedrasMensaje">No hay cátedras asignadas aún.</span>
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn-principal" style="max-width: 200px; margin-top: 15px;">Guardar Usuario</button>
+                <button type="submit" id="btnGuardarUsuario" class="btn-principal" style="max-width: 200px; margin-top: 15px;">Guardar Usuario</button>
             </form>
         </div>
 
         <!-- Sección 2: Tabla con el listado de usuarios cargados -->
         <div class="tabla-usuarios-contenedor" style="margin-top: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
             <h3>Usuarios Registrados</h3>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px; min-width: 600px;">
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">💡 Haga clic en cualquier fila de la tabla para cargar al usuario y editar sus datos o asignación de cursos/cátedras.</p>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 5px; min-width: 600px;">
                 <thead>
                     <tr style="border-bottom: 2px solid #0056b3; color: #333;">
                         <th>Nombre y Apellido</th>
                         <th>Usuario (DNI)</th>
                         <th>Email</th>
-                        <th>Rol</th>
-                        <th style="text-align: center;">Acciones</th>
+                        <th>Rol / Cursos Asignados</th>
+                        <th style="text-align: center; min-width: 180px;">Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="tablaUsuariosBody">
-                    <!-- Las filas se renderizarán dinámicamente mediante el motor JS -->
-                </tbody>
+                <tbody id="tablaUsuariosBody"></tbody>
             </table>
         </div>
         <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 30px; background-color: #0056b3;">Volver al Panel</button>
     </div>
 
-    <!-- Vinculación del archivo lógico de control -->
     <script src="usuarios.js"></script>
 </body>
 </html>
+

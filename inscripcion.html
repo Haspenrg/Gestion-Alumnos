@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción de Alumnos - Colegio HASPEN</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .grid-formulario {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        @media (min-width: 600px) {
+            .grid-formulario {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .form-contenedor {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 20px;
+            position: relative;
+        }
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+        }
+        .fila-alumno {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .fila-alumno:hover {
+            background: #f1f5f9 !important;
+        }
+        .banner-lectura {
+            display: none;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #bae6fd;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .indicador-edicion {
+            display: none;
+            background: #fef3c7;
+            color: #d97706;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #fcd34d;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .badge-curso {
+            background: #f1f5f9;
+            color: #334155;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid #cbd5e1;
+        }
+        .badge-pase {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-baja {
+            background: #fee2e2;
+            color: #ef4444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .grupo-documentacion, .grupo-observaciones {
+            grid-column: 1 / -1;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            margin-top: 5px;
+        }
+        .opcion-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #334155;
+        }
+        .opcion-check input {
+            width: auto;
+            cursor: pointer;
+        }
+        .alerta-documentos {
+            color: #d93025;
+            font-size: 11px;
+            font-weight: bold;
+            display: block;
+            margin-top: 2px;
+        }
+        .documentos-completos {
+            color: #28a745;
+            font-size: 11px;
+            font-weight: bold;
+            display: block;
+            margin-top: 2px;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel-container">
+        <header class="header-dashboard">
+            <h1>Inscripción de Alumnos</h1>
+            <p id="subtitulo-modulo">Registro y matriculación de estudiantes</p>
+        </header>
+
+        <!-- Banner informativo exclusivo para el rol Preceptor -->
+        <div id="bannerPreceptor" class="banner-lectura">
+            ℹ️ <strong>Modo Solo Lectura Activo:</strong> Como Preceptor, usted visualiza únicamente el legajo de los alumnos pertenecientes a sus cursos asignados. Los alumnos sin curso asignado o dados de pase saliente quedan excluidos de su panel.
+        </div>
+
+        <!-- Sección de Alta y Edición en Caliente -->
+        <div id="contenedorFormularioAlta" class="form-contenedor">
+            <div id="bannerEdicion" class="indicador-edicion">
+                <strong>Modo Edición Activo:</strong> Modificando el legajo del estudiante. Al finalizar, haga clic en "Actualizar Legajo" o presione "Cancelar".
+                <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
+            </div>
+            <h3 id="formTitulo">Matricular Nuevo Estudiante</h3>
+            
+            <form id="formInscripcion">
+                <input type="hidden" id="dniOriginalEdicion" value="">
+
+                <div class="grid-formulario">
+                    <div class="input-group">
+                        <label for="nombreAlumno">Nombre y Apellido completo</label>
+                        <input type="text" id="nombreAlumno" placeholder="Ej: Sofía Benítez" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="dniAlumno">Documento de Identidad (DNI)</label>
+                        <input type="number" id="dniAlumno" placeholder="Ej: 48123456" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="direccionAlumno">Dirección de Residencia</label>
+                        <input type="text" id="direccionAlumno" placeholder="Ej: Av. Belgrano 1234" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="nombreTutor">Nombre del Adulto Responsable (Tutor)</label>
+                        <input type="text" id="nombreTutor" placeholder="Ej: Carlos Benítez" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="telefonoUrgencia">Teléfono de Urgencias Principal</label>
+                        <input type="text" id="telefonoUrgencia" placeholder="Ej: 2964-15XXXXXX" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="telefonoAlternativo">Teléfono de Contacto Alternativo</label>
+                        <input type="text" id="telefonoAlternativo" placeholder="Ej: 2964-42XXXX">
+                    </div>
+                    <div class="input-group">
+                        <label for="estadoPermanencia">Estado de Matriculación / Pase</label>
+                        <select id="estadoPermanencia" required>
+                            <option value="Regular">Regular</option>
+                            <option value="Viene de Pase">Viene de Pase (Ingreso Externo)</option>
+                            <option value="Se fue de Pase">Se fue de Pase (Baja / Saliente)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="anioAlumno">Año Académico</label>
+                        <select id="anioAlumno" required>
+                            <option value="Sin Asignar" selected>Sin Asignar (Mesa de Entrada)</option>
+                            <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
+                            <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="contenedorDivAlumno">
+                        <label for="divAlumno">División</label>
+                        <select id="divAlumno" required>
+                            <option value="Sin Asignar" selected>Sin Asignar</option>
+                            <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
+                            <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
+                        </select>
+                    </div>
+
+                    <!-- CONTROL DE CHECKBOXES PARA LA DOCUMENTACIÓN EN ENTREGADA -->
+                    <div class="grupo-documentacion">
+                        <label style="font-weight: bold; color: #0056b3; display: block; margin-bottom: 12px;">Auditoría de Documentación Entregada</label>
+                        <label class="opcion-check">
+                            <input type="checkbox" id="chkDniAlumno">
+                            <span>Fotocopia del DNI del Estudiante</span>
+                        </label>
+                        <label class="opcion-check">
+                            <input type="checkbox" id="chkDniTutor">
+                            <span>Fotocopia del DNI del Tutor / Responsable</span>
+                        </label>
+                        <label class="opcion-check">
+                            <input type="checkbox" id="chkPartida">
+                            <span>Partida de Nacimiento Certificada</span>
+                        </label>
+                        <label class="opcion-check">
+                            <input type="checkbox" id="chkVacunas">
+                            <span>Certificado de Vacunación (Esquema Completo)</span>
+                        </label>
+                    </div>
+
+                    <!-- CAMPO DE OBSERVACIONES PARTICULARES -->
+                    <div class="grupo-observaciones">
+                        <label for="observacionesAlumno" style="font-weight: bold; color: #0056b3; display: block; margin-bottom: 8px;">Observaciones Particulares del Estudiante</label>
+                        <textarea id="observacionesAlumno" rows="3" placeholder="Escriba aquí condiciones médicas, materias pendientes de equivalencia, o detalles del legajo..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" id="btnGuardarInscripcion" class="btn-principal" style="max-width: 200px; margin-top: 15px;">Inscribir Alumno</button>
+            </form>
+        </div>
+
+        <!-- Tabla con el listado de Alumnos Matriculados -->
+        <div class="tabla-usuarios-contenedor" style="margin-top: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+            <h3>Estudiantes Registrados</h3>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">💡 Haga clic sobre cualquier estudiante de la tabla para abrir e inspeccionar su legajo completo.</p>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 5px; min-width: 950px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #1a73e8; color: #333;">
+                        <th>Nombre / Dirección</th>
+                        <th>DNI</th>
+                        <th>Curso Asignado</th>
+                        <th>Tutor / Contactos</th>
+                        <th>Control Documental / Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaAlumnosBody"></tbody>
+            </table>
+        </div>
+
+        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 30px; background-color: #0056b3;">Volver al Panel</button>
+    </div>
+
+    <!-- SCRIPT DE GESTIÓN DEL MÓDULO -->
+    <script>
+        // Semilla adaptada con fechas de inscripciones históricas simuladas
+        const alumnosSemilla = [
+            { 
+                dni: "46111222", nombre: "Lautaro Martínez", curso: '1º "A"', tutor: "Marisa Martínez", 
+                telefono: "2964-401122", telAlt: "2964-152233", direccion: "Piedrabuena 450", estado: "Regular",
+                fechaInscripcion: "10/03/2025", obs: "Alumno regular sin novedades médicas.", 
+                docs: { dniAlumno: true, dniTutor: true, partida: true, vacunas: true }
+            },
+            { 
+                dni: "47222333", nombre: "Milagros Ceballos", curso: '4º "C"', tutor: "Roberto Ceballos", 
+                telefono: "2964-558899", telAlt: "", direccion: "Fagnano 820", estado: "Viene de Pase",
+                fechaInscripcion: "15/05/2025", obs: "Viene de escuela técnica. Pendiente analítico parcial.", 
+                docs: { dniAlumno: true, dniTutor: false, partida: true, vacunas: false }
+            },
+            { 
+                dni: "48333444", nombre: "Facundo Díaz", curso: '5º "B"', tutor: "Elena Gómez", 
+                telefono: "2964-153434", telAlt: "421100", direccion: "Belgrano 120", estado: "Se fue de Pase",
+                fechaInscripcion: "18/02/2024", obs: "Pase emitido hacia Colegio Soberanía Nacional.", 
+                docs: { dniAlumno: true, dniTutor: true, partida: false, vacunas: true }
+            },
+            { 
+                dni: "49444555", nombre: "Santiago Rossi", curso: "Sin Asignar", tutor: "Laura Rossi", 
+                telefono: "2964-434311", telAlt: "", direccion: "Elcano 55", estado: "Regular",
+                fechaInscripcion: "04/02/2026", obs: "Inscripto provisoriamente en espera de vacante de división.", 
+                docs: { dniAlumno: true, dniTutor: false, partida: false, vacunas: true }
+            }
+        ];
+
+        document.getElementById('anioAlumno').addEventListener('change', function() {
+            const divSelect = document.getElementById('divAlumno');
+            if (this.value === 'Sin Asignar') {
+                divSelect.value = 'Sin Asignar';
+            } else if (divSelect.value === 'Sin Asignar') {
+                divSelect.selectedIndex = 1;
+            }
+        });
+        document.getElementById('divAlumno').addEventListener('change', function() {
+            const anioSelect = document.getElementById('anioAlumno');
+            if (this.value === 'Sin Asignar') {
+                anioSelect.value = 'Sin Asignar';
+            } else if (anioSelect.value === 'Sin Asignar') {
+                anioSelect.selectedIndex = 1;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('alumnosColegio')) {
+                localStorage.setItem('alumnosColegio', JSON.stringify(alumnosSemilla));
+            }
+            renderizarModuloSegunRol();
+        });
+
+        function obtenerAlumnos() {
+            return JSON.parse(localStorage.getItem('alumnosColegio')) || [];
+        }
+
+        function renderizarModuloSegunRol() {
+            const sesion = JSON.parse(localStorage.getItem('usuarioActivo'));
+            if (!sesion) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const listaUsuarios = JSON.parse(localStorage.getItem('usuariosColegio')) || [];
+            const usuarioCompleto = listaUsuarios.find(u => u.rol === sesion.rol && u.nombreCompleto === sesion.nombre);
+
+            const tbody = document.getElementById('tablaAlumnosBody');
+            tbody.innerHTML = '';
+
+            let alumnosAMostrar = obtenerAlumnos();
+            const esPreceptor = sesion.rol === 'Preceptor';
+
+            if (esPreceptor) {
+                document.getElementById('bannerPreceptor').style.display = 'block';
+                document.getElementById('contenedorFormularioAlta').style.display = 'none';
+
+                const cursosAsignados = usuarioCompleto?.cursosAsignados || [];
+                alumnosAMostrar = alumnosAMostrar.filter(alumno => cursosAsignados.includes(alumno.curso) && alumno.estado !== "Se fue de Pase");
+                document.getElementById('subtitulo-modulo').textContent = `Vista de supervisión para sus cursos a cargo.`;
+            }
+
+            if (alumnosAMostrar.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">No se encontraron estudiantes registrados para la vista actual.</td></tr>`;
+                return;
+            }
+
+            alumnosAMostrar.forEach(alumno => {
+                const fila = document.createElement('tr');
+                fila.className = 'fila-alumno';
+                fila.style.borderBottom = '1px solid #e2e8f0';
+
+                fila.addEventListener('click', () => {
+                    if (!esPreceptor) {
+                        cargarAlumnoParaEdicion(alumno.dni);
+                    } else {
+                        alert(`📂 LEGAJO DIGITAL DEL ESTUDIANTE:\n\nNombre: ${alumno.nombre}\nDNI: ${alumno.dni}\nDirección: ${alumno.direccion}\nEstado: ${alumno.estado}\nFecha Inscripción: ${alumno.fechaInscripcion || 'No registra'}\n\nContacto Tutor: ${alumno.tutor}\nTeléfono 1: ${alumno.telefono}\nTeléfono 2 (Alt): ${alumno.telAlt || 'No registra'}\n\nObservaciones:\n${alumno.obs || 'Sin observaciones.'}\n\nDocumentos entregados:\n- DNI Alumno: ${alumno.docs.dniAlumno ? 'SI':'NO'}\n- DNI Tutor: ${alumno.docs.dniTutor ? 'SI':'NO'}\n- Partida: ${alumno.docs.partida ? 'SI':'NO'}\n- Vacunas: ${alumno.docs.vacunas ? 'SI':'NO'}`);
+                    }
+                });
+
+                const d = alumno.docs;
+                let estadoDocs = `<span class="documentos-completos">✅ Legajo Completo</span>`;
+                if (!d.dniAlumno || !d.dniTutor || !d.partida || !d.vacunas) {
+                    const faltantes = [];
+                    if(!d.dniAlumno) faltantes.push('DNI Al');
+                    if(!d.dniTutor) faltantes.push('DNI Tut');
+                    if(!d.partida) faltantes.push('Part');
+                    if(!d.vacunas) faltantes.push('Vac');
+                    estadoDocs = `<span class="alerta-documentos">⚠️ Falta: ${faltantes.join(', ')}</span>`;
+                }
+
+                let badgeEstadoCurso = `<span class="badge-curso">${alumno.curso}</span>`;
+                if (alumno.curso === "Sin Asignar") {
+                    badgeEstadoCurso = `<span class="badge-curso" style="background:#f3f4f6; color:#94a3b8;">Sin Asignar</span>`;
+                }
+
+                let tagEstadoPermanencia = '';
+                if (alumno.estado === 'Viene de Pase') {
+                    tagEstadoPermanencia = `<br><span class="badge-pase">📥 Pase Entrante</span>`;
+                } else if (alumno.estado === 'Se fue de Pase') {
+                    tagEstadoPermanencia = `<br><span class="badge-baja">❌ Baja por Pase</span>`;
+                }
+
+                fila.innerHTML = `
+                    <td>
+                        <strong>${alumno.nombre}</strong>
+                        <small style="display:block; color:#64748b; font-size:11px;">📍 ${alumno.direccion}</small>
+                    </td>
+                    <td>${alumno.dni}</td>
+                    <td>
+                        ${badgeEstadoCurso}
+                        ${tagEstadoPermanencia}
+                    </td>
+                    <td>
+                        <span style="font-size:13px; display:block; color:#334155;">${alumno.tutor}</span>
+                        <small style="color:#64748b; display:block;">📞 Ppal: ${alumno.telefono}</small>
+                        ${alumno.telAlt ? `<small style="color:#64748b; display:block;">📞 Alt: ${alumno.telAlt}</small>` : ''}
+                    </td>
+                    <td>
+                        ${estadoDocs}
+                        <small style="display:block; color:#94a3b8; font-size:11px; margin-top:2px;">📅 Alta: ${alumno.fechaInscripcion || 'N/C'}</small>
+                        ${alumno.obs ? `<small style="display:block; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#94a3b8; font-style:italic;" title="${alumno.obs}">📝 ${alumno.obs}</small>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+
+        function cargarAlumnoParaEdicion(dni) {
+            const lista = obtenerAlumnos();
+            const al = lista.find(item => item.dni === String(dni));
+            if (!al) return;
+
+            document.getElementById('dniOriginalEdicion').value = al.dni;
+            document.getElementById('formTitulo').textContent = `Modificar Legajo de: ${al.nombre}`;
+            document.getElementById('btnGuardarInscripcion').textContent = "Actualizar Legajo";
+            document.getElementById('btnGuardarInscripcion').style.backgroundColor = "#e28743";
+            document.getElementById('bannerEdicion').style.display = "block";
+
+            document.getElementById('nombreAlumno').value = al.nombre;
+            document.getElementById('dniAlumno').value = al.dni;
+            document.getElementById('direccionAlumno').value = al.direccion || '';
+            document.getElementById('nombreTutor').value = al.tutor;
+            document.getElementById('telefonoUrgencia').value = al.telefono;
+            document.getElementById('telefonoAlternativo').value = al.telAlt || '';
+            document.getElementById('estadoPermanencia').value = al.estado || 'Regular';
+            document.getElementById('observacionesAlumno').value = al.obs || '';
+
+            if (al.curso === "Sin Asignar") {
+                document.getElementById('anioAlumno').value = "Sin Asignar";
+                document.getElementById('divAlumno').value = "Sin Asignar";
+            } else {
+                const partes = al.curso.split(' ');
+                document.getElementById('anioAlumno').value = partes[0];
+                document.getElementById('divAlumno').value = partes[1].replace(/"/g, '');
+            }
+
+            document.getElementById('chkDniAlumno').checked = al.docs.dniAlumno;
+            document.getElementById('chkDniTutor').checked = al.docs.dniTutor;
+            document.getElementById('chkPartida').checked = al.docs.partida;
+            document.getElementById('chkVacunas').checked = al.docs.vacunas;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.getElementById('btnCancelarEdicion').addEventListener('click', resetearFormularioLegajo);
+
+        function resetearFormularioLegajo() {
+            document.getElementById('formInscripcion').reset();
+            document.getElementById('dniOriginalEdicion').value = "";
+            document.getElementById('formTitulo').textContent = "Matricular Nuevo Estudiante";
+            document.getElementById('btnGuardarInscripcion').textContent = "Inscribir Alumno";
+            document.getElementById('btnGuardarInscripcion').style.backgroundColor = "#1a73e8";
+            document.getElementById('bannerEdicion').style.none = "none";
+            document.getElementById('bannerEdicion').style.display = "none";
+            document.getElementById('anioAlumno').value = "Sin Asignar";
+            document.getElementById('divAlumno').value = "Sin Asignar";
+        }
+
+        document.getElementById('formInscripcion').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const nombre = document.getElementById('nombreAlumno').value.trim();
+            const dni = document.getElementById('dniAlumno').value.trim();
+            const direccion = document.getElementById('direccionAlumno').value.trim();
+            const tutor = document.getElementById('nombreTutor').value.trim();
+            const telefono = document.getElementById('telefonoUrgencia').value.trim();
+            const telAlt = document.getElementById('telefonoAlternativo').value.trim();
+            const estado = document.getElementById('estadoPermanencia').value;
+            const obs = document.getElementById('observacionesAlumno').value.trim();
+            const anio = document.getElementById('anioAlumno').value;
+            const division = document.getElementById('divAlumno').value;
+            
+            const cursoFormateado = (anio === "Sin Asignar" || division === "Sin Asignar") ? "Sin Asignar" : `${anio} "${division}"`;
+            const dniOriginal = document.getElementById('dniOriginalEdicion').value;
+
+            let listaAlumnos = obtenerAlumnos();
+
+            if (!dniOriginal && listaAlumnos.some(al => al.dni === dni)) {
+                alert('Error: Ya se encuentra inscripto un alumno con ese número de DNI.');
+                return;
+            }
+            if (dniOriginal && dniOriginal !== dni && listaAlumnos.some(al => al.dni === dni)) {
+                alert('Error: El nuevo DNI ya le pertenece a otro alumno registrado.');
+                return;
+            }
+
+            const objetoDocs = {
+                dniAlumno: document.getElementById('chkDniAlumno').checked,
+                dniTutor: document.getElementById('chkDniTutor').checked,
+                partida: document.getElementById('chkPartida').checked,
+                vacunas: document.getElementById('chkVacunas').checked
+            };
+
+            if (dniOriginal) {
+                // Caso: Edición en caliente (se preserva la fechaInscripcion original)
+                const index = listaAlumnos.findIndex(al => al.dni === String(dniOriginal));
+                if (index !== -1) {
+                    listaAlumnos[index].nombre = nombre;
+                    listaAlumnos[index].dni = dni;
+                    listaAlumnos[index].direccion = direccion;
+                    listaAlumnos[index].tutor = tutor;
+                    listaAlumnos[index].telefono = telefono;
+                    listaAlumnos[index].telAlt = telAlt;
+                    listaAlumnos[index].estado = estado;
+                    listaAlumnos[index].curso = cursoFormateado;
+                    listaAlumnos[index].obs = obs;
+                    listaAlumnos[index].docs = objetoDocs;
+                    alert('¡Legajo digital del estudiante actualizado con éxito!');
+                }
+            } else {
+                // Caso: Alta tradicional -> Genera la fecha actual automáticamente (Formato DD/MM/AAAA)
+                const hoy = new Date();
+                const dia = String(hoy.getDate()).padStart(2, '0');
+                const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                const anioActual = hoy.getFullYear();
+                const fechaFormateada = `${dia}/${mes}/${anioActual}`;
+
+                const nuevoAlumno = {
+                    dni: dni, nombre: nombre, curso: cursoFormateado, tutor: tutor, telefono: telefono,
+                    telAlt: telAlt, direccion: direccion, estado: estado, obs: obs, docs: objetoDocs,
+                    fechaInscripcion: fechaFormateada
+                };
+                listaAlumnos.push(nuevoAlumno);
+                alert('¡Estudiante matriculado con éxito!');
+            }
+
+            localStorage.setItem('alumnosColegio', JSON.stringify(listaAlumnos));
+            resetearFormularioLegajo();
+            renderizarModuloSegunRol();
+        });
+    </script>
+</body>
+</html>
