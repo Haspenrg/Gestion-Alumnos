@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursos y Materias - Colegio HASPEN</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <div class="panel-container" style="max-width: 95%; width: 95%; margin: 0 auto; padding: 20px;">
+        <header class="header-dashboard" style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 5px;">Configuración de Cursos y Materias</h1>
+            <p style="font-size: 1.1rem; color: #5f6368;">Ecosistema de Estructuras Curriculares Dinámicas e Institucionales</p>
+        </header>
+
+        <div class="grid-formulario" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start; width: 100%;">
+            
+            <!-- CONTENEDOR DEL FORMULARIO -->
+            <div class="form-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+                <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Configurar Curso y Materias</h3>
+                <form id="form-curso" style="display: flex; flex-direction: column; gap: 15px;">
+                    
+                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%;">
+                        <label for="select-ciclo" style="font-weight: bold; margin-bottom: 5px; text-align: left;">Año / Ciclo:</label>
+                        <select id="select-ciclo" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                            <option value="">Seleccione una opción...</option>
+                            <option value="1° Año - Ciclo Básico">1° Año - Ciclo Básico</option>
+                            <option value="2° Año - Ciclo Básico">2° Año - Ciclo Básico</option>
+                            <option value="3° Año - Ciclo Básico">3° Año - Ciclo Básico</option>
+                            <option value="4° Año - Ciclo Orientado">4° Año - Ciclo Orientado</option>
+                            <option value="5° Año - Ciclo Orientado">5° Año - Ciclo Orientado</option>
+                            <option value="6° Año - Ciclo Orientado">6° Año - Ciclo Orientado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%;">
+                        <label for="select-division" style="font-weight: bold; margin-bottom: 5px; text-align: left;">División:</label>
+                        <select id="select-division" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                            <!-- Inyección dinámica -->
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%;">
+                        <label for="select-turno" style="font-weight: bold; margin-bottom: 5px; text-align: left;">Turno:</label>
+                        <select id="select-turno" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                            <option value="">Seleccione turno...</option>
+                            <option value="Mañana">Mañana</option>
+                            <option value="Tarde">Tarde</option>
+                        </select>
+                    </div>
+
+                    <!-- Grupo dinámico de Orientaciones -->
+                    <div id="grupo-orientacion" class="form-group" style="display: none; flex-direction: column; align-items: flex-start; width: 100%;">
+                        <label for="select-orientacion" style="font-weight: bold; margin-bottom: 5px; text-align: left;">Orientación Académica:</label>
+                        <select id="select-orientacion" style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                            <!-- Inyección dinámica -->
+                        </select>
+                    </div>
+
+                    <!-- Contenedor de Checkboxes de Materias Sugeridas -->
+                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%;">
+                        <label style="font-weight: bold; margin-bottom: 5px; text-align: left;">Materias a incorporar en este curso:</label>
+                        <div id="contenedor-materias-checkbox" style="max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 12px; border-radius: 4px; background: #fff; text-align: left; width: 100%; box-sizing: border-box;">
+                            <p style="font-size: 13px; color: #666; margin: 0; text-align: left;">Seleccione primero el Año / Ciclo para cargar las materias.</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-guardar" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px;">Registrar Estructura Completa</button>
+                </form>
+            </div>
+
+            <!-- CONTENEDOR DE LA TABLA COMPLETA -->
+            <div class="tabla-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+                <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Estructuras y Planes Registrados</h3>
+                <div class="table-responsive" style="width: 100%; overflow-x: auto;">
+                    <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                <th style="padding: 12px; text-align: left; width: 20%;">Curso / Turno</th>
+                                <th style="padding: 12px; text-align: left; width: 20%;">Orientación</th>
+                                <th style="padding: 12px; text-align: left; width: 50%;">Materias Asignadas</th>
+                                <th style="padding: 12px; text-align: center; width: 10%;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cursos-body">
+                            <!-- Inyección dinámica -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-volver" class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; margin-top: 25px; padding: 10px 20px; cursor: pointer;">Volver al Panel</button>
+    </div>
+
+    <script>
+        // Semillas base del sistema para control mutable e independiente
+        const SEMILLA_DIVISIONES = ["A", "B", "C", "D", "E", "F", "G"];
+        const SEMILLA_ORIENTACIONES = {
+            comun: ["Prácticas del Lenguaje", "Matemática", "Inglés", "Educación Física", "Educación Tecnológica"],
+            basico: ["Ciencias Sociales", "Ciencias Naturales", "Lenguajes Artísticos", "Historia", "Geografía", "Construcción Ciudadana", "Físico-Química"],
+            "Ciencias Naturales": ["Historia", "Geografía", "Filosofía", "Biología", "Química", "Salud y Derecho", "Física", "Ciencias de la Tierra", "Sociología", "Comunicación", "Cs. Políticas", "Psicología"],
+            "Economía y Administración": ["Historia", "Geografía", "Filosofía", "Economía", "Administración", "SIC", "Microeconomía", "Derecho Económico", "Legislación Impositiva", "Microemp.", "Sociología", "Comunicación", "Cs. Políticas", "Psicología"],
+            "Agro y Ambiente": ["Historia", "Geografía", "Filosofía", "Agroecosistema", "Producción Vegetal", "Procesos Productivos", "Emprendimientos Productivos Sustentables", "Producción Animal", "Agroecología", "Sociología", "Comunicación", "Cs. Políticas", "Psicología"]
+        };
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            // Inicializar las bases mutables en LocalStorage si no existen
+            if (!localStorage.getItem('configDivisiones')) {
+                localStorage.setItem('configDivisiones', JSON.stringify(SEMILLA_DIVISIONES));
+            }
+            if (!localStorage.getItem('configOrientaciones')) {
+                localStorage.setItem('configOrientaciones', JSON.stringify(SEMILLA_ORIENTACIONES));
+            }
+
+            const sesion = localStorage.getItem('usuarioActivo');
+            if (!sesion) { window.location.href = "index.html"; return; }
+            
+            const usuario = JSON.parse(sesion);
+            if (usuario.rol !== "Administrador" && usuario.rol !== "Directivo") {
+                alert("Acceso denegado."); window.location.href = "panel.html"; return;
+            }
+
+            if (usuario.rol === "Directivo") {
+                document.getElementById('form-curso').style.display = "none";
+                document.querySelector('.form-container h3').textContent = "Vista de Supervisión";
+                document.querySelector('.grid-formulario').style.gridTemplateColumns = "1fr";
+            }
+
+            await precargarFormularioDinamico();
+            inicializarEventosEstructura();
+            await renderizarCursosYPlanes();
+        });
+
+        // Genera los elementos de los SELECT basados puramente en la memoria local
+        async function precargarFormularioDinamico() {
+            const divisiones = JSON.parse(localStorage.getItem('configDivisiones'));
+            const orientacionesObj = JSON.parse(localStorage.getItem('configOrientaciones'));
+
+            const selectDivision = document.getElementById('select-division');
+            selectDivision.innerHTML = '<option value="">Seleccione división...</option>';
+            divisiones.forEach(div => {
+                selectDivision.add(new Option(`División ${div}`, div));
+            });
+
+            const selectOrientacion = document.getElementById('select-orientacion');
+            selectOrientacion.innerHTML = '<option value="">Seleccione orientación...</option>';
+            
+            // Recorremos las llaves del objeto omitiendo las fijas del tronco común
+            Object.keys(orientacionesObj).forEach(key => {
+                if (key !== "comun" && key !== "basico") {
+                    selectOrientacion.add(new Option(key, key));
+                }
+            });
+        }
+
+        function inicializarEventosEstructura() {
+            const selectCiclo = document.getElementById('select-ciclo');
+            const grupoOrientacion = document.getElementById('grupo-orientacion');
+            const selectOrientacion = document.getElementById('select-orientacion');
+            const formCurso = document.getElementById('form-curso');
+
+            selectCiclo.addEventListener('change', actualizarMapeoMaterias);
+            selectOrientacion.addEventListener('change', actualizarMapeoMaterias);
+
+            formCurso.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const checkboxes = document.querySelectorAll('.check-materia:checked');
+                if (checkboxes.length === 0) {
+                    alert("Error: Debe seleccionar al menos una materia para registrar el curso.");
+                    return;
+                }
+
+                const materiasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
+                const ciclo = selectCiclo.value;
+                const division = document.getElementById('select-division').value;
+                const turno = document.getElementById('select-turno').value;
+                const orientacion = selectOrientacion.value || "No aplica (Ciclo Básico)";
+
+                const nuevoCurso = {
+                    id: Date.now().toString(),
+                    ciclo,
+                    division,
+                    turno,
+                    orientacion,
+                    materias: materiasSeleccionadas
+                };
+
+                const exito = await guardarCursoPlanLocal(nuevoCurso);
+                if (exito) {
+                    formCurso.reset();
+                    grupoOrientacion.style.display = "none";
+                    selectOrientacion.removeAttribute('required');
+                    document.getElementById('contenedor-materias-checkbox').innerHTML = `<p style="font-size: 13px; color: #666; margin: 0; text-align: left;">Seleccione primero el Año / Ciclo para cargar las materias.</p>`;
+                    await renderizarCursosYPlanes();
+                    alert("Estructura de curso y materias registrada con éxito.");
+                }
+            });
+        }
+
+        function actualizarMapeoMaterias() {
+            const selectCiclo = document.getElementById('select-ciclo');
+            const grupoOrientacion = document.getElementById('grupo-orientacion');
+            const selectOrientacion = document.getElementById('select-orientacion');
+            const contenedor = document.getElementById('contenedor-materias-checkbox');
+
+            if (!selectCiclo.value) {
+                contenedor.innerHTML = `<p style="font-size: 13px; color: #666; margin: 0; text-align: left;">Seleccione primero el Año / Ciclo para cargar las materias.</p>`;
+                return;
+            }
+
+            const orientacionesData = JSON.parse(localStorage.getItem('configOrientaciones'));
+            let listaMaterias = [...orientacionesData.comun];
+
+            if (selectCiclo.value.includes("Ciclo Básico")) {
+                grupoOrientacion.style.display = "none";
+                selectOrientacion.removeAttribute('required');
+                selectOrientacion.value = "";
+                listaMaterias = listaMaterias.concat(orientacionesData.basico);
+            } else {
+                grupoOrientacion.style.display = "flex";
+                selectOrientacion.setAttribute('required', 'true');
+
+                const orientacionElegida = selectOrientacion.value;
+                if (orientacionElegida && orientacionesData[orientacionElegida]) {
+                    listaMaterias = listaMaterias.concat(orientacionesData[orientacionElegida]);
+                } else {
+                    contenedor.innerHTML = `<p style="font-size: 13px; color: #e11d48; margin: 0; text-align: left;">Seleccione la Orientación Académica para cargar el diseño curricular.</p>`;
+                    return;
+                }
+            }
+
+            contenedor.innerHTML = "";
+            contenedor.style.textAlign = "left";
+
+            [...new Set(listaMaterias)].forEach(materia => {
+                const div = document.createElement('div');
+                div.style.display = "block";
+                div.style.width = "100%";
+                div.style.margin = "6px 0";
+                div.style.padding = "2px 0";
+                div.style.textAlign = "left";
+
+                div.innerHTML = `
+                    <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; text-align: left; margin: 0; padding: 0;">
+                        <input type="checkbox" value="${materia}" class="check-materia" checked style="margin: 0; padding: 0; width: auto; min-width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;"> 
+                        <span style="font-size: 14px; color: #333; line-height: 1.2; text-align: left;">${materia}</span>
+                    </label>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        async function obtenerCursosLocal() {
+            const datos = localStorage.getItem('cursosColegio');
+            return datos ? JSON.parse(datos) : [];
+        }
+
+        async function guardarCursoPlanLocal(curso) {
+            const cursos = await obtenerCursosLocal();
+            const duplicado = cursos.find(c => c.ciclo === curso.ciclo && c.division === curso.division && c.turno === curso.turno);
+            
+            if (duplicado) {
+                alert("Error: Este Año, División y Turno ya se encuentran registrados.");
+                return false;
+            }
+            cursos.push(curso);
+            localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+            return true;
+        }
+
+        async function eliminarCursoLocal(id) {
+            let cursos = await obtenerCursosLocal();
+            cursos = cursos.filter(c => c.id !== id);
+            localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+            return true;
+        }
+
+        async function renderizarCursosYPlanes() {
+            const tablaBody = document.getElementById('tabla-cursos-body');
+            const cursos = await obtenerCursosLocal();
+            const sesion = JSON.parse(localStorage.getItem('usuarioActivo'));
+            
+            tablaBody.innerHTML = "";
+
+            if (cursos.length === 0) {
+                tablaBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; opacity:0.6;">No hay estructuras configuradas.</td></tr>`;
+                return;
+            }
+
+            cursos.forEach(curso => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid #dee2e6";
+                
+                const celdaAcciones = sesion.rol === "Administrador"
+                    ? `<button class="btn-eliminar" data-id="${curso.id}" style="padding: 6px 12px; font-size: 12px; cursor:pointer;">Eliminar</button>`
+                    : `<span style="font-size:12px; color:#5f6368;">Lectura</span>`;
+
+                const tagsMaterias = curso.materias.map(m => `<span class="catedra-tag" style="background:#f1f3f4; color:#3c4043; border:none; display:inline-block; margin:2px 4px; padding: 4px 8px; border-radius: 4px; font-size:11px; font-weight: 500;">${m}</span>`).join('');
+
+                tr.innerHTML = `
+                    <td style="padding: 12px; vertical-align: top;"><strong>${curso.ciclo}</strong><br><span style="color:#5f6368; font-size:13px;">División ${curso.division} (${curso.turno})</span></td>
+                    <td style="padding: 12px; vertical-align: top;"><span class="catedra-tag" style="background:#e8f0fe; color:#1a73e8; border:none; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">${curso.orientacion}</span></td>
+                    <td style="padding: 12px; vertical-align: top; white-space: normal; line-height: 1.6;">${tagsMaterias}</td>
+                    <td style="padding: 12px; vertical-align: top; text-align: center;">${celdaAcciones}</td>
+                `;
+                tablaBody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.btn-eliminar').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (confirm("¿Desea eliminar este curso? Se perderán las relaciones asociadas.")) {
+                        await eliminarCursoLocal(this.getAttribute('data-id'));
+                        await renderizarCursosYPlanes();
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

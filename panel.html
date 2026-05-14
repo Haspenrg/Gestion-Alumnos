@@ -15,142 +15,156 @@
         
         <div class="dashboard-grid">
             <!-- Gestión de Usuarios -->
-            <div id="mod-usuarios" class="modulo-card" onclick="window.location.href='usuarios.html'">
+            <div id="mod-usuarios" class="modulo-card">
                 <span class="icon">👥</span>
                 <h4>Gestión de Usuarios</h4>
             </div>
-            
-            <!-- Inscripción Alumnos (Corregido con redirección nativa) -->
-            <div id="mod-inscripcion" class="modulo-card" onclick="window.location.href='inscripcion.html'">
+            <!-- Gestión de Alumnos -->
+            <div id="mod-inscripcion" class="modulo-card">
                 <span class="icon">📝</span>
-                <h4>Inscripción Alumnos</h4>
+                <h4>Gestión de Alumnos</h4>
             </div>
-            
-            <!-- Crear Cursos -->
-            <div id="mod-cursos" class="modulo-card" onclick="alert('Próximamente: Crear Cursos')">
+            <!-- Crear Cursos y Materias (Módulo Unificado) -->
+            <div id="mod-cursos-materias" class="modulo-card">
                 <span class="icon">🏫</span>
-                <h4>Crear Cursos</h4>
+                <h4>Crear Cursos y Materias</h4>
             </div>
-            
-            <!-- Materias -->
-            <div id="mod-materias" class="modulo-card" onclick="alert('Próximamente: Materias')">
-                <span class="icon">📚</span>
-                <h4>Materias</h4>
-            </div>
-            
             <!-- Calificaciones y Boletín -->
-            <div id="mod-calificaciones" class="modulo-card" onclick="alert('Próximamente: Calificaciones y Boletín')">
+            <div id="mod-calificaciones" class="modulo-card">
                 <span class="icon">📊</span>
                 <h4>Calificaciones y Boletín</h4>
             </div>
-            
             <!-- Control de Previas -->
-            <div id="mod-previas" class="modulo-card" onclick="alert('Próximamente: Control de Previas')">
+            <div id="mod-previas" class="modulo-card">
                 <span class="icon">⚠️</span>
                 <h4>Control de Previas</h4>
             </div>
-            
             <!-- Estadísticas -->
-            <div id="mod-estadisticas" class="modulo-card" onclick="alert('Próximamente: Estadísticas')">
+            <div id="mod-estadisticas" class="modulo-card">
                 <span class="icon">📈</span>
                 <h4>Estadísticas</h4>
             </div>
         </div>
-        
-        <button class="btn-salir" onclick="cerrarSesion()">Cerrar Sesión</button>
+        <button id="btn-cerrar-sesion" class="btn-salir">Cerrar Sesión</button>
     </div>
 
-    <!-- SCRIPT DE CONTROL DE ROLES Y PERMISOS -->
+    <!-- SCRIPT DE CONTROL DE ROLES Y PERMISOS BLINDADO -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // 1. Validamos que exista un usuario logueado en el sistema
+        document.addEventListener("DOMContentLoaded", async function() {
+            await verificarYConfigurarPanel();
+            document.getElementById('btn-cerrar-sesion').addEventListener('click', cerrarSesion);
+        });
+
+        async function obtenerSesionLocal() {
             const datosSesion = localStorage.getItem('usuarioActivo');
-            if (!datosSesion) {
+            if (!datosSesion) return null;
+            return JSON.parse(datosSesion);
+        }
+
+        async function verificarYConfigurarPanel() {
+            const usuario = await obtenerSesionLocal();
+            
+            if (!usuario) {
                 window.location.href = "index.html";
                 return;
             }
-            const usuario = JSON.parse(datosSesion);
 
-            // 2. Personalizamos los textos de bienvenida del encabezado
+            // Personalización de la interfaz institucional
             document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
             document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol}`;
 
-            // 3. Aplicamos la lógica estricta de permisos según reglas de negocio
             const rol = usuario.rol;
+
+            // 1. Inicialización limpia de enlaces sin clonar elementos
+            configurarEnlaceModulo("mod-usuarios", "usuarios.html");
+            configurarEnlaceModulo("mod-inscripcion", "inscripcion.html");
+            configurarEnlaceModulo("mod-cursos-materias", "cursos-materias.html"); // Enlace directo corregido
+            configurarEnlaceModulo("mod-calificaciones", "alert('Próximamente: Calificaciones y Boletín')");
+            configurarEnlaceModulo("mod-previas", "alert('Próximamente: Control de Previas')");
+            configurarEnlaceModulo("mod-estadisticas", "alert('Próximamente: Estadísticas')");
+
+            // 2. Aplicación estricta de la matriz de permisos sobreescribiendo bloqueos
             if (rol === "Coordinación") {
-                // Coordinación: Accede a Calificaciones, Estadísticas y Control de Previas
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-inscripcion");
-                bloquearModulo("mod-cursos");
-                bloquearModulo("mod-materias");
-            } else if (rol === "Prosecretario") {
-                // Prosecretario: Accede única y exclusivamente a Inscripción Alumnos
+                bloquearModulo("mod-cursos-materias");
+            } 
+            else if (rol === "Prosecretario") {
                 bloquearModulo("mod-usuarios");
-                bloquearModulo("mod-cursos");
-                bloquearModulo("mod-materias");
+                bloquearModulo("mod-cursos-materias");
                 bloquearModulo("mod-calificaciones");
                 bloquearModulo("mod-previas");
                 bloquearModulo("mod-estadisticas");
-            } else if (rol === "Directivo") {
-                // Directivo: Acceso a todo el panel principal excepto Usuarios
+            } 
+            else if (rol === "Directivo") {
                 bloquearModulo("mod-usuarios");
-            } else if (rol === "Preceptor") {
-                // Preceptor: Acceso a Inscripciones y Calificaciones en Modo LECTURA para sus cursos
+            } 
+            else if (rol === "Preceptor") {
                 bloquearModulo("mod-usuarios");
-                bloquearModulo("mod-cursos");
-                bloquearModulo("mod-materias");
+                bloquearModulo("mod-cursos-materias");
                 bloquearModulo("mod-previas");
                 bloquearModulo("mod-estadisticas");
-                // Configuramos el comportamiento visual y operativo para sus accesos de Solo Lectura
-                configurarModoSoloLectura("mod-inscripcion", "Inscripción de Alumnos", "inscripcion.html");
+                
+                configurarModoSoloLectura("mod-inscripcion", "Gestión de Alumnos", "inscripcion.html");
                 configurarModoSoloLectura("mod-calificaciones", "Calificaciones y Boletín", "");
-            } else if (rol === "Profesor") {
-                // Profesor: Acceso exclusivo a Calificaciones. Se bloquean los otros 6 módulos.
+            } 
+            else if (rol === "Profesor") {
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-inscripcion");
-                bloquearModulo("mod-cursos");
-                bloquearModulo("mod-materias");
+                bloquearModulo("mod-cursos-materias");
                 bloquearModulo("mod-previas");
                 bloquearModulo("mod-estadisticas");
-            }
-        });
-
-        // Función auxiliar para deshabilitar módulos visual y operativamente
-        function bloquearModulo(idModulo) {
-            const elemento = document.getElementById(idModulo);
-            if (elemento) {
-                elemento.style.opacity = "0.4"; // Se muestra atenuado
-                elemento.style.cursor = "not-allowed"; // Cambia el cursor a denegado
-                elemento.removeAttribute("onclick"); // Elimina la acción de redirección o alerta
-                elemento.addEventListener("click", function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert("Acceso denegado: Su rol no posee permisos para ingresar a este módulo.");
-                });
             }
         }
 
-        // Función para establecer permisos de Solo Lectura limitados a los cursos asignados
+        function configurarEnlaceModulo(idModulo, destino) {
+            const elemento = document.getElementById(idModulo);
+            if (!elemento) return;
+            
+            // Asignación limpia mediante propiedad onclick directa para evitar herencias
+            elemento.onclick = function() {
+                if (destino.startsWith("alert")) {
+                    const mensaje = destino.match(/'([^']+)'/);
+                    alert(mensaje ? mensaje[1] : "Próximamente");
+                } else {
+                    window.location.href = destino;
+                }
+            };
+        }
+
+        function bloquearModulo(idModulo) {
+            const elemento = document.getElementById(idModulo);
+            if (!elemento) return;
+
+            elemento.style.opacity = "0.4";
+            elemento.style.cursor = "not-allowed";
+            
+            elemento.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                alert("Acceso denegado: Su rol no posee permisos para ingresar a este módulo.");
+            };
+        }
+
         function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
             const elemento = document.getElementById(idModulo);
-            if (elemento) {
-                // Modificación visual sutil para indicar un permiso especial/limitado
-                elemento.style.borderLeft = "5px solid #1a73e8";
-                elemento.removeAttribute("onclick");
-                elemento.addEventListener("click", function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Mensaje informativo e institucional que respeta la regla de negocio
-                    alert(`Acceso de SOLO LECTURA a [${nombreModulo}].\nUsted operará únicamente sobre sus 2 cursos asignados sin permisos de modificación.`);
-                    
-                    // Si el módulo cuenta con una página web asignada, redirige de forma segura
-                    if (urlRedireccion) {
-                        window.location.href = urlRedireccion;
-                    } else {
-                        alert(`Próximamente: ${nombreModulo}`);
-                    }
-                });
-            }
+            if (!elemento) return;
+
+            elemento.style.borderLeft = "5px solid #1a73e8";
+            elemento.style.opacity = "1";
+            elemento.style.cursor = "pointer";
+            
+            elemento.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                alert(`Acceso de SOLO LECTURA a [${nombreModulo}].\nUsted operará únicamente sobre sus 2 cursos asignados sin permisos de modificación.`);
+                
+                if (urlRedireccion) {
+                    window.location.href = urlRedireccion;
+                } else {
+                    alert(`Próximamente: ${nombreModulo}`);
+                }
+            };
         }
 
         function cerrarSesion() {
@@ -160,4 +174,3 @@
     </script>
 </body>
 </html>
-
