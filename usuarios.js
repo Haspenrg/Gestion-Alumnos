@@ -56,11 +56,11 @@ async function inicializarSelectoresCursos() {
 
     cursos.forEach(curso => {
         const textoOpcion = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
-        const valorOpcion = `${curso.ciclo} - División ${curso.division}`; // Formato estándar de coincidencia
+        const valorOpcion = curso.id; 
 
         const opt1 = new Option(textoOpcion, valorOpcion);
         const opt2 = new Option(textoOpcion, valorOpcion);
-        const optProf = new Option(textoOpcion, curso.id); // Guardamos el ID del curso para buscar sus materias rápido
+        const optProf = new Option(textoOpcion, curso.id); 
 
         selectPrep1.add(opt1);
         selectPrep2.add(opt2);
@@ -82,6 +82,7 @@ async function cargarMateriasPorCursoSeleccionado() {
 
     if (cursoEncontrado && cursoEncontrado.materias) {
         cursoEncontrado.materias.forEach(materia => {
+            // Se inyecta la materia respetando las mayúsculas institucionales
             const opt = new Option(materia, materia);
             selectMateria.add(opt);
         });
@@ -107,7 +108,6 @@ function configurarCamposRequeridos() {
     document.getElementById('anioProfesor').selectedIndex = 0;
     document.getElementById('materiaProfesor').innerHTML = '<option value="" disabled selected>Seleccione primero un curso...</option>';
     
-    // Solo si no estamos en Modo Edición limpiamos la bolsa de horas
     if (!document.getElementById('dniOriginalEdicion').value) {
         catedrasTemporales = [];
         actualizarTagsBolsaHoras();
@@ -136,7 +136,6 @@ function agregarCatedraProfesorBolsa() {
     const textoCurso = selectCurso.options[selectCurso.selectedIndex].text;
     const nombreMateria = selectMateria.value;
     
-    // Formato de cadena de texto acumulable según contexto
     const identificadorCatedra = `${textoCurso} -> ${nombreMateria}`;
 
     if (catedrasTemporales.includes(identificadorCatedra)) {
@@ -144,13 +143,13 @@ function agregarCatedraProfesorBolsa() {
         return;
     }
 
-    // Almacenamiento e inyección visual en caliente (Licencias Docentes permitidas de forma nativa)
     catedrasTemporales.push(identificadorCatedra);
     actualizarTagsBolsaHoras();
 }
 
 function actualizarTagsBolsaHoras() {
     const contenedor = document.getElementById('listaCatedrasProfesor');
+    if (!contenedor) return;
     contenedor.innerHTML = "";
 
     if (catedrasTemporales.length === 0) {
@@ -161,7 +160,6 @@ function actualizarTagsBolsaHoras() {
     catedrasTemporales.forEach((catedra, indice) => {
         const tag = document.createElement('span');
         tag.className = "catedra-tag";
-        // Estilos inline de reseteo institucional
         tag.style.background = "#e8f0fe";
         tag.style.color = "#1a73e8";
         tag.style.padding = "5px 10px";
@@ -193,159 +191,160 @@ async function procesarGuardarUsuario(e) {
     const nombreCompleto = document.getElementById('nombreApellido').value.trim();
     const email = document.getElementById('emailUsuario').value.trim();
     const rol = document.getElementById('rolUsuario').value;
-    const dniOriginal = document.getElementById('dniOriginalEdicion').value;
+    const dniOriginalEdicion = document.getElementById('dniOriginalEdicion').value;
 
-    let listaUsuarios = JSON.parse(localStorage.getItem('usuariosColegio')) || [];
-
-    // Validar duplicidad de DNI solo en altas nuevas
-    if (!dniOriginal && listaUsuarios.find(u => u.dni === dni)) {
-        alert("Error: Ya existe una cuenta registrada con ese número de DNI.");
+    if (!dni || !nombreCompleto || !email || !rol) {
+        alert("Por favor, complete todos los campos obligatorios del formulario.");
         return;
     }
 
-    let datosCurriculares = "";
+    let rolesCursos = [];
     if (rol === "Preceptor") {
         const c1 = document.getElementById('altaAnio1').value;
         const c2 = document.getElementById('altaAnio2').value;
-        datosCurriculares = [c1, c2];
-    } else if (rol === "Profesor") {
-        if (catedrasTemporales.length === 0) {
-            alert("Error: Un perfil pedagógico de Profesor debe poseer al menos una cátedra en su bolsa de horas.");
+        if (!c1 || !c2 || c1 === "Ninguno" || c2 === "Ninguno" || c1 === c2) {
+            alert("Error: Un preceptor debe tener asignados exactamente 2 cursos estructurales distintos.");
             return;
         }
-        datosCurriculares = [...catedrasTemporales];
+        rolesCursos = [c1, c2];
     }
 
-    if (dniOriginal) {
-        // --- MODO EDICIÓN EN CALIENTE ---
-        const index = listaUsuarios.findIndex(u => u.dni === dniOriginal);
+    const usuariosRaw = localStorage.getItem('usuariosColegio');
+    let usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+
+    if (!dniOriginalEdicion && usuarios.some(u => u.dni === dni)) {
+        alert("Error: Ya existe un usuario registrado con el DNI ingresado.");
+        return;
+    }
+
+    if (dniOriginalEdicion) {
+        const index = usuarios.findIndex(u => u.dni === dniOriginalEdicion);
         if (index !== -1) {
-            // Mantener la contraseña existente si no se provee campo de actualización
-            const claveExistente = listaUsuarios[index].clave || dni;
-            
-            listaUsuarios[index] = {
-                dni,
-                usuario: dni,
-                nombreCompleto,
-                email,
-                rol,
-                clave: claveExistente,
-                asignacion: datosCurriculares
-            };
-            alert("Cuenta de usuario reconfigurada y actualizada con éxito.");
+            usuarios[index].dni = dni;
+            usuarios[index].nombre = nombreCompleto;
+            usuarios[index].email = email;
+            usuarios[index].rol = rol;
+            usuarios[index].cursosAsignados = rolesCursos;
+            usuarios[index].bolsaHoras = rol === "Profesor" ? [...catedrasTemporales] : [];
         }
     } else {
-        // --- ALTA NUEVA SEMILLA ---
-        listaUsuarios.push({
-            dni,
-            usuario: dni,
-            nombreCompleto,
-            email,
-            rol,
-            clave: dni, // Contraseña inicial por defecto es su DNI
-            asignacion: datosCurriculares
-        });
-        alert("Nuevo usuario incorporado al sistema HASPEN.");
+        const nuevoUsuario = {
+            dni: dni,
+            nombre: nombreCompleto,
+            email: email,
+            rol: rol,
+            clave: dni, 
+            cursosAsignados: rolesCursos,
+            bolsaHoras: rol === "Profesor" ? [...catedrasTemporales] : []
+        };
+        usuarios.push(nuevoUsuario);
     }
 
-    localStorage.setItem('usuariosColegio', JSON.stringify(listaUsuarios));
+    localStorage.setItem('usuariosColegio', JSON.stringify(usuarios));
+    alert(dniOriginalEdicion ? "Datos de cuenta actualizados correctamente." : "Cuenta registrada con éxito.");
+    
     desactivarModoEdicion();
     await renderizarTablaUsuarios();
 }
 
-// --- RENDERIZADO DE TABLA Y CONTROL DE PERMISOS BIOLÓGICOS ---
+// --- RENDERIZADO ASÍNCRONO DE LA TABLA DE CUENTAS ---
 async function renderizarTablaUsuarios() {
-    const tablaBody = document.getElementById('tablaUsuariosBody');
-    const usuarios = JSON.parse(localStorage.getItem('usuariosColegio')) || [];
-    
-    // Consultamos la sesión activa para bloquear auto-eliminación
-    const sesionActiva = JSON.parse(localStorage.getItem('usuarioActivo'));
-    
-    tablaBody.innerHTML = "";
+    const tbody = document.getElementById('tablaUsuariosBody');
+    if (!tbody) return;
+    tbody.innerHTML = "";
 
-    usuarios.forEach(usuario => {
+    const usuariosRaw = localStorage.getItem('usuariosColegio');
+    const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+
+    if (usuarios.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">No hay usuarios registrados.</td></tr>`;
+        return;
+    }
+
+    usuarios.forEach(user => {
         const tr = document.createElement('tr');
-        tr.className = "fila-usuario";
+        tr.style.borderBottom = "1px solid #f1f3f4";
 
-        let celdaAsignacion = `<span style="color:#64748b; font-size:13px;">No requiere (Permiso Institucional)</span>`;
-        if (usuario.rol === "Preceptor" && Array.isArray(usuario.asignacion)) {
-            celdaAsignacion = usuario.asignacion.map(c => `<span class="badge-rol" style="margin:2px; background:#f0fdf4; color:#16a34a;">${c}</span>`).join('');
-        } else if (usuario.rol === "Profesor" && Array.isArray(usuario.asignacion)) {
-            celdaAsignacion = usuario.asignacion.map(cat => `<span class="badge-rol" style="margin:2px; display:block; font-size:11px; text-align:left;">📚 ${cat}</span>`).join('');
+        let detalleAsignacion = "<span style='color:#94a3b8;'>Ninguna</span>";
+        if (user.rol === "Preceptor" && user.cursosAsignados && user.cursosAsignados.length > 0) {
+            const cursosRaw = localStorage.getItem('cursosColegio');
+            const listaCursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+            const nombresCursos = user.cursosAsignados.map(id => {
+                const c = listaCursos.find(cur => cur.id === id);
+                return c ? `${c.ciclo.split(" ")[0]} ${c.division}` : "Curso Eliminado";
+            });
+            detalleAsignacion = `<strong>Cursos:</strong> ${nombresCursos.join(" y ")}`;
+        } else if (user.rol === "Profesor" && user.bolsaHoras && user.bolsaHoras.length > 0) {
+            detalleAsignacion = `<div style="max-height:60px; overflow-y:auto; font-size:11px; color:#5f6368;">${user.bolsaHoras.join("<br>")}</div>`;
         }
 
-        // Mecánica de Bloqueo de Auto-eliminación segura
-        const esMismoUsuarioLogueado = (usuario.nombreCompleto === sesionActiva.nombre);
-        const botonEliminarHTML = esMismoUsuarioLogueado 
-            ? `<span style="font-size:11px; color:#94a3b8; font-weight:bold;">[Sesión Activa]</span>`
-            : `<button class="btn-accion btn-eliminar" onclick="eliminarUsuarioSeguro('${usuario.dni}')">Dar de Baja</button>`;
-
         tr.innerHTML = `
-            <td style="font-weight:600;">${usuario.nombreCompleto}</td>
-            <td><code>${usuario.dni}</code></td>
-            <td>${usuario.email || 'sin-correo@haspen.edu.ar'}</td>
-            <td><span class="badge-rol">${usuario.rol}</span><div style="margin-top:5px;">${celdaAsignacion}</div></td>
-            <td style="text-align:center;">
-                <button class="btn-accion btn-modificar" onclick="activarModoEdición('${usuario.dni}')">Modificar</button>
-                ${botonEliminarHTML}
+            <td style="padding:12px; font-weight:500;">${user.nombre}<br><span style="font-size:12px; color:#5f6368;">DNI: ${user.dni}</span></td>
+            <td style="padding:12px; color:#5f6368; font-size:13px;">${user.email}</td>
+            <td style="padding:12px;"><span class="badge-rol" style="background:#e8f0fe; color:#1a73e8; padding:3px 8px; border-radius:12px; font-size:12px; font-weight:500;">${user.rol}</span></td>
+            <td style="padding:12px; font-size:12px;">${detalleAsignacion}</td>
+            <td style="padding:12px; text-align:center; display:flex; gap:8px; justify-content:center;">
+                <button type="button" onclick="activarModoEdicion('${user.dni}')" style="background:#1a73e8; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">Editar</button>
+                <button type="button" onclick="eliminarCuentaUsuario('${user.dni}')" style="background:#ea4335; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">Borrar</button>
             </td>
         `;
-        tablaBody.appendChild(tr);
+        tbody.appendChild(tr);
     });
 }
 
-// --- ELIMINACIÓN SEGURA CON CONTROL DE REGLA ---
-window.eliminarUsuarioSeguro = function(dni) {
-    if (confirm("¿Está seguro de dar de baja esta cuenta de acceso institucional? Esta acción modificará los permisos inmediatamente.")) {
-        let listaUsuarios = JSON.parse(localStorage.getItem('usuariosColegio')) || [];
-        listaUsuarios = listaUsuarios.filter(u => u.dni !== dni);
-        localStorage.setItem('usuariosColegio', JSON.stringify(listaUsuarios));
-        renderizarTablaUsuarios();
-    }
-};
-
-// --- GOBERNACIÓN EN CALIENTE: MODO EDICIÓN ---
-window.activarModoEdición = function(dni) {
-    const usuarios = JSON.parse(localStorage.getItem('usuariosColegio')) || [];
+window.activarModoEdicion = function(dni) {
+    const usuariosRaw = localStorage.getItem('usuariosColegio');
+    const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
     const usuario = usuarios.find(u => u.dni === dni);
 
     if (!usuario) return;
 
-    // Activamos elementos de UI del banner de alerta dinámico
-    document.getElementById('bannerEdicion').style.display = "block";
-    document.getElementById('formTitulo').textContent = "Modificar Datos de Usuario";
-    document.getElementById('btnGuardarUsuario').textContent = "Actualizar Usuario";
-
-    // Cargamos campos en el formulario gubernamental
-    document.getElementById('dniOriginalEdicion').value = usuario.dni;
     document.getElementById('dniUsuario').value = usuario.dni;
-    document.getElementById('nombreApellido').value = usuario.nombreCompleto;
-    document.getElementById('emailUsuario').value = usuario.email || "";
+    document.getElementById('nombreApellido').value = usuario.nombre;
+    document.getElementById('emailUsuario').value = usuario.email;
     document.getElementById('rolUsuario').value = usuario.rol;
+    
+    document.getElementById('dniOriginalEdicion').value = usuario.dni;
+    const banner = document.getElementById('bannerEdicion');
+    if (banner) banner.style.display = "block";
 
-    // Provocamos el cambio visual del rol y re-mapeamos asignaciones
     configurarCamposRequeridos();
 
-    if (usuario.rol === "Preceptor" && Array.isArray(usuario.asignacion)) {
-        document.getElementById('altaAnio1').value = usuario.asignacion[0] || "";
-        document.getElementById('altaAnio2').value = usuario.asignacion[1] || "";
-    } else if (usuario.rol === "Profesor" && Array.isArray(usuario.asignacion)) {
-        catedrasTemporales = [...usuario.asignacion];
+    if (usuario.rol === "Preceptor" && usuario.cursosAsignados.length >= 2) {
+        document.getElementById('altaAnio1').value = usuario.cursosAsignados[0];
+        document.getElementById('altaAnio2').value = usuario.cursosAsignados[1];
+    } else if (usuario.rol === "Profesor") {
+        catedrasTemporales = [...usuario.bolsaHoras];
         actualizarTagsBolsaHoras();
     }
+};
+
+window.eliminarCuentaUsuario = function(dni) {
+    const datosSesion = localStorage.getItem('usuarioActivo');
+    const usuarioLogueado = datosSesion ? JSON.parse(datosSesion) : {};
+
+    if (usuarioLogueado.dni === dni) {
+        alert("Operación denegada: No puede eliminar la cuenta con la que se encuentra logueado.");
+        return;
+    }
+
+    if (!confirm("¿Está seguro de que desea eliminar esta cuenta?")) return;
+
+    const usuariosRaw = localStorage.getItem('usuariosColegio');
+    let usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+
+    usuarios = usuarios.filter(u => u.dni !== dni);
+    localStorage.setItem('usuariosColegio', JSON.stringify(usuarios));
     
-    // Auto-desplazamiento suave al formulario superior
-    document.querySelector('.form-registro-usuario').scrollIntoView({ behavior: 'smooth' });
+    renderizarTablaUsuarios();
 };
 
 function desactivarModoEdicion() {
-    document.getElementById('bannerEdicion').style.display = "none";
-    document.getElementById('formTitulo').textContent = "Registrar Nuevo Usuario";
-    document.getElementById('btnGuardarUsuario').textContent = "Guardar Usuario";
     document.getElementById('dniOriginalEdicion').value = "";
+    const banner = document.getElementById('bannerEdicion');
+    if (banner) banner.style.display = "none";
     
     document.getElementById('formUsuario').reset();
     catedrasTemporales = [];
-    configurarCamposRequeridos();
+    actualizarTagsBolsaHoras();
 }
-
