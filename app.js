@@ -3,9 +3,9 @@ const usuariosSemilla = [
     { dni: "11111111", usuario: "11111111", nombreCompleto: "Administrador General", clave: "1234", rol: "Administrador" },
     { dni: "22222222", usuario: "22222222", nombreCompleto: "Carlos Rodríguez (Preceptor)", clave: "22222222", rol: "Preceptor" },
     { dni: "33333333", usuario: "33333333", nombreCompleto: "Ana Martínez (Directivo)", clave: "33333333", rol: "Directivo" },
-    { dni: "44444444", usuario: "44444444", nombreCompleto: "Juan Pérez (Profesor)", clave: "44444444", rol: "Profesor" }
-    { dni: "55555555", usuario: "55555555", nombreCompleto: "Marta Gómez (Coordinación)", clave: "55555555", rol: "Coordinación" }
-
+    { dni: "44444444", usuario: "44444444", nombreCompleto: "Juan Pérez (Profesor)", clave: "44444444", rol: "Profesor" },
+    { dni: "55555555", usuario: "55555555", nombreCompleto: "Marta Gómez (Coordinación)", clave: "55555555", rol: "Coordinación" },
+    { dni: "66666666", usuario: "66666666", nombreCompleto: "Luis Sosa (Prosecretario)", clave: "66666666", rol: "Prosecretario" }
 ];
 
 if (!localStorage.getItem('usuariosColegio')) {

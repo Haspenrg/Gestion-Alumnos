@@ -5,12 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Usuarios - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Estilos específicos para la grilla interna del formulario administrativo */
+        .grid-formulario {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        @media (min-width: 600px) {
+            .grid-formulario {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .form-registro-usuario {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+        }
+        .badge-rol {
+            background: #e0e8f5;
+            color: #0056b3;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
     <div class="panel-container">
         <header class="header-dashboard">
             <h1>Gestión de Usuarios</h1>
-            <p>Administración de accesos and roles del sistema</p>
+            <p>Administración de accesos y roles del sistema</p>
         </header>
 
         <!-- Sección 1: Formulario para registrar un nuevo usuario -->
@@ -38,13 +73,14 @@
                             <option value="Directivo">Directivo</option>
                             <option value="Preceptor">Preceptor</option>
                             <option value="Profesor">Profesor</option>
+                            <option value="Coordinación">Coordinación</option>
+                            <option value="Prosecretario">Prosecretario</option>
                         </select>
                     </div>
 
                     <!-- Campos dinámicos para asignación de Cursos (Preceptor) -->
                     <div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 10px;">
                         <label style="font-weight: bold; color: #0056b3; display: block; margin-bottom: 10px;">Asignación de Responsabilidad (2 Cursos)</label>
-                        
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <!-- Primer Curso -->
                             <div>
@@ -101,7 +137,6 @@
                     <!-- Campos dinámicos para asignación de Materia y Curso (Profesor) -->
                     <div id="grupoAsignacionProfesor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 10px;">
                         <label style="font-weight: bold; color: #0056b3; display: block; margin-bottom: 10px;">Asignación de Cátedras Múltiples</label>
-                        
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; align-items: flex-end;">
                             <div>
                                 <label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Año</label>
@@ -139,46 +174,34 @@
                                 <button type="button" id="btnAgregarCatedra" style="width: 100%; height: 38px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">+ Agregar</button>
                             </div>
                         </div>
-
                         <!-- Lista visual donde se acumularán las cátedras agregadas -->
                         <div id="listaCatedrasProfesor" style="margin-top: 15px; background: white; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 4px; min-height: 40px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                             <span style="color: #94a3b8; font-size: 13px;" id="sinCatedrasMensaje">No hay cátedras asignadas aún.</span>
                         </div>
                     </div>
-
                 </div>
                 <button type="submit" class="btn-principal" style="max-width: 200px; margin-top: 15px;">Guardar Usuario</button>
             </form>
         </div>
 
         <!-- Sección 2: Tabla con el listado de usuarios cargados -->
-        <div class="tabla-usuarios-contenedor" style="margin-top: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <div class="tabla-usuarios-contenedor" style="margin-top: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
             <h3>Usuarios Registrados</h3>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px; min-width: 600px;">
                 <thead>
                     <tr style="border-bottom: 2px solid #0056b3; color: #333;">
-                        <th style="padding: 10px;">Nombre y Apellido</th>
-                        <th style="padding: 10px;">Usuario (DNI)</th>
-                        <th style="padding: 10px;">Email</th>
-                        <th style="padding: 10px;">Rol</th>
-                        <th style="padding: 10px; text-align: center;">Acciones</th>
+                        <th>Nombre y Apellido</th>
+                        <th>Usuario (DNI)</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th style="text-align: center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaUsuariosBody">
-                    <!-- Fila de ejemplo precargada -->
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 10px;">Administrador General</td>
-                        <td style="padding: 10px;">admin</td>
-                        <td style="padding: 10px;">admin@haspen.edu.ar</td>
-                        <td style="padding: 10px;"><span style="background: #e0e8f5; color: #0056b3; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Administrador</span></td>
-                        <td style="padding: 10px; text-align: center;">
-                            <button onclick="alert('Contraseña restablecida al DNI de forma temporal.')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Restablecer Clave</button>
-                        </td>
-                    </tr>
+                    <!-- Las filas se renderizarán dinámicamente mediante el motor JS -->
                 </tbody>
             </table>
         </div>
-
         <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 30px; background-color: #0056b3;">Volver al Panel</button>
     </div>
 

@@ -80,13 +80,21 @@
             const rol = usuario.rol;
 
             if (rol === "Coordinación") {
-                // Coordinación: Solo accede a Calificaciones y Estadísticas
+                // Coordinación: Accede a Calificaciones, Estadísticas y Control de Previas
                 bloquearModulo("mod-usuarios");
                 bloquearModulo("mod-inscripcion");
                 bloquearModulo("mod-cursos");
                 bloquearModulo("mod-materias");
-                bloquearModulo("mod-previas");
             } 
+            else if (rol === "Prosecretario") {
+                // Prosecretario: Accede única y exclusivamente a Inscripción Alumnos
+                bloquearModulo("mod-usuarios");
+                bloquearModulo("mod-cursos");
+                bloquearModulo("mod-materias");
+                bloquearModulo("mod-calificaciones");
+                bloquearModulo("mod-previas");
+                bloquearModulo("mod-estadisticas");
+            }
             else if (rol === "Directivo") {
                 // Directivo: Acceso a todo el panel principal excepto Usuarios
                 bloquearModulo("mod-usuarios");
@@ -130,5 +138,4 @@
     </script>
 </body>
 </html>
-
 

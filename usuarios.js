@@ -7,11 +7,11 @@ document.getElementById('rolUsuario').addEventListener('change', function() {
     configurarCamposRequeridos(grupoPreceptor, false);
     configurarCamposRequeridos(grupoProfesor, false);
 
-    // Ocultar paneles
+    // Ocultar paneles por defecto
     grupoPreceptor.style.display = 'none';
     grupoProfesor.style.display = 'none';
 
-    // Mostrar y activar según corresponda
+    // Mostrar y activar según corresponda según la matriz de roles
     if (rolSeleccionado === 'Preceptor') {
         grupoPreceptor.style.display = 'block';
         configurarCamposRequeridos(grupoPreceptor, true);
@@ -19,10 +19,12 @@ document.getElementById('rolUsuario').addEventListener('change', function() {
         grupoProfesor.style.display = 'block';
         configurarCamposRequeridos(grupoProfesor, true);
     }
+    // Para 'Coordinación', 'Directivo' y 'Administrador' los paneles permanecen ocultos y limpios
 });
 
 // Función auxiliar para activar/desactivar el atributo 'required' dinámicamente
 function configurarCamposRequeridos(contenedor, activar) {
+    if (!contenedor) return;
     const selectores = contenedor.querySelectorAll('select');
     selectores.forEach(select => {
         if (activar) {
@@ -33,6 +35,7 @@ function configurarCamposRequeridos(contenedor, activar) {
         }
     });
 }
+
 // Array para almacenar en memoria temporal las cátedras agregadas antes de guardar el usuario completo
 let catedrasTemporales = [];
 
@@ -51,7 +54,7 @@ document.getElementById('btnAgregarCatedra').addEventListener('click', function(
 
     const catedraTexto = `${anio} "${division}" - ${materia}`;
 
-    // Evitar que el administrador ingrese dos veces la misma cátedra idéntica
+    // Evitar que el administrador ingrese dos veces la misma cátedra idéntica para el mismo docente
     if (catedrasTemporales.includes(catedraTexto)) {
         alert('Esta cátedra ya fue agregada a la lista.');
         return;
