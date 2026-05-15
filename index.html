@@ -5,22 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Estilos complementarios para la consistencia del enlace de recuperación */
+        .forgot-pass {
+            display: block;
+            margin-top: 15px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .forgot-pass:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
         <!-- FORMULARIO DE LOGUEO PRINCIPAL -->
-        <form id="loginForm">
+        <form id="loginForm" novalidate>
             <img src="logo.jpg" alt="Logo Colegio HASPEN" class="logo-colegio">
             <h2 class="titulo-principal">Sistema de Gestión de Alumnos</h2>
             <h3>Colegio Haspen</h3>
             <p>Inicie sesión para continuar</p>
-
+            
             <div id="mensaje" class="mensaje-alerta"></div>
-
+            
             <div class="input-group">
                 <label for="usuario">Usuario (DNI)</label>
                 <input type="text" id="usuario" placeholder="Ej: 22222222" required pattern="[0-9]+" inputmode="numeric">
             </div>
+            
             <div class="input-group">
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" placeholder="••••••••" required>
@@ -31,30 +46,156 @@
         </form>
     </div>
 
-    <!-- SEPARADO: VENTANA MODAL (FUERA DEL FORMULARIO DE ACCESO) -->
+    <!-- VENTANA MODAL DE RECUPERACIÓN (CORREGIDA PARA VALIDACIÓN EN CALIENTE) -->
     <div id="modalRecuperar" class="modal-contenedor">
         <div class="modal-contenido">
-            <h3>Restablecer Contraseña</h3>
-            <p>Ingrese su DNI verificado para cambiar su clave de acceso.</p>
+            <h3>Recuperar Credenciales</h3>
+            <p>Ingrese su número de DNI para consultar sus datos de acceso registrados en el sistema.</p>
             
             <div id="modal-mensaje" class="mensaje-alerta"></div>
-
+            
             <div class="input-group">
                 <label for="modal-dni">Su número de DNI</label>
-                <input type="text" id="modal-dni" placeholder="Ingrese su DNI" pattern="[0-9]+" inputmode="numeric">
+                <input type="text" id="modal-dni" placeholder="Ej: 11111111" pattern="[0-9]+" inputmode="numeric">
             </div>
-            <div class="input-group">
-                <label for="modal-nueva-clave">Nueva Contraseña</label>
-                <input type="password" id="modal-nueva-clave" placeholder="Mínimo 4 caracteres">
-            </div>
-
+            
             <div class="modal-botones">
-                <button type="button" id="btn-cancelar-modal" class="btn-secundario">Cancelar</button>
-                <button type="button" id="btn-cambiar-modal" class="btn-principal">Cambiar Contraseña</button>
+                <button type="button" id="btn-cancelar-modal" class="btn-secundario">Cerrar</button>
+                <button type="button" id="btn-consultar-modal" class="btn-principal">Verificar DNI</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- CONTROLADOR DE AUTENTICACIÓN ASÍNCRONO Y BLINDADO -->
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            await verificarEInyectarSemillaBase();
+            
+            // Registradores de eventos principales
+            document.getElementById('loginForm').addEventListener('submit', procesarAutenticacion);
+            document.getElementById('olvido-pass').addEventListener('click', abrirModalRecuperacion);
+            document.getElementById('btn-cancelar-modal').addEventListener('click', cerrarModalRecuperacion);
+            document.getElementById('btn-consultar-modal').addEventListener('click', procesarRecuperacionEnCaliente);
+        });
+
+        // Inicializa la plataforma bajo regla de negocio estricta 3-A si está vacía
+        async function verificarEInyectarSemillaBase() {
+            try {
+                if (!localStorage.getItem('usuariosColegio')) {
+                    const administradorRaiz = [{
+                        dni: "11111111",
+                        nombre: "Admin General",
+                        email: "admin@haspen.edu.ar",
+                        rol: "administrador", // Guardado estrictamente como ID en minúsculas
+                        esProfesor: false,
+                        clave: "1234",
+                        cursosAsignados: [],
+                        bolsaHoras: []
+                    }];
+                    localStorage.setItem('usuariosColegio', JSON.stringify(administradorRaiz));
+                }
+            } catch (error) {
+                console.error("Error al inyectar la semilla inicial de usuarios:", error);
+            }
+        }
+
+        // Procesa el inicio de sesión contrastando contra la base de usuarios mutable
+        async function procesarAutenticacion(e) {
+            e.preventDefault();
+            const txtMensaje = document.getElementById('mensaje');
+            txtMensaje.textContent = "";
+            txtMensaje.style.color = "";
+
+            const dniIngresado = document.getElementById('usuario').value.trim();
+            const claveIngresada = document.getElementById('password').value;
+
+            if (!dniIngresado || !claveIngresada) {
+                mostrarAlertaUI(txtMensaje, "Por favor, complete todos los campos requeridos.", "#dc2626");
+                return;
+            }
+
+            try {
+                const usuariosRaw = localStorage.getItem('usuariosColegio');
+                const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+
+                // Búsqueda en caliente filtrando por DNI
+                const cuentaEncontrada = usuarios.find(u => u.dni === dniIngresado);
+
+                if (!cuentaEncontrada || cuentaEncontrada.clave !== claveIngresada) {
+                    mostrarAlertaUI(txtMensaje, "Credenciales inválidas. Verifique el DNI y la contraseña.", "#dc2626");
+                    return;
+                }
+
+                // Creación estructurada del objeto JSON de sesión activa (usuarioActivo)
+                const sesionActiva = {
+                    nombre: cuentaEncontrada.nombre,
+                    rol: cuentaEncontrada.rol, // Pasa el ID en minúsculas directamente
+                    dni: cuentaEncontrada.dni,
+                    esProfesor: cuentaEncontrada.esProfesor || false
+                };
+
+                localStorage.setItem('usuarioActivo', JSON.stringify(sesionActiva));
+                
+                mostrarAlertaUI(txtMensaje, "Acceso concedido. Redireccionando...", "#0d9488");
+                
+                setTimeout(() => {
+                    window.location.href = "panel.html";
+                }, 800);
+
+            } catch (error) {
+                console.error("Error en el proceso de logueo asíncrono:", error);
+                mostrarAlertaUI(txtMensaje, "Error interno del sistema al procesar la solicitud.", "#dc2626");
+            }
+        }
+
+        // Validación en caliente de DNI contra la base de datos de usuarios
+        async function procesarRecuperacionEnCaliente() {
+            const txtModalMensaje = document.getElementById('modal-mensaje');
+            txtModalMensaje.textContent = "";
+            txtModalMensaje.style.color = "";
+
+            const dniAVerificar = document.getElementById('modal-dni').value.trim();
+
+            if (!dniAVerificar) {
+                mostrarAlertaUI(txtModalMensaje, "Debe ingresar un número de DNI válido.", "#dc2626");
+                return;
+            }
+
+            try {
+                const usuariosRaw = localStorage.getItem('usuariosColegio');
+                const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+                
+                const cuentaExistente = usuarios.find(u => u.dni === dniAVerificar);
+
+                if (!cuentaExistente) {
+                    mostrarAlertaUI(txtModalMensaje, "El DNI ingresado no corresponde a ningún operador registrado.", "#dc2626");
+                    return;
+                }
+
+                // Exposición limpia de la contraseña en caliente mitigando vectores XSS
+                mostrarAlertaUI(txtModalMensaje, `Verificación exitosa. Su contraseña actual es: [ ${cuentaExistente.clave} ]`, "#0d9488");
+
+            } catch (error) {
+                console.error("Error al recuperar credenciales en caliente:", error);
+                mostrarAlertaUI(txtModalMensaje, "No se pudo completar la verificación en este momento.", "#dc2626");
+            }
+        }
+
+        function abrirModalRecuperacion(e) {
+            e.preventDefault();
+            document.getElementById('modal-dni').value = "";
+            document.getElementById('modal-mensaje').textContent = "";
+            document.getElementById('modalRecuperar').classList.add('mostrar-modal');
+        }
+
+        function cerrarModalRecuperacion() {
+            document.getElementById('modalRecuperar').classList.remove('mostrar-modal');
+        }
+
+        function mostrarAlertaUI(contenedor, mensajeText, colorHex) {
+            contenedor.textContent = mensajeText;
+            contenedor.style.color = colorHex;
+        }
+    </script>
 </body>
 </html>
