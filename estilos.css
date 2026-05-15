@@ -39,9 +39,21 @@ body {
 }
 
 /* Tipografía */
-h2 { color: #1a73e8; margin-bottom: 5px; }
-h3 { color: #555; font-weight: 500; margin-bottom: 20px; }
-p { color: #777; margin-bottom: 20px; }
+h2 {
+    color: #1a73e8;
+    margin-bottom: 5px;
+}
+
+h3 {
+    color: #555;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+p {
+    color: #777;
+    margin-bottom: 20px;
+}
 
 /* Formulario */
 .input-group {
@@ -77,8 +89,14 @@ input {
     transition: background 0.3s;
 }
 
-.btn-salir { background-color: #d93025; margin-top: 30px; }
-.btn-principal:hover { background-color: #1557b0; }
+.btn-salir {
+    background-color: #d93025;
+    margin-top: 30px;
+}
+
+.btn-principal:hover {
+    background-color: #1557b0;
+}
 
 /* Grid de Módulos */
 .dashboard-grid {
@@ -101,7 +119,11 @@ input {
     transform: translateY(-3px);
 }
 
-.icon { font-size: 40px; display: block; margin-bottom: 10px; }
+.icon {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+}
 
 /* Mensajes de error */
 .mensaje-alerta {
@@ -123,6 +145,7 @@ input {
         grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas en PC */
     }
 }
+
 /* --- ESTILOS DE LA VENTANA MODAL (RECUPERACIÓN) --- */
 .modal-contenedor {
     position: fixed;
@@ -187,11 +210,44 @@ input {
 .btn-secundario:hover {
     background-color: #d4d4d4;
 }
+
 /* Fuerza el título en una sola línea y adapta su tamaño */
 .titulo-principal {
     white-space: nowrap !important; /* Prohíbe el salto de línea de forma estricta */
-    font-size: 1.35rem !important;  /* Reduce ligeramente el tamaño para que entre horizontalmente */
+    font-size: 1.35rem !important; /* Reduce ligeramente el tamaño para que entre horizontalmente */
     display: block;
     width: 100%;
     text-align: center;
+}
+
+/* ==========================================================================
+   NUEVAS ADICIONES INCREMENTALES: SEGURIDAD DE ROLES Y CONTROL MASIVO EN PC
+   ========================================================================== */
+
+/* Bloqueo Coercitivo del Panel Principal para Roles Restringidos */
+.modulo-bloqueado {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important; /* Neutraliza clics directos del mouse */
+    user-select: none !important;
+}
+
+/* Desactivación Física y Visual de Formularios para Modo Solo Lectura */
+input:disabled, 
+select:disabled, 
+textarea:disabled, 
+button:disabled {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    cursor: not-allowed !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Optimización Widescreen: Cabeceras fijas para desplazamiento masivo en PC */
+.tabla-usuarios th,
+.tabla-usuarios-contenedor th {
+    position: sticky !important;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 0 #cbd5e1; /* Reemplaza el borde perdido por el scrolling */
 }

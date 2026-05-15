@@ -6,18 +6,52 @@
     <title>Gestión de Usuarios - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
     <style>
+        /* Optimización Híbrida: Aprovechamiento Widescreen 100% y Adaptabilidad */
+        body {
+            margin: 0;
+            padding: 0;
+            max-width: 100% !important;
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        /* Remoción del max-width de tarjeta para usar toda la pantalla en PC */
+        .panel-container {
+            max-width: 98% !important;
+            width: 98%;
+            margin: 15px auto;
+            padding: 15px;
+            text-align: left;
+        }
+
+        /* Centrado de Títulos Institucionales */
+        .header-dashboard {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header-dashboard h2 {
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+
+        /* Formulario responsivo base: 1 columna en celular, 2 en pantallas mayores */
         .grid-formulario {
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
-            text-align: left;
             margin-bottom: 15px;
         }
-        @media (min-width: 600px) {
+        @media (min-width: 768px) {
             .grid-formulario {
                 grid-template-columns: 1fr 1fr;
             }
         }
+
         .form-registro-usuario {
             background: #ffffff;
             padding: 20px;
@@ -25,11 +59,14 @@
             border: 1px solid #e2e8f0;
             margin-top: 20px;
             position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
+
         th, td {
             padding: 12px 10px;
             text-align: left;
         }
+
         .fila-usuario {
             cursor: pointer;
             transition: background 0.2s;
@@ -37,31 +74,28 @@
         .fila-usuario:hover {
             background: #f1f5f9 !important;
         }
+
         .badge-rol {
-            background: #e0e8f5;
-            color: #0056b3;
+            background: #e8f0fe;
+            color: #1a73e8;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 12px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 500;
             display: inline-block;
         }
-        .btn-accion {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 5px 10px;
+
+        .badge-docente {
+            background: #e6fffa;
+            color: #0d9488;
+            border: 1px solid #b2f5ea;
+            padding: 2px 6px;
             border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            margin: 2px;
-            transition: background 0.2s;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 5px;
         }
-        .btn-accion:hover { background: #5a6268; }
-        .btn-modificar { background: #1a73e8; }
-        .btn-modificar:hover { background: #1557b0; }
-        .btn-eliminar { background: #d93025; }
-        .btn-eliminar:hover { background: #b52218; }
+
         .indicador-edicion {
             display: none;
             background: #fef3c7;
@@ -72,28 +106,71 @@
             font-size: 13px;
             font-weight: 500;
             margin-bottom: 15px;
-            text-align: left;
+        }
+
+        /* Checkbox multirrol estilizado */
+        .contenedor-multirrol-check {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fff8e1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px dashed #ffe082;
+            margin-top: -5px;
+        }
+        .contenedor-multirrol-check input[type="checkbox"] {
+            width: 18px !important;
+            height: 18px !important;
+            cursor: pointer;
+        }
+
+        /* Grilla adaptiva interna para asignaciones de Preceptores */
+        .grid-preceptor-cursos {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 576px) {
+            .grid-preceptor-cursos {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Grilla adaptiva interna para bolsa de horas de Profesores */
+        .grid-profesor-catedras {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        @media (min-width: 768px) {
+            .grid-profesor-catedras {
+                grid-template-columns: 2fr 2fr auto;
+            }
         }
     </style>
 </head>
 <body>
     <div class="panel-container">
         <header class="header-dashboard">
-            <h1>Gestión de Usuarios</h1>
-            <p>Administración de accesos y roles del sistema</p>
+            <h2>Gestión de Usuarios</h2>
+            <h3>Colegio HASPEN</h3>
+            <p>Administración de accesos, roles y responsabilidades híbridas del sistema</p>
         </header>
 
-        <!-- Sección 1: Formulario para registrar o editar un usuario -->
+        <!-- Sección 1: Formulario Responsivo Multirrol -->
         <div class="form-registro-usuario">
             <div id="bannerEdicion" class="indicador-edicion">
-                <strong>Modo Edición Activo:</strong> Modificando los datos del usuario. Al finalizar, haga clic en "Actualizar Usuario" o presione "Cancelar".
+                <strong>Modo Edición Activo:</strong> Modificando los datos del usuario. Al finalizar, haga clic en "Guardar Usuario" o presione "Cancelar".
                 <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
             </div>
-            <h3 id="formTitulo">Registrar Nuevo Usuario</h3>
             
+            <h3 id="formTitulo" style="color: #333; margin-bottom: 15px;">Registrar Nuevo Usuario</h3>
             <form id="formUsuario">
                 <input type="hidden" id="dniOriginalEdicion" value="">
-
+                
                 <div class="grid-formulario">
                     <div class="input-group">
                         <label for="nombreApellido">Nombre y Apellido</label>
@@ -108,7 +185,7 @@
                         <input type="email" id="emailUsuario" placeholder="ejemplo@haspen.edu.ar" required>
                     </div>
                     <div class="input-group">
-                        <label for="rolUsuario">Seleccionar Rol</label>
+                        <label for="rolUsuario">Seleccionar Cargo / Rol Base</label>
                         <select id="rolUsuario" required>
                             <option value="" disabled selected>Seleccione un rol...</option>
                             <option value="Administrador">Administrador</option>
@@ -120,108 +197,90 @@
                         </select>
                     </div>
 
-                    <!-- Campos dinámicos para asignación de Cursos (Preceptor) -->
-                    <div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 10px;">
-                        <label style="font-weight: bold; color: #0056b3; display: block; margin-bottom: 10px;">Asignación de Responsabilidad (2 Cursos)</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <!-- Primer Curso -->
+                    <!-- REPLANTEO ARQUITECTÓNICO: Checkbox de Habilitación de Función Docente Simultánea -->
+                    <div id="bloqueCheckProfesor" class="contenedor-multirrol-check">
+                        <input type="checkbox" id="checkEsProfesor">
+                        <label for="checkEsProfesor" style="margin: 0; font-weight: 600; color: #b78103; cursor: pointer; font-size: 13px;">
+                            ¿Este usuario también dicta materias frente a curso como Profesor / Horas Cátedra?
+                        </label>
+                    </div>
+
+                    <!-- Campos Dinámicos Responsivos para Preceptores -->
+                    <div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
+                        <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Responsabilidad (2 Cursos Estructurales)</label>
+                        <div class="grid-preceptor-cursos">
                             <div>
                                 <label style="font-size: 13px; margin-bottom: 3px; display:block;">Primer Curso</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <select id="altaAnio1" class="select-anio-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                        <option value="" disabled selected>Año...</option>
-                                        <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
-                                        <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
-                                    </select>
-                                    <select id="altaDiv1" class="select-div-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                        <option value="" disabled selected>División...</option>
-                                        <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
-                                        <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
-                                    </select>
-                                </div>
+                                <select id="altaAnio1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
+                                    <!-- Inyección dinámica -->
+                                </select>
                             </div>
-
-                            <!-- Segundo Curso -->
                             <div>
                                 <label style="font-size: 13px; margin-bottom: 3px; display:block;">Segundo Curso</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <select id="altaAnio2" class="select-anio-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                        <option value="" disabled selected>Año...</option>
-                                        <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
-                                        <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
-                                    </select>
-                                    <select id="altaDiv2" class="select-div-prep-alta" style="width: 50%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                        <option value="" disabled selected>División...</option>
-                                        <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
-                                        <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
-                                    </select>
-                                </div>
+                                <select id="altaAnio2" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
+                                    <!-- Inyección dinámica -->
+                                </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Campos dinámicos para asignación de Materia y Curso (Profesor) -->
-                    <div id="grupoAsignacionProfesor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 10px;">
-                        <label style="font-weight: bold; color: #0056b3; display: block; margin-bottom: 10px;">Asignación de Cátedras Múltiples</label>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; align-items: flex-end;">
+                    <!-- Campos Dinámicos Responsivos para Profesores (Bolsa de Horas Adaptiva Multirrol) -->
+                    <div id="grupoAsignacionProfesor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
+                        <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Cátedras Múltiples (Bolsa de Horas Docente)</label>
+                        <div class="grid-profesor-catedras">
                             <div>
-                                <label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Año</label>
-                                <select id="anioProfesor" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                    <option value="" disabled selected>Seleccione...</option>
-                                    <option value="1º">1º Año</option><option value="2º">2º Año</option><option value="3º">3º Año</option>
-                                    <option value="4º">4º Año</option><option value="5º">5º Año</option><option value="6º">6º Año</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="divProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">División</label>
-                                <select id="divProfesor" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                    <option value="" disabled selected>Seleccione...</option>
-                                    <option value="A">Div. A</option><option value="B">Div. B</option><option value="C">Div. C</option>
-                                    <option value="D">Div. D</option><option value="E">Div. E</option><option value="F">Div. F</option>
+                                <label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Curso Estructural Destino</label>
+                                <select id="anioProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
+                                    <!-- Inyección dinámica -->
                                 </select>
                             </div>
                             <div>
                                 <label for="materiaProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Materia Asignada</label>
-                                <select id="materiaProfesor" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; height: 38px;">
-                                    <option value="" disabled selected>Seleccione materia...</option>
-                                    <option value="Matemáticas">Matemáticas</option>
-                                    <option value="Física">Física</option>
+                                <select id="materiaProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
+                                    <option value="" disabled selected>Seleccione primero un curso...</option>
                                 </select>
                             </div>
                             <div>
-                                <button type="button" id="btnAgregarCatedra" style="width: 100%; height: 38px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">+ Agregar</button>
+                                <button type="button" id="btnAgregarCatedra" style="width: 100%; height: 42px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; padding: 0 20px;">+ Agregar Cátedra</button>
                             </div>
                         </div>
-                        <div id="listaCatedrasProfesor" style="margin-top: 15px; background: white; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 4px; min-height: 40px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                        <div id="listaCatedrasProfesor" style="margin-top: 15px; background: white; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 6px; min-height: 45px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                             <span style="color: #94a3b8; font-size: 13px;" id="sinCatedrasMensaje">No hay cátedras asignadas aún.</span>
                         </div>
                     </div>
                 </div>
-                <button type="submit" id="btnGuardarUsuario" class="btn-principal" style="max-width: 200px; margin-top: 15px;">Guardar Usuario</button>
+                
+                <button type="submit" id="btnGuardarUsuario" class="btn-principal" style="max-width: 220px; margin-top: 10px; height: 44px; font-weight: bold;">Guardar Usuario</button>
             </form>
         </div>
 
-        <!-- Sección 2: Tabla con el listado de usuarios cargados -->
-        <div class="tabla-usuarios-contenedor" style="margin-top: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
-            <h3>Usuarios Registrados</h3>
-            <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">💡 Haga clic en cualquier fila de la tabla para cargar al usuario y editar sus datos o asignación de cursos/cátedras.</p>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 5px; min-width: 600px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #0056b3; color: #333;">
-                        <th>Nombre y Apellido</th>
-                        <th>Usuario (DNI)</th>
-                        <th>Email</th>
-                        <th>Rol / Cursos Asignados</th>
-                        <th style="text-align: center; min-width: 180px;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaUsuariosBody"></tbody>
-            </table>
+        <!-- Sección 2: Tabla de Datos Masiva Adaptiva de 6 Columnas -->
+        <div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; width: 100%; box-sizing: border-box;">
+            <h3 style="color: #333; margin-bottom: 5px;">Usuarios Registrados</h3>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Haga clic en el botón Editar de cualquier fila para cargar al usuario en el panel superior y actualizar sus credenciales o responsabilidades.</p>
+            
+            <div style="width: 100%; overflow-x: auto;">
+                <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 850px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #1a73e8; color: #1e293b; background: #f8fafc;">
+                            <th style="width: 20%;">Nombre y Apellido</th>
+                            <th style="width: 12%;">Usuario (DNI)</th>
+                            <th style="width: 18%;">Email</th>
+                            <th style="width: 15%;">Rol Personal Base</th>
+                            <th style="width: 20%;">Cursos / Materias Asignadas</th>
+                            <th style="text-align: center; width: 15%; min-width: 140px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuariosBody">
+                        <!-- Inyección interactiva unificada desde usuarios.js -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 30px; background-color: #0056b3;">Volver al Panel</button>
+
+        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
     </div>
 
     <script src="usuarios.js"></script>
 </body>
 </html>
-
