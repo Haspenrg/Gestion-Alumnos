@@ -18,7 +18,7 @@
             justify-content: flex-start;
             align-items: center;
         }
-
+        
         /* Remoción del max-width de tarjeta para usar toda la pantalla en PC */
         .panel-container {
             max-width: 98% !important;
@@ -27,7 +27,7 @@
             padding: 15px;
             text-align: left;
         }
-
+        
         /* Centrado de Títulos Institucionales */
         .header-dashboard {
             width: 100%;
@@ -38,7 +38,7 @@
             color: #1a73e8;
             margin-bottom: 5px;
         }
-
+        
         /* Formulario responsivo base: 1 columna en celular, 2 en pantallas mayores */
         .grid-formulario {
             display: grid;
@@ -51,7 +51,7 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
-
+        
         .form-registro-usuario {
             background: #ffffff;
             padding: 20px;
@@ -59,14 +59,14 @@
             border: 1px solid #e2e8f0;
             margin-top: 20px;
             position: relative;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
         }
-
+        
         th, td {
             padding: 12px 10px;
             text-align: left;
         }
-
+        
         .fila-usuario {
             cursor: pointer;
             transition: background 0.2s;
@@ -74,7 +74,7 @@
         .fila-usuario:hover {
             background: #f1f5f9 !important;
         }
-
+        
         .badge-rol {
             background: #e8f0fe;
             color: #1a73e8;
@@ -84,7 +84,7 @@
             font-weight: 500;
             display: inline-block;
         }
-
+        
         .badge-docente {
             background: #e6fffa;
             color: #0d9488;
@@ -95,7 +95,7 @@
             font-weight: 600;
             margin-left: 5px;
         }
-
+        
         .indicador-edicion {
             display: none;
             background: #fef3c7;
@@ -107,7 +107,7 @@
             font-weight: 500;
             margin-bottom: 15px;
         }
-
+        
         /* Checkbox multirrol estilizado */
         .contenedor-multirrol-check {
             grid-column: 1 / -1;
@@ -125,7 +125,7 @@
             height: 18px !important;
             cursor: pointer;
         }
-
+        
         /* Grilla adaptiva interna para asignaciones de Preceptores */
         .grid-preceptor-cursos {
             display: grid;
@@ -137,8 +137,8 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
-
-        /* Grilla adaptiva interna para bolsa de horas de Profesores */
+        
+        /* Grilla adaptiva interna para bolsa de horas de Profesores con Escalafón */
         .grid-profesor-catedras {
             display: grid;
             grid-template-columns: 1fr;
@@ -147,7 +147,25 @@
         }
         @media (min-width: 768px) {
             .grid-profesor-catedras {
-                grid-template-columns: 2fr 2fr auto;
+                grid-template-columns: 1.5fr 1.5fr 1fr auto;
+            }
+        }
+        
+        /* Contenedor de barra de filtros y auditoría */
+        .grid-barra-auditoria {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-sizing: border-box;
+        }
+        @media (min-width: 768px) {
+            .grid-barra-auditoria {
+                grid-template-columns: 2fr 1fr;
             }
         }
     </style>
@@ -176,35 +194,32 @@
                         <label for="nombreApellido">Nombre y Apellido</label>
                         <input type="text" id="nombreApellido" placeholder="Ej: Juan Pérez" required>
                     </div>
+                    
                     <div class="input-group">
                         <label for="dniUsuario">DNI (Será su usuario inicial)</label>
-                        <input type="number" id="dniUsuario" placeholder="Ej: 35123456" required>
+                        <input type="number" id="dniUsuario" placeholder="Ej: 35123456" pattern="[0-9]+" inputmode="numeric" required>
                     </div>
+                    
                     <div class="input-group">
                         <label for="emailUsuario">Correo Electrónico</label>
                         <input type="email" id="emailUsuario" placeholder="ejemplo@haspen.edu.ar" required>
                     </div>
+                    
                     <div class="input-group">
                         <label for="rolUsuario">Seleccionar Cargo / Rol Base</label>
                         <select id="rolUsuario" required>
                             <option value="" disabled selected>Seleccione un rol...</option>
-                            <option value="Administrador">Administrador</option>
-                            <option value="Directivo">Directivo</option>
-                            <option value="Preceptor">Preceptor</option>
-                            <option value="Profesor">Profesor</option>
-                            <option value="Coordinación">Coordinación</option>
-                            <option value="Prosecretario">Prosecretario</option>
                         </select>
                     </div>
-
-                    <!-- REPLANTEO ARQUITECTÓNICO: Checkbox de Habilitación de Función Docente Simultánea -->
+                    
+                    <!-- Checkbox de Habilitación de Función Docente Simultánea -->
                     <div id="bloqueCheckProfesor" class="contenedor-multirrol-check">
                         <input type="checkbox" id="checkEsProfesor">
                         <label for="checkEsProfesor" style="margin: 0; font-weight: 600; color: #b78103; cursor: pointer; font-size: 13px;">
                             ¿Este usuario también dicta materias frente a curso como Profesor / Horas Cátedra?
                         </label>
                     </div>
-
+                    
                     <!-- Campos Dinámicos Responsivos para Preceptores -->
                     <div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
                         <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Responsabilidad (2 Cursos Estructurales)</label>
@@ -212,32 +227,37 @@
                             <div>
                                 <label style="font-size: 13px; margin-bottom: 3px; display:block;">Primer Curso</label>
                                 <select id="altaAnio1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-                                    <!-- Inyección dinámica -->
                                 </select>
                             </div>
                             <div>
                                 <label style="font-size: 13px; margin-bottom: 3px; display:block;">Segundo Curso</label>
                                 <select id="altaAnio2" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-                                    <!-- Inyección dinámica -->
                                 </select>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Campos Dinámicos Responsivos para Profesores (Bolsa de Horas Adaptiva Multirrol) -->
+                    
+                    <!-- Campos Dinámicos para Profesores con Escalafón Jerárquico -->
                     <div id="grupoAsignacionProfesor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
                         <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Cátedras Múltiples (Bolsa de Horas Docente)</label>
                         <div class="grid-profesor-catedras">
                             <div>
                                 <label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Curso Estructural Destino</label>
                                 <select id="anioProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-                                    <!-- Inyección dinámica -->
                                 </select>
                             </div>
                             <div>
                                 <label for="materiaProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Materia Asignada</label>
                                 <select id="materiaProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
                                     <option value="" disabled selected>Seleccione primero un curso...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="revistaProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Situación de Revista</label>
+                                <select id="revistaProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
+                                    <option value="TITULAR">Titular</option>
+                                    <option value="SUPLENTE">Suplente</option>
+                                    <option value="SUPL_SUPL">Suplente de Suplente</option>
                                 </select>
                             </div>
                             <div>
@@ -249,16 +269,30 @@
                         </div>
                     </div>
                 </div>
-                
                 <button type="submit" id="btnGuardarUsuario" class="btn-principal" style="max-width: 220px; margin-top: 10px; height: 44px; font-weight: bold;">Guardar Usuario</button>
             </form>
         </div>
 
-        <!-- Sección 2: Tabla de Datos Masiva Adaptiva de 6 Columnas -->
-        <div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; width: 100%; box-sizing: border-box;">
+        <!-- Sección 2: Tabla de Datos con Barra de Auditoría Masiva -->
+        <div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">
             <h3 style="color: #333; margin-bottom: 5px;">Usuarios Registrados</h3>
-            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Haga clic en el botón Editar de cualquier fila para cargar al usuario en el panel superior y actualizar sus credenciales o responsabilidades.</p>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Utilice la barra de controles inferiores para auditar superpoblaciones o buscar perfiles.</p>
             
+            <!-- CONTENEDOR ELÁSTICO DE AUDITORÍA AVANZADA -->
+            <div class="grid-barra-auditoria">
+                <div>
+                    <label for="filtroBusquedaRapida" style="font-size:12px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Búsqueda por Nombre, DNI o Email:</label>
+                    <input type="text" id="filtroBusquedaRapida" placeholder="Escriba para filtrar legajos en tiempo real...">
+                </div>
+                <div>
+                    <label for="filtroSuperpoblacion" style="font-size:12px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Auditoría Masiva de Cátedras:</label>
+                    <select id="filtroSuperpoblacion" style="height:38px;">
+                        <option value="TODOS">Mostrar Todos los Usuarios</option>
+                        <option value="SUPERPOBLADO">Cursos/Materias con Multi-Docentes (>1)</option>
+                    </select>
+                </div>
+            </div>
+
             <div style="width: 100%; overflow-x: auto;">
                 <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 850px;">
                     <thead>
@@ -272,7 +306,6 @@
                         </tr>
                     </thead>
                     <tbody id="tablaUsuariosBody">
-                        <!-- Inyección interactiva unificada desde usuarios.js -->
                     </tbody>
                 </table>
             </div>
@@ -280,7 +313,6 @@
 
         <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
     </div>
-
     <script src="usuarios.js"></script>
 </body>
 </html>

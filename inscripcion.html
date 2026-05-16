@@ -29,8 +29,7 @@
         }
         @media (min-width: 1200px) {
             .workspace-layout {
-                /* Si el formulario se oculta por JS, la grilla colapsa a 1fr de forma automática en el navegador */
-                grid-template-columns: minmax(0, auto) 1fr; 
+                grid-template-columns: minmax(0, auto) 1fr;
             }
         }
         .grid-formulario {
@@ -190,8 +189,7 @@
         }
         @media (min-width: 900px) {
             .seccion-filtros {
-                /* Distribución elástica proporcional basada en fr para evitar el amontonamiento amparado en la imagen */
-                grid-template-columns: 1.2fr 2fr 1.5fr 1.5fr 1.5fr; 
+                grid-template-columns: 1.2fr 2fr 1.5fr 1.5fr 1.5fr;
             }
         }
         .contador-registros {
@@ -207,7 +205,6 @@
             font-weight: bold;
             color: #b78103;
         }
-
         /* Remoción de anchos limitantes rígidos para la tabla a la derecha */
         .tabla-seccion-widescreen {
             background: #ffffff;
@@ -229,7 +226,7 @@
 
         <!-- Banner informativo exclusivo para el rol Preceptor -->
         <div id="bannerPreceptor" class="banner-lectura">
-            ℹ️ <strong>Modo Monitor Institucional Activo:</strong> Como Preceptor, usted opera bajo permisos de Solo Lectura. El listado refleja únicamente alumnos regulares o ingresantes de sus cursos asignados para el Ciclo seleccionado.
+            ℹ <strong>Modo Monitor Institucional Activo:</strong> Como Preceptor, usted opera bajo permisos de Solo Lectura. El listado refleja únicamente alumnos regulares o ingresantes de sus cursos asignados para el Ciclo seleccionado.
         </div>
 
         <!-- ÁREA DE TRABAJO EN PANTALLA ANCHA -->
@@ -244,7 +241,6 @@
                 <h3 id="formTitulo" style="margin-bottom: 15px; color: #1e293b;">Matricular Estudiante</h3>
                 <form id="formInscripcion">
                     <input type="hidden" id="idOriginalEdicion" value="">
-                    
                     <div class="grid-formulario">
                         <div class="input-group">
                             <label for="nombreAlumno">Nombre y Apellido completo</label>
@@ -254,7 +250,8 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
                                 <label for="dniAlumno">DNI (Identificador)</label>
-                                <input type="text" id="dniAlumno" placeholder="Ej: 48123456" required pattern="[0-9]+">
+                                <!-- CORRECCIÓN: inputmode añadido para entorno responsivo celular -->
+                                <input type="text" id="dniAlumno" placeholder="Ej: 48123456" required pattern="[0-9]+" inputmode="numeric">
                             </div>
                             <div class="input-group">
                                 <label for="cuilAlumno">CUIL Estudiante</label>
@@ -328,18 +325,18 @@
                             </div>
                         </div>
                         
-                        <div class="input-group"> 
-                            <label>Auditoría Documental Interactiva (docs)</label> 
-                            <div class="grupo-documentacion"> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="FOTOCOPIA DNI"><span>Fotocopia DNI Alumno</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="PARTIDA NACIMIENTO"><span>Partida de Nacimiento</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="CERTIFICADO PRIMARIA"><span>Certificado de Educación Primaria</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="BUENA SALUD"><span>Certificado de Buena Salud</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="VACUNAS"><span>Carnet de Vacunas</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="DNI TUTOR"><span>DNI del Tutor o Responsable</span></label> 
-                            </div> 
+                        <div class="input-group">
+                            <label>Auditoría Documental Interactiva (docs)</label>
+                            <div class="grupo-documentacion">
+                                <label class="opcion-check"><input type="checkbox" name="docs" value="FOTOCOPIA DNI"><span>Fotocopia DNI Alumno</span></label>
+                                <label class="opcion-check"><input type="checkbox" name="docs" value="PARTIDA NACIMIENTO"><span>Partida de Nacimiento</span></label>
+                                <label class="opcion-check"><input type="checkbox" name="docs" value="CERTIFICADO PRIMARIA"><span>Certificado de Educación Primaria</span></label>
+                                <label class="opcion-check"><input type="checkbox" name="docs" value="BUENA SALUD"><span>Certificado de Buena Salud</span></label>
+                                <label class="opcion-check"><input type="checkbox" name="docs" value="VACUNAS"><span>Carnet de Vacunas</span></label>
+                                <label class="opcion-check"><input type="checkbox" name="docs" value="DNI TUTOR"><span>DNI del Tutor o Responsable</span></label>
+                            </div>
                         </div>
-
+                        
                         <div class="input-group">
                             <label for="observacionesAlumno">Observaciones y Mesa de Entrada</label>
                             <textarea id="observacionesAlumno" placeholder="Anotaciones pedagógicas o médicas del estudiante..." rows="2"></textarea>
@@ -352,7 +349,6 @@
 
             <!-- COLUMNA DERECHA: SECCIÓN DE FILTROS ELÁSTICOS Y PLANILLA MASIVA WIDESCREEN -->
             <div class="tabla-seccion-widescreen">
-                <!-- Barra de Filtros Avanzados del Ecosistema -->
                 <div class="seccion-filtros">
                     <div>
                         <select id="filtroCicloLectivo" class="selector-ciclo-principal">
@@ -386,9 +382,8 @@
                         </select>
                     </div>
                 </div>
-
-                <div id="contadorEstudiantes" class="contador-registros">Matrículas Visualizadas: 0</div>
                 
+                <div id="contadorEstudiantes" class="contador-registros">Matrículas Visualizadas: 0</div>
                 <div class="table-responsive" style="width: 100%; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
                     <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse;">
                         <thead>
@@ -412,8 +407,6 @@
             <button id="btn-volver" class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; margin-top: 25px; padding: 10px 20px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold;">Volver al Panel</button>
         </div>
     </div>
-
-    <!-- Script de Gobernación del Legajo Digital -->
     <script src="inscripcion.js"></script>
 </body>
 </html>

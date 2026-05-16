@@ -16,20 +16,20 @@
     const pUsuarios = document.getElementById('pUsuarios');
     const pPlanes = document.getElementById('pPlanes');
     const pCalificaciones = document.getElementById('pCalificaciones');
-    const pAsistencia = document.getElementById('pAsistencia');
+    const pAsistencia = document.getElementById('pAsistencia'); // Vinculado a Control de Previas
     const pReportes = document.getElementById('pReportes');
     const pLegajo = document.getElementById('pLegajo');
 
     // Inicialización asíncrona segura del módulo
     document.addEventListener('DOMContentLoaded', async () => {
         ocultarBannerEdicion();
-        await verificarSesionAdministrador();
+        await verificarSessionAdministrador();
         await inicializarSemillaRoles();
         await cargarTablaRoles();
     });
 
     // Control estricto de acceso en cliente neutralizando mayúsculas/minúsculas
-    async function verificarSesionAdministrador() {
+    async function verificarSessionAdministrador() {
         try {
             const sesionRaw = localStorage.getItem('usuarioActivo');
             if (!sesionRaw) throw new Error('Sin sesión activa en la plataforma.');
@@ -38,7 +38,7 @@
             const rolNormalizado = usuario.rol.toLowerCase().trim();
             
             if (rolNormalizado !== 'administrador') {
-                alert('Acceso denegado: Solo el Administrador general posee credenciales para gestionar perfiles.');
+                alert('Acceso denegado: Solo el Administrator general posee credenciales para gestionar perfiles.');
                 window.location.href = 'panel.html';
                 return;
             }
@@ -48,7 +48,7 @@
         }
     }
 
-    // Inyección de Semilla Base de roles (CORREGIDO: Administrador con acceso total a todo)
+    // Inyección de Semilla Base de roles (CORREGIDO: Clave unificada a controlPrevias, cero asistencia)
     async function inicializarSemillaRoles() {
         try {
             if (!localStorage.getItem('rolesColegio')) {
@@ -56,23 +56,27 @@
                     {
                         id: "administrador",
                         nombre: "Administrador",
-                        // Se corrigen las claves libroCalificaciones y asistenciaPresentismo a "acceso" de forma nativa
-                        permisos: { configuracionUsuarios: "acceso", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "acceso" }
+                        permisos: { configuracionUsuarios: "acceso", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", controlPrevias: "acceso", reportesEstadisticas: "acceso" }
                     },
                     {
                         id: "directivo",
                         nombre: "Directivo",
-                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "acceso" }
+                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", controlPrevias: "acceso", reportesEstadisticas: "acceso" }
                     },
                     {
                         id: "coordinacion",
                         nombre: "Coordinación",
-                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "acceso" }
+                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", controlPrevias: "acceso", reportesEstadisticas: "acceso" }
                     },
                     {
                         id: "preceptor",
                         nombre: "Preceptor",
-                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "bloqueado", legajoDigital: "solo-vista-filtrado", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "bloqueado" }
+                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "bloqueado", legajoDigital: "solo-vista-filtrado", libroCalificaciones: "acceso", controlPrevias: "acceso", reportesEstadisticas: "bloqueado" }
+                    },
+                    {
+                        id: "profesor",
+                        nombre: "Profesor",
+                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "bloqueado", legajoDigital: "bloqueado", libroCalificaciones: "acceso", controlPrevias: "acceso", reportesEstadisticas: "bloqueado" }
                     }
                 ];
                 localStorage.setItem('rolesColegio', JSON.stringify(rolesSemilla));
@@ -118,7 +122,7 @@
     async function cargarTablaRoles() {
         const roles = await obtenerRoles();
         tablaRolesBody.textContent = ''; // Sanitización preventiva de nodos hijos previos
-
+        
         roles.forEach(rol => {
             const tr = document.createElement('tr');
             tr.className = 'fila-rol';
@@ -134,20 +138,19 @@
             const tdPermisos = document.createElement('td');
             const divContenedor = document.createElement('div');
             divContenedor.className = 'contenedor-badges-roles';
-
-            // Mapeo e inyección de los bloques en formato horizontal compacto
+            
+            // Mapeo e inyección de los bloques en formato horizontal compacto (Texto unificado a Previas)
             divContenedor.appendChild(crearBadgeVisual('Usuarios', rol.permisos.configuracionUsuarios));
             divContenedor.appendChild(crearBadgeVisual('Planes', rol.permisos.planesEstudio));
             divContenedor.appendChild(crearBadgeVisual('Notas', rol.permisos.libroCalificaciones));
-            divContenedor.appendChild(crearBadgeVisual('Previas', rol.permisos.asistenciaPresentismo));
+            divContenedor.appendChild(crearBadgeVisual('Previas', rol.permisos.controlPrevias));
             divContenedor.appendChild(crearBadgeVisual('Informes', rol.permisos.reportesEstadisticas));
             divContenedor.appendChild(crearBadgeVisual('Legajos', rol.permisos.legajoDigital));
-
             tdPermisos.appendChild(divContenedor);
-
+            
             const tdAcciones = document.createElement('td');
             tdAcciones.style.textAlign = 'center';
-
+            
             // Bloqueo estricto de edición para salvaguardar el acceso del operador raíz
             if (rol.id === 'administrador') {
                 tdAcciones.textContent = 'Inmutable';
@@ -170,7 +173,7 @@
                 tdAcciones.appendChild(btnEditar);
                 tdAcciones.appendChild(btnEliminar);
             }
-
+            
             tr.appendChild(tdNombre);
             tr.appendChild(tdId);
             tr.appendChild(tdPermisos);
@@ -200,22 +203,22 @@
     // Envío y procesamiento unificado del formulario (Alta / Modificación)
     formRol.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const nombreTexto = nombreRolInput.value.trim();
+        
         if (!nombreTexto) {
             alert('Por favor, asigne un nombre válido al perfil.');
             return;
         }
-
+        
         const idDestino = editRolIdInput.value || sanitizarIdRol(nombreTexto);
         let listaRoles = await obtenerRoles();
-
+        
         // Control de duplicados estricto en modo creación
         if (!editRolIdInput.value && listaRoles.some(r => r.id === idDestino)) {
             alert('Error operativo: Ya existe un perfil registrado con un identificador de control equivalente.');
             return;
         }
-
+        
         const estructuraNuevoRol = {
             id: idDestino,
             nombre: nombreTexto,
@@ -223,12 +226,12 @@
                 configuracionUsuarios: pUsuarios.checked ? 'acceso' : 'bloqueado',
                 planesEstudio: pPlanes.checked ? 'acceso' : 'bloqueado',
                 libroCalificaciones: pCalificaciones.checked ? 'acceso' : 'bloqueado',
-                asistenciaPresentismo: pAsistencia.checked ? 'acceso' : 'bloqueado',
+                controlPrevias: pAsistencia.checked ? 'acceso' : 'bloqueado',
                 reportesEstadisticas: pReportes.checked ? 'acceso' : 'bloqueado',
                 legajoDigital: pLegajo.value
             }
         };
-
+        
         if (editRolIdInput.value) {
             // Reemplazo en caliente por coincidencia de ID en modo edición
             listaRoles = listaRoles.map(r => r.id === idDestino ? estructuraNuevoRol : r);
@@ -236,7 +239,7 @@
             // Adición directa en altas
             listaRoles.push(estructuraNuevoRol);
         }
-
+        
         if (await guardarRoles(listaRoles)) {
             restaurarEstadoFormulario();
             await cargarTablaRoles();
@@ -249,14 +252,14 @@
         nombreRolInput.value = rol.nombre;
         nombreRolInput.disabled = true; // Inmutabilidad del ID clave para proteger relacionales
         editRolIdInput.value = rol.id;
-
+        
         pUsuarios.checked = rol.permisos.configuracionUsuarios === 'acceso';
         pPlanes.checked = rol.permisos.planesEstudio === 'acceso';
         pCalificaciones.checked = rol.permisos.libroCalificaciones === 'acceso';
-        pAsistencia.checked = rol.permisos.asistenciaPresentismo === 'acceso';
+        pAsistencia.checked = rol.permisos.controlPrevias === 'acceso';
         pReportes.checked = rol.permisos.reportesEstadisticas === 'acceso';
         pLegajo.value = rol.permisos.legajoDigital;
-
+        
         bannerEdicion.style.display = 'block';
         btnGuardar.textContent = 'Actualizar Rol';
     }
@@ -266,7 +269,6 @@
         if (confirm('¿Está seguro de que desea eliminar este perfil? Los usuarios vinculados perderán sus configuraciones de acceso.')) {
             let listaRoles = await obtenerRoles();
             listaRoles = listaRoles.filter(r => r.id !== id);
-            
             if (await guardarRoles(listaRoles)) {
                 await cargarTablaRoles();
             }

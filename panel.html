@@ -53,7 +53,7 @@
 
             <!-- 5. Control de Previas (Restaurado Estrictamente) -->
             <div id="mod-previas" class="modulo-card">
-                <span class="icon">⚠️</span>
+                <span class="icon">⚠</span>
                 <h4>Control de Previas</h4>
             </div>
 
@@ -133,7 +133,6 @@
 
             // Cargar la matriz dinámica para los demás roles de la institución
             const datosRolActual = await obtenerPermisosRol(rolIdMapeado);
-
             if (!datosRolActual) {
                 console.warn("Advertencia: No se encontraron registros de permisos para este rol. Bloqueo preventivo.");
                 bloquearModuloFisico("mod-usuarios");
@@ -151,7 +150,10 @@
             evaluarPermisoModulo("mod-usuarios", permisos.configuracionUsuarios, "usuarios.html");
             evaluarPermisoModulo("mod-cursos-materias", permisos.planesEstudio, "cursos-materias.html");
             evaluarPermisoModulo("mod-calificaciones", permisos.libroCalificaciones, "alert('Próximamente: Calificaciones y Boletín')");
-            evaluarPermisoModulo("mod-previas", permisos.asistenciaPresentismo, "alert('Próximamente: Control de Previas')");
+            
+            // CORRECCIÓN: Adaptado a la clave unificada de control de exámenes de previas
+            evaluarPermisoModulo("mod-previas", permisos.controlPrevias, "alert('Próximamente: Control de Previas')");
+            
             evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, "alert('Próximamente: Estadísticas')");
 
             // Tratamiento reactivo para el Legajo Digital de Alumnos
@@ -173,9 +175,7 @@
         function configurarEnlaceModulo(idModulo, destino) {
             const elemento = document.getElementById(idModulo);
             if (!elemento) return;
-            
             elemento.classList.remove('modulo-bloqueado', 'modulo-solo-lectura');
-            
             elemento.onclick = function() {
                 if (destino.startsWith("alert")) {
                     const mensaje = destino.match(/'([^']+)'/);
@@ -189,10 +189,8 @@
         function bloquearModuloFisico(idModulo) {
             const elemento = document.getElementById(idModulo);
             if (!elemento) return;
-
             elemento.classList.add('modulo-bloqueado');
             elemento.classList.remove('modulo-solo-lectura');
-            
             elemento.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -204,10 +202,8 @@
         function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
             const elemento = document.getElementById(idModulo);
             if (!elemento) return;
-
             elemento.classList.remove('modulo-bloqueado');
             elemento.classList.add('modulo-solo-lectura');
-            
             elemento.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
