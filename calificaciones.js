@@ -19,7 +19,7 @@
     document.addEventListener("DOMContentLoaded", async () => {
         await verificarAutenticacion();
         await cargarSelectoresIniciales();
-        
+
         // Escuchadores reactivos en cascada
         if (selectCurso) selectCurso.addEventListener('change', gestionarCambioCurso);
         if (selectMateria) selectMateria.addEventListener('change', cargarNominaEstudiantes);
@@ -33,10 +33,10 @@
             window.location.href = "index.html";
             return;
         }
+
         usuarioLogueado = JSON.parse(datosSesion);
         rolNormalizado = usuarioLogueado.rol.toLowerCase().trim();
 
-        // Si es Preceptor (bajo vista filtrada) o Directivo, operan en modo monitor
         if (rolNormalizado === "preceptor" || rolNormalizado === "directivo") {
             esModoLectura = true;
             if (bannerLectura) bannerLectura.style.display = "block";
@@ -51,12 +51,11 @@
         const cursosRaw = localStorage.getItem('cursosColegio');
         const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
 
-        // Si es preceptor, la directiva del legajo filtra sus 2 cursos de responsabilidad
         if (rolNormalizado === "preceptor") {
             const usuariosRaw = localStorage.getItem('usuariosColegio');
             const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
             const preceptorReal = usuarios.find(u => u.dni === usuarioLogueado.dni);
-            const cursosAsignados = preceptorReal ? preceptorReal.cursosAsignados : [];
+            const cursosAsignados = preceptorReal ? (preceptorReal.cursosAsignados || []) : [];
 
             cursos.forEach(curso => {
                 if (cursosAsignados.includes(curso.id)) {
@@ -64,7 +63,6 @@
                 }
             });
         } else {
-            // El administrador o directivo listan toda la planta institucional
             cursos.forEach(curso => {
                 selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
             });
@@ -84,26 +82,26 @@
 
         if (!cursoEncontrado || !cursoEncontrado.materias) return;
 
-        // Si es operador Profesor, filtramos estrictamente contra su Bolsa de Horas
         if (rolNormalizado === "profesor" || usuarioLogueado.esProfesor) {
             const usuariosRaw = localStorage.getItem('usuariosColegio');
             const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
             const profesorReal = usuarios.find(u => u.dni === usuarioLogueado.dni);
-            const bolsaDocente = profesorReal ? profesorReal.bolsaHoras : [];
+            const bolsaDocente = profesorReal ? (profesorReal.bolsaHoras || profesorReal.bolsaHours || []) : [];
 
             cursoEncontrado.materias.forEach(materia => {
-                // Buscamos coincidencia estructural cruzada en la bolsa
-                const matchBolsa = bolsaDocente.some(b => b.includes(cursoEncontrado.division) && b.includes(materia));
+                const matchBolsa = bolsaDocente.some(b => 
+                    b.toLowerCase().includes(cursoEncontrado.division.toLowerCase().trim()) && 
+                    b.toLowerCase().includes(materia.toLowerCase().trim())
+                );
                 if (matchBolsa || rolNormalizado === "administrador") {
                     selectMateria.add(new Option(materia, materia));
                 }
             });
-            
+
             if (selectMateria.options.length === 1) {
                 selectMateria.add(new Option("Sin asignaturas autorizadas en este curso", ""));
             }
         } else {
-            // Para administradores o directivos listamos todas las materias del plan
             cursoEncontrado.materias.forEach(materia => {
                 selectMateria.add(new Option(materia, materia));
             });
@@ -118,17 +116,41 @@
 
         tablaNotasBody.innerHTML = "";
 
-        // 1. Mapear datos de cabecera (Docente de la bolsa y Preceptor)
-        const usuariosRaw = localStorage.getItem('usuariosColegio');
-        const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
-        
-        const docentesCatedra = usuarios.filter(u => u.bolsaHoras && u.bolsaHoras.some(b => b.includes(materiaId) && b.includes(cursoId)));
-        txtDocente.textContent = docentesCatedra.length > 0 ? docentesCatedra.map(d => d.nombre).join(" / ") : "Sin asignar";
+        // --- SOLUCIÓN CABECERAS: Búsqueda tolerante a fallos de metadatos ---
+        try {
+            const usuariosRaw = localStorage.getItem('usuariosColegio');
+            const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+            
+            const cursosRaw = localStorage.getItem('cursosColegio');
+            const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+            const cursoActual = cursos.find(c => c.id === cursoId) || {};
+            const divisionActual = cursoActual.division ? cursoActual.division.toLowerCase().trim() : "";
 
-        const preceptorCurso = usuarios.find(u => u.rol === "preceptor" && u.cursosAsignados && u.cursosAsignados.includes(cursoId));
-        txtPreceptor.textContent = preceptorCurso ? preceptorCurso.nombre : "Sin asignar";
+            // 1. Mapear Profesor por cruce tolerante de Bolsa de Horas
+            const docentesCatedra = usuarios.filter(u => {
+                const bolsa = u.bolsaHoras || u.bolsaHours || [];
+                return bolsa.some(b => 
+                    b.toLowerCase().includes(materiaId.toLowerCase().trim()) && 
+                    b.toLowerCase().includes(divisionActual)
+                );
+            });
+            txtDocente.textContent = docentesCatedra.length > 0 ? docentesCatedra.map(d => d.nombre).join(" / ") : "Sin asignar";
 
-        // 2. Extraer nómina de alumnos regulares indexados de ese curso
+            // 2. Mapear Preceptor por cruce estructurado de Cursos Asignados
+            const preceptorCurso = usuarios.find(u => {
+                if (u.rol && u.rol.toLowerCase().trim() === "preceptor") {
+                    const asignados = u.cursosAsignados || [];
+                    return asignados.some(id => id.toString().trim() === cursoId.toString().trim());
+                }
+                return false;
+            });
+            txtPreceptor.textContent = preceptorCurso ? preceptorCurso.nombre : "Sin asignar";
+        } catch (err) {
+            console.error("Error al procesar la asignación de cabeceras:", err);
+            txtDocente.textContent = "Error de carga";
+            txtPreceptor.textContent = "Error de carga";
+        }
+
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         const alumnos = alumnosRaw ? JSON.parse(alumnosRaw) : [];
         const alumnosCurso = alumnos.filter(a => a.cursoId === cursoId && a.estado === "Regular");
@@ -139,70 +161,58 @@
             return;
         }
 
-        // 3. Extraer historial de calificaciones existentes para este casillero curricular
         const notasRaw = localStorage.getItem('calificacionesColegio');
         const registroGlobalNotas = notasRaw ? JSON.parse(notasRaw) : [];
 
-        // Ordenar alfabéticamente por apellido y nombre como el Google Sheet real
         alumnosCurso.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
         alumnosCurso.forEach((alumno, index) => {
             const tr = document.createElement('tr');
-            
-            // Buscar si ya posee fila guardada en el casillero
             const persistenciaNota = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === cursoId && n.materia === materiaId) || {};
-            const d = persistenciaNota.notas || { trim1: {}, trim2: {} }; // Mapeo de almacenamiento unificado cuatrimestral
+            const d = persistenciaNota.notas || { trim1: {}, trim2: {} };
 
-            // Marcar si el alumno posee Proyecto Pedagógico para la Inclusión (PPI)
             const esPPI = alumno.nombre.toUpperCase().includes("PPI") || (alumno.observaciones && alumno.observaciones.toUpperCase().includes("PPI"));
             const badgePPI = esPPI ? '<span class="tag-ppi">PPI</span>' : '';
 
             tr.innerHTML = `
                 <td style="text-align:center; font-weight:bold; color:#64748b;">${index + 1}</td>
                 <td style="font-weight:500;">${alumno.nombre} ${badgePPI}<br><span style="font-size:11px; color:#94a3b8;">DNI: ${alumno.dni}</span></td>
-                
                 <!-- 1ER CUATRIMESTRE -->
-                <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d.trim1.n1 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d.trim1.n2 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d.trim1.ef || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada c1-prom">-</td>
-
+                <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
+                <td class="col-calculada">-</td>
                 <!-- 2DO CUATRIMESTRE -->
-                <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d.trim2.n1 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d.trim2.n2 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d.trim2.ef || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada c2-prom">-</td>
-
+                <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
+                <td class="col-calculada">-</td>
                 <!-- INSTANCIAS ANUALES DE EXAMEN -->
-                <td class="col-calculada nota-anual">-</td>
+                <td class="col-calculada">-</td>
                 <td><input type="number" class="input-nota inst-dic" min="1" max="10" value="${persistenciaNota.diciembre || ''}" data-dni="${alumno.dni}" disabled></td>
                 <td><input type="number" class="input-nota inst-feb" min="1" max="10" value="${persistenciaNota.febrero || ''}" data-dni="${alumno.dni}" disabled></td>
-                <td class="col-calculada nota-def">-</td>
+                <td class="col-calculada">-</td>
             `;
 
             tablaNotasBody.appendChild(tr);
 
-            // Blindar inputs y registrar cálculo dinámico reactivo en caliente
             const inputsFila = tr.querySelectorAll('.input-nota');
             inputsFila.forEach(input => {
-                if (esModoLectura) input.disabled = true; // Forzar bloqueo visual RBAC
-                
+                if (esModoLectura) input.disabled = true;
                 input.addEventListener('input', (e) => {
                     sanitizarEntradaNotaEntera(e.target);
                     calcularMatrizFilaCalificaciones(tr);
                 });
             });
 
-            // Disparar primer cómputo de celdas basado en datos históricos
             calcularMatrizFilaCalificaciones(tr);
         });
 
         if (bloqueGuardar && !esModoLectura) bloqueGuardar.style.display = "block";
     }
 
-    // --- REGLA PEDAGÓGICA: NOTAS NUMÉRICAS ENTERAS PURAS (1 AL 10, SIN LETRAS) ---
     function sanitizarEntradaNotaEntera(input) {
-        let valor = input.value.replace(/[^0-9]/g, ''); // Machacar cualquier letra o caracter decimal
+        let valor = input.value.replace(/[^0-9]/g, '');
         if (valor !== '') {
             let num = parseInt(valor, 10);
             if (num < 1) num = 1;
@@ -213,98 +223,114 @@
         }
     }
 
-    // --- MOTOR DE CÓMPUTO AUTOMÁTICO EN CALIENTE (EMULADOR DE GOOGLE SHEET) ---
+    // --- MOTOR REACTIVO BASADO EN INDICES (TOLERANTE A FALLOS Y NULOS) ---
     function calcularMatrizFilaCalificaciones(filaTr) {
-        // Captura de inputs de notas de la fila
-        const c1n1 = parseInt(filaTr.querySelector('.c1-n1').value, 10);
         const c1n2 = parseInt(filaTr.querySelector('.c1-n2').value, 10);
         const c1ef = parseInt(filaTr.querySelector('.c1-ef').value, 10);
 
-        const c2n1 = parseInt(filaTr.querySelector('.c2-n1').value, 10);
         const c2n2 = parseInt(filaTr.querySelector('.c2-n2').value, 10);
         const c2ef = parseInt(filaTr.querySelector('.c2-ef').value, 10);
 
         const dic = parseInt(filaTr.querySelector('.inst-dic').value, 10);
         const feb = parseInt(filaTr.querySelector('.inst-feb').value, 10);
 
-        // Referencias de celdas calculadas
-        const celdaC1Prom = filaTr.querySelector('.c1-prom');
-        const celdaC2Prom = filaTr.querySelector('.c2-prom');
-        const celdaAnual = filaTr.querySelector('.nota-anual');
-        const celdaDef = filaTr.querySelector('.nota-def');
+        const celdasFila = filaTr.querySelectorAll('td');
+        if (celdasFila.length < 14) return; // Validación preventiva antifrágil
+
+        const celdaC1Prom = celdasFila[5];   
+        const celdaC2Prom = celdasFila[9];   
+        const celdaAnual = celdasFila[10];  
         const inputDic = filaTr.querySelector('.inst-dic');
         const inputFeb = filaTr.querySelector('.inst-feb');
+        const celdaDef = celdasFila[13];    
 
-        // Cálculo 1° Cuatrimestre: Promedia solo las ingresadas (evita tirar abajo la planilla)
-        let prom1 = 0;
-        let c1Notas = [c1n1, c1n2, c1ef].filter(n => !isNaN(n));
-        if (c1Notas.length > 0) {
-            prom1 = Math.round(c1Notas.reduce((a, b) => a + b, 0) / c1Notas.length);
-            celdaC1Prom.textContent = prom1;
-            aplicarColorFormatoPedagógico(celdaC1Prom, prom1);
+        // 1. CALCULO PRIMER CUATRIMESTRE
+        let notaFinalC1 = null;
+        if (!isNaN(c1n2)) {
+            if (c1n2 >= 6) {
+                notaFinalC1 = c1n2;
+            } else if (!isNaN(c1ef)) {
+                notaFinalC1 = c1ef;
+            }
+        }
+
+        if (notaFinalC1 !== null) {
+            celdaC1Prom.textContent = notaFinalC1;
+            aplicarColorFormatoPedagógico(celdaC1Prom, notaFinalC1);
         } else {
             celdaC1Prom.textContent = "-";
-            celdaC1Prom.className = "col-calculada c1-prom";
+            celdaC1Prom.className = "col-calculada";
         }
 
-        // Cálculo 2° Cuatrimestre
-        let prom2 = 0;
-        let c2Notas = [c2n1, c2n2, c2ef].filter(n => !isNaN(n));
-        if (c2Notas.length > 0) {
-            prom2 = Math.round(c2Notas.reduce((a, b) => a + b, 0) / c2Notas.length);
-            celdaC2Prom.textContent = prom2;
-            aplicarColorFormatoPedagógico(celdaC2Prom, prom2);
+        // 2. CALCULO SEGUNDO CUATRIMESTRE
+        let notaFinalC2 = null;
+        if (!isNaN(c2n2)) {
+            if (c2n2 >= 6) {
+                notaFinalC2 = c2n2;
+            } else if (!isNaN(c2ef)) {
+                notaFinalC2 = c2ef;
+            }
+        }
+
+        if (notaFinalC2 !== null) {
+            celdaC2Prom.textContent = notaFinalC2;
+            aplicarColorFormatoPedagógico(celdaC2Prom, notaFinalC2);
         } else {
             celdaC2Prom.textContent = "-";
-            celdaC2Prom.className = "col-calculada c2-prom";
+            celdaC2Prom.className = "col-calculada";
         }
 
-        // Cálculo Nota Anual (Cierre de los dos cuatrimestres parciales)
-        let notaAnual = 0;
-        if (c1Notas.length > 0 && c2Notas.length > 0) {
-            notaAnual = Math.round((prom1 + prom2) / 2);
-            celdaAnual.textContent = notaAnual;
-            aplicarColorFormatoPedagógico(celdaAnual, notaAnual);
+        // 3. ARRASTRE DE NOTA ANUAL Y DEFINITIVA
+        if (notaFinalC1 !== null && notaFinalC2 !== null) {
+            const notaAnualCalculada = notaFinalC2;
+            celdaAnual.textContent = notaAnualCalculada;
+            aplicarColorFormatoPedagógico(celdaAnual, notaAnualCalculada);
+
+            if (notaAnualCalculada >= 6) {
+                celdaDef.textContent = notaAnualCalculada;
+                aplicarColorFormatoPedagógico(celdaDef, notaAnualCalculada);
+                if (!esModoLectura) {
+                    if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
+                    if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
+                }
+            } else {
+                if (!esModoLectura && inputDic) inputDic.disabled = false;
+
+                let notaCierreFinal = null;
+                if (!isNaN(dic)) {
+                    if (dic >= 6) {
+                        notaCierreFinal = dic;
+                        if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
+                    } else {
+                        if (!esModoLectura && inputFeb) inputFeb.disabled = false;
+                        if (!isNaN(feb)) notaCierreFinal = feb;
+                    }
+                } else {
+                    if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
+                }
+
+                if (notaCierreFinal !== null) {
+                    celdaDef.textContent = notaCierreFinal;
+                    aplicarColorFormatoPedagógico(celdaDef, notaCierreFinal);
+                } else {
+                    celdaDef.textContent = "-";
+                    celdaDef.className = "col-calculada";
+                }
+            }
         } else {
             celdaAnual.textContent = "-";
-            celdaAnual.className = "col-calculada nota-anual";
+            celdaAnual.className = "col-calculada";
             celdaDef.textContent = "-";
-            celdaDef.className = "col-calculada nota-def";
-            if (!esModoLectura) { inputDic.disabled = true; inputFeb.disabled = true; }
-            return;
-        }
-
-        // REGLA CRÍTICA DE CORTE: Se desaprueba con 5 o menos, se aprueba con 6 o más
-        if (notaAnual >= 6) {
-            // Aprobación Directa: El alumno cierra el año y se bloquean recuperatorios
-            celdaDef.textContent = notaAnual;
-            aplicarColorFormatoPedagógico(celdaDef, notaAnual);
+            celdaDef.className = "col-calculada";
             if (!esModoLectura) {
-                inputDic.disabled = true; inputDic.value = "";
-                inputFeb.disabled = true; inputFeb.value = "";
+                if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
+                if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
             }
-        } else {
-            // Desaprobación (Menor o igual a 5): Se habilitan comisiones de examen de Dic/Feb
-            if (!esModoLectura) {
-                inputDic.disabled = false;
-                inputFeb.disabled = false;
-            }
-
-            // La nota definitiva se evalúa según los exámenes complementarios
-            let notaFinalCierre = notaAnual;
-            if (!isNaN(feb)) {
-                notaFinalCierre = feb; // Febrero tiene prioridad por ser la última instancia
-            } else if (!isNaN(dic)) {
-                notaFinalCierre = dic;
-            }
-
-            celdaDef.textContent = notaFinalCierre;
-            aplicarColorFormatoPedagógico(celdaDef, notaFinalCierre);
         }
     }
 
     function aplicarColorFormatoPedagógico(celda, nota) {
-        celda.className = "col-calculada"; // Reset clases
+        celda.className = "col-calculada";
         if (nota >= 6) {
             celda.classList.add("nota-aprobada");
         } else {
@@ -322,17 +348,16 @@
         if (!cursoId || !materiaId) return;
 
         const filas = tablaNotasBody.querySelectorAll('tr');
-        const notasRaw = localStorage.getItem('calificacionesColegio');
-        let registroGlobalNotas = notasRaw ? JSON.parse(notasRaw) : [];
+        const calendarRaw = localStorage.getItem('calificacionesColegio');
+        let registroGlobalNotas = calendarRaw ? JSON.parse(calendarRaw) : [];
 
-        // Limpiar registros antiguos de este casillero de cátedra específico para sobreescribir limpio
         registroGlobalNotas = registroGlobalNotas.filter(n => !(n.cursoId === cursoId && n.materia === materiaId));
 
         filas.forEach(fila => {
             const inputBase = fila.querySelector('.c1-n1');
             if (!inputBase) return;
-            const dniAlumno = inputBase.getAttribute('data-dni');
 
+            const dniAlumno = inputBase.getAttribute('data-dni');
             const c1n1 = parseInt(fila.querySelector('.c1-n1').value, 10);
             const c1n2 = parseInt(fila.querySelector('.c1-n2').value, 10);
             const c1ef = parseInt(fila.querySelector('.c1-ef').value, 10);
@@ -343,7 +368,13 @@
 
             const dic = parseInt(fila.querySelector('.inst-dic').value, 10);
             const feb = parseInt(fila.querySelector('.inst-feb').value, 10);
-            const notaDefinitiva = parseInt(fila.querySelector('.nota-def').textContent, 10);
+
+            const celdas = fila.querySelectorAll('td');
+            let notaDefinitiva = null;
+            if (celdas.length >= 14) {
+                const textoDefinitiva = celdas[13].textContent;
+                notaDefinitiva = textoDefinitiva === "-" ? null : parseInt(textoDefinitiva, 10);
+            }
 
             const estructuraCalificacionAlumno = {
                 alumnoDni: dniAlumno,
@@ -355,8 +386,8 @@
                 },
                 diciembre: isNaN(dic) ? null : dic,
                 febrero: isNaN(feb) ? null : feb,
-                notaFinal: isNaN(notaDefinitiva) ? null : notaDefinitiva,
-                estadoMateria: notaDefinitiva >= 6 ? "Aprobada" : "Previa" // Conexión automática con el RBAC de previas
+                notaFinal: notaDefinitiva,
+                estadoMateria: (notaDefinitiva !== null && notaDefinitiva >= 6) ? "Aprobada" : "Previa"
             };
 
             registroGlobalNotas.push(estructuraCalificacionAlumno);

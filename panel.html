@@ -121,7 +121,7 @@
                 configurarEnlaceModulo("mod-usuarios", "usuarios.html");
                 configurarEnlaceModulo("mod-inscripcion", "inscripcion.html");
                 configurarEnlaceModulo("mod-cursos-materias", "cursos-materias.html");
-                configurarEnlaceModulo("mod-calificaciones", "alert('Próximamente: Calificaciones y Boletín')");
+                configurarEnlaceModulo("mod-calificaciones", "calificaciones.html");
                 configurarEnlaceModulo("mod-previas", "alert('Próximamente: Control de Previas')");
                 configurarEnlaceModulo("mod-estadisticas", "alert('Próximamente: Estadísticas')");
                 configurarEnlaceModulo("mod-roles", "roles.html");
@@ -149,11 +149,10 @@
             // Evaluación de permisos dinámica para roles que no son administradores
             evaluarPermisoModulo("mod-usuarios", permisos.configuracionUsuarios, "usuarios.html");
             evaluarPermisoModulo("mod-cursos-materias", permisos.planesEstudio, "cursos-materias.html");
-            evaluarPermisoModulo("mod-calificaciones", permisos.libroCalificaciones, "alert('Próximamente: Calificaciones y Boletín')");
+            evaluarPermisoModulo("mod-calificaciones", permisos.libroCalificaciones, "calificaciones.html");
             
             // CORRECCIÓN: Adaptado a la clave unificada de control de exámenes de previas
             evaluarPermisoModulo("mod-previas", permisos.controlPrevias, "alert('Próximamente: Control de Previas')");
-            
             evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, "alert('Próximamente: Estadísticas')");
 
             // Tratamiento reactivo para el Legajo Digital de Alumnos
