@@ -16,7 +16,7 @@
     const pUsuarios = document.getElementById('pUsuarios');
     const pPlanes = document.getElementById('pPlanes');
     const pCalificaciones = document.getElementById('pCalificaciones');
-    const pAsistencia = document.getElementById('pAsistencia'); // Vinculado a la celda de Control de Previas
+    const pAsistencia = document.getElementById('pAsistencia'); 
     const pReportes = document.getElementById('pReportes');
 
     // Escuchador principal de arranque del módulo
@@ -44,7 +44,7 @@
         }
     }
 
-    // --- SEMILLA DE INICIALIZACIÓN CON SOPORTE DE TRES NIVELES ---
+    // --- SEMILLA DE INICIALIZACIÓN PURGADA PARA EL COLEGIO HASPEN ---
     async function inicializarSemillaRoles() {
         if (!localStorage.getItem('rolesColegio')) {
             const rolesSemilla = [
@@ -56,7 +56,7 @@
                         planesEstudio: "escritura",
                         legajoDigital: "escritura",
                         libroCalificaciones: "escritura",
-                        controlPrevias: "escritura", // Unificado con la clave estructural
+                        controlPrevias: "escritura", 
                         reportesEstadisticas: "escritura"
                     }
                 },
@@ -66,8 +66,8 @@
                     permisos: {
                         configuracionUsuarios: "ninguno",
                         planesEstudio: "ninguno",
-                        legajoDigital: "lectura", 
-                        libroCalificaciones: "lectura", 
+                        legajoDigital: "lectura", // Mantiene acceso a legajos en Gestión de Alumnos
+                        libroCalificaciones: "ninguno", // PURGADO: El preceptor puro ya no entra a calificaciones
                         controlPrevias: "escritura", 
                         reportesEstadisticas: "ninguno"
                     }
@@ -149,7 +149,7 @@
             contenedorBadgesHTML += crearBadgeVisual("Planes", p.planesEstudio);
             contenedorBadgesHTML += crearBadgeVisual("Alumnos", p.legajoDigital);
             contenedorBadgesHTML += crearBadgeVisual("Notas", p.libroCalificaciones);
-            contenedorBadgesHTML += crearBadgeVisual("Previas", p.controlPrevias); // Corregida vinculación de mapeo
+            contenedorBadgesHTML += crearBadgeVisual("Previas", p.controlPrevias); 
             contenedorBadgesHTML += crearBadgeVisual("Estadísticas", p.reportesEstadisticas);
             contenedorBadgesHTML += '</div>';
 
@@ -228,13 +228,12 @@
         const idEditar = editRolId.value;
         let listaRoles = await obtenerRolesDesdeStorage();
 
-        // Mapeo unificado usando la clave estandarizada controlPrevias
         const estructuraPermisosMapeada = {
             configuracionUsuarios: pUsuarios.value,
             planesEstudio: pPlanes.value,
             legajoDigital: pLegajo.value,
             libroCalificaciones: pCalificaciones.value,
-            controlPrevias: pAsistencia.value, // Captura desde el select pAsistencia y guarda como controlPrevias
+            controlPrevias: pAsistencia.value, 
             reportesEstadisticas: pReportes.value
         };
 
@@ -285,13 +284,12 @@
 
         const p = rol.permisos || {};
         
-        // Conversor seguro adaptado a la clave de controlPrevias
-        pLegajo.value = (p.legajoDigital === "acceso" ? "escritura" : (p.legajoDigital === "solo-vista-filtrado" ? "lectura" : p.legajoDigital)) || "ninguno";
-        pUsuarios.value = (p.configuracionUsuarios === "acceso" ? "escritura" : p.configuracionUsuarios) || "ninguno";
-        pPlanes.value = (p.planesEstudio === "acceso" ? "escritura" : p.planesEstudio) || "ninguno";
-        pCalificaciones.value = (p.libroCalificaciones === "acceso" ? "escritura" : p.libroCalificaciones) || "ninguno";
-        pAsistencia.value = (p.controlPrevias === "acceso" ? "escritura" : p.controlPrevias) || "ninguno"; // Mapeo correcto hacia el select pAsistencia
-        pReportes.value = (p.reportesEstadisticas === "acceso" ? "escritura" : p.reportesEstadisticas) || "ninguno";
+        pLegajo.value = p.legajoDigital || "ninguno";
+        pUsuarios.value = p.configuracionUsuarios || "ninguno";
+        pPlanes.value = p.planesEstudio || "ninguno";
+        pCalificaciones.value = p.libroCalificaciones || "ninguno";
+        pAsistencia.value = p.controlPrevias || "ninguno"; 
+        pReportes.value = p.reportesEstadisticas || "ninguno";
 
         formRol.scrollIntoView({ behavior: 'smooth' });
     }
