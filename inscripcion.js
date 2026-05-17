@@ -66,36 +66,50 @@
         document.getElementById('estadoAlumno')?.addEventListener('change', evaluarEstadoMesaEntrada);
     });
 
-    // --- INTEGRACIÓN: MANEJADOR DINÁMICO DE ARCHIVOS DIGITALES (FIX) ---
- // BUSCA ESTA FUNCIÓN EN INSCRIPCION.JS Y REEMPLÁZALA POR ESTA VERSIÓN:
+    // --- MANEJADOR REACTIVO CON ADVERTENCIA DE DUPLICADOS Y ELIMINACIÓN ---
+    function inicializarManejadoresArchivosDigitales() {
+        const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
+        inputsArchivos.forEach(input => {
+            // Interceptamos el click: si ya existe un documento, se advierte al usuario
+            input.addEventListener('click', function(e) {
+                const key = this.getAttribute('data-key');
+                if (base64DocumentosTemporales[key]) {
+                    const confirmarCambio = confirm(`Atención:\nYa se encuentra cargado un documento en este casillero.\n\n¿Desea eliminar el archivo existente para seleccionar uno nuevo?`);
+                    if (!confirmarCambio) {
+                        e.preventDefault(); // Cancela la apertura del explorador nativo
+                    } else {
+                        // El usuario aceptó vaciar el archivo para cargar uno nuevo
+                        base64DocumentosTemporales[key] = null;
+                        actualizarFilaUIArchivo(key, null);
+                    }
+                }
+            });
 
-function inicializarManejadoresArchivosDigitales() {
-    const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
-    inputsArchivos.forEach(input => {
-        input.addEventListener('change', function(e) {
-            const archivo = e.target.files[0]; // <--- EL CAMBIO ESTÁ AQUÍ (Agrega el [0])
-            const key = this.getAttribute('data-key');
-            if (!archivo) return;
+            input.addEventListener('change', function(e) {
+                const archivo = e.target.files[0];
+                const key = this.getAttribute('data-key');
+                if (!archivo) return;
 
-            // Validación de Tamaño: 1 MB máximo (1024 * 1024 bytes)
-            const limiteMaximoBytes = 1024 * 1024;
-            if (archivo.size > limiteMaximoBytes) {
-                alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
-                this.value = ""; 
-                return;
-            }
+                // Validación de Tamaño: 1 MB máximo (1024 * 1024 bytes)
+                const limiteMaximoBytes = 1024 * 1024;
+                if (archivo.size > limiteMaximoBytes) {
+                    alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
+                    this.value = "";
+                    return;
+                }
 
-            const lectorBinario = new FileReader();
-            lectorBinario.onload = function(evt) {
-                const stringBase64Final = evt.target.result;
-                base64DocumentosTemporales[key] = stringBase64Final;
-                actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
-            };
-            lectorBinario.readAsDataURL(archivo);
-            this.value = ""; 
+                const lectorBinario = new FileReader();
+                lectorBinario.onload = function(evt) {
+                    const stringBase64Final = evt.target.result;
+                    base64DocumentosTemporales[key] = stringBase64Final;
+                    actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
+                };
+                lectorBinario.readAsDataURL(archivo);
+                this.value = "";
+            });
         });
-    });
-}
+    }
+
     function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
         const chk = document.getElementById(`chk-${key}`);
         if (chk) chk.checked = !!base64Data;
@@ -121,7 +135,6 @@ function inicializarManejadoresArchivosDigitales() {
             return;
         }
 
-        // Crear un entorno HTML limpio e inyectar el binario directamente (Soporta PDF e Imágenes)
         ventanaEmergente.document.write(`
             <html>
             <head>
@@ -180,7 +193,6 @@ function inicializarManejadoresArchivosDigitales() {
         if (btnLoteInforme) btnLoteInforme.disabled = deshabilitar;
         if (btnLoteBoletin) btnLoteBoletin.disabled = deshabilitar;
     }
-
     async function procesarFiltrosYNomina() {
         if (!tbodyAlumnos) return;
         const alumnosRaw = localStorage.getItem('alumnosColegio');
@@ -210,7 +222,6 @@ function inicializarManejadoresArchivosDigitales() {
             if (estadoFiltro && alumno.estado !== estadoFiltro) return false;
 
             if (docFiltro) {
-                // Cálculo de legajo completo basado en la existencia de los strings Base64 digitalizados
                 const dMap = alumno.documentosDigitales || {};
                 const totalCargados = Object.values(dMap).filter(v => v !== null && v !== undefined).length;
                 const esCompleto = totalCargados === 6;
@@ -233,7 +244,6 @@ function inicializarManejadoresArchivosDigitales() {
         `;
 
         tbodyAlumnos.innerHTML = "";
-
         if (alumnosFiltrados.length === 0) {
             tbodyAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No se encontraron legajos con los criterios seleccionados.</td></tr>`;
             return;
@@ -264,7 +274,6 @@ function inicializarManejadoresArchivosDigitales() {
                 : `<span class="badge-curso">${alumno.estado}</span>`;
 
             let celdaAccionesHTML = `<div style="display:flex; gap:4px; justify-content:center;">`;
-
             if (alumno.estado === "Regular") {
                 celdaAccionesHTML += `
                     <button type="button" class="btn-accion-fila btn-fila-informe" onclick="emitirDocumentoIndividual('${alumno.dni}', 'INFORME')" title="Informe Pedagógico Analítico">📊</button>
@@ -277,7 +286,6 @@ function inicializarManejadoresArchivosDigitales() {
             } else if (alumno.estado !== "Regular") {
                 celdaAccionesHTML += `<span style="color:#94a3b8; font-size:11px;">Solo Vista</span>`;
             }
-
             celdaAccionesHTML += `</div>`;
 
             tr.innerHTML = `
@@ -293,7 +301,6 @@ function inicializarManejadoresArchivosDigitales() {
                 <td style="vertical-align: top; padding-top: 14px;">${auditoriaHtml}</td>
                 <td style="vertical-align: top; padding-top: 10px;">${celdaAccionesHTML}</td>
             `;
-
             tbodyAlumnos.appendChild(tr);
         });
     }
@@ -302,7 +309,6 @@ function inicializarManejadoresArchivosDigitales() {
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         const alumno = (alumnosRaw ? JSON.parse(alumnosRaw) : []).find(a => a.dni === dni);
         if (!alumno) return;
-
         configurarEstiloPaginaPorTipo(tipo);
         modalCuerpo.innerHTML = construirHTMLHojaDocumento(alumno, tipo);
         if (modalContenedor) modalContenedor.style.display = "flex";
@@ -311,7 +317,6 @@ function inicializarManejadoresArchivosDigitales() {
     async function emitirDocumentosEnLote(tipo) {
         const cursoId = selectCursoFiltro.value;
         if (!cursoId) return;
-
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         const ciclo = document.getElementById('filtroCicloLectivo').value;
 
@@ -323,15 +328,11 @@ function inicializarManejadoresArchivosDigitales() {
             alert("No hay alumnos Regulares inscritos en esta división para el ciclo actual.");
             return;
         }
-
         listaAlumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
         configurarEstiloPaginaPorTipo(tipo);
 
         let htmlAcumulado = "";
-        listaAlumnos.forEach(alumno => {
-            htmlAcumulado += construirHTMLHojaDocumento(alumno, tipo);
-        });
-
+        listaAlumnos.forEach(alumno => { htmlAcumulado += construirHTMLHojaDocumento(alumno, tipo); });
         modalCuerpo.innerHTML = htmlAcumulado;
         if (modalContenedor) modalContenedor.style.display = "flex";
     }
@@ -350,10 +351,8 @@ function inicializarManejadoresArchivosDigitales() {
         const mergeCursosRaw = localStorage.getItem('cursosColegio');
         const cursoObj = (mergeCursosRaw ? JSON.parse(mergeCursosRaw) : []).find(c => c.id === alumno.cursoId) || {};
         const materiasPlan = cursoObj.materias || [];
-
         const notasRaw = localStorage.getItem('calificacionesColegio');
-        const registroGlobalNotas = notasRaw ? JSON.parse(notesRaw || '[]') : [];
-
+        const registroGlobalNotas = notasRaw ? JSON.parse(notasRaw) : [];
         const anioNumero = cursoObj.ciclo ? cursoObj.ciclo.charAt(0) : "1";
         const txtCursoVisible = `${anioNumero} ° "${cursoObj.division}" (${cursoObj.turno})`;
 
@@ -389,14 +388,12 @@ function inicializarManejadoresArchivosDigitales() {
                     </thead>
                     <tbody>
             `;
-
             materiasPlan.forEach(materia => {
                 const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
                 const n = p.notas || {};
                 const c1 = calcularNotaFase(n.trim1?.n2, n.trim1?.ef);
                 const c2 = calcularNotaFase(n.trim2?.n2, n.trim2?.ef);
                 const notaFinal = c2 >= 6 ? c2 : (p.febrero || p.diciembre || "-");
-
                 html += `
                     <tr>
                         <td style="text-align:left; font-weight:bold;">${materia.toUpperCase()}</td>
@@ -408,7 +405,6 @@ function inicializarManejadoresArchivosDigitales() {
                     </tr>
                 `;
             });
-
             html += `
                     </tbody>
                 </table>
@@ -439,27 +435,24 @@ function inicializarManejadoresArchivosDigitales() {
                     </thead>
                     <tbody>
             `;
-
             materiasPlan.forEach(materia => {
                 const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
                 const n = p.notas || {};
                 const c1 = calcularNotaFase(n.trim1?.n2, n.trim1?.ef);
                 const c2 = calcularNotaFase(n.trim2?.n2, n.trim2?.ef);
                 const def = c2 >= 6 ? c2 : (p.febrero || p.diciembre || "-");
-
                 html += `
                     <tr>
                         <td style="text-align:left; font-weight:500;">${materia}</td>
-                        <div><td>${n.trim1?.n1 || "-"}</td><td>${n.trim1?.n2 || "-"}</td><td>${n.trim1?.ef || "-"}</td></div>
+                        <td>${n.trim1?.n1 || "-"}</td><td>${n.trim1?.n2 || "-"}</td><td>${n.trim1?.ef || "-"}</td>
                         <td style="font-weight:bold; background:#f8fafc;">${c1}</td>
-                        <div><td>${n.trim2?.n1 || "-"}</td><td>${n.trim2?.n2 || "-"}</td><td>${n.trim2?.ef || "-"}</td></div>
+                        <td>${n.trim2?.n1 || "-"}</td><td>${n.trim2?.n2 || "-"}</td><td>${n.trim2?.ef || "-"}</td>
                         <td style="font-weight:bold; background:#f8fafc;">${c2}</td>
                         <td>${p.diciembre || "-"}</td><td>${p.febrero || "-"}</td>
                         <td style="font-weight:bold; background:#f1f5f9;">${def}</td>
                     </tr>
                 `;
             });
-
             html += `
                     </tbody>
                 </table>
@@ -468,7 +461,6 @@ function inicializarManejadoresArchivosDigitales() {
                 </div>
             `;
         }
-
         html += `</div>`;
         return html;
     }
@@ -592,28 +584,6 @@ function inicializarManejadoresArchivosDigitales() {
         document.getElementById('formTitulo').textContent = "Matricular Estudiante";
         document.getElementById('bannerEdicion').style.display = "none";
 
-        base64DocumentosTemporales = {
-            dni_alumno: null,
-            partida_nac: null,
-            cert_primaria: null,
-            buena_salud: null,
-            carnet_vacunas: null,
-            dni_tutor: null
-        };
-
-        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor'];
-               llavesRequisitos.forEach(key => {
-            actualizarFilaUIArchivo(key, base64DocumentosTemporales[key], `Historico_${key}`);
-        });
-    }
-        // Asegúrate de que después de tu bloque sigan estas líneas finales:
-    
-    function salirModoEdicion() {
-        if (formInscripcion) formInscripcion.reset();
-        document.getElementById('idOriginalEdicion').value = "";
-        document.getElementById('formTitulo').textContent = "Matricular Estudiante";
-        document.getElementById('bannerEdicion').style.display = "none";
-        
         base64DocumentosTemporales = {
             dni_alumno: null,
             partida_nac: null,
