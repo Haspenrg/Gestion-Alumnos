@@ -68,47 +68,56 @@
 
     // --- MANEJADOR REACTIVO CON ADVERTENCIA DE DUPLICADOS Y ELIMINACIÓN ---
     function inicializarManejadoresArchivosDigitales() {
-        const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
-        inputsArchivos.forEach(input => {
-            // Interceptamos el click: si ya existe un documento, se advierte al usuario
-            input.addEventListener('click', function(e) {
-                const key = this.getAttribute('data-key');
-                if (base64DocumentosTemporales[key]) {
-                    const confirmarCambio = confirm(`Atención:\nYa se encuentra cargado un documento en este casillero.\n\n¿Desea eliminar el archivo existente para seleccionar uno nuevo?`);
-                    if (!confirmarCambio) {
-                        e.preventDefault(); // Cancela la apertura del explorador nativo
-                    } else {
-                        // El usuario aceptó vaciar el archivo para cargar uno nuevo
-                        base64DocumentosTemporales[key] = null;
-                        actualizarFilaUIArchivo(key, null);
-                    }
+    const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
+    inputsArchivos.forEach(input => {
+        // Interceptamos el click para gestionar la eliminación o vaciado
+        input.addEventListener('click', function(e) {
+            const key = this.getAttribute('data-key');
+            
+            // Si ya existe un documento cargado, gestionamos el vaciado completo
+            if (base64DocumentosTemporales[key]) {
+                // Bloqueamos la apertura automática del explorador nativo
+                e.preventDefault(); 
+                
+                const confirmarEliminacion = confirm(`Atención:\nYa se encuentra cargado un documento en este casillero.\n\n¿Desea eliminar el archivo por completo y dejar el casillero vacío?`);
+                
+                if (confirmarEliminacion) {
+                    // El usuario aceptó: limpiamos el estado y la interfaz por completo
+                    base64DocumentosTemporales[key] = null;
+                    actualizarFilaUIArchivo(key, null);
+                    alert("El documento ha sido removido del legajo temporal.");
                 }
-            });
-
-            input.addEventListener('change', function(e) {
-                const archivo = e.target.files[0];
-                const key = this.getAttribute('data-key');
-                if (!archivo) return;
-
-                // Validación de Tamaño: 1 MB máximo (1024 * 1024 bytes)
-                const limiteMaximoBytes = 1024 * 1024;
-                if (archivo.size > limiteMaximoBytes) {
-                    alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
-                    this.value = "";
-                    return;
-                }
-
-                const lectorBinario = new FileReader();
-                lectorBinario.onload = function(evt) {
-                    const stringBase64Final = evt.target.result;
-                    base64DocumentosTemporales[key] = stringBase64Final;
-                    actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
-                };
-                lectorBinario.readAsDataURL(archivo);
-                this.value = "";
-            });
+                // Si cancela, no hace nada y el archivo viejo se preserva intacto
+            }
+            // Si NO existe documento (está en null), el e.preventDefault() no se ejecuta 
+            // y el navegador abre el explorador nativo de forma normal.
         });
-    }
+
+        input.addEventListener('change', function(e) {
+            const archivo = e.target.files[0];
+            const key = this.getAttribute('data-key');
+            if (!archivo) return;
+
+            // Validación de Tamaño: 1 MB máximo (1024 * 1024 bytes)
+            const limiteMaximoBytes = 1024 * 1024;
+            if (archivo.size > limiteMaximoBytes) {
+                alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
+                this.value = "";
+                return;
+            }
+
+            const lectorBinario = new FileReader();
+            lectorBinario.onload = function(evt) {
+                const stringBase64Final = evt.target.result;
+                base64DocumentosTemporales[key] = stringBase64Final;
+                actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
+            };
+            lectorBinario.readAsDataURL(archivo);
+            this.value = "";
+        });
+    });
+}
+
 
     function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
         const chk = document.getElementById(`chk-${key}`);
