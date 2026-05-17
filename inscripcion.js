@@ -31,6 +31,7 @@
             window.location.href = "index.html";
             return;
         }
+
         usuarioLogueado = JSON.parse(datosSesionRaw);
         rolNormalizado = usuarioLogueado.rol.toLowerCase().trim();
 
@@ -47,12 +48,11 @@
 
         if (formInscripcion) formInscripcion.addEventListener('submit', guardarLegajoDigital);
         document.getElementById('btnCancelarEdicion')?.addEventListener('click', salirModoEdicion);
-
         document.getElementById('filtroCicloLectivo').addEventListener('change', procesarFiltrosYNomina);
         document.getElementById('filtroBusquedaRapida').addEventListener('input', procesarFiltrosYNomina);
         document.getElementById('filtroEstadoMatricula').addEventListener('change', procesarFiltrosYNomina);
         document.getElementById('filtroAuditoriaDocs').addEventListener('change', procesarFiltrosYNomina);
-        
+
         if (selectCursoFiltro) {
             selectCursoFiltro.addEventListener('change', () => {
                 gestionarHabilitacionBotoneraLote();
@@ -63,49 +63,55 @@
         btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
         btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
         btnCerrarModal?.addEventListener('click', cerrarModalPrevisualizacion);
-
         document.getElementById('estadoAlumno')?.addEventListener('change', evaluarEstadoMesaEntrada);
     });
 
     // --- INTEGRACIÓN: MANEJADOR DINÁMICO DE ARCHIVOS DIGITALES (FIX) ---
-    function inicializarManejadoresArchivosDigitales() {
-        const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
-        
-        inputsArchivos.forEach(input => {
-            input.addEventListener('change', function(e) {
-                const archivo = e.target.files[0];
-                const key = this.getAttribute('data-key');
-                if (!archivo) return;
+ // BUSCA ESTA FUNCIÓN EN INSCRIPCION.JS Y REEMPLÁZALA POR ESTA VERSIÓN:
 
-                // Validación Coercitiva de Tamaño: 1 MB máximo (1024 * 1024 bytes)
-                const limiteMaximoBytes = 1024 * 1024;
-                if (archivo.size > limiteMaximoBytes) {
-                    alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para resguardo de la memoria local.\nPor favor, optimice o reduzca el peso de la imagen.`);
-                    this.value = ""; // Destruir selección
-                    return;
-                }
+function inicializarManejadoresArchivosDigitales() {
+    const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
+    inputsArchivos.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const archivo = e.target.files[0]; // <--- EL CAMBIO ESTÁ AQUÍ (Agrega el [0])
+            const key = this.getAttribute('data-key');
+            if (!archivo) return;
 
-                const lectorBinario = new FileReader();
-                lectorBinario.onload = function(evt) {
-                    const stringBase64Final = evt.target.result;
-                    
-                    // Sincronizar memoria temporal del formulario y encender UI reactiva
-                    base64DocumentosTemporales[key] = stringBase64Final;
-                    
-                    const chk = document.getElementById(`chk-${key}`);
-                    if (chk) chk.checked = true;
+            // Validación de Tamaño: 1 MB máximo (1024 * 1024 bytes)
+            const limiteMaximoBytes = 1024 * 1024;
+            if (archivo.size > limiteMaximoBytes) {
+                alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
+                this.value = ""; 
+                return;
+            }
 
-                    const btnVer = document.getElementById(`view-${key}`);
-                    if (btnVer) {
-                        btnVer.disabled = false;
-                        btnVer.onclick = function() {
-                            abrirDocumentoPestanaNueva(stringBase64Final, archivo.name);
-                        };
-                    }
-                };
-                lectorBinario.readAsDataURL(archivo);
-            });
+            const lectorBinario = new FileReader();
+            lectorBinario.onload = function(evt) {
+                const stringBase64Final = evt.target.result;
+                base64DocumentosTemporales[key] = stringBase64Final;
+                actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
+            };
+            lectorBinario.readAsDataURL(archivo);
+            this.value = ""; 
         });
+    });
+}
+    function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
+        const chk = document.getElementById(`chk-${key}`);
+        if (chk) chk.checked = !!base64Data;
+
+        const btnVer = document.getElementById(`view-${key}`);
+        if (btnVer) {
+            if (base64Data) {
+                btnVer.disabled = false;
+                btnVer.onclick = function() {
+                    abrirDocumentoPestanaNueva(base64Data, nombreArchivo);
+                };
+            } else {
+                btnVer.disabled = true;
+                btnVer.onclick = null;
+            }
+        }
     }
 
     function abrirDocumentoPestanaNueva(base64Data, nombreArchivo) {
@@ -114,7 +120,7 @@
             alert("Error: El navegador bloqueó la ventana emergente. Por favor, autorice los pop-ups para este sitio.");
             return;
         }
-        
+
         // Crear un entorno HTML limpio e inyectar el binario directamente (Soporta PDF e Imágenes)
         ventanaEmergente.document.write(`
             <html>
@@ -127,8 +133,8 @@
                 </style>
             </head>
             <body>
-                ${base64Data.startsWith("data:application/pdf") 
-                    ? `<iframe src="${base64Data}"></iframe>` 
+                ${base64Data.startsWith("data:application/pdf")
+                    ? `<iframe src="${base64Data}"></iframe>`
                     : `<img src="${base64Data}" alt="Documentación Escolar Legal">`
                 }
             </body>
@@ -153,10 +159,10 @@
 
     async function inicializarSelectoresCursos() {
         const coursesRaw = localStorage.getItem('cursosColegio');
-        const cursos = coursesRaw ? JSON.parse(cursosRaw) : [];
+        const cursos = coursesRaw ? JSON.parse(coursesRaw) : [];
         const selectForm = document.getElementById('selectCursoAlumno');
-        
         if (!selectForm || !selectCursoFiltro) return;
+
         selectForm.innerHTML = '<option value="" disabled selected>Seleccione el curso destino...</option>';
         selectCursoFiltro.innerHTML = '<option value="">Todos los Cursos</option>';
 
@@ -164,7 +170,7 @@
             const texto = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
             selectForm.add(new Option(texto, curso.id));
             const numeroAnio = curso.ciclo ? curso.ciclo.charAt(0) : "1";
-            selectCursoFiltro.add(new Option(`${numeroAnio}° "${curso.division}"`, curso.id));
+            selectCursoFiltro.add(new Option(`${numeroAnio} ° "${curso.division}"`, curso.id));
         });
     }
 
@@ -177,7 +183,6 @@
 
     async function procesarFiltrosYNomina() {
         if (!tbodyAlumnos) return;
-        
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         let alumnos = alumnosRaw ? JSON.parse(alumnosRaw) : [];
         const cursosRaw = localStorage.getItem('cursosColegio');
@@ -203,6 +208,7 @@
             if (alumno.cicloLectivo !== ciclo) return false;
             if (cursoFiltro && alumno.cursoId !== cursoFiltro) return false;
             if (estadoFiltro && alumno.estado !== estadoFiltro) return false;
+
             if (docFiltro) {
                 // Cálculo de legajo completo basado en la existencia de los strings Base64 digitalizados
                 const dMap = alumno.documentosDigitales || {};
@@ -211,6 +217,7 @@
                 if (docFiltro === "Completo" && !esCompleto) return false;
                 if (docFiltro === "Incompleto" && esCompleto) return false;
             }
+
             if (busqueda) {
                 const mNombre = alumno.nombre.toLowerCase().includes(busqueda);
                 const mDni = alumno.dni.includes(busqueda);
@@ -244,8 +251,7 @@
             }
 
             const curso = cursos.find(c => c.id === alumno.cursoId);
-            const textoCurso = curso ? `${curso.ciclo.charAt(0)}° "${curso.division}"` : "Sin Asignar";
-            
+            const textoCurso = curso ? `${curso.ciclo.charAt(0)} ° "${curso.division}"` : "Sin Asignar";
             const dMap = alumno.documentosDigitales || {};
             const totalDocs = Object.values(dMap).filter(v => v !== null && v !== undefined).length;
 
@@ -258,17 +264,20 @@
                 : `<span class="badge-curso">${alumno.estado}</span>`;
 
             let celdaAccionesHTML = `<div style="display:flex; gap:4px; justify-content:center;">`;
+
             if (alumno.estado === "Regular") {
                 celdaAccionesHTML += `
                     <button type="button" class="btn-accion-fila btn-fila-informe" onclick="emitirDocumentoIndividual('${alumno.dni}', 'INFORME')" title="Informe Pedagógico Analítico">📊</button>
                     <button type="button" class="btn-accion-fila btn-fila-boletin" onclick="emitirDocumentoIndividual('${alumno.dni}', 'BOLETIN')" title="Boletín de Calificaciones Oficial">📜</button>
                 `;
             }
+
             if (rolNormalizado !== "preceptor") {
                 celdaAccionesHTML += `<button type="button" class="btn-accion-eliminar" onclick="removerLegajoAlumno('${alumno.dni}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Eliminar</button>`;
             } else if (alumno.estado !== "Regular") {
                 celdaAccionesHTML += `<span style="color:#94a3b8; font-size:11px;">Solo Vista</span>`;
             }
+
             celdaAccionesHTML += `</div>`;
 
             tr.innerHTML = `
@@ -284,6 +293,7 @@
                 <td style="vertical-align: top; padding-top: 14px;">${auditoriaHtml}</td>
                 <td style="vertical-align: top; padding-top: 10px;">${celdaAccionesHTML}</td>
             `;
+
             tbodyAlumnos.appendChild(tr);
         });
     }
@@ -298,14 +308,14 @@
         if (modalContenedor) modalContenedor.style.display = "flex";
     };
 
-    async function emitirDocumentosEn Lote(tipo) {
+    async function emitirDocumentosEnLote(tipo) {
         const cursoId = selectCursoFiltro.value;
         if (!cursoId) return;
 
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         const ciclo = document.getElementById('filtroCicloLectivo').value;
-        
-        let listaAlumnos = (alumnosRaw ? JSON.parse(alumnosRaw) : []).filter(a => 
+
+        let listaAlumnos = (alumnosRaw ? JSON.parse(alumnosRaw) : []).filter(a =>
             a.cursoId === cursoId && a.estado === "Regular" && a.cicloLectivo === ciclo
         );
 
@@ -337,20 +347,19 @@
     }
 
     function construirHTMLHojaDocumento(alumno, tipo) {
-        const cursosRaw = localStorage.getItem('cursosColegio');
-        const cursoObj = (cursosRaw ? JSON.parse(cursosRaw) : []).find(c => c.id === alumno.cursoId) || {};
+        const mergeCursosRaw = localStorage.getItem('cursosColegio');
+        const cursoObj = (mergeCursosRaw ? JSON.parse(mergeCursosRaw) : []).find(c => c.id === alumno.cursoId) || {};
         const materiasPlan = cursoObj.materias || [];
 
         const notasRaw = localStorage.getItem('calificacionesColegio');
-        const registroGlobalNotas = notasRaw ? JSON.parse(notasRaw) : [];
+        const registroGlobalNotas = notasRaw ? JSON.parse(notesRaw || '[]') : [];
 
         const anioNumero = cursoObj.ciclo ? cursoObj.ciclo.charAt(0) : "1";
-        const txtCursoVisible = `${anioNumero}° "${cursoObj.division}" (${cursoObj.turno})`;
+        const txtCursoVisible = `${anioNumero} ° "${cursoObj.division}" (${cursoObj.turno})`;
 
         let claseHoja = (tipo === 'BOLETIN') ? "contenedor-hoja-pdf hoja-formato-boletin" : "contenedor-hoja-pdf";
-
         let html = `<div class="${claseHoja}">`;
-        
+
         html += `
             <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;">
                 <h2 style="margin:0; font-size:16px; text-transform:uppercase;">${tipo === 'BOLETIN' ? 'Boletín de Calificaciones Oficial' : 'Informe Pedagógico de Trayectorias'}</h2>
@@ -384,7 +393,6 @@
             materiasPlan.forEach(materia => {
                 const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
                 const n = p.notas || {};
-
                 const c1 = calcularNotaFase(n.trim1?.n2, n.trim1?.ef);
                 const c2 = calcularNotaFase(n.trim2?.n2, n.trim2?.ef);
                 const notaFinal = c2 >= 6 ? c2 : (p.febrero || p.diciembre || "-");
@@ -435,7 +443,6 @@
             materiasPlan.forEach(materia => {
                 const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
                 const n = p.notas || {};
-
                 const c1 = calcularNotaFase(n.trim1?.n2, n.trim1?.ef);
                 const c2 = calcularNotaFase(n.trim2?.n2, n.trim2?.ef);
                 const def = c2 >= 6 ? c2 : (p.febrero || p.diciembre || "-");
@@ -443,9 +450,9 @@
                 html += `
                     <tr>
                         <td style="text-align:left; font-weight:500;">${materia}</td>
-                        <td>${n.trim1?.n1 || "-"}</td><td>${n.trim1?.n2 || "-"}</td><td>${n.trim1?.ef || "-"}</td>
+                        <div><td>${n.trim1?.n1 || "-"}</td><td>${n.trim1?.n2 || "-"}</td><td>${n.trim1?.ef || "-"}</td></div>
                         <td style="font-weight:bold; background:#f8fafc;">${c1}</td>
-                        <td>${n.trim2?.n1 || "-"}</td><td>${n.trim2?.n2 || "-"}</td><td>${n.trim2?.ef || "-"}</td>
+                        <div><td>${n.trim2?.n1 || "-"}</td><td>${n.trim2?.n2 || "-"}</td><td>${n.trim2?.ef || "-"}</td></div>
                         <td style="font-weight:bold; background:#f8fafc;">${c2}</td>
                         <td>${p.diciembre || "-"}</td><td>${p.febrero || "-"}</td>
                         <td style="font-weight:bold; background:#f1f5f9;">${def}</td>
@@ -468,7 +475,9 @@
 
     function calcularNotaFase(n2, ef) {
         if (!n2) return "-";
-        return n2 >= 6 ? n2 : (ef || "-");
+        const numN2 = parseInt(n2, 10);
+        if (isNaN(numN2)) return "-";
+        return numN2 >= 6 ? numN2 : (ef || "-");
     }
 
     function obtenerClaseColorNota(nota) {
@@ -483,7 +492,6 @@
         modalCuerpo.innerHTML = "";
     }
 
-    // --- GUARDADO ASÍNCRONO SEGURO CON MAPA DE IMAGENES BINARIAS ---
     async function guardarLegajoDigital(e) {
         e.preventDefault();
         const idEdicion = document.getElementById('idOriginalEdicion').value;
@@ -519,15 +527,12 @@
             observaciones: document.getElementById('observacionesAlumno').value.trim(),
             cicloLectivo: cicloActual,
             fechaInscripcion: idEdicion ? (alumnos.find(a => a.dni === idEdicion)?.fechaInscripcion || fechaFormateada) : fechaFormateada,
-            
-            // Persistencia del mapa binario completo en el JSON estructurado
             documentosDigitales: { ...base64DocumentosTemporales }
         };
 
         if (idEdicion) {
             const idx = alumnos.findIndex(a => a.dni === idEdicion);
             if (idx !== -1) {
-                // Al editar, si el usuario no cargó una nueva foto, retenemos el binario histórico existente
                 const dHistorico = alumnos[idx].documentosDigitales || {};
                 for (let k in datosLegajo.documentosDigitales) {
                     if (!datosLegajo.documentosDigitales[k]) datosLegajo.documentosDigitales[k] = dHistorico[k] || null;
@@ -544,7 +549,6 @@
         await procesarFiltrosYNomina();
     }
 
-    // --- LECTURA Y CONVERSIÓN RETROALIMENTADA AL ENTRAR EN MODO EDICIÓN ---
     function cargarLegajoEnFormulario(dni) {
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         const alumnos = alumnosRaw ? JSON.parse(alumnosRaw) : [];
@@ -571,8 +575,76 @@
         document.getElementById('dniTutor').value = alumno.tutorDni || "";
         document.getElementById('observacionesAlumno').value = alumno.observaciones || "";
 
-        // Resetear y remapear la UI reactiva de documentos digitalizados
+        evaluarEstadoMesaEntrada();
+
         const dMap = alumno.documentosDigitales || {};
         base64DocumentosTemporales = { ...dMap };
 
-        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'bu
+        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor'];
+        llavesRequisitos.forEach(key => {
+            actualizarFilaUIArchivo(key, base64DocumentosTemporales[key], `Legajo_${alumno.dni}_${key}`);
+        });
+    }
+
+    function salirModoEdicion() {
+        if (formInscripcion) formInscripcion.reset();
+        document.getElementById('idOriginalEdicion').value = "";
+        document.getElementById('formTitulo').textContent = "Matricular Estudiante";
+        document.getElementById('bannerEdicion').style.display = "none";
+
+        base64DocumentosTemporales = {
+            dni_alumno: null,
+            partida_nac: null,
+            cert_primaria: null,
+            buena_salud: null,
+            carnet_vacunas: null,
+            dni_tutor: null
+        };
+
+        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor'];
+               llavesRequisitos.forEach(key => {
+            actualizarFilaUIArchivo(key, base64DocumentosTemporales[key], `Historico_${key}`);
+        });
+    }
+        // Asegúrate de que después de tu bloque sigan estas líneas finales:
+    
+    function salirModoEdicion() {
+        if (formInscripcion) formInscripcion.reset();
+        document.getElementById('idOriginalEdicion').value = "";
+        document.getElementById('formTitulo').textContent = "Matricular Estudiante";
+        document.getElementById('bannerEdicion').style.display = "none";
+        
+        base64DocumentosTemporales = {
+            dni_alumno: null,
+            partida_nac: null,
+            cert_primaria: null,
+            buena_salud: null,
+            carnet_vacunas: null,
+            dni_tutor: null
+        };
+
+        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor'];
+        llavesRequisitos.forEach(key => {
+            const chk = document.getElementById(`chk-${key}`);
+            if (chk) chk.checked = false;
+            const btnVer = document.getElementById(`view-${key}`);
+            if (btnVer) {
+                btnVer.disabled = true;
+                btnVer.onclick = null;
+            }
+        });
+        evaluarEstadoMesaEntrada();
+    }
+
+    window.removerLegajoAlumno = function(dni) {
+        if (!confirm("¿Está seguro de eliminar este legajo por completo?")) return;
+        const alumnosRaw = localStorage.getItem('alumnosColegio');
+        let alumnos = alumnosRaw ? JSON.parse(alumnosRaw) : [];
+        alumnos = alumnos.filter(a => a.dni !== dni);
+        localStorage.setItem('alumnosColegio', JSON.stringify(alumnos));
+        procesarFiltrosYNomina();
+    };
+
+})();
+
+
