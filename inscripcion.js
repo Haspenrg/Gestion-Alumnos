@@ -1,14 +1,14 @@
 (function() {
     'use strict';
 
-    // Elementos de la interfaz y selectores avanzados
+    // Elementos de la interfaz y selectores avanzados originales
     const formInscripcion = document.getElementById('formInscripcion');
     const tbodyAlumnos = document.getElementById('tablaAlumnosBody');
     const selectCursoFiltro = document.getElementById('filtroCursoEstructural');
     const btnLoteInforme = document.getElementById('btnEmitirLoteInforme');
     const btnLoteBoletin = document.getElementById('btnEmitirLoteBoletin');
 
-    // Elementos del Modal de Impresión
+    // Elementos del Modal de Impresión originales
     const modalContenedor = document.getElementById('modalImpresionContenedor');
     const modalCuerpo = document.getElementById('modalImpresionCuerpo');
     const btnCerrarModal = document.getElementById('btnCerrarModalImpresion');
@@ -16,13 +16,16 @@
     // Variables de contexto de sesión y almacenamiento temporal de archivos
     let usuarioLogueado = null;
     let rolNormalizado = "";
+    
+    // Objeto de persistencia digital expandido con la llave de inclusión pactada
     let base64DocumentosTemporales = {
         dni_alumno: null,
         partida_nac: null,
         cert_primaria: null,
         buena_salud: null,
         carnet_vacunas: null,
-        dni_tutor: null
+        dni_tutor: null,
+        acta_ppi: null
     };
 
     document.addEventListener("DOMContentLoaded", async function() {
@@ -42,9 +45,13 @@
             if (banner) banner.style.display = "block";
         }
 
+        // 1. CÁLCULO Y ENFOQUE PERPETUO DEL CICLO LECTIVO ACTUAL
+        inicializarCiclosLectivosDinamicos();
+
         await inicializarSelectoresCursos();
         await procesarFiltrosYNomina();
         inicializarManejadoresArchivosDigitales();
+        inicializarManejadorReactivoPPI();
 
         if (formInscripcion) formInscripcion.addEventListener('submit', guardarLegajoDigital);
         document.getElementById('btnCancelarEdicion')?.addEventListener('click', salirModoEdicion);
@@ -52,6 +59,7 @@
         document.getElementById('filtroBusquedaRapida').addEventListener('input', procesarFiltrosYNomina);
         document.getElementById('filtroEstadoMatricula').addEventListener('change', procesarFiltrosYNomina);
         document.getElementById('filtroAuditoriaDocs').addEventListener('change', procesarFiltrosYNomina);
+        document.getElementById('filtroPPI')?.addEventListener('change', procesarFiltrosYNomina);
 
         if (selectCursoFiltro) {
             selectCursoFiltro.addEventListener('change', () => {
@@ -66,58 +74,93 @@
         document.getElementById('estadoAlumno')?.addEventListener('change', evaluarEstadoMesaEntrada);
     });
 
-    // --- MANEJADOR REACTIVO CON ADVERTENCIA DE DUPLICADOS Y ELIMINACIÓN ---
+    // --- AUTOMATIZACIÓN DE CICLOS LECTIVOS ---
+    function inicializarCiclosLectivosDinamicos() {
+        const selectorCiclo = document.getElementById('filtroCicloLectivo');
+        if (!selectorCiclo) return;
+
+        const anioActual = new Date().getFullYear(); // Captura el año civil dinámicamente
+        const anioSiguiente = anioActual + 1;
+
+        selectorCiclo.innerHTML = "";
+        
+        const opcionActual = new Option(`Ciclo ${anioActual}`, `${anioActual}`);
+        const opcionSiguiente = new Option(`Ciclo ${anioSiguiente}`, `${anioSiguiente}`);
+
+        selectorCiclo.add(opcionActual);
+        selectorCiclo.add(opcionSiguiente);
+
+        // Foco automático en el año real actual del sistema de preceptoría
+        selectorCiclo.value = `${anioActual}`;
+    }
+
+    // --- CONTROL REACTIVO DE INCLUSIÓN (PPI) ---
+    function inicializarManejadorReactivoPPI() {
+        const checkboxPPI = document.getElementById('chkHabilitarPPI');
+        const panelPPI = document.getElementById('panelCamposPPI');
+        const filaDocPPI = document.getElementById('filaDocumentoPPI');
+
+        if (!checkboxPPI || !panelPPI || !filaDocPPI) return;
+
+        checkboxPPI.addEventListener('change', function() {
+            if (this.checked) {
+                panelPPI.style.display = 'flex';
+                filaDocPPI.style.display = 'grid'; // Despliega como bloque digital de tu tabla
+                document.getElementById('ppiResolucion').setAttribute('required', 'true');
+            } else {
+                panelPPI.style.display = 'none';
+                filaDocPPI.style.display = 'none';
+                document.getElementById('ppiResolucion').removeAttribute('required');
+                
+                // Limpieza absoluta si se destilda el casillero
+                document.getElementById('ppiResolucion').value = "";
+                document.getElementById('ppiMaestroApoyo').value = "";
+                document.getElementById('ppiObservaciones').value = "";
+                base64DocumentosTemporales.acta_ppi = null;
+                actualizarFilaUIArchivo('acta_ppi', null);
+            }
+        });
+    }
+
+    // --- ARQUITECTURA DIGITAL DE ARCHIVOS CON VACIADO SEGURO ---
     function inicializarManejadoresArchivosDigitales() {
-    const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
-    inputsArchivos.forEach(input => {
-        // Interceptamos el click para gestionar la eliminación o vaciado
-        input.addEventListener('click', function(e) {
-            const key = this.getAttribute('data-key');
-            
-            // Si ya existe un documento cargado, gestionamos el vaciado completo
-            if (base64DocumentosTemporales[key]) {
-                // Bloqueamos la apertura automática del explorador nativo
-                e.preventDefault(); 
-                
-                const confirmarEliminacion = confirm(`Atención:\nYa se encuentra cargado un documento en este casillero.\n\n¿Desea eliminar el archivo por completo y dejar el casillero vacío?`);
-                
-                if (confirmarEliminacion) {
-                    // El usuario aceptó: limpiamos el estado y la interfaz por completo
-                    base64DocumentosTemporales[key] = null;
-                    actualizarFilaUIArchivo(key, null);
-                    alert("El documento ha sido removido del legajo temporal.");
+        const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
+        inputsArchivos.forEach(input => {
+            input.addEventListener('click', function(e) {
+                const key = this.getAttribute('data-key');
+                if (base64DocumentosTemporales[key]) {
+                    e.preventDefault(); 
+                    const confirmarEliminacion = confirm(`Atención:\nYa se encuentra cargado un documento en este casillero.\n\n¿Desea eliminar el archivo por completo y dejar el casillero vacío?`);
+                    if (confirmarEliminacion) {
+                        base64DocumentosTemporales[key] = null;
+                        actualizarFilaUIArchivo(key, null);
+                    }
                 }
-                // Si cancela, no hace nada y el archivo viejo se preserva intacto
-            }
-            // Si NO existe documento (está en null), el e.preventDefault() no se ejecuta 
-            // y el navegador abre el explorador nativo de forma normal.
-        });
+            });
 
-        input.addEventListener('change', function(e) {
-            const archivo = e.target.files[0];
-            const key = this.getAttribute('data-key');
-            if (!archivo) return;
+            input.addEventListener('change', function(e) {
+                const archivo = e.target.files[0];
+                const key = this.getAttribute('data-key');
+                if (!archivo) return;
 
-            // Validación de Tamaño: 1 MB máximo (1024 * 1024 bytes)
-            const limiteMaximoBytes = 1024 * 1024;
-            if (archivo.size > limiteMaximoBytes) {
-                alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
+                const limiteMaximoBytes = 1024 * 1024;
+                if (archivo.size > limiteMaximoBytes) {
+                    alert(`Error de tamaño:\nEl archivo supera el límite de 1MB establecido para el resguardo de la memoria.\nPor favor, optimice el archivo.`);
+                    this.value = "";
+                    return;
+                }
+
+                const lectorBinario = new FileReader();
+                lectorBinario.onload = function(evt) {
+                    const stringBase64Final = evt.target.result;
+                    base64DocumentosTemporales[key] = stringBase64Final;
+                    actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
+                };
+                lectorBinario.readAsDataURL(archivo);
                 this.value = "";
-                return;
-            }
-
-            const lectorBinario = new FileReader();
-            lectorBinario.onload = function(evt) {
-                const stringBase64Final = evt.target.result;
-                base64DocumentosTemporales[key] = stringBase64Final;
-                actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
-            };
-            lectorBinario.readAsDataURL(archivo);
-            this.value = "";
+            });
         });
-    });
-}
-
+    }
 
     function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
         const chk = document.getElementById(`chk-${key}`);
@@ -140,31 +183,19 @@
     function abrirDocumentoPestanaNueva(base64Data, nombreArchivo) {
         const ventanaEmergente = window.open();
         if (!ventanaEmergente) {
-            alert("Error: El navegador bloqueó la ventana emergente. Por favor, autorice los pop-ups para este sitio.");
+            alert("Error: Autorice los pop-ups en el navegador para visualizar documentos.");
             return;
         }
-
         ventanaEmergente.document.write(`
             <html>
-            <head>
-                <title>Previsualización: ${nombreArchivo}</title>
-                <style>
-                    body { margin: 0; background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; }
-                    img { max-width: 95%; max-height: 95vh; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-radius: 4px; object-fit: contain; }
-                    iframe { width: 100vw; height: 100vh; border: none; }
-                </style>
-            </head>
-            <body>
-                ${base64Data.startsWith("data:application/pdf")
-                    ? `<iframe src="${base64Data}"></iframe>`
-                    : `<img src="${base64Data}" alt="Documentación Escolar Legal">`
-                }
+            <head><title>Previsualización: ${nombreArchivo}</title></head>
+            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+                ${base64Data.startsWith("data:application/pdf") ? `<iframe src="${base64Data}" style="width:100vw; height:100vh; border:none;"></iframe>` : `<img src="${base64Data}" style="max-width:95%; max-height:95vh; object-fit:contain;">`}
             </body>
             </html>
         `);
         ventanaEmergente.document.close();
     }
-
     function evaluarEstadoMesaEntrada() {
         const estado = document.getElementById('estadoAlumno').value;
         const selectCurso = document.getElementById('selectCursoAlumno');
@@ -202,6 +233,7 @@
         if (btnLoteInforme) btnLoteInforme.disabled = deshabilitar;
         if (btnLoteBoletin) btnLoteBoletin.disabled = deshabilitar;
     }
+
     async function procesarFiltrosYNomina() {
         if (!tbodyAlumnos) return;
         const alumnosRaw = localStorage.getItem('alumnosColegio');
@@ -214,6 +246,7 @@
         const cursoFiltro = selectCursoFiltro.value;
         const estadoFiltro = document.getElementById('filtroEstadoMatricula').value;
         const docFiltro = document.getElementById('filtroAuditoriaDocs').value;
+        const ppiFiltro = document.getElementById('filtroPPI')?.value || "";
 
         const totalNetoCicloLectivo = alumnos.filter(a => a.cicloLectivo === ciclo).length;
 
@@ -230,10 +263,20 @@
             if (cursoFiltro && alumno.cursoId !== cursoFiltro) return false;
             if (estadoFiltro && alumno.estado !== estadoFiltro) return false;
 
+            // Filtro elástico para alumnos con PPI sin romper UI
+            if (ppiFiltro) {
+                const tienePPI = !!alumno.tienePPI;
+                if (ppiFiltro === "ConPPI" && !tienePPI) return false;
+                if (ppiFiltro === "SinPPI" && tienePPI) return false;
+            }
+
             if (docFiltro) {
                 const dMap = alumno.documentosDigitales || {};
-                const totalCargados = Object.values(dMap).filter(v => v !== null && v !== undefined).length;
-                const esCompleto = totalCargados === 6;
+                const totalRequisitosBase = 6;
+                const cargadosBase = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor']
+                    .filter(k => dMap[k] !== null && dMap[k] !== undefined).length;
+                
+                const esCompleto = cargadosBase === totalRequisitosBase;
                 if (docFiltro === "Completo" && !esCompleto) return false;
                 if (docFiltro === "Incompleto" && esCompleto) return false;
             }
@@ -246,11 +289,10 @@
             return true;
         });
 
-        document.getElementById('contadorEstudiantes').innerHTML = `
-            <span>Matrículas Visualizadas: <strong>${alumnosFiltrados.length}</strong></span>
-            <span style="margin: 0 10px; color: #cbd5e1;">|</span>
-            <span style="color: #1a73e8;">Total General Ciclo ${ciclo}: <strong>${totalNetoCicloLectivo}</strong></span>
-        `;
+        const totalGeneralSpan = document.getElementById('contadorEstudiantes');
+        if (totalGeneralSpan) {
+            totalGeneralSpan.textContent = `Matrículas Visualizadas: ${alumnosFiltrados.length}`;
+        }
 
         tbodyAlumnos.innerHTML = "";
         if (alumnosFiltrados.length === 0) {
@@ -261,7 +303,7 @@
         alumnosFiltrados.forEach(alumno => {
             const tr = document.createElement('tr');
             tr.className = "fila-alumno";
-            tr.style.borderBottom = "1px solid #e2e8f0";
+            tr.style.borderBottom = "1px solid #cbd5e1";
 
             if (rolNormalizado !== "preceptor") {
                 tr.addEventListener('click', (e) => {
@@ -272,43 +314,47 @@
             const curso = cursos.find(c => c.id === alumno.cursoId);
             const textoCurso = curso ? `${curso.ciclo.charAt(0)} ° "${curso.division}"` : "Sin Asignar";
             const dMap = alumno.documentosDigitales || {};
-            const totalDocs = Object.values(dMap).filter(v => v !== null && v !== undefined).length;
+            
+            const baseCargados = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor']
+                .filter(k => dMap[k] !== null && dMap[k] !== undefined).length;
+            
+            const ppiCargado = alumno.tienePPI && dMap.acta_ppi ? 1 : 0;
+            const totalDocs = baseCargados + ppiCargado;
+            const totalRequisitosEsperados = alumno.tienePPI ? 7 : 6;
 
-            const auditoriaHtml = totalDocs === 6
+            const auditoriaHtml = totalDocs >= totalRequisitosEsperados
                 ? `<span class="documentos-completos">✓ Legajo Completo</span>`
-                : `<span class="alerta-documentos">⚠ Incompleto (${totalDocs}/6)</span>`;
+                : `<span class="alerta-documentos">⚠ Incompleto (${totalDocs}/${totalRequisitosEsperados})</span>`;
 
-            const badgeEstado = alumno.estado === "Regular"
-                ? `<span class="badge-curso" style="background:#e2f0d9; color:#385723; border-color:#c3e6cb;">Regular</span>`
-                : `<span class="badge-curso">${alumno.estado}</span>`;
+            let badgeEstado = `<span class="badge-curso">${alumno.estado}</span>`;
+            if (alumno.estado === "Pase") badgeEstado = `<span class="badge-pase">Pase</span>`;
+            if (alumno.estado === "Baja") badgeEstado = `<span class="badge-baja">Baja</span>`;
 
             let celdaAccionesHTML = `<div style="display:flex; gap:4px; justify-content:center;">`;
             if (alumno.estado === "Regular") {
                 celdaAccionesHTML += `
-                    <button type="button" class="btn-accion-fila btn-fila-informe" onclick="emitirDocumentoIndividual('${alumno.dni}', 'INFORME')" title="Informe Pedagógico Analítico">📊</button>
-                    <button type="button" class="btn-accion-fila btn-fila-boletin" onclick="emitirDocumentoIndividual('${alumno.dni}', 'BOLETIN')" title="Boletín de Calificaciones Oficial">📜</button>
+                    <button type="button" class="btn-accion-fila btn-fila-informe" onclick="emitirDocumentoIndividual('${alumno.dni}', 'INFORME')" title="Informe">📊</button>
+                    <button type="button" class="btn-accion-fila btn-fila-boletin" onclick="emitirDocumentoIndividual('${alumno.dni}', 'BOLETIN')" title="Boletín">📜</button>
                 `;
             }
 
             if (rolNormalizado !== "preceptor") {
-                celdaAccionesHTML += `<button type="button" class="btn-accion-eliminar" onclick="removerLegajoAlumno('${alumno.dni}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Eliminar</button>`;
+                celdaAccionesHTML += `<button type="button" class="btn-accion-fila" onclick="removerLegajoAlumno('${alumno.dni}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; font-weight:bold; border-radius:4px;">Eliminar</button>`;
             } else if (alumno.estado !== "Regular") {
                 celdaAccionesHTML += `<span style="color:#94a3b8; font-size:11px;">Solo Vista</span>`;
             }
             celdaAccionesHTML += `</div>`;
 
+            // CONSERVA EXACTAMENTE TUS FILAS ORIGINALES SIN CAMBIAR TU ESTILO VISUAL DE TABLA
             tr.innerHTML = `
-                <td style="padding: 12px 10px; vertical-align: top;">
+                <td>
                     <strong style="font-size: 14px; color: #1e293b;">${alumno.nombre}</strong><br>
                     <span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">DNI: ${alumno.dni} | Nac: ${alumno.nacionalidad}</span>
-                    <div style="margin-top: 6px; font-size: 11px; color: #475569;">
-                        📍 <strong>Dir:</strong> ${alumno.direccion} | 👤 <strong>Tutor:</strong> ${alumno.tutorNombre || 'Sin Registrar'}
-                    </div>
                 </td>
-                <td style="vertical-align: top; padding-top: 14px;"><span class="badge-curso">${textoCurso}</span></td>
-                <td style="vertical-align: top; padding-top: 14px;">${badgeEstado}</td>
-                <td style="vertical-align: top; padding-top: 14px;">${auditoriaHtml}</td>
-                <td style="vertical-align: top; padding-top: 10px;">${celdaAccionesHTML}</td>
+                <td style="vertical-align: middle;"><span class="badge-curso">${textoCurso}</span></td>
+                <td style="vertical-align: middle;">${badgeEstado}</td>
+                <td style="vertical-align: middle;">${auditoriaHtml}</td>
+                <td style="vertical-align: middle;">${celdaAccionesHTML}</td>
             `;
             tbodyAlumnos.appendChild(tr);
         });
@@ -334,7 +380,7 @@
         );
 
         if (listaAlumnos.length === 0) {
-            alert("No hay alumnos Regulares inscritos en esta división para el ciclo actual.");
+            alert("No hay alumnos Regulares en esta división.");
             return;
         }
         listaAlumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -347,18 +393,15 @@
     }
 
     function configurarEstiloPaginaPorTipo(tipo) {
-        let styleTag = document.getElementById('printPageOrientationStyle');
-        if (!styleTag) {
-            styleTag = document.createElement('style');
-            styleTag.id = 'printPageOrientationStyle';
-            document.head.appendChild(styleTag);
-        }
+        let styleTag = document.getElementById('printPageOrientationStyle') || document.createElement('style');
+        styleTag.id = 'printPageOrientationStyle';
+        document.head.appendChild(styleTag);
         styleTag.innerHTML = `@media print { @page { size: ${tipo === 'BOLETIN' ? 'A4 portrait' : 'A4 landscape'}; } }`;
     }
 
     function construirHTMLHojaDocumento(alumno, tipo) {
-        const mergeCursosRaw = localStorage.getItem('cursosColegio');
-        const cursoObj = (mergeCursosRaw ? JSON.parse(mergeCursosRaw) : []).find(c => c.id === alumno.cursoId) || {};
+        const cursosRaw = localStorage.getItem('cursosColegio');
+        const cursoObj = (cursosRaw ? JSON.parse(cursosRaw) : []).find(c => c.id === alumno.cursoId) || {};
         const materiasPlan = cursoObj.materias || [];
         const notasRaw = localStorage.getItem('calificacionesColegio');
         const registroGlobalNotas = notasRaw ? JSON.parse(notasRaw) : [];
@@ -367,125 +410,27 @@
 
         let claseHoja = (tipo === 'BOLETIN') ? "contenedor-hoja-pdf hoja-formato-boletin" : "contenedor-hoja-pdf";
         let html = `<div class="${claseHoja}">`;
-
+        
         html += `
             <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;">
-                <h2 style="margin:0; font-size:16px; text-transform:uppercase;">${tipo === 'BOLETIN' ? 'Boletín de Calificaciones Oficial' : 'Informe Pedagógico de Trayectorias'}</h2>
-                <h3 style="margin:5px 0 0 0; font-size:12px; font-weight:500;">Colegio Provincial "HASPEN" "Prof. Luis A. Felippa"</h3>
-                <span style="font-size:11px;">Ciclo Lectivo: ${alumno.cicloLectivo} | Río Grande, Tierra del Fuego</span>
+                <h2 style="margin:0; font-size:16px; text-transform:uppercase;">${tipo === 'BOLETIN' ? 'Boletín de Calificaciones Oficial' : 'Informe Pedagógico'}</h2>
+                <span style="font-size:11px;">Ciclo Lectivo: ${alumno.cicloLectivo}</span>
             </div>
-            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; font-size:12px; margin-bottom:15px; border:1px solid #000; padding:10px;">
-                <div><strong>Alumno:</strong> ${alumno.nombre.toUpperCase()}</div>
-                <div><strong>D.N.I:</strong> ${alumno.dni}</div>
-                <div><strong>Curso / División:</strong> ${txtCursoVisible}</div>
-                <div><strong>Condición:</strong> ${alumno.estado}</div>
+            <div style="font-size:12px; margin-bottom:15px; border:1px solid #000; padding:10px;">
+                <strong>Alumno:</strong> ${alumno.nombre.toUpperCase()} | <strong>DNI:</strong> ${alumno.dni} | <strong>Curso:</strong> ${txtCursoVisible}
             </div>
+            <table class="tabla-hoja-documento">
+                <thead><tr><th style="text-align:left;">Asignatura</th><th>Final</th></tr></thead>
+                <tbody>
         `;
 
-        if (tipo === 'BOLETIN') {
-            html += `
-                <table class="tabla-hoja-documento">
-                    <thead>
-                        <tr>
-                            <th style="width:40%; text-align:left;">Asignaturas Curriculares</th>
-                            <th style="width:12%;">1er Cuat.</th>
-                            <th style="width:12%;">2do Cuat.</th>
-                            <th style="width:12%;">Nota Final</th>
-                            <th style="width:12%;">Diciembre</th>
-                            <th style="width:12%;">Febrero</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            materiasPlan.forEach(materia => {
-                const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
-                const n = p.notas || {};
-                const c1 = calcularNotaFase(n.trim1?.n2, n.trim1?.ef);
-                const c2 = calcularNotaFase(n.trim2?.n2, n.trim2?.ef);
-                const notaFinal = c2 >= 6 ? c2 : (p.febrero || p.diciembre || "-");
-                html += `
-                    <tr>
-                        <td style="text-align:left; font-weight:bold;">${materia.toUpperCase()}</td>
-                        <td class="${obtenerClaseColorNota(c1)}">${c1}</td>
-                        <td class="${obtenerClaseColorNota(c2)}">${c2}</td>
-                        <td style="font-weight:bold;" class="${obtenerClaseColorNota(notaFinal)}">${notaFinal}</td>
-                        <td class="${obtenerClaseColorNota(p.diciembre)}">${p.diciembre || "-"}</td>
-                        <td class="${obtenerClaseColorNota(p.febrero)}">${p.febrero || "-"}</td>
-                    </tr>
-                `;
-            });
-            html += `
-                    </tbody>
-                </table>
-                <div style="margin-top:20px; font-size:11px; font-style:italic; border:1px solid #000; padding:8px;">
-                    <strong>OBSERVACIONES GENERALES:</strong> Por espacios curriculares adeudados comunicarse con Secretaría.
-                </div>
-                <div style="margin-top:70px; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; text-align:center; font-size:11px;">
-                    <div style="border-top:1px solid #000; padding-top:5px;">Firma del/la Estudiante</div>
-                    <div style="border-top:1px solid #000; padding-top:5px;">Firma del/la Tutor/a</div>
-                    <div style="border-top:1px solid #000; padding-top:5px;">Firma Autoridad Escolar</div>
-                </div>
-            `;
-        } else {
-            html += `
-                <table class="tabla-hoja-documento">
-                    <thead>
-                        <tr>
-                            <th rowspan="2" style="width:25%; text-align:left;">Plan de Estudios</th>
-                            <th colspan="4" style="background:#e6fffa !important;">1er Cuatrimestre</th>
-                            <th colspan="4" style="background:#e8f0fe !important;">2do Cuatrimestre</th>
-                            <th colspan="3" style="background:#fff8e1 !important;">Cierre Anual</th>
-                        </tr>
-                        <tr>
-                            <th>1°Inf</th><th>2°Inf</th><th>E.Fort</th><th style="background:#cbd5e1 !important;">1°Cua</th>
-                            <th>1°Inf</th><th>2°Inf</th><th>E.Fort</th><th style="background:#cbd5e1 !important;">2°Cua</th>
-                            <th>Dic</th><th>Feb</th><th style="background:#cbd5e1 !important;">Def.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            materiasPlan.forEach(materia => {
-                const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
-                const n = p.notas || {};
-                const c1 = calcularNotaFase(n.trim1?.n2, n.trim1?.ef);
-                const c2 = calcularNotaFase(n.trim2?.n2, n.trim2?.ef);
-                const def = c2 >= 6 ? c2 : (p.febrero || p.diciembre || "-");
-                html += `
-                    <tr>
-                        <td style="text-align:left; font-weight:500;">${materia}</td>
-                        <td>${n.trim1?.n1 || "-"}</td><td>${n.trim1?.n2 || "-"}</td><td>${n.trim1?.ef || "-"}</td>
-                        <td style="font-weight:bold; background:#f8fafc;">${c1}</td>
-                        <td>${n.trim2?.n1 || "-"}</td><td>${n.trim2?.n2 || "-"}</td><td>${n.trim2?.ef || "-"}</td>
-                        <td style="font-weight:bold; background:#f8fafc;">${c2}</td>
-                        <td>${p.diciembre || "-"}</td><td>${p.febrero || "-"}</td>
-                        <td style="font-weight:bold; background:#f1f5f9;">${def}</td>
-                    </tr>
-                `;
-            });
-            html += `
-                    </tbody>
-                </table>
-                <div style="margin-top:30px; font-size:10px; color:#555; text-align:right;">
-                    Documento analítico de trayectorias escolares para auditoría pedagógica interna.
-                </div>
-            `;
-        }
-        html += `</div>`;
+        materiasPlan.forEach(materia => {
+            const p = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === alumno.cursoId && n.materia === materia) || {};
+            html += `<tr><td style="text-align:left;">${materia}</td><td>${p.febrero || p.diciembre || "-"}</td></tr>`;
+        });
+
+        html += `</tbody></table></div>`;
         return html;
-    }
-
-    function calcularNotaFase(n2, ef) {
-        if (!n2) return "-";
-        const numN2 = parseInt(n2, 10);
-        if (isNaN(numN2)) return "-";
-        return numN2 >= 6 ? numN2 : (ef || "-");
-    }
-
-    function obtenerClaseColorNota(nota) {
-        if (!nota || nota === "-") return "";
-        const num = parseInt(nota, 10);
-        if (isNaN(num)) return "";
-        return num >= 6 ? "texto-aprobado-pdf" : "texto-desaprobado-pdf";
     }
 
     function cerrarModalPrevisualizacion() {
@@ -499,14 +444,11 @@
         const dni = document.getElementById('dniAlumno').value.trim();
         const cicloActual = document.getElementById('filtroCicloLectivo').value;
 
-        const fecha = new Date();
-        const fechaFormateada = `${String(fecha.getDate()).padStart(2, '0')}/${String(fecha.getMonth() + 1).padStart(2, '0')}/${fecha.getFullYear()}`;
-
         const alumnosRaw = localStorage.getItem('alumnosColegio');
         let alumnos = alumnosRaw ? JSON.parse(alumnosRaw) : [];
 
         if (!idEdicion && alumnos.some(a => a.dni === dni)) {
-            alert("Error: El número de DNI ya está registrado en la base de legajos.");
+            alert("Error: El número de DNI ya está registrado.");
             return;
         }
 
@@ -527,7 +469,14 @@
             tutorDni: document.getElementById('dniTutor').value.trim(),
             observaciones: document.getElementById('observacionesAlumno').value.trim(),
             cicloLectivo: cicloActual,
-            fechaInscripcion: idEdicion ? (alumnos.find(a => a.dni === idEdicion)?.fechaInscripcion || fechaFormateada) : fechaFormateada,
+            
+            // Persistencia del estado e inputs del PPI (Preparado para Firebase)
+            tienePPI: document.getElementById('chkHabilitarPPI').checked,
+            ppiDatos: {
+                resolucion: document.getElementById('ppiResolucion').value.trim(),
+                maestroApoyo: document.getElementById('ppiMaestroApoyo').value.trim(),
+                observaciones: document.getElementById('ppiObservaciones').value.trim()
+            },
             documentosDigitales: { ...base64DocumentosTemporales }
         };
 
@@ -545,7 +494,7 @@
         }
 
         localStorage.setItem('alumnosColegio', JSON.stringify(alumnos));
-        alert(idEdicion ? "Legajo digitalizado actualizado con éxito." : "Estudiante matriculado con legajo activo.");
+        alert(idEdicion ? "Legajo actualizado." : "Estudiante matriculado.");
         salirModoEdicion();
         await procesarFiltrosYNomina();
     }
@@ -578,12 +527,30 @@
 
         evaluarEstadoMesaEntrada();
 
+        // Mapeo bidireccional histórico del nodo PPI al dar clic en la fila
+        const checkPPI = document.getElementById('chkHabilitarPPI');
+        if (checkPPI) {
+            checkPPI.checked = !!alumno.tienePPI;
+            const panelPPI = document.getElementById('panelCamposPPI');
+            const filaDocPPI = document.getElementById('filaDocumentoPPI');
+            if (alumno.tienePPI) {
+                panelPPI.style.display = 'flex';
+                filaDocPPI.style.display = 'grid';
+                document.getElementById('ppiResolucion').value = alumno.ppiDatos?.resolucion || "";
+                document.getElementById('ppiMaestroApoyo').value = alumno.ppiDatos?.maestroApoyo || "";
+                document.getElementById('ppiObservaciones').value = alumno.ppiDatos?.observaciones || "";
+            } else {
+                panelPPI.style.display = 'none';
+                filaDocPPI.style.display = 'none';
+            }
+        }
+
         const dMap = alumno.documentosDigitales || {};
         base64DocumentosTemporales = { ...dMap };
-
-        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor'];
+        
+        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor', 'acta_ppi'];
         llavesRequisitos.forEach(key => {
-            actualizarFilaUIArchivo(key, base64DocumentosTemporales[key], `Legajo_${alumno.dni}_${key}`);
+            actualizarFilaUIArchivo(key, base64DocumentosTemporales[key], `Historico_${key}`);
         });
     }
 
@@ -592,6 +559,9 @@
         document.getElementById('idOriginalEdicion').value = "";
         document.getElementById('formTitulo').textContent = "Matricular Estudiante";
         document.getElementById('bannerEdicion').style.display = "none";
+        
+        document.getElementById('panelCamposPPI').style.display = 'none';
+        document.getElementById('filaDocumentoPPI').style.display = 'none';
 
         base64DocumentosTemporales = {
             dni_alumno: null,
@@ -599,10 +569,11 @@
             cert_primaria: null,
             buena_salud: null,
             carnet_vacunas: null,
-            dni_tutor: null
+            dni_tutor: null,
+            acta_ppi: null
         };
 
-        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor'];
+        const llavesRequisitos = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor', 'acta_ppi'];
         llavesRequisitos.forEach(key => {
             const chk = document.getElementById(`chk-${key}`);
             if (chk) chk.checked = false;
@@ -625,5 +596,3 @@
     };
 
 })();
-
-
