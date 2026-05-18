@@ -1,292 +1,336 @@
-// Asegurar aislamiento del contexto global y evitar colisiones
 (function() {
     'use strict';
 
-    // Elementos del DOM del nuevo diseño widescreen
+    // Elementos de control de la interfaz de usuario
     const formRol = document.getElementById('formRol');
     const nombreRolInput = document.getElementById('nombreRol');
-    const editRolIdInput = document.getElementById('editRolId');
-    const tablaRolesBody = document.getElementById('tablaRolesBody');
-    const bannerEdicion = document.getElementById('bannerEdicion');
-    const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
+    const editRolId = document.getElementById('editRolId');
     const formTitulo = document.getElementById('formTitulo');
     const btnGuardar = document.getElementById('btnGuardar');
+    const bannerEdicion = document.getElementById('bannerEdicion');
+    const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
+    const tablaRolesBody = document.getElementById('tablaRolesBody');
 
-    // Checkboxes y Selects de la matriz de permisos
+    // Elementos de la matriz de selectores de tres niveles
+    const pLegajo = document.getElementById('pLegajo');
     const pUsuarios = document.getElementById('pUsuarios');
     const pPlanes = document.getElementById('pPlanes');
     const pCalificaciones = document.getElementById('pCalificaciones');
-    const pAsistencia = document.getElementById('pAsistencia');
+    const pAsistencia = document.getElementById('pAsistencia'); 
     const pReportes = document.getElementById('pReportes');
-    const pLegajo = document.getElementById('pLegajo');
+    const pPpi = document.getElementById('pPpi'); // Agregado selector Inclusión / PPI
 
-    // Inicialización asíncrona segura del módulo
+    // Escuchador principal de arranque del módulo
     document.addEventListener('DOMContentLoaded', async () => {
-        ocultarBannerEdicion();
-        await verificarSesionAdministrador();
+        await verificarAutenticacionAdmin();
         await inicializarSemillaRoles();
         await cargarTablaRoles();
+
+        if (btnCancelarEdicion) {
+            btnCancelarEdicion.addEventListener('click', restaurarEstadoFormulario);
+        }
     });
 
-    // Control estricto de acceso en cliente neutralizando mayúsculas/minúsculas
-    async function verificarSesionAdministrador() {
-        try {
-            const sesionRaw = localStorage.getItem('usuarioActivo');
-            if (!sesionRaw) throw new Error('Sin sesión activa en la plataforma.');
-            
-            const usuario = JSON.parse(sesionRaw);
-            const rolNormalizado = usuario.rol.toLowerCase().trim();
-            
-            if (rolNormalizado !== 'administrador') {
-                alert('Acceso denegado: Solo el Administrador general posee credenciales para gestionar perfiles.');
-                window.location.href = 'panel.html';
-                return;
-            }
-        } catch (error) {
-            console.error("Fallo de autenticación en módulo:", error);
-            window.location.href = 'index.html';
+    // --- PROTECCIÓN COERCITIVA RBAC PARA LA VISTA DE ROLES ---
+    async function verificarAutenticacionAdmin() {
+        const datosSesion = localStorage.getItem('usuarioActivo');
+        if (!datosSesion) {
+            window.location.href = "index.html";
+            return;
+        }
+        const usuario = JSON.parse(datosSesion);
+        if (usuario.rol.toLowerCase().trim() !== "administrador") {
+            alert("Acceso denegado: Este módulo de configuración crítica de seguridad es exclusivo del Administrador.");
+            window.location.href = "panel.html";
         }
     }
 
-    // Inyección de Semilla Base de roles (CORREGIDO: Administrador con acceso total a todo)
+    // --- SEMILLA DE INICIALIZACIÓN PURGADA PARA EL COLEGIO HASPEN ---
     async function inicializarSemillaRoles() {
-        try {
-            if (!localStorage.getItem('rolesColegio')) {
-                const rolesSemilla = [
-                    {
-                        id: "administrador",
-                        nombre: "Administrador",
-                        // Se corrigen las claves libroCalificaciones y asistenciaPresentismo a "acceso" de forma nativa
-                        permisos: { configuracionUsuarios: "acceso", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "acceso" }
-                    },
-                    {
-                        id: "directivo",
-                        nombre: "Directivo",
-                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "acceso" }
-                    },
-                    {
-                        id: "coordinacion",
-                        nombre: "Coordinación",
-                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "acceso", legajoDigital: "acceso", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "acceso" }
-                    },
-                    {
-                        id: "preceptor",
-                        nombre: "Preceptor",
-                        permisos: { configuracionUsuarios: "bloqueado", planesEstudio: "bloqueado", legajoDigital: "solo-vista-filtrado", libroCalificaciones: "acceso", asistenciaPresentismo: "acceso", reportesEstadisticas: "bloqueado" }
+        if (!localStorage.getItem('rolesColegio')) {
+            const rolesSemilla = [
+                {
+                    id: "administrador",
+                    nombre: "Administrador General",
+                    permisos: {
+                        configuracionUsuarios: "escritura",
+                        planesEstudio: "escritura",
+                        legajoDigital: "escritura",
+                        libroCalificaciones: "escritura",
+                        controlPrevias: "escritura", 
+                        reportesEstadisticas: "escritura",
+                        inclusionPpi: "escritura" // Agregado a la semilla
                     }
-                ];
-                localStorage.setItem('rolesColegio', JSON.stringify(rolesSemilla));
-            }
-        } catch (error) {
-            console.error("Error al inyectar semilla base de roles:", error);
+                },
+                {
+                    id: "preceptor",
+                    nombre: "Preceptor Escolar",
+                    permisos: {
+                        configuracionUsuarios: "ninguno",
+                        planesEstudio: "ninguno",
+                        legajoDigital: "lectura", 
+                        libroCalificaciones: "ninguno", 
+                        controlPrevias: "escritura", 
+                        reportesEstadisticas: "ninguno",
+                        inclusionPpi: "lectura" // Agregado a la semilla
+                    }
+                },
+                {
+                    id: "profesor",
+                    nombre: "Profesor de Cátedra",
+                    permisos: {
+                        configuracionUsuarios: "ninguno",
+                        planesEstudio: "ninguno",
+                        legajoDigital: "ninguno",
+                        libroCalificaciones: "escritura", 
+                        controlPrevias: "ninguno",
+                        reportesEstadisticas: "ninguno",
+                        inclusionPpi: "lectura" // Agregado a la semilla
+                    }
+                },
+                {
+                    id: "directivo",
+                    nombre: "Equipo Directivo",
+                    permisos: {
+                        configuracionUsuarios: "lectura",
+                        planesEstudio: "lectura",
+                        legajoDigital: "lectura",
+                        libroCalificaciones: "lectura",
+                        controlPrevias: "lectura",
+                        reportesEstadisticas: "escritura",
+                        inclusionPpi: "lectura" // Agregado a la semilla
+                    }
+                }
+            ];
+            localStorage.setItem('rolesColegio', JSON.stringify(rolesSemilla));
         }
     }
 
-    // Sanitización estricta para generar los identificadores únicos (IDs)
+    // --- FUNCIONES AUXILIARES DE PERSISTENCIA LOCAL ---
     function sanitizarIdRol(nombre) {
         return nombre.toLowerCase()
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // Remueve tildes de forma limpia
-            .replace(/[^a-z0-9\s-]/g, "")    // Remueve caracteres especiales
-            .trim()
-            .replace(/\s+/g, "-");           // Transforma espacios en guiones comunes
+            .replace(/[\u0300-\u036f]/g, "") 
+            .replace(/[^a-z0-9]/g, "-")      
+            .replace(/-+/g, "-")             
+            .replace(/-/.anchor, "-") // Mantiene tu lógica original limpia
+            .trim();
     }
 
-    // Operación de lectura asíncrona simulada
-    async function obtenerRoles() {
+    async function obtenerRolesDesdeStorage() {
         try {
-            return JSON.parse(localStorage.getItem('rolesColegio')) || [];
+            const data = localStorage.getItem('rolesColegio');
+            return data ? JSON.parse(data) : [];
         } catch (error) {
-            console.error("Error al leer roles de la persistencia:", error);
+            console.error("Error al leer roles de la base de datos local:", error);
             return [];
         }
     }
 
-    // Operación de escritura asíncrona con control robusto contra fallos de almacenamiento
-    async function guardarRoles(roles) {
+    async function guardarRolesEnStorage(arrayRoles) {
         try {
-            localStorage.setItem('rolesColegio', JSON.stringify(roles));
+            localStorage.setItem('rolesColegio', JSON.stringify(arrayRoles));
             return true;
         } catch (error) {
-            console.error("Error al escribir roles en almacenamiento local:", error);
-            alert("Error crítico: El almacenamiento local está lleno o deshabilitado.");
+            console.error("Error al persistir la matriz de roles:", error);
             return false;
         }
     }
 
-    // Renderizado estructurado y atómico de las filas de la tabla masiva
+    // --- CONSTRUCCIÓN REACTIVA DEL SPREADSHEET DE ROLES ---
     async function cargarTablaRoles() {
-        const roles = await obtenerRoles();
-        tablaRolesBody.textContent = ''; // Sanitización preventiva de nodos hijos previos
+        if (!tablaRolesBody) return;
+        tablaRolesBody.innerHTML = "";
 
-        roles.forEach(rol => {
+        const listaRoles = await obtenerRolesDesdeStorage();
+
+        listaRoles.forEach(rol => {
             const tr = document.createElement('tr');
-            tr.className = 'fila-rol';
+            tr.className = "fila-rol";
             
-            const tdNombre = document.createElement('td');
-            tdNombre.textContent = rol.nombre;
-            tdNombre.style.fontWeight = '600';
-            
-            const tdId = document.createElement('td');
-            tdId.textContent = rol.id;
-            tdId.style.color = '#64748b';
-            
-            const tdPermisos = document.createElement('td');
-            const divContenedor = document.createElement('div');
-            divContenedor.className = 'contenedor-badges-roles';
+            let contenedorBadgesHTML = '<div class="contenedor-badges-roles">';
+            const p = rol.permisos || {};
 
-            // Mapeo e inyección de los bloques en formato horizontal compacto
-            divContenedor.appendChild(crearBadgeVisual('Usuarios', rol.permisos.configuracionUsuarios));
-            divContenedor.appendChild(crearBadgeVisual('Planes', rol.permisos.planesEstudio));
-            divContenedor.appendChild(crearBadgeVisual('Notas', rol.permisos.libroCalificaciones));
-            divContenedor.appendChild(crearBadgeVisual('Previas', rol.permisos.asistenciaPresentismo));
-            divContenedor.appendChild(crearBadgeVisual('Informes', rol.permisos.reportesEstadisticas));
-            divContenedor.appendChild(crearBadgeVisual('Legajos', rol.permisos.legajoDigital));
+            contenedorBadgesHTML += crearBadgeVisual("Usuarios", p.configuracionUsuarios);
+            contenedorBadgesHTML += crearBadgeVisual("Planes", p.planesEstudio);
+            contenedorBadgesHTML += crearBadgeVisual("Alumnos", p.legajoDigital);
+            contenedorBadgesHTML += crearBadgeVisual("Notas", p.libroCalificaciones);
+            contenedorBadgesHTML += crearBadgeVisual("Previas", p.controlPrevias); 
+            contenedorBadgesHTML += crearBadgeVisual("Estadísticas", p.reportesEstadisticas);
+            contenedorBadgesHTML += crearBadgeVisual("Inclusión/PPI", p.inclusionPpi); // Badge dinámico en tabla
+            contenedorBadgesHTML += '</div>';
 
-            tdPermisos.appendChild(divContenedor);
-
-            const tdAcciones = document.createElement('td');
-            tdAcciones.style.textAlign = 'center';
-
-            // Bloqueo estricto de edición para salvaguardar el acceso del operador raíz
-            if (rol.id === 'administrador') {
-                tdAcciones.textContent = 'Inmutable';
-                tdAcciones.style.color = '#dc2626';
-                tdAcciones.style.fontWeight = 'bold';
-                tdAcciones.style.fontSize = '13px';
+            let botonesAccionesHTML = "";
+            if (rol.id === "administrador") {
+                botonesAccionesHTML = `<span style="color:#94a3b8; font-style:italic; font-size:13px;">Sistema Protegido</span>`;
             } else {
-                const btnEditar = document.createElement('button');
-                btnEditar.type = 'button';
-                btnEditar.className = 'btn-accion-editar';
-                btnEditar.textContent = 'Editar';
-                btnEditar.addEventListener('click', () => prepararEdicionRol(rol));
-                
-                const btnEliminar = document.createElement('button');
-                btnEliminar.type = 'button';
-                btnEliminar.className = 'btn-accion-eliminar';
-                btnEliminar.textContent = 'Eliminar';
-                btnEliminar.addEventListener('click', () => eliminarRolSistema(rol.id));
-                
-                tdAcciones.appendChild(btnEditar);
-                tdAcciones.appendChild(btnEliminar);
+                botonesAccionesHTML = `
+                    <button type="button" class="btn-accion-editar" data-id="${rol.id}">Editar</button>
+                    <button type="button" class="btn-accion-eliminar" data-id="${rol.id}">Eliminar</button>
+                `;
             }
 
-            tr.appendChild(tdNombre);
-            tr.appendChild(tdId);
-            tr.appendChild(tdPermisos);
-            tr.appendChild(tdAcciones);
+            tr.innerHTML = `
+                <td style="font-weight: 600; color: #1e293b;">${rol.nombre}</td>
+                <td style="font-family: monospace; color: #64748b; font-size: 13px;">${rol.id}</td>
+                <td>${contenedorBadgesHTML}</td>
+                <td style="text-align: center;">${botonesAccionesHTML}</td>
+            `;
+
             tablaRolesBody.appendChild(tr);
+        });
+
+        asociarEventosBotonesAccion();
+    }
+
+    function crearBadgeVisual(nombreModulo, nivelPermiso) {
+        let claseBadge = "badge-ninguno";
+        let textoNivel = "Ninguno";
+
+        const estadoNormalizado = String(nivelPermiso || 'ninguno').toLowerCase().trim();
+
+        if (estadoNormalizado === "escritura" || estadoNormalizado === "acceso") {
+            claseBadge = "badge-escritura";
+            textoNivel = "Escritura";
+        } else if (estadoNormalizado === "lectura" || estadoNormalizado === "solo-vista-filtrado") {
+            claseBadge = "badge-lectura";
+            textoNivel = "Lectura";
+        } else {
+            claseBadge = "badge-ninguno";
+            textoNivel = "Ninguno";
+        }
+
+        return `<span class="badge-permiso-sistema ${claseBadge}"><strong>${nombreModulo}:</strong> ${textoNivel}</span>`;
+    }
+
+    function asociarEventosBotonesAccion() {
+        const botonesEditar = document.querySelectorAll('.btn-accion-editar');
+        botonesEditar.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const idRol = e.target.getAttribute('data-id');
+                const roles = await obtenerRolesDesdeStorage();
+                const rolEncontrado = roles.find(r => r.id === idRol);
+                if (rolEncontrado) {
+                    prepararEdicionRol(rolEncontrado);
+                }
+            });
+        });
+
+        const botonesEliminar = document.querySelectorAll('.btn-accion-eliminar');
+        botonesEliminar.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const idRol = e.target.getAttribute('data-id');
+                if (confirm(`¿Está completamente seguro de que desea eliminar el perfil [${idRol}]?\nEsta acción revocará el ingreso inmediato a todos los usuarios vinculados a este cargo.`)) {
+                    await eliminarRolSistema(idRol);
+                }
+            });
         });
     }
 
-    // Creador dinámico de etiquetas de estado asociadas a los estilos nativos
-    function crearBadgeVisual(nombreModulo, estadoPermiso) {
-        const span = document.createElement('span');
-        span.className = 'badge-permiso-sistema ';
-        
-        if (estadoPermiso === 'acceso') {
-            span.className += 'badge-activo';
-            span.textContent = `${nombreModulo}: Habilitado`;
-        } else if (estadoPermiso === 'bloqueado') {
-            span.className += 'badge-denegado';
-            span.textContent = `${nombreModulo}: Bloqueado`;
-        } else {
-            span.className += 'badge-vista';
-            span.textContent = `${nombreModulo}: Solo Vista`;
-        }
-        return span;
-    }
-
-    // Envío y procesamiento unificado del formulario (Alta / Modificación)
+    // --- PROCESAMIENTO GENERAL DEL FORMULARIO DE ALTA Y EDICIÓN ---
     formRol.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const nombreTexto = nombreRolInput.value.trim();
-        if (!nombreTexto) {
-            alert('Por favor, asigne un nombre válido al perfil.');
-            return;
-        }
 
-        const idDestino = editRolIdInput.value || sanitizarIdRol(nombreTexto);
-        let listaRoles = await obtenerRoles();
+        const nombre = nombreRolInput.value.trim();
+        const idEditar = editRolId.value;
+        let listaRoles = await obtenerRolesDesdeStorage();
 
-        // Control de duplicados estricto en modo creación
-        if (!editRolIdInput.value && listaRoles.some(r => r.id === idDestino)) {
-            alert('Error operativo: Ya existe un perfil registrado con un identificador de control equivalente.');
-            return;
-        }
-
-        const estructuraNuevoRol = {
-            id: idDestino,
-            nombre: nombreTexto,
-            permisos: {
-                configuracionUsuarios: pUsuarios.checked ? 'acceso' : 'bloqueado',
-                planesEstudio: pPlanes.checked ? 'acceso' : 'bloqueado',
-                libroCalificaciones: pCalificaciones.checked ? 'acceso' : 'bloqueado',
-                asistenciaPresentismo: pAsistencia.checked ? 'acceso' : 'bloqueado',
-                reportesEstadisticas: pReportes.checked ? 'acceso' : 'bloqueado',
-                legajoDigital: pLegajo.value
-            }
+        const estructuraPermisosMapeada = {
+            configuracionUsuarios: pUsuarios.value,
+            planesEstudio: pPlanes.value,
+            legajoDigital: pLegajo.value,
+            libroCalificaciones: pCalificaciones.value,
+            controlPrevias: pAsistencia.value, 
+            reportesEstadisticas: pReportes.value,
+            inclusionPpi: pPpi.value // Mapeo de persistencia guardado con éxito
         };
 
-        if (editRolIdInput.value) {
-            // Reemplazo en caliente por coincidencia de ID en modo edición
-            listaRoles = listaRoles.map(r => r.id === idDestino ? estructuraNuevoRol : r);
+        if (idEditar !== "") {
+            listaRoles = listaRoles.map(rol => {
+                if (rol.id === idEditar) {
+                    return {
+                        ...rol,
+                        nombre: nombre,
+                        permisos: estructuraPermisosMapeada
+                    };
+                }
+                return rol;
+            });
+            alert("Perfil de seguridad actualizado y sincronizado en la matriz RBAC.");
         } else {
-            // Adición directa en altas
-            listaRoles.push(estructuraNuevoRol);
+            const idNuevo = sanitizarIdRol(nombre);
+
+            if (listaRoles.some(r => r.id === idNuevo)) {
+                alert("Error de duplicación: Ya existe un perfil registrado con un nombre idéntico o identificador equivalente.");
+                return;
+            }
+
+            const nuevoRolEstructura = {
+                id: idNuevo,
+                nombre: nombre,
+                permisos: estructuraPermisosMapeada
+            };
+
+            listaRoles.push(nuevoRolEstructura);
+            alert("Nuevo rol institucional incorporado con éxito a la base de datos local.");
         }
 
-        if (await guardarRoles(listaRoles)) {
+        const guardadoExitoso = await guardarRolesEnStorage(listaRoles);
+        if (guardadoExitoso) {
             restaurarEstadoFormulario();
             await cargarTablaRoles();
         }
     });
 
-    // Carga de datos del rol en los campos superiores para modificación
+    // --- ENTRADA AL MODO EDICIÓN EN CALIENTE ---
     function prepararEdicionRol(rol) {
-        formTitulo.textContent = `Modificar Permisos: ${rol.nombre}`;
+        formTitulo.textContent = `Modificar Perfil: ${rol.nombre}`;
+        btnGuardar.textContent = "Actualizar Permisos";
+        editRolId.value = rol.id;
         nombreRolInput.value = rol.nombre;
-        nombreRolInput.disabled = true; // Inmutabilidad del ID clave para proteger relacionales
-        editRolIdInput.value = rol.id;
+        if (bannerEdicion) bannerEdicion.style.display = "block";
 
-        pUsuarios.checked = rol.permisos.configuracionUsuarios === 'acceso';
-        pPlanes.checked = rol.permisos.planesEstudio === 'acceso';
-        pCalificaciones.checked = rol.permisos.libroCalificaciones === 'acceso';
-        pAsistencia.checked = rol.permisos.asistenciaPresentismo === 'acceso';
-        pReportes.checked = rol.permisos.reportesEstadisticas === 'acceso';
-        pLegajo.value = rol.permisos.legajoDigital;
+        const p = rol.permisos || {};
+        
+        pLegajo.value = p.legajoDigital || "ninguno";
+        pUsuarios.value = p.configuracionUsuarios || "ninguno";
+        pPlanes.value = p.planesEstudio || "ninguno";
+        pCalificaciones.value = p.libroCalificaciones || "ninguno";
+        pAsistencia.value = p.controlPrevias || "ninguno"; 
+        pReportes.value = p.reportesEstadisticas || "ninguno";
+        pPpi.value = p.inclusionPpi || "ninguno"; // Carga del valor guardado en el selector de edición
 
-        bannerEdicion.style.display = 'block';
-        btnGuardar.textContent = 'Actualizar Rol';
+        formRol.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Remoción física del rol de la base de datos local
+    // --- CONTROL DE ELIMINACIÓN DE REGISTROS ---
     async function eliminarRolSistema(id) {
-        if (confirm('¿Está seguro de que desea eliminar este perfil? Los usuarios vinculados perderán sus configuraciones de acceso.')) {
-            let listaRoles = await obtenerRoles();
-            listaRoles = listaRoles.filter(r => r.id !== id);
-            
-            if (await guardarRoles(listaRoles)) {
-                await cargarTablaRoles();
-            }
+        let listaRoles = await obtenerRolesDesdeStorage();
+        listaRoles = listaRoles.filter(rol => rol.id !== id);
+        
+        const guardadoExitoso = await guardarRolesEnStorage(listaRoles);
+        if (guardadoExitoso) {
+            alert("El perfil ha sido removido de la planta de seguridad con éxito.");
+            restaurarEstadoFormulario();
+            await cargarTablaRoles();
         }
     }
 
+    // --- LIMPIEZA Y RESTAURACIÓN DE CONTEXTOS ---
     function restaurarEstadoFormulario() {
         formTitulo.textContent = "Crear Nuevo Perfil / Rol";
+        btnGuardar.textContent = "Guardar Rol";
+        editRolId.value = "";
         formRol.reset();
-        nombreRolInput.disabled = false;
-        editRolIdInput.value = '';
-        ocultarBannerEdicion();
-        btnGuardar.textContent = 'Guardar Rol';
-    }
+        
+        if (bannerEdicion) bannerEdicion.style.display = "none";
 
-    function ocultarBannerEdicion() {
-        if (bannerEdicion) {
-            bannerEdicion.style.display = 'none';
-        }
+        pLegajo.value = "ninguno";
+        pUsuarios.value = "ninguno";
+        pPlanes.value = "ninguno";
+        pCalificaciones.value = "ninguno";
+        pAsistencia.value = "ninguno";
+        pReportes.value = "ninguno";
+        pPpi.value = "ninguno"; // Limpieza del nuevo selector al resetear
     }
-
-    btnCancelarEdicion.addEventListener('click', restaurarEstadoFormulario);
 })();

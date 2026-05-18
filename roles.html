@@ -6,7 +6,6 @@
     <title>Creación de Roles y Permisos - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
     <style>
-        /* Optimización Híbrida: Clonación de la arquitectura Widescreen de Usuarios */
         body {
             margin: 0;
             padding: 0;
@@ -18,7 +17,6 @@
             justify-content: flex-start;
             align-items: center;
         }
-
         .panel-container {
             max-width: 98% !important;
             width: 98%;
@@ -26,19 +24,15 @@
             padding: 15px;
             text-align: left;
         }
-
         .header-dashboard {
             width: 100%;
             text-align: center;
             margin-bottom: 20px;
         }
-
         .header-dashboard h2 {
             color: #1a73e8;
             margin-bottom: 5px;
         }
-
-        /* Contenedor del Formulario que emula la estética de Gestión de Usuarios */
         .form-registro-usuario {
             background: #ffffff;
             padding: 20px;
@@ -46,24 +40,19 @@
             border: 1px solid #e2e8f0;
             margin-top: 20px;
             position: relative;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
         }
-
-        /* Grilla del formulario de Roles: Nombre a la izquierda, Selector de Legajo a la derecha */
         .grid-formulario-roles {
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
             margin-bottom: 15px;
         }
-
         @media (min-width: 768px) {
             .grid-formulario-roles {
                 grid-template-columns: 1fr 1fr;
             }
         }
-
-        /* Panel contenedor para la Matriz de Checkboxes distribuidos horizontalmente */
         .contenedor-matriz-permisos {
             grid-column: 1 / -1;
             background: #f8fafc;
@@ -72,67 +61,57 @@
             border: 1px solid #e2e8f0;
             margin-top: 5px;
         }
-
-        /* Distribución adaptiva de las opciones con checkbox */
         .grid-opciones-permisos {
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
             margin-top: 10px;
         }
-
         @media (min-width: 576px) {
             .grid-opciones-permisos {
                 grid-template-columns: 1fr 1fr;
             }
         }
-
         @media (min-width: 992px) {
             .grid-opciones-permisos {
-                grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
             }
         }
-
-        /* Fila de permiso individual estilizada */
-        .bloque-permiso-check {
+        .bloque-permiso-select {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 5px;
             background: #ffffff;
             padding: 12px;
             border-radius: 6px;
             border: 1px solid #cbd5e1;
         }
-
-        .bloque-permiso-check input[type="checkbox"] {
-            width: 18px !important;
-            height: 18px !important;
-            cursor: pointer;
+        .select-permiso-matriz {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            height: 38px;
         }
-
-        /* Elementos específicos de la Tabla Masiva de Roles */
         th, td {
             padding: 12px 10px;
             text-align: left;
         }
-
         .fila-rol {
             cursor: pointer;
             transition: background 0.2s;
         }
-
         .fila-rol:hover {
             background: #f1f5f9 !important;
         }
-
-        /* Badges de permisos horizontales adaptados a la línea gráfica */
         .contenedor-badges-roles {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
             align-items: center;
         }
-
         .badge-permiso-sistema {
             padding: 4px 8px;
             border-radius: 4px;
@@ -141,12 +120,9 @@
             display: inline-block;
             text-transform: uppercase;
         }
-
-        .badge-activo { background: #e6fffa; color: #0d9488; border: 1px solid #b2f5ea; }
-        .badge-denegado { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
-        .badge-vista { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
-
-        /* Estilos de botones internos de tabla */
+        .badge-escritura { background: #e6fffa; color: #0d9488; border: 1px solid #b2f5ea; }
+        .badge-ninguno { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+        .badge-lectura { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
         .btn-accion-editar {
             background-color: #ffc107;
             color: #212529;
@@ -156,7 +132,6 @@
             font-weight: bold;
             cursor: pointer;
         }
-
         .btn-accion-eliminar {
             background-color: #dc3545;
             color: white;
@@ -174,72 +149,92 @@
         <header class="header-dashboard">
             <h2>Configuración de Seguridad RBAC</h2>
             <h3>Colegio HASPEN</h3>
-            <p id="infoUsuario">Administración de perfiles, matrices de accesos y permisos mutables del sistema</p>
+            <p>Administración de perfiles, matrices de accesos y permisos mutables del sistema</p>
         </header>
 
-        <!-- Sección 1: Formulario Unificado a Ancho Completo -->
         <div class="form-registro-usuario">
-            <div id="bannerEdicion" class="indicador-edicion">
+            <div id="bannerEdicion" class="indicador-edicion" style="display:none; background:#fef3c7; padding:10px; border-radius:6px; border:1px solid #fcd34d; margin-bottom:15px;">
                 <strong>Modo Edición Activo:</strong> Modificando los permisos del rol seleccionado. Al finalizar, haga clic en "Guardar Rol" o presione "Cancelar".
                 <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
             </div>
-            
             <h3 id="formTitulo" style="color: #333; margin-bottom: 15px;">Crear Nuevo Perfil / Rol</h3>
             <form id="formRol">
                 <input type="hidden" id="editRolId" value="">
-                
                 <div class="grid-formulario-roles">
                     <div class="input-group">
-                        <label for="nombreRol">Nombre del Rol</label>
-                        <input type="text" id="nombreRol" placeholder="Ej: Secretaría Técnica" required>
+                        <label for="nombreRol" style="font-weight:bold; display:block; margin-bottom:5px;">Nombre del Rol</label>
+                        <input type="text" id="nombreRol" placeholder="Ej: Secretaría Técnica" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; height: 21px;">
                     </div>
-                    
                     <div class="input-group">
-                        <label for="pLegajo">Acceso a Legajo Digital (Alumnos)</label>
-                        <select id="pLegajo" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: white; height: 47px;">
-                            <option value="bloqueado">Bloqueado (Sin Acceso)</option>
-                            <option value="acceso">Acceso Total (Escritura)</option>
-                            <option value="solo-vista-filtrado">Solo Vista (Filtrado Preceptor)</option>
+                        <label for="pLegajo" style="font-weight:bold; display:block; margin-bottom:5px;">Acceso a Legajo Digital (Alumnos)</label>
+                        <select id="pLegajo" required class="select-permiso-matriz" style="height: 47px;">
+                            <option value="ninguno">Ninguno (Sin Acceso)</option>
+                            <option value="lectura">Lectura (Solo Vista Filtrada)</option>
+                            <option value="escritura">Escritura (Acceso Total)</option>
                         </select>
                     </div>
 
-                    <!-- Matriz Horizontal Interna para los 5 módulos restantes -->
                     <div class="contenedor-matriz-permisos">
-                        <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 5px;">Habilitación de Módulos Directos</label>
+                        <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Niveles de Operación por Módulo</label>
                         <div class="grid-opciones-permisos">
-                            <div class="bloque-permiso-check">
-                                <input type="checkbox" id="pUsuarios">
-                                <label for="pUsuarios" style="margin: 0; font-weight: 600; color: #334155; cursor: pointer; font-size: 13px;">Gestión de Usuarios</label>
+                            <div class="bloque-permiso-select">
+                                <label for="pUsuarios" style="font-weight: 600; color: #334155; font-size: 13px;">Gestión de Usuarios</label>
+                                <select id="pUsuarios" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
                             </div>
-                            <div class="bloque-permiso-check">
-                                <input type="checkbox" id="pPlanes">
-                                <label for="pPlanes" style="margin: 0; font-weight: 600; color: #334155; cursor: pointer; font-size: 13px;">Planes de Estudio</label>
+                            <div class="bloque-permiso-select">
+                                <label for="pPlanes" style="font-weight: 600; color: #334155; font-size: 13px;">Planes de Estudio</label>
+                                <select id="pPlanes" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
                             </div>
-                            <div class="bloque-permiso-check">
-                                <input type="checkbox" id="pCalificaciones">
-                                <label for="pCalificaciones" style="margin: 0; font-weight: 600; color: #334155; cursor: pointer; font-size: 13px;">Libro Calificaciones</label>
+                            <div class="bloque-permiso-select">
+                                <label for="pCalificaciones" style="font-weight: 600; color: #334155; font-size: 13px;">Libro Calificaciones</label>
+                                <select id="pCalificaciones" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
                             </div>
-                            <div class="bloque-permiso-check">
-                                <input type="checkbox" id="pAsistencia">
-                                <label for="pAsistencia" style="margin: 0; font-weight: 600; color: #334155; cursor: pointer; font-size: 13px;">Control de Previas</label>
+                            <div class="bloque-permiso-select">
+                                <label for="pAsistencia" style="font-weight: 600; color: #334155; font-size: 13px;">Control de Previas</label>
+                                <select id="pAsistencia" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
                             </div>
-                            <div class="bloque-permiso-check">
-                                <input type="checkbox" id="pReportes">
-                                <label for="pReportes" style="margin: 0; font-weight: 600; color: #334155; cursor: pointer; font-size: 13px;">Estadísticas</label>
+                            <div class="bloque-permiso-select">
+                                <label for="pReportes" style="font-weight: 600; color: #334155; font-size: 13px;">Estadísticas</label>
+                                <select id="pReportes" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
+                            </div>
+                            <div class="bloque-permiso-select">
+                                <label for="pPpi" style="font-weight: 600; color: #334155; font-size: 13px;">Inclusión / PPI</label>
+                                <select id="pPpi" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <button type="submit" id="btnGuardar" class="btn-principal" style="max-width: 220px; margin-top: 10px; height: 44px; font-weight: bold;">Guardar Rol</button>
             </form>
         </div>
 
-        <!-- Sección 2: Tabla de Datos Masiva Adaptiva -->
         <div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; width: 100%; box-sizing: border-box;">
             <h3 style="color: #333; margin-bottom: 5px;">Roles y Perfiles Registrados</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Los perfiles creados aquí se inyectarán dinámicamente en el selector de cargos del personal de la institución.</p>
-            
             <div style="width: 100%; overflow-x: auto;">
                 <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 850px;">
                     <thead>
@@ -250,16 +245,13 @@
                             <th style="text-align: center; width: 15%; min-width: 140px;">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="tablaRolesBody">
-                        <!-- Inyección interactiva unificada desde roles.js -->
-                    </tbody>
+                    <tbody id="tablaRolesBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
+        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px; color:white; border:none; cursor:pointer;">Volver al Panel</button>
     </div>
-
     <script src="roles.js"></script>
 </body>
 </html>

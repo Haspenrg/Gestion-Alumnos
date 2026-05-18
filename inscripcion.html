@@ -1,419 +1,594 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legajo Digital del Alumno - Colegio HASPEN</title>
-    <link rel="stylesheet" href="estilos.css">
-    <style>
-        /* Configuración de Pantalla Completa y Aprovechamiento Máximo del Espacio (Widescreen) */
-        body {
-            margin: 0;
-            padding: 0;
-            max-width: 100% !important;
-            width: 100vw;
-        }
-        .panel-container {
-            max-width: 98% !important;
-            width: 98%;
-            margin: 10px auto;
-            padding: 10px;
-        }
-        /* Contenedor Flex/Grid Principal - Dos Columnas en PC */
-        .workspace-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            margin-top: 15px;
-            align-items: start;
-        }
-        @media (min-width: 1200px) {
-            .workspace-layout {
-                /* Si el formulario se oculta por JS, la grilla colapsa a 1fr de forma automática en el navegador */
-                grid-template-columns: minmax(0, auto) 1fr; 
-            }
-        }
-        .grid-formulario {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            text-align: left;
-        }
-        .form-contenedor {
-            background: #ffffff;
-            padding: 18px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            position: relative;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            width: 450px; /* Ancho físico estricto de la columna de captura */
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 3px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #475569;
-        }
-        th, td {
-            padding: 12px 10px;
-            text-align: left;
-            font-size: 13px;
-        }
-        .fila-alumno {
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .fila-alumno:hover {
-            background: #f1f5f9 !important;
-        }
-        .banner-lectura {
-            display: none;
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #bae6fd;
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .indicador-edicion {
-            display: none;
-            background: #fef3c7;
-            color: #d97706;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid #fcd34d;
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 12px;
-        }
-        .badge-curso {
-            background: #e2e8f0;
-            color: #1e293b;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            border: 1px solid #cbd5e1;
-            white-space: nowrap;
-        }
-        .badge-pase {
-            background: #fef3c7;
-            color: #d97706;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .badge-baja {
-            background: #fee2e2;
-            color: #ef4444;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .grupo-documentacion, .grupo-observaciones {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            text-align: left;
-        }
-        /* Corrección estricta de alineación de Checkboxes */
-        .opcion-check {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: flex-start !important;
-            gap: 10px !important;
-            margin-bottom: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            color: #334155;
-            width: 100%;
-            text-align: left;
-        }
-        .opcion-check input[type="checkbox"] {
-            width: 16px !important;
-            height: 16px !important;
-            min-width: 16px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            cursor: pointer;
-            display: inline-block !important;
-        }
-        .opcion-check span {
-            display: inline-block !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            line-height: 1.2 !important;
-        }
-        .alerta-documentos {
-            color: #dc2626;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        .documentos-completos {
-            color: #16a34a;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        select, textarea, input {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            background: white;
-            font-family: inherit;
-            box-sizing: border-box;
-            height: 38px;
-        }
-        textarea {
-            height: auto;
-        }
-        /* Contenedor de Filtros Avanzados Elástico */
-        .seccion-filtros {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 15px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            width: 100%;
-        }
-        @media (min-width: 900px) {
-            .seccion-filtros {
-                /* Distribución elástica proporcional basada en fr para evitar el amontonamiento amparado en la imagen */
-                grid-template-columns: 1.2fr 2fr 1.5fr 1.5fr 1.5fr; 
-            }
-        }
-        .contador-registros {
-            font-size: 13px;
-            color: #475569;
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-align: right;
-        }
-        .selector-ciclo-principal {
-            background: #fff8e1;
-            border: 1px solid #ffe082;
-            font-weight: bold;
-            color: #b78103;
-        }
-
-        /* Remoción de anchos limitantes rígidos para la tabla a la derecha */
-        .tabla-seccion-widescreen {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            width: 100%;
-            box-sizing: border-box;
-            flex-grow: 1;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legajo Digital del Alumno - Colegio HASPEN</title>
+<link rel="stylesheet" href="estilos.css">
+<style>
+body {
+margin: 0;
+padding: 0;
+max-width: 100% !important;
+width: 100vw;
+}
+.panel-container {
+max-width: 98% !important;
+width: 98%;
+margin: 10px auto;
+padding: 10px;
+}
+.workspace-layout {
+display: grid;
+grid-template-columns: 1fr;
+gap: 20px;
+margin-top: 15px;
+align-items: start;
+}
+@media (min-width: 1200px) {
+.workspace-layout {
+grid-template-columns: minmax(0, auto) 1fr;
+}
+}
+.grid-formulario {
+display: grid;
+grid-template-columns: 1fr;
+gap: 12px;
+text-align: left;
+}
+.form-contenedor {
+background: #ffffff;
+padding: 18px;
+border-radius: 8px;
+border: 1px solid #e2e8f0;
+position: relative;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+width: 450px;
+}
+.input-group label {
+display: block;
+margin-bottom: 3px;
+font-size: 12px;
+font-weight: 600;
+color: #475569;
+}
+th, td {
+padding: 12px 10px;
+text-align: left;
+font-size: 13px;
+}
+.fila-alumno {
+cursor: pointer;
+transition: background 0.15s;
+}
+.fila-alumno:hover {
+background: #f1f5f9 !important;
+}
+.banner-lectura {
+display: none;
+background: #e0f2fe;
+color: #0369a1;
+padding: 12px;
+border-radius: 6px;
+border: 1px solid #bae6fd;
+font-size: 13px;
+font-weight: 500;
+margin-bottom: 15px;
+text-align: left;
+}
+.indicador-edicion {
+display: none;
+background: #fef3c7;
+color: #d97706;
+padding: 8px 12px;
+border-radius: 6px;
+border: 1px solid #fcd34d;
+font-size: 12px;
+font-weight: 500;
+margin-bottom: 12px;
+}
+.badge-curso {
+background: #e2e8f0;
+color: #1e293b;
+padding: 4px 8px;
+border-radius: 4px;
+font-size: 12px;
+font-weight: bold;
+border: 1px solid #cbd5e1;
+white-space: nowrap;
+}
+.badge-pase { background: #fef3c7; color: #d97706; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+.badge-baja { background: #fee2e2; color: #ef4444; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+.grupo-documentacion {
+background: #f8fafc;
+padding: 10px;
+border-radius: 6px;
+border: 1px solid #e2e8f0;
+text-align: left;
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+.linea-documento-digital {
+display: grid;
+grid-template-columns: auto 1fr auto auto;
+align-items: center;
+gap: 8px;
+background: #ffffff;
+padding: 6px 10px;
+border-radius: 6px;
+border: 1px solid #e2e8f0;
+}
+.linea-documento-digital span {
+font-size: 12px;
+color: #334155;
+font-weight: 500;
+}
+.input-archivo-oculto {
+display: none !important;
+}
+.btn-accion-digital {
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 12px;
+font-weight: bold;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 32px;
+height: 32px;
+transition: background 0.2s;
+}
+.btn-subir-doc { background: #e0f2fe; color: #0369a1; }
+.btn-subir-doc:hover { background: #bae6fd; }
+.btn-ver-doc { background: #fef3c7; color: #d97706; }
+.btn-ver-doc:hover { background: #fcd34d; }
+.btn-ver-doc:disabled {
+background: #f1f5f9 !important;
+color: #cbd5e1 !important;
+cursor: not-allowed !important;
+}
+.check-digital-bloqueado {
+width: 16px;
+height: 16px;
+accent-color: #16a34a;
+pointer-events: none;
+}
+.alerta-documentos { color: #dc2626; font-size: 11px; font-weight: bold; }
+.documentos-completos { color: #16a34a; font-size: 11px; font-weight: bold; }
+select, textarea, input {
+width: 100%;
+padding: 8px 10px;
+border: 1px solid #cbd5e1;
+border-radius: 6px;
+font-size: 14px;
+background: white;
+font-family: inherit;
+box-sizing: border-box;
+height: 38px;
+}
+textarea { height: auto; }
+.seccion-filtros {
+background: #f8fafc;
+padding: 12px;
+border-radius: 8px;
+border: 1px solid #e2e8f0;
+margin-bottom: 15px;
+display: grid;
+grid-template-columns: 1fr;
+gap: 10px;
+width: 100%;
+align-items: center;
+}
+@media (min-width: 992px) {
+.seccion-filtros {
+grid-template-columns: 1.2fr 2fr 1.3fr 1.3fr 1.3fr 1.3fr;
+}
+}
+.contenedor-emision-lote {
+grid-column: 1 / -1;
+display: flex;
+gap: 10px;
+background: #f1f5f9;
+padding: 8px 12px;
+border-radius: 6px;
+border: 1px solid #cbd5e1;
+align-items: center;
+margin-top: 2px;
+}
+.btn-emision-masiva {
+padding: 6px 14px;
+font-size: 12px;
+font-weight: bold;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+color: white;
+display: inline-flex;
+align-items: center;
+gap: 5px;
+height: 32px;
+}
+.btn-lote-informe { background: #0d9488; }
+.btn-lote-boletin { background: #4f46e5; }
+.btn-lote-informe:disabled, .btn-lote-boletin:disabled {
+background: #cbd5e1 !important;
+color: #94a3b8 !important;
+cursor: not-allowed !important;
+}
+.contador-registros { font-size: 13px; color: #475569; font-weight: 600; margin-bottom: 8px; text-align: right; }
+.selector-ciclo-principal { background: #fff8e1; border: 1px solid #ffe082; font-weight: bold; color: #b78103; }
+.tabla-seccion-widescreen {
+background: #ffffff;
+padding: 20px;
+border-radius: 8px;
+border: 1px solid #e2e8f0;
+width: 100%;
+box-sizing: border-box;
+flex-grow: 1;
+}
+.btn-accion-fila {
+border: none;
+padding: 4px 8px;
+border-radius: 4px;
+cursor: pointer;
+font-size: 12px;
+font-weight: bold;
+margin: 2px;
+color: white;
+display: inline-flex;
+align-items: center;
+}
+.btn-fila-informe { background: #0284c7; }
+.btn-fila-boletin { background: #7c3aed; }
+.modal-impresion-externo {
+display: none;
+position: fixed;
+top: 0; left: 0; width: 100vw; height: 100vh;
+background: rgba(15, 23, 42, 0.6);
+z-index: 9999;
+justify-content: center;
+align-items: center;
+}
+.modal-impresion-interno {
+background: white;
+width: 95vw;
+height: 90vh;
+border-radius: 8px;
+display: flex;
+flex-direction: column;
+box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+.modal-cabecera-acciones {
+background: #1e293b;
+color: white;
+padding: 12px 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-top-left-radius: 8px;
+border-top-right-radius: 8px;
+}
+.modal-cuerpo-scrollable {
+flex-grow: 1;
+overflow-y: auto;
+padding: 30px;
+background: #f8fafc;
+box-sizing: border-box;
+}
+.contenedor-hoja-pdf {
+background: white;
+padding: 25px;
+margin: 0 auto 30px auto;
+width: 297mm;
+min-height: 210mm;
+box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+border: 1px solid #e2e8f0;
+box-sizing: border-box;
+page-break-after: always;
+}
+.hoja-formato-boletin {
+width: 210mm !important;
+min-height: 297mm !important;
+}
+.tabla-hoja-documento {
+width: 100%;
+border-collapse: collapse;
+margin-top: 15px;
+}
+.tabla-hoja-documento th, .tabla-hoja-documento td {
+border: 1px solid #000000 !important;
+padding: 6px 8px;
+font-size: 11px;
+text-align: center;
+color: #000000;
+}
+.tabla-hoja-documento th {
+background: #f1f5f9 !important;
+font-weight: bold;
+}
+.texto-aprobado-pdf { color: #15803d !important; font-weight: bold; }
+.texto-desaprobado-pdf { color: #b91c1c !important; font-weight: bold; }
+@media print {
+body, .panel-container, .workspace-layout, .tabla-seccion-widescreen {
+display: none !important;
+}
+.modal-impresion-externo {
+position: absolute !important;
+display: block !important;
+background: white !important;
+top: 0; left: 0; width: 100%; height: auto;
+}
+.modal-cabecera-acciones { display: none !important; }
+.modal-cuerpo-scrollable {
+padding: 0 !important;
+background: white !important;
+overflow: visible !important;
+}
+.contenedor-hoja-pdf {
+box-shadow: none !important;
+border: none !important;
+margin: 0 !important;
+padding: 0 !important;
+}
+}
+</style>
 </head>
 <body>
-    <div class="panel-container">
-        <header class="header-dashboard" style="width: 100%; text-align: center; margin-bottom: 15px;">
-            <h1 style="color: #1a73e8; margin-bottom: 5px;">Gestión Integral de Alumnos</h1>
-            <p id="subtitulo-modulo" style="color: #64748b;">Consola de matriculación con persistencia indexada por Ciclo Lectivo</p>
-        </header>
+<div class="panel-container">
+<header class="header-dashboard" style="width: 100%; text-align: center; margin-bottom: 15px;">
+<h1 style="color: #1a73e8; margin-bottom: 5px;">Gestión Integral de Alumnos</h1>
+<p id="subtitulo-modulo" style="color: #64748b;">Consola de matriculación con persistencia indexada por Ciclo Lectivo</p>
+</header>
+<div id="bannerPreceptor" class="banner-lectura">
+ℹ <strong>Modo Monitor Institucional Active:</strong> Como Preceptor, usted opera bajo permisos de Solo Lectura. El listado refleja únicamente alumnos regulares o ingresantes de sus cursos asignados para el Ciclo seleccionado.
+</div>
+<div class="workspace-layout">
+<div id="contenedorFormularioAlta" class="form-contenedor">
+<div id="bannerEdicion" class="indicador-edicion">
+<strong>Modo Edición Activo</strong>
+<button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
+</div>
+<h3 id="formTitulo" style="margin-bottom: 15px; color: #1e293b;">Matricular Estudiante</h3>
+<form id="formInscripcion">
+<input type="hidden" id="idOriginalEdicion" value="">
+<div class="grid-formulario">
+<div class="input-group">
+<label for="nombreAlumno">Nombre y Apellido completo</label>
+<input type="text" id="nombreAlumno" placeholder="Ej: Sofía Benítez" required>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label for="dniAlumno">DNI (Identificador)</label>
+<input type="text" id="dniAlumno" placeholder="Ej: 48123456" required pattern="[0-9]+" inputmode="numeric">
+</div>
+<div class="input-group">
+<label for="cuilAlumno">CUIL Estudiante</label>
+<input type="text" id="cuilAlumno" placeholder="Sin guiones">
+</div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label for="fechaNacimiento">Fecha de Nacimiento</label>
+<input type="date" id="fechaNacimiento" required>
+</div>
+<div class="input-group">
+<label for="lugarNacimiento">Lugar de Nacimiento</label>
+<input type="text" id="lugarNacimiento" placeholder="Ej: Río Grande" required>
+</div>
+</div>
+<div class="input-group">
+<label for="nacionalidad">Nacionalidad</label>
+<input type="text" id="nacionalidad" placeholder="Ej: Argentina" value="Argentina" required>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label for="selectCursoAlumno">Curso Destino</label>
+<select id="selectCursoAlumno" required></select>
+</div>
+<div class="input-group">
+<label for="estadoAlumno">Estado Matrícula</label>
+<select id="estadoAlumno" required>
+<option value="Regular">Regular</option>
+<option value="Entrante">Entrante / Mesa Entrada</option>
+<option value="Pase">Pase Traslado</option>
+<option value="Baja">Baja Definitiva</option>
+</select>
+</div>
+</div>
+<div class="input-group">
+<label for="direccionAlumno">Dirección de Residencia</label>
+<input type="text" id="direccionAlumno" placeholder="Calle y Número" required>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label for="telefonoAlumno">Teléfono Principal</label>
+<input type="text" id="telefonoAlumno" placeholder="Celular Tutor" required>
+</div>
+<div class="input-group">
+<label for="telefonoAlternativo">Teléfono Alternativo</label>
+<input type="text" id="telefonoAlternativo" placeholder="Emergencias">
+</div>
+</div>
+<div class="input-group" style="grid-column: 1 / -1;">
+<label for="escuelaProcedencia">Escuela de Procedencia</label>
+<input type="text" id="escuelaProcedencia" placeholder="Ej: CPET / EPP N° 2">
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label for="nombreTutor">Adulto Responsable</label>
+<input type="text" id="nombreTutor" placeholder="Nombre Madre/Padre">
+</div>
+<div class="input-group">
+<label for="dniTutor">DNI Responsable</label>
+<input type="text" id="dniTutor" placeholder="Documento Adulto">
+</div>
+</div>
+<div class="input-group">
+<label>Auditoría Documental Digitalizada (Máx 1MB por archivo)</label>
+<div class="grupo-documentacion">
+<div class="linea-documento-digital">
+<input type="checkbox" id="chk-dni_alumno" class="check-digital-bloqueado">
+<span>Fotocopia DNI Alumno</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-dni_alumno').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-dni_alumno" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-dni_alumno" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="dni_alumno">
+</div>
+<div class="linea-documento-digital">
+<input type="checkbox" id="chk-partida_nac" class="check-digital-bloqueado">
+<span>Partida de Nacimiento</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-partida_nac').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-partida_nac" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-partida_nac" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="partida_nac">
+</div>
+<div class="linea-documento-digital">
+<input type="checkbox" id="chk-cert_primaria" class="check-digital-bloqueado">
+<span>Certificado Educación Primaria</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-cert_primaria').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-cert_primaria" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-cert_primaria" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="cert_primaria">
+</div>
+<div class="linea-documento-digital">
+<input type="checkbox" id="chk-buena_salud" class="check-digital-bloqueado">
+<span>Certificado Buena Salud</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-buena_salud').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-buena_salud" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-buena_salud" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="buena_salud">
+</div>
+<div class="linea-documento-digital">
+<input type="checkbox" id="chk-carnet_vacunas" class="check-digital-bloqueado">
+<span>Carnet de Vacunas</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-carnet_vacunas').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-carnet_vacunas" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-carnet_vacunas" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="carnet_vacunas">
+</div>
+<div class="linea-documento-digital">
+<input type="checkbox" id="chk-dni_tutor" class="check-digital-bloqueado">
+<span>DNI del Tutor Responsable</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-dni_tutor').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-dni_tutor" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-dni_tutor" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="dni_tutor">
+</div>
 
-        <!-- Banner informativo exclusivo para el rol Preceptor -->
-        <div id="bannerPreceptor" class="banner-lectura">
-            ℹ️ <strong>Modo Monitor Institucional Activo:</strong> Como Preceptor, usted opera bajo permisos de Solo Lectura. El listado refleja únicamente alumnos regulares o ingresantes de sus cursos asignados para el Ciclo seleccionado.
-        </div>
+<!-- EL CHECKBOX SE UBICA AQUÍ: AL FINAL DE LOS SEIS REQUISITOS BASE -->
+<div style="display: flex; align-items: center; background: #fffbeb; padding: 10px; border-radius: 6px; border: 1px dashed #fcd34d; margin: 5px 0; gap: 8px;">
+<input type="checkbox" id="chkHabilitarPPI" style="width: auto; height: auto; cursor: pointer;">
+<label for="chkHabilitarPPI" style="cursor: pointer; font-size: 12px; color: #b45309; font-weight: bold; margin: 0;">
+⚠️ ¿Cuenta con Proyecto Pedagógico para la Inclusión (PPI)?
+</label>
+</div>
 
-        <!-- ÁREA DE TRABAJO EN PANTALLA ANCHA -->
-        <div class="workspace-layout">
-            <!-- COLUMNA IZQUIERDA: MÓDULO DE INSCRIPCIÓN / EDICIÓN -->
-            <div id="contenedorFormularioAlta" class="form-contenedor">
-                <div id="bannerEdicion" class="indicador-edicion">
-                    <strong>Modo Edición Activo</strong>
-                    <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
-                </div>
-                
-                <h3 id="formTitulo" style="margin-bottom: 15px; color: #1e293b;">Matricular Estudiante</h3>
-                <form id="formInscripcion">
-                    <input type="hidden" id="idOriginalEdicion" value="">
-                    
-                    <div class="grid-formulario">
-                        <div class="input-group">
-                            <label for="nombreAlumno">Nombre y Apellido completo</label>
-                            <input type="text" id="nombreAlumno" placeholder="Ej: Sofía Benítez" required>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <label for="dniAlumno">DNI (Identificador)</label>
-                                <input type="text" id="dniAlumno" placeholder="Ej: 48123456" required pattern="[0-9]+">
-                            </div>
-                            <div class="input-group">
-                                <label for="cuilAlumno">CUIL Estudiante</label>
-                                <input type="text" id="cuilAlumno" placeholder="Sin guiones">
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <label for="fechaNacimiento">Fecha de Nacimiento</label>
-                                <input type="date" id="fechaNacimiento" required>
-                            </div>
-                            <div class="input-group">
-                                <label for="lugarNacimiento">Lugar de Nacimiento</label>
-                                <input type="text" id="lugarNacimiento" placeholder="Ej: Río Grande" required>
-                            </div>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="nacionalidad">Nacionalidad</label>
-                            <input type="text" id="nacionalidad" placeholder="Ej: Argentina" value="Argentina" required>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <label for="selectCursoAlumno">Curso Destino</label>
-                                <select id="selectCursoAlumno" required>
-                                    <!-- Inyección dinámica -->
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="estadoAlumno">Estado Matrícula</label>
-                                <select id="estadoAlumno" required>
-                                    <option value="Regular">Regular</option>
-                                    <option value="Entrante">Entrante / Mesa Entrada</option>
-                                    <option value="Pase">Pase Traslado</option>
-                                    <option value="Baja">Baja Definitiva</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="direccionAlumno">Dirección de Residencia</label>
-                            <input type="text" id="direccionAlumno" placeholder="Calle y Número" required>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <label for="telefonoAlumno">Teléfono Principal</label>
-                                <input type="text" id="telefonoAlumno" placeholder="Celular Tutor" required>
-                            </div>
-                            <div class="input-group">
-                                <label for="telefonoAlternativo">Teléfono Alternativo</label>
-                                <input type="text" id="telefonoAlternativo" placeholder="Emergencias">
-                            </div>
-                        </div>
-                        
-                        <div class="input-group" style="grid-column: 1 / -1;">
-                            <label for="escuelaProcedencia">Escuela de Procedencia</label>
-                            <input type="text" id="escuelaProcedencia" placeholder="Ej: CPET / EPP N° 2">
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <label for="nombreTutor">Adulto Responsable</label>
-                                <input type="text" id="nombreTutor" placeholder="Nombre Madre/Padre">
-                            </div>
-                            <div class="input-group">
-                                <label for="dniTutor">DNI Responsable</label>
-                                <input type="text" id="dniTutor" placeholder="Documento Adulto">
-                            </div>
-                        </div>
-                        
-                        <div class="input-group"> 
-                            <label>Auditoría Documental Interactiva (docs)</label> 
-                            <div class="grupo-documentacion"> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="FOTOCOPIA DNI"><span>Fotocopia DNI Alumno</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="PARTIDA NACIMIENTO"><span>Partida de Nacimiento</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="CERTIFICADO PRIMARIA"><span>Certificado de Educación Primaria</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="BUENA SALUD"><span>Certificado de Buena Salud</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="VACUNAS"><span>Carnet de Vacunas</span></label> 
-                                <label class="opcion-check"><input type="checkbox" name="docs" value="DNI TUTOR"><span>DNI del Tutor o Responsable</span></label> 
-                            </div> 
-                        </div>
+<!-- PANEL DE CAMPOS INCLUSIÓN ADJUNTO -->
+<div id="panelCamposPPI" style="display: none; flex-direction: column; gap: 10px; background: #fffbeb; padding: 12px; border-radius: 6px; border: 1px solid #fde68a; margin-bottom: 5px;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label style="color: #78350f;">N° Disposición / Resolución</label>
+<input type="text" id="ppiResolucion" placeholder="Ej: Disp. N° 412/26">
+</div>
+<div class="input-group">
+<label style="color: #78350f;">Maestro/a de Apoyo (MAI)</label>
+<input type="text" id="ppiMaestroApoyo" placeholder="Nombre / Escuela">
+</div>
+</div>
+<div class="input-group">
+<label style="color: #78350f;">Configuraciones de Apoyo</label>
+<textarea id="ppiObservaciones" placeholder="Criterios de adaptación..." rows="2"></textarea>
+</div>
+</div>
 
-                        <div class="input-group">
-                            <label for="observacionesAlumno">Observaciones y Mesa de Entrada</label>
-                            <textarea id="observacionesAlumno" placeholder="Anotaciones pedagógicas o médicas del estudiante..." rows="2"></textarea>
-                        </div>
-                        
-                        <button type="submit" class="btn-guardar" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer; background: #1e293b; color: white; border: none; border-radius: 6px; margin-top: 5px;">Registrar Legajo Digital</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- COLUMNA DERECHA: SECCIÓN DE FILTROS ELÁSTICOS Y PLANILLA MASIVA WIDESCREEN -->
-            <div class="tabla-seccion-widescreen">
-                <!-- Barra de Filtros Avanzados del Ecosistema -->
-                <div class="seccion-filtros">
-                    <div>
-                        <select id="filtroCicloLectivo" class="selector-ciclo-principal">
-                            <option value="2026" selected>Ciclo 2026</option>
-                            <option value="2025">Ciclo 2025</option>
-                        </select>
-                    </div>
-                    <div>
-                        <input type="text" id="filtroBusquedaRapida" placeholder="Buscar por Nombre, DNI o Tutor...">
-                    </div>
-                    <div>
-                        <select id="filtroCursoEstructural">
-                            <option value="">Todos los Cursos</option>
-                            <!-- Se puebla dinámicamente -->
-                        </select>
-                    </div>
-                    <div>
-                        <select id="filtroEstadoMatricula">
-                            <option value="">Todos los Estados</option>
-                            <option value="Regular">Regulares</option>
-                            <option value="Entrante">Mesa de Entrada</option>
-                            <option value="Pase">Pases</option>
-                            <option value="Baja">Bajas</option>
-                        </select>
-                    </div>
-                    <div>
-                        <select id="filtroAuditoriaDocs">
-                            <option value="">Toda la Documentación</option>
-                            <option value="Incompleto">Documentación Incompleta</option>
-                            <option value="Completo">Legajo Completo</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="contadorEstudiantes" class="contador-registros">Matrículas Visualizadas: 0</div>
-                
-                <div class="table-responsive" style="width: 100%; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
-                    <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #1e293b;">
-                                <th style="width: 30%;">Estudiante / Datos Legajo</th>
-                                <th style="width: 20%;">Curso</th>
-                                <th style="width: 15%;">Estado Matrícula</th>
-                                <th style="width: 20%;">Auditoría Documental</th>
-                                <th style="width: 15%; text-align: center;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaAlumnosBody">
-                            <!-- Inyección interactiva filtrada desde el script -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div style="text-align: left; width: 100%;">
-            <button id="btn-volver" class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; margin-top: 25px; padding: 10px 20px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold;">Volver al Panel</button>
-        </div>
-    </div>
-
-    <!-- Script de Gobernación del Legajo Digital -->
-    <script src="inscripcion.js"></script>
+<!-- FILA DE DIGITALIZACIÓN ASOCIADA AL PANEL -->
+<div class="linea-documento-digital" id="filaDocumentoPPI" style="display: none; background: #fffbeb; border-color: #fde68a;">
+<input type="checkbox" id="chk-acta_ppi" class="check-digital-bloqueado">
+<span style="color: #b45309; font-weight: bold;">Disposición Proyecto PPI</span>
+<button type="button" class="btn-accion-digital btn-subir-doc" onclick="document.getElementById('file-acta_ppi').click()" title="Subir archivo">📁</button>
+<button type="button" id="view-acta_ppi" class="btn-accion-digital btn-ver-doc" disabled title="Previsualizar en pestaña nueva">👁</button>
+<input type="file" id="file-acta_ppi" class="input-archivo-oculto" accept="image/*,application/pdf" data-key="acta_ppi">
+</div>
+</div>
+</div>
+<div class="input-group">
+<label for="observacionesAlumno">Observaciones y Mesa de Entrada</label>
+<textarea id="observacionesAlumno" placeholder="Anotaciones pedagógicas..." rows="2"></textarea>
+</div>
+<button type="submit" class="btn-guardar" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer; background: #1e293b; color: white; border: none; border-radius: 6px; margin-top: 5px;">Registrar Legajo Digital</button>
+</div>
+</form>
+</div>
+<div class="tabla-seccion-widescreen">
+<div class="seccion-filtros">
+<div>
+<select id="filtroCicloLectivo" class="selector-ciclo-principal"></select>
+</div>
+<div>
+<input type="text" id="filtroBusquedaRapida" placeholder="Buscar por Nombre, DNI...">
+</div>
+<div>
+<select id="filtroCursoEstructural"></select>
+</div>
+<div>
+<select id="filtroEstadoMatricula">
+<option value="">Todos los Estados</option>
+<option value="Regular">Regulares</option>
+<option value="Entrante">Mesa de Entrada</option>
+<option value="Pase">Pases</option>
+<option value="Baja">Bajas</option>
+</select>
+</div>
+<div>
+<select id="filtroAuditoriaDocs">
+<option value="">Toda la Documentación</option>
+<option value="Incompleto">Documentación Incompleta</option>
+<option value="Completo">Legajo Completo</option>
+</select>
+</div>
+<div>
+<select id="filtroPPI" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-size: 14px;">
+<option value="">Todos los Alumnos</option>
+<option value="ConPPI">Alumnos con PPI</option>
+<option value="SinPPI">Alumnos sin PPI</option>
+</select>
+</div>
+<div class="contenedor-emision-lote">
+<span style="font-size:12px; font-weight:bold; color:#475569;">⚙ Emisión por Curso:</span>
+<button type="button" id="btnEmitirLoteInforme" class="btn-emision-masiva btn-lote-informe" disabled>📊 Emitir Informes Analíticos</button>
+<button type="button" id="btnEmitirLoteBoletin" class="btn-emision-masiva btn-lote-boletin" disabled>📜 Emitir Boletines Oficiales</button>
+</div>
+</div>
+<div id="contadorEstudiantes" class="contador-registros">Matrículas Visualizadas: 0</div>
+<div class="table-responsive" style="width: 100%; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
+<table class="tabla-usuarios" style="width: 100%; border-collapse: collapse;">
+<thead>
+<tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #1e293b;">
+<th style="width: 35%;">Estudiante / Datos Legajo</th>
+<th style="width: 15%;">Curso</th>
+<th style="width: 15%;">Estado Matrícula</th>
+<th style="width: 15%;">Auditoría Documental</th>
+<th style="width: 20%; text-align: center;">Acciones</th>
+</tr>
+</thead>
+<tbody id="tablaAlumnosBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div style="text-align: left; width: 100%;">
+<button id="btn-volver" class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; margin-top: 25px; padding: 10px 20px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold;">Volver al Panel</button>
+</div>
+</div>
+<div id="modalImpresionContenedor" class="modal-impresion-externo">
+<div class="modal-impresion-interno">
+<div class="modal-cabecera-acciones">
+<h3 id="modalImpresionTitulo" style="margin:0; font-size:16px;">Previsualización de Documentos Escolares</h3>
+<div style="display:flex; gap:10px;">
+<button type="button" onclick="window.print()" style="background:#10b981; color:white; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">🖨 Ejecutar Impresión / Guardar PDF</button>
+<button type="button" id="btnCerrarModalImpresion" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">Cerrar Ventana</button>
+</div>
+</div>
+<div id="modalImpresionCuerpo" class="modal-cuerpo-scrollable"></div>
+</div>
+</div>
+</div>
+<script src="inscripcion.js"></script>
 </body>
 </html>

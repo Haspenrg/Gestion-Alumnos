@@ -1,4 +1,6 @@
-/* Configuración General */
+/* ==========================================================================
+   CONFIGURACIÓN GENERAL Y TIPOGRAFÍA INSTITUCIONAL
+   ========================================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -15,22 +17,31 @@ body {
     padding: 20px;
 }
 
-/* Contenedores */
-.login-container, .panel-container {
+/* ==========================================================================
+   CONTENEDORES Y ARQUITECTURA HORIZONTAL (WIDESCREEN FLUIDO)
+   ========================================================================== */
+.login-container {
     background-color: white;
     padding: 30px;
     border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
     text-align: center;
 }
 
 .panel-container {
-    max-width: 900px; /* El panel se ensancha en PC */
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 96%; /* Adaptabilidad horizontal fluida */
+    max-width: 100% !important; /* Libera el límite rígido de 900px para PC */
+    text-align: center;
+    transition: all 0.3s ease;
 }
 
-/* Logo adaptable */
+/* Logo adaptable institucional */
 .logo-colegio {
     width: 100%;
     max-width: 300px;
@@ -38,7 +49,6 @@ body {
     margin-bottom: 15px;
 }
 
-/* Tipografía */
 h2 {
     color: #1a73e8;
     margin-bottom: 5px;
@@ -55,7 +65,9 @@ p {
     margin-bottom: 20px;
 }
 
-/* Formulario */
+/* ==========================================================================
+   COMPONENTES DE FORMULARIO
+   ========================================================================== */
 .input-group {
     text-align: left;
     margin-bottom: 15px;
@@ -68,15 +80,23 @@ label {
     color: #333;
 }
 
-input {
+input, select, textarea {
     width: 100%;
     padding: 12px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
 }
 
-/* Botones */
+input:focus, select:focus, textarea:focus {
+    border-color: #1a73e8;
+}
+
+/* ==========================================================================
+   BOTONES DEL SISTEMA (ACCIONES OPERATIVAS GENERALES)
+   ========================================================================== */
 .btn-principal, .btn-salir {
     width: 100%;
     padding: 12px;
@@ -86,6 +106,7 @@ input {
     border-radius: 8px;
     font-size: 16px;
     cursor: pointer;
+    font-weight: bold;
     transition: background 0.3s;
 }
 
@@ -98,7 +119,48 @@ input {
     background-color: #1557b0;
 }
 
-/* Grid de Módulos */
+.btn-salir:hover {
+    background-color: #b52218;
+}
+
+/* ==========================================================================
+   BOTONES DE ACCIÓN INTERNA EN FILAS DE TABLAS MASIVAS
+   ========================================================================== */
+.btn-accion-editar {
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.btn-accion-editar:hover {
+    background-color: #e0a800;
+}
+
+.btn-accion-eliminar {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.btn-accion-eliminar:hover {
+    background-color: #bd2130;
+}
+
+/* ==========================================================================
+   GRID DE MÓDULOS DEL DASHBOARD PRINCIPAL
+   ========================================================================== */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr; /* 1 columna en celular */
@@ -125,7 +187,6 @@ input {
     margin-bottom: 10px;
 }
 
-/* Mensajes de error */
 .mensaje-alerta {
     min-height: 25px;
     font-size: 14px;
@@ -133,7 +194,9 @@ input {
     font-weight: bold;
 }
 
-/* MEDIA QUERIES (Ajustes para PC) */
+/* ==========================================================================
+   ADAPTABILIDAD RESPONSIVA Y REGLAS MEDIA QUERIES
+   ========================================================================== */
 @media (min-width: 600px) {
     .dashboard-grid {
         grid-template-columns: 1fr 1fr; /* 2 columnas en tablets */
@@ -146,14 +209,16 @@ input {
     }
 }
 
-/* --- ESTILOS DE LA VENTANA MODAL (RECUPERACIÓN) --- */
+/* ==========================================================================
+   ESTILOS DE LA VENTANA MODAL DE RECUPERACIÓN
+   ========================================================================== */
 .modal-contenedor {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro transparente */
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -211,31 +276,27 @@ input {
     background-color: #d4d4d4;
 }
 
-/* Fuerza el título en una sola línea y adapta su tamaño */
 .titulo-principal {
-    white-space: nowrap !important; /* Prohíbe el salto de línea de forma estricta */
-    font-size: 1.35rem !important; /* Reduce ligeramente el tamaño para que entre horizontalmente */
+    white-space: nowrap !important;
+    font-size: 1.35 rem !important;
     display: block;
     width: 100%;
     text-align: center;
 }
 
 /* ==========================================================================
-   NUEVAS ADICIONES INCREMENTALES: SEGURIDAD DE ROLES Y CONTROL MASIVO EN PC
+   SEGURIDAD RBAC, CONTROL MASIVO Y NÓMINAS
    ========================================================================== */
-
-/* Bloqueo Coercitivo del Panel Principal para Roles Restringidos */
 .modulo-bloqueado {
     opacity: 0.4 !important;
     cursor: not-allowed !important;
-    pointer-events: none !important; /* Neutraliza clics directos del mouse */
+    pointer-events: none !important;
     user-select: none !important;
 }
 
-/* Desactivación Física y Visual de Formularios para Modo Solo Lectura */
-input:disabled, 
-select:disabled, 
-textarea:disabled, 
+input:disabled,
+select:disabled,
+textarea:disabled,
 button:disabled {
     background-color: #f1f5f9 !important;
     color: #64748b !important;
@@ -243,11 +304,21 @@ button:disabled {
     border-color: #cbd5e1 !important;
 }
 
-/* Optimización Widescreen: Cabeceras fijas para desplazamiento masivo en PC */
+/* Cabeceras fijas para scrolling en listados masivos */
 .tabla-usuarios th,
 .tabla-usuarios-contenedor th {
     position: sticky !important;
     top: 0;
     z-index: 10;
-    box-shadow: 0 1px 0 #cbd5e1; /* Reemplaza el borde perdido por el scrolling */
+    box-shadow: 0 1px 0 #cbd5e1;
+}
+
+/* ==========================================================================
+   TAGS DEL ESCALAFÓN DOCENTE (SITUACIÓN DE REVISTA INLINE)
+   ========================================================================== */
+.catedra-tag {
+    transition: transform 0.15s ease;
+}
+.catedra-tag:hover {
+    transform: scale(1.02);
 }

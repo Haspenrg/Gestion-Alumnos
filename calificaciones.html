@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libro de Calificaciones y Boletín - Colegio HASPEN</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Optimización Híbrida: Fluid Widescreen al 98% para emular Google Sheets */
+        body {
+            margin: 0;
+            padding: 0;
+            max-width: 100% !important;
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .panel-container {
+            max-width: 98% !important;
+            width: 98%;
+            margin: 15px auto;
+            padding: 15px;
+            text-align: left;
+        }
+
+        /* Cabecera compacta de metadatos */
+        .cabecera-planilla {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+        }
+        @media (min-width: 768px) {
+            .cabecera-planilla {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        /* Estructura contenedora del Google Sheet Interactivo */
+        .contenedor-sheet-interactivo {
+            width: 100%;
+            overflow-x: auto; /* Scroll horizontal elástico para PC */
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            margin-top: 15px;
+        }
+
+        .tabla-calificaciones {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 1100px; /* Asegura el ancho mínimo de las 13 columnas */
+        }
+
+        /* Doble cabecera para agrupar Cuatrimestres */
+        .tabla-calificaciones th {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .tabla-calificaciones td {
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+            vertical-align: middle;
+        }
+
+        /* Inputs ultra-compactos para notas numéricas rápidas */
+        .input-nota {
+            width: 45px;
+            height: 28px;
+            padding: 2px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Bloqueo visual para columnas calculadas automáticas */
+        .col-calculada {
+            background-color: #f8fafc;
+            font-weight: bold;
+            text-align: center;
+            color: #1e293b;
+            width: 50px;
+        }
+
+        /* Estilos reactivos pedagógicos (Aprobación >= 6, Desaprobación <= 5) */
+        .nota-aprobada {
+            color: #16a34a !important; /* Verde */
+        }
+
+        .nota-desaprobada {
+            color: #dc2626 !important; /* Rojo */
+            background-color: #fef2f2;
+        }
+
+        .tag-ppi {
+            background: #f59e0b;
+            color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel-container">
+        <header class="header-dashboard" style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #1a73e8; margin-bottom: 5px;">Libro de Calificaciones Digital</h2>
+            <h3>Colegio Provincial "HASPEN"</h3>
+            <p style="margin-bottom: 10px;">Carga horizontal de registros académicos por cuatrimestres e instancias de recuperación</p>
+        </header>
+
+        <!-- Sección 1: Selectores en cascada para filtrar la Planilla -->
+        <div class="cabecera-planilla">
+            <div class="input-group" style="margin: 0;">
+                <label for="selectCursoNotas" style="font-size: 12px; color: #475569;">Curso / División Destino:</label>
+                <select id="selectCursoNotas" style="height: 40px;" required>
+                    <option value="" disabled selected>Seleccione estructura...</option>
+                </select>
+            </div>
+            
+            <div class="input-group" style="margin: 0;">
+                <label for="selectMateriaNotas" style="font-size: 12px; color: #475569;">Asignatura / Espacio Curricular:</label>
+                <select id="selectMateriaNotas" style="height: 40px;" required>
+                    <option value="" disabled selected>Seleccione primero un curso...</option>
+                </select>
+            </div>
+
+            <!-- Panel Informativo Informatizado de Cátedra -->
+            <div id="infoCatedraDocente" style="display: flex; flex-direction: column; justify-content: center; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1; font-size: 12px; color: #64748b; text-align: left;">
+                <span>👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
+                <span style="margin-top: 4px;">🛡️ <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
+            </div>
+        </div>
+
+        <!-- Banner de advertencia de solo lectura para Preceptores/Directivos -->
+        <div id="bannerModoLecturaCalificaciones" class="indicador-edicion" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; margin-bottom: 15px; display: none;">
+            <strong>Modo Monitor Activo:</strong> Usted posee permisos de solo vista filtrada. Los cambios introducidos en la planilla no se guardarán en la persistencia.
+        </div>
+
+        <!-- Sección 2: Matriz Google Sheet Interactivo (13 Columnas Operativas) -->
+        <div class="contenedor-sheet-interactivo">
+            <form id="formPlanillaNotas">
+                <table class="tabla-calificaciones">
+                    <thead>
+                        <!-- Fila de Cabecera Superior: Agrupamiento de Periodos -->
+                        <tr>
+                            <th rowspan="2" style="width: 4%;">Orden</th>
+                            <th rowspan="2" style="width: 24%; text-align: left;">Apellido y Nombre</th>
+                            <th colspan="4" style="background: #e8f0fe;">1ER CUATRIMESTRE</th>
+                            <th colspan="4" style="background: #fef8e7;">2DO CUATRIMESTRE</th>
+                            <th rowspan="2" style="width: 5%; background: #f1f5f9;">Anual</th>
+                            <th rowspan="2" style="width: 5%; background: #fee2e2;">Dic.</th>
+                            <th rowspan="2" style="width: 5%; background: #fee2e2;">Feb.</th>
+                            <th rowspan="2" style="width: 6%; background: #e2f0d9;">Def.</th>
+                        </tr>
+                        <!-- Fila de Cabecera Inferior: Instancias específicas de examen -->
+                        <tr>
+                            <th style="width: 5%;">1° Inf</th>
+                            <th style="width: 5%;">2° Inf</th>
+                            <th style="width: 5%;">E.Fort</th>
+                            <th style="width: 5%; background: #dbeafe;">1°Cua</th>
+                            <th style="width: 5%;">1° Inf</th>
+                            <th style="width: 5%;">2° Inf</th>
+                            <th style="width: 5%;">E.Fort</th>
+                            <th style="width: 5%; background: #fef3c7;">2°Cua</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaNotasBody">
+                        <tr>
+                            <td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px; font-weight: 500;">
+                                Seleccione un Curso y una Asignatura para cargar la nómina de estudiantes regulares.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- Botón de guardado masivo rápido -->
+                <div id="bloqueGuardarNotas" style="padding: 12px; background: #f8fafc; border-top: 1px solid #cbd5e1; text-align: right; display: none;">
+                    <button type="submit" class="btn-principal" style="max-width: 200px; height: 38px; padding: 0; font-size: 14px;">Guardar Planilla</button>
+                </div>
+            </form>
+        </div>
+
+        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
+    </div>
+    
+    <!-- Vinculación del motor de gobernación lógica cuatrimestral -->
+    <script src="calificaciones.js"></script>
+</body>
+</html>
