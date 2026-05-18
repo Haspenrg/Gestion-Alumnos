@@ -18,6 +18,7 @@
     const pCalificaciones = document.getElementById('pCalificaciones');
     const pAsistencia = document.getElementById('pAsistencia'); 
     const pReportes = document.getElementById('pReportes');
+    const pPpi = document.getElementById('pPpi'); // Agregado selector Inclusión / PPI
 
     // Escuchador principal de arranque del módulo
     document.addEventListener('DOMContentLoaded', async () => {
@@ -57,7 +58,8 @@
                         legajoDigital: "escritura",
                         libroCalificaciones: "escritura",
                         controlPrevias: "escritura", 
-                        reportesEstadisticas: "escritura"
+                        reportesEstadisticas: "escritura",
+                        inclusionPpi: "escritura" // Agregado a la semilla
                     }
                 },
                 {
@@ -66,10 +68,11 @@
                     permisos: {
                         configuracionUsuarios: "ninguno",
                         planesEstudio: "ninguno",
-                        legajoDigital: "lectura", // Mantiene acceso a legajos en Gestión de Alumnos
-                        libroCalificaciones: "ninguno", // PURGADO: El preceptor puro ya no entra a calificaciones
+                        legajoDigital: "lectura", 
+                        libroCalificaciones: "ninguno", 
                         controlPrevias: "escritura", 
-                        reportesEstadisticas: "ninguno"
+                        reportesEstadisticas: "ninguno",
+                        inclusionPpi: "lectura" // Agregado a la semilla
                     }
                 },
                 {
@@ -81,7 +84,8 @@
                         legajoDigital: "ninguno",
                         libroCalificaciones: "escritura", 
                         controlPrevias: "ninguno",
-                        reportesEstadisticas: "ninguno"
+                        reportesEstadisticas: "ninguno",
+                        inclusionPpi: "lectura" // Agregado a la semilla
                     }
                 },
                 {
@@ -93,7 +97,8 @@
                         legajoDigital: "lectura",
                         libroCalificaciones: "lectura",
                         controlPrevias: "lectura",
-                        reportesEstadisticas: "escritura"
+                        reportesEstadisticas: "escritura",
+                        inclusionPpi: "lectura" // Agregado a la semilla
                     }
                 }
             ];
@@ -108,6 +113,7 @@
             .replace(/[\u0300-\u036f]/g, "") 
             .replace(/[^a-z0-9]/g, "-")      
             .replace(/-+/g, "-")             
+            .replace(/-/.anchor, "-") // Mantiene tu lógica original limpia
             .trim();
     }
 
@@ -151,6 +157,7 @@
             contenedorBadgesHTML += crearBadgeVisual("Notas", p.libroCalificaciones);
             contenedorBadgesHTML += crearBadgeVisual("Previas", p.controlPrevias); 
             contenedorBadgesHTML += crearBadgeVisual("Estadísticas", p.reportesEstadisticas);
+            contenedorBadgesHTML += crearBadgeVisual("Inclusión/PPI", p.inclusionPpi); // Badge dinámico en tabla
             contenedorBadgesHTML += '</div>';
 
             let botonesAccionesHTML = "";
@@ -180,7 +187,7 @@
         let claseBadge = "badge-ninguno";
         let textoNivel = "Ninguno";
 
-        const estadoNormalizado = String(nivelPermiso).toLowerCase().trim();
+        const estadoNormalizado = String(nivelPermiso || 'ninguno').toLowerCase().trim();
 
         if (estadoNormalizado === "escritura" || estadoNormalizado === "acceso") {
             claseBadge = "badge-escritura";
@@ -234,7 +241,8 @@
             legajoDigital: pLegajo.value,
             libroCalificaciones: pCalificaciones.value,
             controlPrevias: pAsistencia.value, 
-            reportesEstadisticas: pReportes.value
+            reportesEstadisticas: pReportes.value,
+            inclusionPpi: pPpi.value // Mapeo de persistencia guardado con éxito
         };
 
         if (idEditar !== "") {
@@ -290,6 +298,7 @@
         pCalificaciones.value = p.libroCalificaciones || "ninguno";
         pAsistencia.value = p.controlPrevias || "ninguno"; 
         pReportes.value = p.reportesEstadisticas || "ninguno";
+        pPpi.value = p.inclusionPpi || "ninguno"; // Carga del valor guardado en el selector de edición
 
         formRol.scrollIntoView({ behavior: 'smooth' });
     }
@@ -322,5 +331,6 @@
         pCalificaciones.value = "ninguno";
         pAsistencia.value = "ninguno";
         pReportes.value = "ninguno";
+        pPpi.value = "ninguno"; // Limpieza del nuevo selector al resetear
     }
 })();

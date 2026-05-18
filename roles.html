@@ -40,7 +40,7 @@
             border: 1px solid #e2e8f0;
             margin-top: 20px;
             position: relative;
-            box-shadow: 0 4 px 6px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
         }
         .grid-formulario-roles {
             display: grid;
@@ -212,6 +212,14 @@
                             <div class="bloque-permiso-select">
                                 <label for="pReportes" style="font-weight: 600; color: #334155; font-size: 13px;">Estadísticas</label>
                                 <select id="pReportes" class="select-permiso-matriz">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
+                            </div>
+                            <div class="bloque-permiso-select">
+                                <label for="pPpi" style="font-weight: 600; color: #334155; font-size: 13px;">Inclusión / PPI</label>
+                                <select id="pPpi" class="select-permiso-matriz">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
