@@ -6,7 +6,7 @@
     <title>Acceso - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
     <style>
-        /* Estilos complementarios para la consistencia del enlace de recuperación */
+        /* Estilos de consistencia para el enlace de recuperación de contraseña */
         .forgot-pass {
             display: block;
             margin-top: 15px;
@@ -28,21 +28,17 @@
             <h2 class="titulo-principal">Sistema de Gestión de Alumnos</h2>
             <h3>Colegio Haspen</h3>
             <p>Inicie sesión para continuar</p>
-            
             <div id="mensaje" class="mensaje-alerta"></div>
-            
             <div class="input-group">
                 <label for="usuario">Usuario (DNI)</label>
                 <input type="text" id="usuario" placeholder="Ej: 22222222" required pattern="[0-9]+" inputmode="numeric">
             </div>
-            
             <div class="input-group">
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            
             <button type="submit" class="btn-principal">Ingresar al Sistema</button>
-            <a href="#" id="olvido-pass" class="forgot-pass">¿Olvidaste tu contraseña?</a>
+            <a href="#" id="olvido-pass" class="forgot-pass">¿Olvidadte tu contraseña?</a>
         </form>
     </div>
 
@@ -51,58 +47,55 @@
         <div class="modal-contenido">
             <h3>Recuperar Credenciales</h3>
             <p>Ingrese su número de DNI para consultar sus datos de acceso registrados en el sistema.</p>
-            
             <div id="modal-mensaje" class="mensaje-alerta"></div>
-            
             <div class="input-group">
                 <label for="modal-dni">Su número de DNI</label>
                 <input type="text" id="modal-dni" placeholder="Ej: 11111111" pattern="[0-9]+" inputmode="numeric">
             </div>
-            
             <div class="modal-botones">
                 <button type="button" id="btn-cancelar-modal" class="btn-secundario">Cerrar</button>
                 <button type="button" id="btn-consultar-modal" class="btn-principal">Verificar DNI</button>
             </div>
         </div>
     </div>
+    
+     <!-- CONTROLADOR DE AUTENTICACIÓN ASÍNCRONO Y BLINDADO CON FIREBASE -->
+    <script type="module">
+        // Importación dinámica desarmada indestructible
+        const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+        
+        const { auth, db } = await import('./firebase-config.js');
+        const { signInWithEmailAndPassword, sendPasswordResetEmail } = await import(b + 'firebase-auth.js');
+        const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
 
-    <!-- CONTROLADOR DE AUTENTICACIÓN ASÍNCRONO Y BLINDADO -->
-    <script>
-        document.addEventListener("DOMContentLoaded", async function() {
-            await verificarEInyectarSemillaBase();
-            
-            // Registradores de eventos principales
-            document.getElementById('loginForm').addEventListener('submit', procesarAutenticacion);
-            document.getElementById('olvido-pass').addEventListener('click', abrirModalRecuperacion);
-            document.getElementById('btn-cancelar-modal').addEventListener('click', cerrarModalRecuperacion);
-            document.getElementById('btn-consultar-modal').addEventListener('click', procesarRecuperacionEnCaliente);
-        });
+        // ... El resto de tu código de abajo queda exactamente igual ...
 
-        // Inicializa la plataforma bajo regla de negocio estricta 3-A si está vacía
-        async function verificarEInyectarSemillaBase() {
-            try {
-                if (!localStorage.getItem('usuariosColegio')) {
-                    const administradorRaiz = [{
-                        dni: "11111111",
-                        nombre: "Admin General",
-                        email: "admin@haspen.edu.ar",
-                        rol: "administrador", // Guardado estrictamente como ID en minúsculas
-                        esProfesor: false,
-                        clave: "1234",
-                        cursosAsignados: [],
-                        bolsaHoras: []
-                    }];
-                    localStorage.setItem('usuariosColegio', JSON.stringify(administradorRaiz));
-                }
-            } catch (error) {
-                console.error("Error al inyectar la semilla inicial de usuarios:", error);
-            }
+        // Vinculación directa y segura de eventos garantizando la carga completa del DOM
+        const formLogin = document.getElementById('loginForm');
+        if (formLogin) {
+            formLogin.addEventListener('submit', procesarAutenticacion);
         }
 
-        // Procesa el inicio de sesión contrastando contra la base de usuarios mutable
+        const btnOlvido = document.getElementById('olvido-pass');
+        if (btnOlvido) {
+            btnOlvido.addEventListener('click', abrirModalRecuperacion);
+        }
+
+        const btnCancelar = document.getElementById('btn-cancelar-modal');
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', cerrarModalRecuperacion);
+        }
+
+        const btnConsultar = document.getElementById('btn-consultar-modal');
+        if (btnConsultar) {
+            btnConsultar.addEventListener('click', procesarRecuperacionEnCaliente);
+        }
+
+        // Procesa el inicio de sesión contrastando contra Firebase Authentication
         async function procesarAutenticacion(e) {
             e.preventDefault();
             const txtMensaje = document.getElementById('mensaje');
+            if (!txtMensaje) return;
             txtMensaje.textContent = "";
             txtMensaje.style.color = "";
 
@@ -115,42 +108,58 @@
             }
 
             try {
-                const usuariosRaw = localStorage.getItem('usuariosColegio');
-                const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+                // Conversión implícita de DNI a correo institucional para Firebase Auth
+                const emailSintetico = `${dniIngresado}@haspen.edu.ar`;
 
-                // Búsqueda en caliente filtrando por DNI
-                const cuentaEncontrada = usuarios.find(u => u.dni === dniIngresado);
+                // Petición asíncrona de acceso a Firebase
+                const credenciales = await signInWithEmailAndPassword(auth, emailSintetico, claveIngresada);
+                const user = credenciales.user;
 
-                if (!cuentaEncontrada || cuentaEncontrada.clave !== claveIngresada) {
-                    mostrarAlertaUI(txtMensaje, "Credenciales inválidas. Verifique el DNI y la contraseña.", "#dc2626");
-                    return;
-                }
-
-                // Creación estructurada del objeto JSON de sesión activa (usuarioActivo)
-                const sesionActiva = {
-                    nombre: cuentaEncontrada.nombre,
-                    rol: cuentaEncontrada.rol, // Pasa el ID en minúsculas directamente
-                    dni: cuentaEncontrada.dni,
-                    esProfesor: cuentaEncontrada.esProfesor || false
+                // Buscamos los datos del perfil (nombre, rol, esProfesor) guardados en Firestore
+                const q = query(collection(db, "usuariosColegio"), where("dni", "==", dniIngresado));
+                const querySnapshot = await getDocs(q);
+                
+                let perfilUsuario = {
+                    nombre: user.displayName || "Personal Haspen",
+                    rol: "preceptor",
+                    dni: dniIngresado,
+                    esProfesor: false
                 };
 
-                localStorage.setItem('usuarioActivo', JSON.stringify(sesionActiva));
-                
+                // Si existen datos expandidos en la colección, estructuramos el token dinámico institucional
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach((doc) => {
+                        const datosDb = doc.data();
+                        perfilUsuario.nombre = datosDb.nombre || perfilUsuario.nombre;
+                        perfilUsuario.rol = datosDb.rol || perfilUsuario.rol;
+                        perfilUsuario.esProfesor = datosDb.esProfesor || false;
+                    });
+                }
+
+                // Conservación matemática del objeto JSON de sesión activa esperado por panel.html
+                localStorage.setItem('usuarioActivo', JSON.stringify(perfilUsuario));
+
                 mostrarAlertaUI(txtMensaje, "Acceso concedido. Redireccionando...", "#0d9488");
-                
                 setTimeout(() => {
                     window.location.href = "panel.html";
                 }, 800);
 
             } catch (error) {
-                console.error("Error en el proceso de logueo asíncrono:", error);
-                mostrarAlertaUI(txtMensaje, "Error interno del sistema al procesar la solicitud.", "#dc2626");
+                console.error("Error en el proceso de logueo asíncrono Firebase:", error);
+                let mensajeError = "Credenciales inválidas. Verifique el DNI y la contraseña.";
+                if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+                    mensajeError = "Credenciales inválidas. Verifique el DNI y la contraseña.";
+                } else if (error.code === "auth/network-request-failed") {
+                    mensajeError = "Error de conexión. Verifique su acceso a internet.";
+                }
+                mostrarAlertaUI(txtMensaje, mensajeError, "#dc2626");
             }
         }
 
-        // Validación en caliente de DNI contra la base de datos de usuarios
+        // Recuperación en caliente readaptada para enviar restablecimiento por correo institucional
         async function procesarRecuperacionEnCaliente() {
             const txtModalMensaje = document.getElementById('modal-mensaje');
+            if (!txtModalMensaje) return;
             txtModalMensaje.textContent = "";
             txtModalMensaje.style.color = "";
 
@@ -162,34 +171,35 @@
             }
 
             try {
-                const usuariosRaw = localStorage.getItem('usuariosColegio');
-                const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
-                
-                const cuentaExistente = usuarios.find(u => u.dni === dniAVerificar);
-
-                if (!cuentaExistente) {
-                    mostrarAlertaUI(txtModalMensaje, "El DNI ingresado no corresponde a ningún operador registrado.", "#dc2626");
-                    return;
-                }
-
-                // Exposición limpia de la contraseña en caliente mitigando vectores XSS
-                mostrarAlertaUI(txtModalMensaje, `Verificación exitosa. Su contraseña actual es: [ ${cuentaExistente.clave} ]`, "#0d9488");
-
+                const emailSintetico = `${dniAVerificar}@haspen.edu.ar`;
+                await sendPasswordResetEmail(auth, emailSintetico);
+                mostrarAlertaUI(txtModalMensaje, "Verificación exitosa. Se envió un enlace de restauración a su correo institucional.", "#0d9488");
             } catch (error) {
-                console.error("Error al recuperar credenciales en caliente:", error);
-                mostrarAlertaUI(txtModalMensaje, "No se pudo completar la verificación en este momento.", "#dc2626");
+                console.error("Error al recuperar credenciales Firebase:", error);
+                let msg = "El DNI ingresado no corresponde a ningún operador registrado.";
+                if (error.code === "auth/user-not-found") {
+                    msg = "El DNI ingresado no corresponde a ningún operador registrado.";
+                } else {
+                    msg = "No se pudo procesar la solicitud en este momento.";
+                }
+                mostrarAlertaUI(txtModalMensaje, msg, "#dc2626");
             }
         }
 
         function abrirModalRecuperacion(e) {
             e.preventDefault();
-            document.getElementById('modal-dni').value = "";
-            document.getElementById('modal-mensaje').textContent = "";
-            document.getElementById('modalRecuperar').classList.add('mostrar-modal');
+            const inputDni = document.getElementById('modal-dni');
+            const msgModal = document.getElementById('modal-mensaje');
+            if (inputDni) inputDni.value = "";
+            if (msgModal) msgModal.textContent = "";
+            
+            const divModal = document.getElementById('modalRecuperar');
+            if (divModal) divModal.classList.add('mostrar-modal');
         }
 
         function cerrarModalRecuperacion() {
-            document.getElementById('modalRecuperar').classList.remove('mostrar-modal');
+            const divModal = document.getElementById('modalRecuperar');
+            if (divModal) divModal.classList.remove('mostrar-modal');
         }
 
         function mostrarAlertaUI(contenedor, mensajeText, colorHex) {
