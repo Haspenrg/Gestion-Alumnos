@@ -1,10 +1,8 @@
 (async function() {
-
 'use strict';
 
 // Importación dinámica desarmada indestructible para evadir el filtro automático de la IA
 const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-
 const { db } = await import('./firebase-config.js');
 const { collection, getDocs, setDoc, doc, deleteDoc, getDoc } = await import(b + 'firebase-firestore.js');
 
@@ -16,7 +14,7 @@ const formTitulo = document.getElementById('formTitulo');
 const btnGuardar = document.getElementById('btnGuardar');
 const bannerEdicion = document.getElementById('bannerEdicion');
 const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
-const tablaRolesBody = document.getElementById('tablaRolesBody'); // Confirmado en tu HTML original
+const tablaRolesBody = document.getElementById('tablaRolesBody');
 
 // Elementos de la matriz de selectores de tres niveles originales e intactos
 const pLegajo = document.getElementById('pLegajo');
@@ -25,17 +23,16 @@ const pPlanes = document.getElementById('pPlanes');
 const pCalificaciones = document.getElementById('pCalificaciones');
 const pAsistencia = document.getElementById('pAsistencia');
 const pReportes = document.getElementById('pReportes');
-const pPpi = document.getElementById('pPpi'); 
+const pPpi = document.getElementById('pPpi');
 
-// Escuchador principal de arranque del módulo original adaptado asíncronamente
-document.addEventListener('DOMContentLoaded', async () => {
-    await verificarAutenticacionAdmin();
-    await inicializarSemillaRoles();
-    await cargarTablaRoles();
-    if (btnCancelarEdicion) {
-        btnCancelarEdicion.addEventListener('click', restaurarEstadoFormulario);
-    }
-});
+// Flujo de inicialización perimetral directo de ES6 Modules
+await verificarAutenticacionAdmin();
+await inicializarSemillaRoles();
+await cargarTablaRoles();
+
+if (btnCancelarEdicion) {
+    btnCancelarEdicion.addEventListener('click', restaurarEstadoFormulario);
+}
 
 // --- PROTECCIÓN COERCITIVA RBAC PARA LA VISTA DE ROLES ORIGINAL ---
 async function verificarAutenticacionAdmin() {
@@ -51,12 +48,16 @@ async function verificarAutenticacionAdmin() {
     }
 }
 
-// --- SEMILLA DE INICIALIZACIÓN PURGADA PARA EL COLEGIO HASPEN MIGRADA A FIRESTORE ---
+// --- SEMILLA DE INICIALIZACIÓN PURGADA CON FILTRO OPTIMIZADO CONTRA CONSUMO ---
 async function inicializarSemillaRoles() {
     try {
         const querySnapshot = await getDocs(collection(db, "roles"));
-        // Si la base de datos en la nube está limpia, insertamos tu semilla institucional
+        
+        console.log(`Auditoría Firestore: Se detectaron ${querySnapshot.size} perfiles activos.`);
+        
         if (querySnapshot.empty) {
+            console.log("Base de datos limpia detectada. Procediendo a inyectar roles estructurales...");
+            
             const rolesSemilla = [
                 {
                     id: "administrador",
@@ -112,13 +113,13 @@ async function inicializarSemillaRoles() {
                 }
             ];
 
-            // Inyección atómica síncrona en Cloud Firestore
             for (const rol of rolesSemilla) {
                 await setDoc(doc(db, "roles", rol.id), rol);
+                console.log(`Sincronización inicial exitosa: Perfil [${rol.id}] guardado.`);
             }
         }
     } catch (error) {
-        console.error("Error al inyectar la semilla inicial en Firestore:", error);
+        console.error("Error crítico al inyectar la semilla inicial en Firestore:", error);
     }
 }
 
@@ -148,7 +149,6 @@ async function obtenerRolesDesdeStorage() {
 
 async function guardarRolesEnStorage(arrayRoles) {
     try {
-        // En Firestore guardamos cada objeto de forma individual mapeado por su ID único
         for (const rol of arrayRoles) {
             await setDoc(doc(db, "roles", rol.id), rol);
         }
@@ -162,11 +162,26 @@ async function guardarRolesEnStorage(arrayRoles) {
 // --- CONSTRUCCIÓN REACTIVA DEL SPREADSHEET DE ROLES ORIGINAL ---
 async function cargarTablaRoles() {
     if (!tablaRolesBody) return;
-    tablaRolesBody.innerHTML = "";
+    
+    // CAMBIO APLICADO: Mensaje de carga inmediato para mejorar la experiencia de usuario
+    tablaRolesBody.innerHTML = `
+        <tr>
+            <td colspan="4" style="text-align: center; color: #1a73e8; font-weight: 500; padding: 30px;">
+                🔄 Conectando con Cloud Firestore. Cargando perfiles...
+            </td>
+        </tr>
+    `;
+    
+    // Aquí el script espera la respuesta asíncrona de internet
     const listaRoles = await obtenerRolesDesdeStorage();
+    
+    // Una vez que llegan los datos de Firebase, limpiamos el cartel e imprimimos las filas reales
+    tablaRolesBody.innerHTML = "";
+    
     listaRoles.forEach(rol => {
         const tr = document.createElement('tr');
         tr.className = "fila-rol";
+        
         let contenedorBadgesHTML = '<div class="contenedor-badges-roles">';
         const p = rol.permisos || {};
         contenedorBadgesHTML += crearBadgeVisual("Usuarios", p.configuracionUsuarios);
@@ -175,9 +190,9 @@ async function cargarTablaRoles() {
         contenedorBadgesHTML += crearBadgeVisual("Notas", p.libroCalificaciones);
         contenedorBadgesHTML += crearBadgeVisual("Previas", p.controlPrevias);
         contenedorBadgesHTML += crearBadgeVisual("Estadísticas", p.reportesEstadisticas);
-        contenedorBadgesHTML += crearBadgeVisual("Inclusión/PPI", p.inclusionPpi); 
+        contenedorBadgesHTML += crearBadgeVisual("Inclusión/PPI", p.inclusionPpi);
         contenedorBadgesHTML += '</div>';
-
+        
         let botonesAccionesHTML = "";
         if (rol.id === "administrador") {
             botonesAccionesHTML = `<span style="color:#94a3b8; font-style:italic; font-size:13px;">Sistema Protegido</span>`;
@@ -187,7 +202,7 @@ async function cargarTablaRoles() {
                 <button type="button" class="btn-accion-eliminar" data-id="${rol.id}">Eliminar</button>
             `;
         }
-
+        
         tr.innerHTML = `
             <td style="font-weight: 600; color: #1e293b;">${rol.nombre}</td>
             <td style="font-family: monospace; color: #64748b; font-size: 13px;">${rol.id}</td>
@@ -203,6 +218,7 @@ function crearBadgeVisual(nombreModulo, nivelPermiso) {
     let claseBadge = "badge-ninguno";
     let textoNivel = "Ninguno";
     const estadoNormalizado = String(nivelPermiso || 'ninguno').toLowerCase().trim();
+    
     if (estadoNormalizado === "escritura" || estadoNormalizado === "acceso") {
         claseBadge = "badge-escritura";
         textoNivel = "Escritura";
@@ -246,7 +262,7 @@ formRol.addEventListener('submit', async (e) => {
     const nombre = nombreRolInput.value.trim();
     const idEditar = editRolId.value;
     let listaRoles = await obtenerRolesDesdeStorage();
-
+    
     const estructuraPermisosMapeada = {
         configuracionUsuarios: pUsuarios.value,
         planesEstudio: pPlanes.value,
@@ -254,7 +270,7 @@ formRol.addEventListener('submit', async (e) => {
         libroCalificaciones: pCalificaciones.value,
         controlPrevias: pAsistencia.value,
         reportesEstadisticas: pReportes.value,
-        inclusionPpi: pPpi.value 
+        inclusionPpi: pPpi.value
     };
 
     if (idEditar !== "") {
@@ -278,7 +294,7 @@ formRol.addEventListener('submit', async (e) => {
         const nuevoRolEstructura = {
             id: idNuevo,
             nombre: nombre,
-            permisos: estructuraPermisosMapeada
+            permisos: structurePermisosMapeada
         };
         listaRoles.push(nuevoRolEstructura);
         alert("Nuevo rol institucional incorporado con éxito a la base de datos en la nube.");
@@ -298,6 +314,7 @@ function prepararEdicionRol(rol) {
     editRolId.value = rol.id;
     nombreRolInput.value = rol.nombre;
     if (bannerEdicion) bannerEdicion.style.display = "block";
+    
     const p = rol.permisos || {};
     pLegajo.value = p.legajoDigital || "ninguno";
     pUsuarios.value = p.configuracionUsuarios || "ninguno";
@@ -305,7 +322,8 @@ function prepararEdicionRol(rol) {
     pCalificaciones.value = p.libroCalificaciones || "ninguno";
     pAsistencia.value = p.controlPrevias || "ninguno";
     pReportes.value = p.reportesEstadisticas || "ninguno";
-    pPpi.value = p.inclusionPpi || "ninguno"; 
+    pPpi.value = p.inclusionPpi || "ninguno";
+    
     formRol.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -334,7 +352,7 @@ function restaurarEstadoFormulario() {
     pCalificaciones.value = "ninguno";
     pAsistencia.value = "ninguno";
     pReportes.value = "ninguno";
-    pPpi.value = "ninguno"; 
+    pPpi.value = "ninguno";
 }
 
 })();
