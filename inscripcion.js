@@ -405,11 +405,14 @@ emitirDocumentoIndividual('INFORME', e.target.getAttribute('data-dni'));
 });
 
 tbodyAlumnos.querySelectorAll('.btn-fila-boletin').forEach(btn => {
-btn.addEventListener('click', (e) => {
-e.stopPropagation();
-emitirDocumentoIndividual('BOLETIN', e.target.getAttribute('data-dni'));
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dniAlumno = e.target.getAttribute('data-dni');
+        // Redirección modular interactiva en nueva pestaña
+        window.open(`boletin.html?dni=${dniAlumno}`, '_blank');
+    });
 });
-});
+
 
 tbodyAlumnos.querySelectorAll('button[style*="background:#ef4444"]').forEach(btn => {
 btn.addEventListener('click', (e) => {
@@ -615,49 +618,60 @@ console.error("Fallo de compilación en reportes:", error);
 }
 
 async function emitirDocumentosEnLote(tipo) {
-const cursoId = selectCursoFiltro.value;
-if (!cursoId || !window.currentAlumnosFiltradosCached) return;
-let htmlAcumulado = "";
-const cRef = window.cachedCursosColegio.find(c => c.id === cursoId);
-const cursoTexto = cRef ? `${cRef.ciclo} - "${cRef.division}" (${cRef.turno})` : "";
-const materiasEstructura = cRef ? (cRef.materias || []) : [];
+    const cursoId = selectCursoFiltro.value;
+    const cicloLectivo = document.getElementById('filtroCicloLectivo').value;
+    
+    if (!cursoId) return;
 
-let todasCalificaciones = [];
-try {
-const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
-snapCalificaciones.forEach(cDoc => todasCalificaciones.push(cDoc.data()));
-} catch (err) {
-console.warn("Fallo masivo de calificaciones.");
-}
+    // --- INTERCEPCIÓN MODULAR PARA BOLETINES EN LOTE ---
+    if (tipo === 'BOLETIN') {
+        window.open(`boletin.html?cursoId=${cursoId}&ciclo=${cicloLectivo}`, '_blank');
+        return; 
+    }
 
-let todasAsistencias = [];
-try {
-const snapAsistencias = await getDocs(collection(db, "asistencias"));
-snapAsistencias.forEach(aDoc => todasAsistencias.push(aDoc.data()));
-} catch (err) {
-console.warn("Fallo masivo de asistencias.");
-}
+    // --- LÓGICA PARA INFORMES PEDAGÓGICOS ---
+    if (!window.currentAlumnosFiltradosCached) return;
+    let htmlAcumulado = "";
+    const cRef = window.cachedCursosColegio.find(c => c.id === cursoId);
+    const cursoTexto = cRef ? `${cRef.ciclo} - "${cRef.division}" (${cRef.turno})` : "";
+    const materiasEstructura = cRef ? (cRef.materias || []) : [];
 
-window.currentAlumnosFiltradosCached.forEach(alumno => {
-let calificacionesMapeadas = {};
-todasCalificaciones.forEach(cData => {
-if (cData.alumnoDni === alumno.dni) {
-calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
-}
-});
-let inasistenciasTotales = 0;
-todasAsistencias.forEach(aData => {
-if (aData.alumnoDni === alumno.dni && aData.valor) {
-inasistenciasTotales += parseFloat(aData.valor);
-}
-});
-htmlAcumulado += tipo === 'INFORME'
-? construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales)
-: construirHojaA4BoletinOficial(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas);
-});
+    let todasCalificaciones = [];
+    try {
+        const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
+        snapCalificaciones.forEach(cDoc => todasCalificaciones.push(cDoc.data()));
+    } catch (err) {
+        console.warn("Fallo masivo de calificaciones.");
+    }
 
-modalCuerpo.innerHTML = htmlAcumulado;
-modalContenedor.style.display = "flex";
+    let todasAsistencias = [];
+    try {
+        const snapAsistencias = await getDocs(collection(db, "asistencias"));
+        snapAsistencias.forEach(aDoc => todasAsistencias.push(aDoc.data()));
+    } catch (err) {
+        console.warn("Fallo masivo de asistencias.");
+    }
+
+    window.currentAlumnosFiltradosCached.forEach(alumno => {
+        let calificacionesMapeadas = {};
+        todasCalificaciones.forEach(cData => {
+            if (cData.alumnoDni === alumno.dni) {
+                calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
+            }
+        });
+        let inasistenciasTotales = 0;
+        todasAsistencias.forEach(aData => {
+            if (aData.alumnoDni === alumno.dni && aData.valor) {
+                inasistenciasTotales += parseFloat(aData.valor);
+            }
+        });
+        
+        htmlAcumulado += construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales);
+    });
+
+    // Inyección final dentro del ámbito correcto de la función
+    modalCuerpo.innerHTML = htmlAcumulado;
+    modalContenedor.style.display = "flex";
 }
 
 // --- RENDEREADO DINÁMICO DE LA GRILLA DEL SPREADSHEET (MITAD HOJA VERTICAL A4) ---
