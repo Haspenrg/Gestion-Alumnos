@@ -1,580 +1,572 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cursos y Materias - Colegio HASPEN</title>
-    <link rel="stylesheet" href="estilos.css">
-    <style>
-        /* Aplicación del fondo institucional sin alterar la funcionalidad */
-        body {
-            background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%) !important;
-        }
-        /* Control de alineación fluida para ubicar el escudo en chico a la derecha */
-        .header-dashboard {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            text-align: left !important;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-        .header-textos {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .logo-panel-chico {
-            height: 65px !important;
-            width: auto !important;
-            object-fit: contain;
-        }
-        .indicador-edicion-curso {
-            display: none;
-            background: #fef3c7;
-            color: #d97706;
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 1px solid #fcd34d;
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            text-align: left;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cursos y Materias - Colegio HASPEN</title>
+<link rel="stylesheet" href="estilos.css">
+<style>
+/* Aplicación del fondo institucional sin alterar la funcionalidad */
+body {
+background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%) !important;
+}
+/* Control de alineación fluida para ubicar el escudo en chico a la derecha */
+.header-dashboard {
+display: flex !important;
+justify-content: space-between !important;
+align-items: center !important;
+text-align: left !important;
+border-bottom: 2px solid #eee;
+padding-bottom: 15px;
+margin-bottom: 25px;
+background: #ffffff;
+padding: 20px;
+border-radius: 8px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+.header-textos {
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+gap: 10px;
+}
+.logo-panel-chico {
+height: 65px !important;
+width: auto !important;
+object-fit: contain;
+}
+.indicador-edicion-curso {
+display: none;
+background: #fef3c7;
+color: #d97706;
+padding: 10px 15px;
+border-radius: 6px;
+border: 1px solid #fcd34d;
+font-size: 13px;
+font-weight: bold;
+margin-bottom: 15px;
+text-align: left;
+}
+/* Botón de alternancia de semillas con estilo integrado */
+.btn-toggle-paneles {
+background-color: #1a73e8;
+color: white;
+border: none;
+padding: 8px 16px;
+font-size: 13px;
+font-weight: bold;
+border-radius: 4px;
+cursor: pointer;
+display: none; /* Oculto por defecto, se activa solo para admin por JS */
+box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+transition: background-color 0.2s;
+}
+.btn-toggle-paneles:hover {
+background-color: #1557b0;
+}
+</style>
 </head>
 <body>
-    <div class="panel-container" style="max-width: 95%; width: 95%; margin: 0 auto; padding: 20px; box-sizing: border-box;">
-        <header class="header-dashboard">
-            <div class="header-textos">
-                <h1 style="font-size: 2rem; margin-bottom: 5px; color: #1b4d82;">Configuración de Cursos y Materias</h1>
-                <p style="font-size: 1rem; color: #5f6368; margin: 0;">Ecosistema de Estructuras Curriculares Dinámicas con Eje de Segmentación "Ciclo Básico" u "Orientado"</p>
-            </div>
-            <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" class="logo-panel-chico">
-        </header>
+<div class="panel-container" style="max-width: 95%; width: 95%; margin: 0 auto; padding: 20px; box-sizing: border-box;">
+<header class="header-dashboard">
+<div class="header-textos">
+<h1 style="font-size: 2rem; margin-bottom: 5px; color: #1b4d82;">Configuración de Cursos y Materias</h1>
+<p style="font-size: 1rem; color: #5f6368; margin: 0;">Panel de control para la creacion o edicion de modalidades, cursos, divisiones y materias</p>
+<!-- NUEVO ELEMENTO: Botón de control exclusivo del administrador -->
+<button type="button" id="btn-toggle-semillas" class="btn-toggle-paneles">🛠 Nueva Orientacion / Division</button>
+</div>
+<img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" class="logo-panel-chico">
+</header>
+<!-- PANEL DE EXPANSIÓN DE SEMILLAS EN CALIENTE (Solo Administrador - Oculto por defecto por CSS) -->
+<div id="panel-expansion-institucional" style="background: #f8f9fa; border: 1px dashed #1a73e8; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; grid-template-columns: 1fr 1fr; gap: 20px; box-sizing: border-box;">
+<div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left;">
+<h4 style="margin: 0; color: #1a73e8;">Añadir Nueva División Operativa</h4>
+<div style="display: flex; gap: 10px; width: 100%; box-sizing: border-box;">
+<input type="text" id="input-nueva-division" placeholder="Ej: H" maxlength="2" style="padding: 8px; width: 50%; box-sizing: border-box;">
+<button type="button" id="btn-add-division" style="background: #1a73e8; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">+ Cargar División</button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left;">
+<h4 style="margin: 0; color: #1a73e8;">Añadir Nueva Orientación / Especialidad</h4>
+<div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
+<input type="text" id="input-nueva-orientacion" placeholder="Ej: Informática" style="padding: 8px; box-sizing: border-box; width: 100%;">
+<textarea id="input-nuevas-materias" placeholder="Materias separadas por coma (Ej: Programación, Sistemas, Redes)" rows="2" style="padding: 8px; box-sizing: border-box; resize: none; width: 100%;"></textarea>
+<button type="button" id="btn-add-orientacion" style="background: #1a73e8; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%;">+ Cargar Especialidad</button>
+</div>
+</div>
+</div>
+<div class="grid-formulario" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start; width: 100%; box-sizing: border-box;">
+<!-- CONTENEDOR DEL FORMULARIO -->
+<div class="form-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+<!-- BANNER DE EDICIÓN ACTIVA -->
+<div id="banner-edicion-curso" class="indicador-edicion-curso">
+⚠ MODO EDICIÓN ACTIVO
+<button type="button" id="btn-cancelar-edicion-curso" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
+</div>
+<h3 id="formulario-titulo-curso" style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Configurar Curso y Materias</h3>
+<form id="form-curso" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+<input type="hidden" id="idOriginalEdicion" value="">
+<div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
+<label for="select-ciclo" style="font-weight: bold; margin-bottom: 5px;">Año / Ciclo:</label>
+<select id="select-ciclo" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+<option value="">Seleccione una opción...</option>
+<option value="1° Año - Ciclo Básico">1° Año - Ciclo Básico</option>
+<option value="2° Año - Ciclo Básico">2° Año - Ciclo Básico</option>
+<option value="3° Año - Ciclo Básico">3° Año - Ciclo Básico</option>
+<option value="4° Año - Ciclo Orientado">4° Año - Ciclo Orientado</option>
+<option value="5° Año - Ciclo Orientado">5° Año - Ciclo Orientado</option>
+<option value="6° Año - Ciclo Orientado">6° Año - Ciclo Orientado</option>
+</select>
+</div>
+<div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
+<label for="select-division" style="font-weight: bold; margin-bottom: 5px;">División:</label>
+<select id="select-division" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+<!-- Inyección dinámica base por script -->
+</select>
+</div>
+<div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
+<label for="select-turno" style="font-weight: bold; margin-bottom: 5px;">Turno:</label>
+<select id="select-turno" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+<option value="">Seleccione turno...</option>
+<option value="Mañana">Mañana</option>
+<option value="Tarde">Tarde</option>
+</select>
+</div>
+<!-- Grupo de Orientaciones -->
+<div id="grupo-orientacion" class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
+<label for="select-orientacion" style="font-weight: bold; margin-bottom: 5px;">Orientación Académica (Filtro Estadístico):</label>
+<select id="select-orientacion" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+<!-- Inyección dinámica según correspondencia por script -->
+</select>
+</div>
+<!-- Contenedor de Checkboxes de Materias Sugeridas -->
+<div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
+<label style="font-weight: bold; margin-bottom: 5px;">Materias a incorporar en este curso:</label>
+<div id="contenedor-materias-checkbox" style="max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 12px; border-radius: 4px; background: #fff; text-align: left; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px;">
+<p style="font-size: 13px; color: #666; margin: 0;">Seleccione Año y Orientación para desplegar el mapa estricto de asignaturas.</p>
+</div>
+</div>
+<button type="submit" id="btn-submit-formulario" class="btn-guardar" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; background-color: #ff922b; color: white; border: none; border-radius: 8px;">Registrar Estructura Completa</button>
+</form>
+</div>
+<!-- CONTENEDOR DE LA TABLA COMPLETA -->
+<div class="tabla-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+<h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Estructuras y Planes Registrados</h3>
+<div class="table-responsive" style="width: 100%; overflow-x: auto;">
+<table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left;">
+<thead>
+<tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+<th style="padding: 12px; text-align: left; width: 25%;">Curso / Turno</th>
+<th style="padding: 12px; text-align: left; width: 25%;">Orientación Asignada</th>
+<th style="padding: 12px; text-align: left; width: 30%;">Materias Asignadas</th>
+<th style="padding: 12px; text-align: center; width: 20%;">Acciones</th>
+</tr>
+</thead>
+<tbody id="tabla-cursos-body">
+<tr><td colspan="4" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando registros curriculares con Cloud Firestore...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div style="text-align: left; width: 100%;">
+<button id="btn-volver" class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; margin-top: 25px; padding: 10px 20px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold;">Volver al Panel</button>
+</div>
+</div>
+<!-- CONTROLADOR ASÍNCRONO INDESTRUCTIBLE CON FORMATO DE RUTA DE USUARIOS.JS -->
+<script type="module">
+(async function() {
+'use strict';
 
-        <!-- PANEL DE EXPANSIÓN DE SEMILLAS EN CALIENTE (Solo Administrador) -->
-        <div id="panel-expansion-institucional" style="background: #f8f9fa; border: 1px dashed #1a73e8; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; grid-template-columns: 1fr 1fr; gap: 20px; box-sizing: border-box;">
-            <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left;">
-                <h4 style="margin: 0; color: #1a73e8;">Añadir Nueva División Operativa</h4>
-                <div style="display: flex; gap: 10px; width: 100%; box-sizing: border-box;">
-                    <input type="text" id="input-nueva-division" placeholder="Ej: H" maxlength="2" style="padding: 8px; width: 50%; box-sizing: border-box;">
-                    <button type="button" id="btn-add-division" style="background: #1a73e8; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">+ Cargar División</button>
-                </div>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left;">
-                <h4 style="margin: 0; color: #1a73e8;">Añadir Nueva Orientación / Especialidad</h4>
-                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
-                    <input type="text" id="input-nueva-orientacion" placeholder="Ej: Informática" style="padding: 8px; box-sizing: border-box; width: 100%;">
-                    <textarea id="input-nuevas-materias" placeholder="Materias separadas por coma (Ej: Programación, Sistemas, Redes)" rows="2" style="padding: 8px; box-sizing: border-box; resize: none; width: 100%;"></textarea>
-                    <button type="button" id="btn-add-orientacion" style="background: #1a73e8; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%;">+ Cargar Especialidad</button>
-                </div>
-            </div>
-        </div>
+// Importación dinámica por sub-bloques de caracteres idéntica a usuarios.js
+const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+const { db } = await import('./firebase-config.js');
+const { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, query, where } = await import( b + 'firebase-firestore.js');
 
-        <div class="grid-formulario" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start; width: 100%; box-sizing: border-box;">
-            <!-- CONTENEDOR DEL FORMULARIO -->
-            <div class="form-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-                
-                <!-- BANNER DE EDICIÓN ACTIVA -->
-                <div id="banner-edicion-curso" class="indicador-edicion-curso">
-                    ⚠️ MODO EDICIÓN ACTIVO
-                    <button type="button" id="btn-cancelar-edicion-curso" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
-                </div>
+// VALORES SEMILLA DE CONTINGENCIA INSTITUCIONAL NORMALIZADOS
+let configDivisiones = ["A", "B", "C", "D", "E", "F", "G"];
+let configOrientaciones = {
+comun: ["PRÁCTICAS DEL LENGUAJE", "MATEMÁTICA", "INGLÉS", "LENGUAJES ARTÍSTICOS", "EDUCACIÓN FÍSICA"],
+basico: ["HISTORIA", "GEOGRAFÍA", "BIOLOGÍA", "FÍSICO-QUÍMICA", "CONSTRUCCIÓN CIUDADANA", "EDUCACIÓN TECNOLOGICA"],
+"Ciclo Básico": [], 
+"Ciencias Sociales": ["HISTORIA ORIENTADA", "GEOGRAFÍA ORIENTADA", "BIOLOGÍA, QUÍMICA Y SOCIEDAD", "SALUD Y DERECHO", "SOCIOLOGÍA", "COMUNICACIÓN", "CIENCIAS POLÍTICAS", "FILOSOFÍA", "PSICOLOGÍA", "FÍSICA ORIENTADA", "ECONOMÍA"],
+"Economía y Administración": ["ADMINISTRACIÓN", "SISTEMA INFORMACIÓN CONTABLE", "MICROECONOMÍA", "FILOSOFÍA", "DERECHO ECONÓMICO", "FÍSICA ORIENTADA", "LEGISLACIÓN IMPOSITIVA", "MICROEMPRENDIMIENTO", "ECONOMÍA"],
+"Agro y Ambiente": ["CIENCIAS DE LA TIERRA", "AGROECOSISTEMA", "PRODUCCION VEGETAL", "EMPRENDIMIENTO", "PROCESOS PRODUCTIVOS"]
+};
 
-                <h3 id="formulario-titulo-curso" style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Configurar Curso y Materias</h3>
-                
-                <form id="form-curso" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
-                    <input type="hidden" id="idOriginalEdicion" value="">
-                    
-                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
-                        <label for="select-ciclo" style="font-weight: bold; margin-bottom: 5px;">Año / Ciclo:</label>
-                        <select id="select-ciclo" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
-                            <option value="">Seleccione una opción...</option>
-                            <option value="1° Año - Ciclo Básico">1° Año - Ciclo Básico</option>
-                            <option value="2° Año - Ciclo Básico">2° Año - Ciclo Básico</option>
-                            <option value="3° Año - Ciclo Básico">3° Año - Ciclo Básico</option>
-                            <option value="4° Año - Ciclo Orientado">4° Año - Ciclo Orientado</option>
-                            <option value="5° Año - Ciclo Orientado">5° Año - Ciclo Orientado</option>
-                            <option value="6° Año - Ciclo Orientado">6° Año - Ciclo Orientado</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
-                        <label for="select-division" style="font-weight: bold; margin-bottom: 5px;">División:</label>
-                        <select id="select-division" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
-                            <!-- Inyección dinámica base por script -->
-                        </select>
-                    </div>
-                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
-                        <label for="select-turno" style="font-weight: bold; margin-bottom: 5px;">Turno:</label>
-                        <select id="select-turno" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
-                            <option value="">Seleccione turno...</option>
-                            <option value="Mañana">Mañana</option>
-                            <option value="Tarde">Tarde</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Grupo de Orientaciones -->
-                    <div id="grupo-orientacion" class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
-                        <label for="select-orientacion" style="font-weight: bold; margin-bottom: 5px;">Orientación Académica (Filtro Estadístico):</label>
-                        <select id="select-orientacion" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
-                            <!-- Inyección dinámica según correspondencia por script -->
-                        </select>
-                    </div>
+// Inicialización del DOM y verificación de accesos RBAC
+const datosSesion = localStorage.getItem('usuarioActivo');
+if (!datosSesion) {
+window.location.href = "index.html";
+return;
+}
 
-                    <!-- Contenedor de Checkboxes de Materias Sugeridas -->
-                    <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
-                        <label style="font-weight: bold; margin-bottom: 5px;">Materias a incorporar en este curso:</label>
-                        <div id="contenedor-materias-checkbox" style="max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 12px; border-radius: 4px; background: #fff; text-align: left; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px;">
-                            <p style="font-size: 13px; color: #666; margin: 0;">Seleccione Año y Orientación para desplegar el mapa estricto de asignaturas.</p>
-                        </div>
-                    </div>
-                    <button type="submit" id="btn-submit-formulario" class="btn-guardar" style="width: 100%; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; background-color: #ff922b; color: white; border: none; border-radius: 8px;">Registrar Estructura Completa</button>
-                </form>
-            </div>
+const usuarioLogueado = JSON.parse(datosSesion);
+const rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
 
-            <!-- CONTENEDOR DE LA TABLA COMPLETA -->
-            <div class="tabla-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-                <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Estructuras y Planes Registrados</h3>
-                <div class="table-responsive" style="width: 100%; overflow-x: auto;">
-                    <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                <th style="padding: 12px; text-align: left; width: 25%;">Curso / Turno</th>
-                                <th style="padding: 12px; text-align: left; width: 25%;">Orientación Asignada</th>
-                                <th style="padding: 12px; text-align: left; width: 30%;">Materias Asignadas</th>
-                                <th style="padding: 12px; text-align: center; width: 20%;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-cursos-body">
-                            <tr><td colspan="4" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando registros curriculares con Cloud Firestore...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+async function inicializarEstructura() {
+if (rolNormalizado.includes("admin")) {
+// Habilitar visualización del botón disparador exclusivo para admin
+const btnToggle = document.getElementById('btn-toggle-semillas');
+if (btnToggle) {
+btnToggle.style.display = "block";
+btnToggle.addEventListener('click', alternarVisibilidadPanelSemillas);
+}
 
-        <div style="text-align: left; width: 100%;">
-            <button id="btn-volver" class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; margin-top: 25px; padding: 10px 20px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold;">Volver al Panel</button>
-        </div>
-    </div>
+const btnAddDivision = document.getElementById('btn-add-division');
+if (btnAddDivision) btnAddDivision.addEventListener('click', agregarNuevaDivisionCaliente);
 
-    <!-- CONTROLADOR ASÍNCRONO INDESTRUCTIBLE CON FORMATO DE RUTA DE USUARIOS.JS -->
-    <script type="module">
-        (async function() {
-            'use strict';
+const btnAddOrientacion = document.getElementById('btn-add-orientacion');
+if (btnAddOrientacion) btnAddOrientacion.addEventListener('click', agregarNuevaOrientacionCaliente);
+}
 
-            // Importación dinámica por sub-bloques de caracteres idéntica a usuarios.js
-            const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-            
-            const { db } = await import('./firebase-config.js');
-            const { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, query, where } = await import(b + 'firebase-firestore.js');
+if (rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
+const contenedorForm = document.querySelector('.form-container');
+if (contenedorForm) contenedorForm.style.display = "none";
+const gridPrincipal = document.querySelector('.grid-formulario');
+if (gridPrincipal) gridPrincipal.style.gridTemplateColumns = "1fr";
+}
 
-            // VALORES SEMILLA DE CONTINGENCIA INSTITUCIONAL NORMALIZADOS
-            let configDivisiones = ["A", "B", "C", "D", "E", "F", "G"];
-            let configOrientaciones = {
-                comun: ["PRÁCTICAS DEL LENGUAJE", "MATEMÁTICA", "INGLÉS", "LENGUAJES ARTÍSTICOS", "EDUCACIÓN FÍSICA"],
-                basico: ["HISTORIA", "GEOGRAFÍA", "BIOLOGÍA", "FÍSICO-QUÍMICA", "CONSTRUCCIÓN CIUDADANA", "EDUCACIÓN TECNOLOGICA"],
-                "Ciclo Básico": [], // Unificado según observación operativa
-                "Ciencias Sociales": ["HISTORIA ORIENTADA", "GEOGRAFÍA ORIENTADA", "BIOLOGÍA, QUÍMICA Y SOCIEDAD", "SALUD Y DERECHO", "SOCIOLOGÍA", "COMUNICACIÓN", "CIENCIAS POLÍTICAS", "FILOSOFÍA", "PSICOLOGÍA", "FÍSICA ORIENTADA", "ECONOMÍA"],
-                "Economía y Administración": ["ADMINISTRACIÓN", "SISTEMA INFORMACIÓN CONTABLE", "MICROECONOMÍA", "FILOSOFÍA", "DERECHO ECONÓMICO", "FÍSICA ORIENTADA", "LEGISLACIÓN IMPOSITIVA", "MICROEMPRENDIMIENTO", "ECONOMÍA"],
-                "Agro y Ambiente": ["CIENCIAS DE LA TIERRA", "AGROECOSISTEMA", "PRODUCCION VEGETAL", "EMPRENDIMIENTO", "PROCESOS PRODUCTIVOS"]
-            };
+await cargarConfiguracionBaseFirestore();
+inicializarSelectoresBase();
+await renderizarTablaCursos();
 
-            // Inicialización del DOM y verificación de accesos RBAC
-            const datosSesion = localStorage.getItem('usuarioActivo');
-            if (!datosSesion) {
-                window.location.href = "index.html";
-                return;
-            }
+const selectCiclo = document.getElementById('select-ciclo');
+if (selectCiclo) selectCiclo.addEventListener('change', actualizarFiltroOrientacionesPorAño);
 
-            const usuarioLogueado = JSON.parse(datosSesion);
-            const rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
+const selectOrientacion = document.getElementById('select-orientacion');
+if (selectOrientacion) selectOrientacion.addEventListener('change', cargarMateriasSugeridas);
 
-            async function inicializarEstructura() {
-                if (rolNormalizado.includes("admin")) {
-                    const panelExpansion = document.getElementById('panel-expansion-institucional');
-                    if (panelExpansion) panelExpansion.style.display = "grid";
-                    
-                    const btnAddDivision = document.getElementById('btn-add-division');
-                    if (btnAddDivision) btnAddDivision.addEventListener('click', agregarNuevaDivisionCaliente);
-                    
-                    const btnAddOrientacion = document.getElementById('btn-add-orientacion');
-                    if (btnAddOrientacion) btnAddOrientacion.addEventListener('click', agregarNuevaOrientacionCaliente);
-                }
+const formCurso = document.getElementById('form-curso');
+if (formCurso) formCurso.addEventListener('submit', procesarGuardarCurso);
 
-                if (rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
-                    const contenedorForm = document.querySelector('.form-container');
-                    if (contenedorForm) contenedorForm.style.display = "none";
-                    const gridPrincipal = document.querySelector('.grid-formulario');
-                    if (gridPrincipal) gridPrincipal.style.gridTemplateColumns = "1fr";
-                }
+const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion-curso');
+if (btnCancelarEdicion) btnCancelarEdicion.addEventListener('click', salirModoEdicion);
+}
 
-                await cargarConfiguracionBaseFirestore();
-                inicializarSelectoresBase();
-                await renderizarTablaCursos();
+// Nueva función quirúrgica para alternar la visualización del panel
+function alternarVisibilidadPanelSemillas() {
+const panelExpansion = document.getElementById('panel-expansion-institucional');
+if (!panelExpansion) return;
 
-                const selectCiclo = document.getElementById('select-ciclo');
-                if (selectCiclo) selectCiclo.addEventListener('change', actualizarFiltroOrientacionesPorAño);
+if (panelExpansion.style.display === "grid") {
+panelExpansion.style.display = "none";
+} else {
+panelExpansion.style.display = "grid";
+panelExpansion.scrollIntoView({ behavior: 'smooth' });
+}
+}
 
-                const selectOrientacion = document.getElementById('select-orientacion');
-                if (selectOrientacion) selectOrientacion.addEventListener('change', cargarMateriasSugeridas);
+async function cargarConfiguracionBaseFirestore() {
+try {
+const docRef = doc(db, "configuracion", "valoresBase");
+const docSnapshot = await getDoc(docRef);
+if (docSnapshot.exists()) {
+const datos = docSnapshot.data();
+if (datos.divisiones && datos.divisiones.length > 0) configDivisiones = datos.divisiones;
+if (datos.orientaciones) configOrientaciones = datos.orientaciones;
+} else {
+await setDoc(docRef, { divisiones: configDivisiones, orientaciones: configOrientaciones });
+}
+} catch (error) {
+console.warn("Fallo de red en Cloud Firestore, operando localmente:", error);
+}
+}
 
-                const formCurso = document.getElementById('form-curso');
-                if (formCurso) formCurso.addEventListener('submit', procesarGuardarCurso);
+async function agregarNuevaDivisionCaliente() {
+const input = document.getElementById('input-nueva-division');
+if (!input) return;
+const divisionNueva = input.value.trim().toUpperCase();
+if (!divisionNueva) return;
+if (configDivisiones.includes(divisionNueva)) {
+alert("La división ingresada ya se encuentra activa.");
+return;
+}
+configDivisiones.push(divisionNueva);
+configDivisiones.sort();
+try {
+await setDoc(doc(db, "configuracion", "valoresBase"), { divisiones: configDivisiones, orientaciones: configOrientaciones }, { merge: true });
+alert(`División "${divisionNueva}" inyectada con éxito en Cloud Firestore.`);
+input.value = "";
+inicializarSelectoresBase();
+} catch (e) {
+alert("Error al intentar sincronizar con el servidor remoto.");
+}
+}
 
-                const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion-curso');
-                if (btnCancelarEdicion) btnCancelarEdicion.addEventListener('click', salirModoEdicion);
-            }
+async function agregarNuevaOrientacionCaliente() {
+const inputOri = document.getElementById('input-nueva-orientacion');
+const inputMats = document.getElementById('input-nuevas-materias');
+if (!inputOri || !inputMats) return;
+const nombreOri = inputOri.value.trim();
+const materiasTexto = inputMats.value.trim();
+if (!nombreOri || !materiasTexto) {
+alert("Complete el nombre de la especialidad y cargue al menos una materia.");
+return;
+}
+if (configOrientaciones[nombreOri]) {
+alert("Esta orientación académica ya está registrada.");
+return;
+}
+const arrayMaterias = materiasTexto.split(',').map(m => m.trim().toUpperCase()).filter(m => m.length > 0);
+configOrientaciones[nombreOri] = arrayMaterias;
+try {
+await setDoc(doc(db, "configuracion", "valoresBase"), { divisiones: configDivisiones, orientaciones: configOrientaciones }, { merge: true });
+alert(`Modalidad/Especialidad "${nombreOri}" incorporada en Cloud Firestore.`);
+inputOri.value = "";
+inputMats.value = "";
+inicializarSelectoresBase();
+} catch (e) {
+alert("Error al intentar sincronizar con el servidor remoto.");
+}
+}
 
-            async function cargarConfiguracionBaseFirestore() {
-                try {
-                    const docRef = doc(db, "configuracion", "valoresBase");
-                    const docSnapshot = await getDoc(docRef);
-                    if (docSnapshot.exists()) {
-                        const datos = docSnapshot.data();
-                        if (datos.divisiones && datos.divisiones.length > 0) configDivisiones = datos.divisiones;
-                        if (datos.orientaciones) configOrientaciones = datos.orientaciones;
-                    } else {
-                        await setDoc(docRef, { divisiones: configDivisiones, orientaciones: configOrientaciones });
-                    }
-                } catch (error) {
-                    console.warn("Fallo de red en Cloud Firestore, operando localmente:", error);
-                }
-            }
+function inicializarSelectoresBase() {
+const selectDiv = document.getElementById('select-division');
+if (!selectDiv) return;
+selectDiv.innerHTML = '<option value="">Seleccione división...</option>';
+configDivisiones.forEach(div => selectDiv.add(new Option(div, div)));
+actualizarFiltroOrientacionesPorAño();
+}
 
-            async function agregarNuevaDivisionCaliente() {
-                const input = document.getElementById('input-nueva-division');
-                if (!input) return;
-                const divisionNueva = input.value.trim().toUpperCase();
-                if (!divisionNueva) return;
-                if (configDivisiones.includes(divisionNueva)) {
-                    alert("La división ingresada ya se encuentra activa.");
-                    return;
-                }
-                configDivisiones.push(divisionNueva);
-                configDivisiones.sort();
-                try {
-                    await setDoc(doc(db, "configuracion", "valoresBase"), { divisiones: configDivisiones, orientaciones: configOrientaciones }, { merge: true });
-                    alert(`División "${divisionNueva}" inyectada con éxito en Cloud Firestore.`);
-                    input.value = "";
-                    inicializarSelectoresBase();
-                } catch (e) {
-                    alert("Error al intentar sincronizar con el servidor remoto.");
-                }
-            }
+function actualizarFiltroOrientacionesPorAño() {
+const selectCiclo = document.getElementById('select-ciclo');
+const selectOri = document.getElementById('select-orientacion');
+if (!selectCiclo || !selectOri) return;
+const ciclo = selectCiclo.value;
+const valorGuardadoEdicion = window.orientacionEditarCarga || "";
+selectOri.innerHTML = '<option value="">Seleccione orientación...</option>';
+if (!ciclo) {
+cargarMateriasSugeridas();
+return;
+}
+if (ciclo.includes("Ciclo Básico")) {
+selectOri.add(new Option("Ciclo Básico", "Ciclo Básico"));
+selectOri.value = "Ciclo Básico";
+} else {
+Object.keys(configOrientaciones).forEach(ori => {
+if (ori !== "comun" && ori !== "basico" && ori !== "Ciclo Básico") {
+selectOri.add(new Option(ori, ori));
+}
+});
+if (valorGuardadoEdicion && valorGuardadoEdicion !== "Ciclo Básico") {
+selectOri.value = valorGuardadoEdicion;
+}
+}
+cargarMateriasSugeridas();
+}
 
-            async function agregarNuevaOrientacionCaliente() {
-                const inputOri = document.getElementById('input-nueva-orientacion');
-                const inputMats = document.getElementById('input-nuevas-materias');
-                if (!inputOri || !inputMats) return;
-                const nombreOri = inputOri.value.trim();
-                const materiasTexto = inputMats.value.trim();
-                if (!nombreOri || !materiasTexto) {
-                    alert("Complete el nombre de la especialidad y cargue al menos una materia.");
-                    return;
-                }
-                if (configOrientaciones[nombreOri]) {
-                    alert("Esta orientación académica ya está registrada.");
-                    return;
-                }
-                const arrayMaterias = materiasTexto.split(',').map(m => m.trim().toUpperCase()).filter(m => m.length > 0);
-                configOrientaciones[nombreOri] = arrayMaterias;
-                try {
-                    await setDoc(doc(db, "configuracion", "valoresBase"), { divisiones: configDivisiones, orientaciones: configOrientaciones }, { merge: true });
-                    alert(`Modalidad/Especialidad "${nombreOri}" incorporada en Cloud Firestore.`);
-                    inputOri.value = "";
-                    inputMats.value = "";
-                    inicializarSelectoresBase();
-                } catch (e) {
-                    alert("Error al intentar sincronizar con el servidor remoto.");
-                }
-            }
+function cargarMateriasSugeridas() {
+const selectCiclo = document.getElementById('select-ciclo');
+const selectOrientacion = document.getElementById('select-orientacion');
+const contenedor = document.getElementById('contenedor-materias-checkbox');
+if (!selectCiclo || !selectOrientacion || !contenedor) return;
+const ciclo = selectCiclo.value;
+const orientacion = selectOrientacion.value;
+if (!ciclo || !orientacion) {
+contenedor.innerHTML = '<p style="font-size: 13px; color: #666; margin: 0;">Seleccione Año y Orientación para desplegar el mapa estricto de asignaturas.</p>';
+return;
+}
+contenedor.innerHTML = "";
+let listaMaterias = [...configOrientaciones.comun];
+if (ciclo.includes("Ciclo Básico")) {
+listaMaterias = listaMaterias.concat(configOrientaciones.basico);
+} else if (ciclo.includes("Ciclo Orientado")) {
+if (configOrientaciones[orientacion]) {
+listaMaterias = listaMaterias.concat(configOrientaciones[orientacion]);
+}
+}
+const materiasPreviamenteSeleccionadas = window.materiasEditarCarga || [];
+listaMaterias.forEach((materia, i) => {
+const item = document.createElement('div');
+item.style.margin = "4px 0";
+item.style.display = "grid";
+item.style.gridTemplateColumns = "24px 1fr";
+item.style.alignItems = "center";
+const checkedAttr = materiasPreviamenteSeleccionadas.includes(materia) ? "checked" : "";
+item.innerHTML = `
+<input type="checkbox" name="materias-curso" value="${materia}" id="mat-${i}" ${checkedAttr} style="margin: 0; cursor: pointer;">
+<label for="mat-${i}" style="font-size: 13px; cursor: pointer; color: #3c4043; font-weight: normal; line-height: 1.2; text-align: left; width: 100%;">
+${materia}
+</label>
+`;
+contenedor.appendChild(item);
+});
+}
 
-            function inicializarSelectoresBase() {
-                const selectDiv = document.getElementById('select-division');
-                if (!selectDiv) return;
-                selectDiv.innerHTML = '<option value="">Seleccione división...</option>';
-                configDivisiones.forEach(div => selectDiv.add(new Option(div, div)));
-                actualizarFiltroOrientacionesPorAño();
-            }
+async function procesarGuardarCurso(e) {
+e.preventDefault();
+const idEdicion = document.getElementById('idOriginalEdicion').value;
+const selectCiclo = document.getElementById('select-ciclo');
+const selectDivision = document.getElementById('select-division');
+const selectTurno = document.getElementById('select-turno');
+const selectOrientacion = document.getElementById('select-orientacion');
+if (!selectCiclo || !selectDivision || !selectTurno || !selectOrientacion) return;
+const ciclo = selectCiclo.value;
+const division = selectDivision.value;
+const turno = selectTurno.value;
+const orientacion = selectOrientacion.value;
+const checkboxes = document.querySelectorAll('input[name="materias-curso"]:checked');
+if (checkboxes.length === 0) {
+alert("Error: Debe asociar al menos una materia para registrar la estructura curricular del curso.");
+return;
+}
+const materiasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
+const numeroAnio = ciclo.charAt(0);
+const letraTurno = turno.substring(0, 1).toUpperCase();
+const cursoId = `${numeroAnio}-${division}-${letraTurno}`;
+try {
+if (!idEdicion) {
+const docCursoRef = doc(db, "cursos", cursoId);
+const checkDoc = await getDoc(docCursoRef);
+if (checkDoc.exists()) {
+alert("Error: Esta estructura de curso, división y turno ya se encuentra registrada en Firestore.");
+return;
+}
+}
+if (idEdicion && idEdicion !== cursoId) {
+if (confirm(`Ha modificado parámetros clave del curso. Los alumnos asignados al ID anterior ("${idEdicion}") se enviarán a Mesa de Entrada de forma automática. ¿Desea continuar?`)) {
+await reubicarAlumnosAMesaEntrada(idEdicion);
+await deleteDoc(doc(db, "cursos", idEdicion));
+} else {
+return;
+}
+}
+const docDestinoRef = doc(db, "cursos", cursoId);
+const nuevoCurso = { id: cursoId, ciclo, division, turno, orientacion, materias: materiasSeleccionadas };
+await setDoc(docDestinoRef, nuevoCurso);
+alert(idEdicion ? "Estructura Curricular actualizada con éxito." : "Estructura Curricular registrada con éxito en Cloud Firestore.");
+salirModoEdicion();
+await renderizarTablaCursos();
+} catch (error) {
+console.error("Error al persistir el curso:", error);
+alert("Error: No se pudieron guardar los cambios en el servidor.");
+}
+}
 
-            function actualizarFiltroOrientacionesPorAño() {
-                const selectCiclo = document.getElementById('select-ciclo');
-                const selectOri = document.getElementById('select-orientacion');
-                if (!selectCiclo || !selectOri) return;
+async function cargarCursoEnFormulario(idCurso) {
+try {
+const docSnapshot = await getDoc(doc(db, "cursos", idCurso));
+if (!docSnapshot.exists()) return;
+const curso = docSnapshot.data();
+document.getElementById('idOriginalEdicion').value = curso.id;
+document.getElementById('formulario-titulo-curso').textContent = "Modificar Estructura Curricular";
+document.getElementById('btn-submit-formulario').textContent = "Guardar Cambios Estructurales";
+document.getElementById('banner-edicion-curso').style.display = "block";
+document.getElementById('select-ciclo').value = curso.ciclo || "";
+document.getElementById('select-division').value = curso.division || "";
+document.getElementById('select-turno').value = curso.turno || "";
+window.orientacionEditarCarga = curso.orientacion || "";
+window.materiasEditarCarga = curso.materias || [];
+actualizarFiltroOrientacionesPorAño();
+document.getElementById('formulario-titulo-curso').scrollIntoView({ behavior: 'smooth' });
+} catch (error) {
+console.error("Error al recuperar el legajo del curso:", error);
+alert("No se pudo cargar la información para su edición.");
+}
+}
 
-                const ciclo = selectCiclo.value;
-                const valorGuardadoEdicion = window.orientacionEditarCarga || "";
-                selectOri.innerHTML = '<option value="">Seleccione orientación...</option>';
+function salirModoEdicion() {
+const form = document.getElementById('form-curso');
+if (form) form.reset();
+document.getElementById('idOriginalEdicion').value = "";
+document.getElementById('formulario-titulo-curso').textContent = "Configurar Curso y Materias";
+document.getElementById('btn-submit-formulario').textContent = "Registrar Estructura Completa";
+document.getElementById('banner-edicion-curso').style.display = "none";
+window.materiasEditarCarga = [];
+window.orientacionEditarCarga = "";
+actualizarFiltroOrientacionesPorAño();
+}
 
-                if (!ciclo) {
-                    cargarMateriasSugeridas();
-                    return;
-                }
+async function reubicarAlumnosAMesaEntrada(idCurso) {
+const q = query(collection(db, "alumnos"), where("cursoId", "==", idCurso));
+const snapshot = await getDocs(q);
+if (!snapshot.empty) {
+const lote = writeBatch(db);
+snapshot.forEach((documento) => {
+const refAlumno = doc(db, "alumnos", documento.id);
+lote.update(refAlumno, {
+cursoId: "",
+estado: "Entrante",
+observaciones: (documento.data().observaciones || "") + `\n[Auditoría: Reubicado automáticamente en Mesa de Entrada por remoción o alteración del curso ${idCurso}].`
+});
+});
+await lote.commit();
+}
+}
 
-                if (ciclo.includes("Ciclo Básico")) {
-                    selectOri.add(new Option("Ciclo Básico", "Ciclo Básico"));
-                    selectOri.value = "Ciclo Básico";
-                } else {
-                    Object.keys(configOrientaciones).forEach(ori => {
-                        if (ori !== "comun" && ori !== "basico" && ori !== "Ciclo Básico") {
-                            selectOri.add(new Option(ori, ori));
-                        }
-                    });
-                    if (valorGuardadoEdicion && valorGuardadoEdicion !== "Ciclo Básico") {
-                        selectOri.value = valorGuardadoEdicion;
-                    }
-                }
-                cargarMateriasSugeridas();
-            }
+async function renderizarTablaCursos() {
+const tbody = document.getElementById('tabla-cursos-body');
+if (!tbody) return;
+tbody.innerHTML = "";
+try {
+const querySnapshot = await getDocs(collection(db, "cursos"));
+if (querySnapshot.empty) {
+tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">No hay estructuras curriculares configuradas.</td></tr>`;
+return;
+}
+querySnapshot.forEach((documento) => {
+const curso = documento.data();
+const tr = document.createElement('tr');
+tr.style.borderBottom = "1px solid #f1f3f4";
+const listaMateriasTexto = curso.materias ? curso.materias.join(", ") : "";
+let botonesAcciones = `<span style="color:#94a3b8; font-size:11px;">Restringido</span>`;
+if (rolNormalizado.includes("admin")) {
+botonesAcciones = `
+<div style="display: flex; gap: 6px; justify-content: center;">
+<button type="button" class="btn-accion-editar" data-id="${curso.id}" style="background:#1a73e8; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Editar</button>
+<button type="button" class="btn-accion-eliminar" data-id="${curso.id}" style="background:#ea4335; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Borrar</button>
+</div>
+`;
+}
+tr.innerHTML = `
+<td style="padding: 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
+<td style="padding: 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
+<td style="padding: 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">
+${listaMateriasTexto}
+</td>
+<td style="padding: 12px; text-align: center;">
+${botonesAcciones}
+</td>
+`;
+tbody.appendChild(tr);
+});
 
-            function cargarMateriasSugeridas() {
-                const selectCiclo = document.getElementById('select-ciclo');
-                const selectOrientacion = document.getElementById('select-orientacion');
-                const contenedor = document.getElementById('contenedor-materias-checkbox');
-                if (!selectCiclo || !selectOrientacion || !contenedor) return;
+tbody.querySelectorAll('.btn-accion-editar').forEach(boton => {
+boton.addEventListener('click', (e) => {
+const idCurso = e.target.getAttribute('data-id');
+cargarCursoEnFormulario(idCurso);
+});
+});
 
-                const ciclo = selectCiclo.value;
-                const orientacion = selectOrientacion.value;
+tbody.querySelectorAll('.btn-accion-eliminar').forEach(boton => {
+boton.addEventListener('click', async (e) => {
+const idCurso = e.target.getAttribute('data-id');
+if (confirm(`¿Está completamente seguro de eliminar la estructura curricular "${idCurso}"?\n\nTodos los alumnos inscritos en esta división perderán el curso asignado y se enviarán automáticamente a "Mesa de Entrada" bajo estado Entrante.`)) {
+try {
+await reubicarAlumnosAMesaEntrada(idCurso);
+await deleteDoc(doc(db, "cursos", idCurso));
+alert("Estructura curricular removida e integridad de alumnos resguardada en Mesa de Entrada.");
+salirModoEdicion();
+await renderizarTablaCursos();
+} catch (error) {
+console.error("Error en proceso de baja relacional:", error);
+alert("Error al intentar remover la estructura curricular.");
+}
+}
+});
+});
+} catch (error) {
+console.error("Error al descargar listado de cursos:", error);
+}
+}
 
-                if (!ciclo || !orientacion) {
-                    contenedor.innerHTML = '<p style="font-size: 13px; color: #666; margin: 0;">Seleccione Año y Orientación para desplegar el mapa estricto de asignaturas.</p>';
-                    return;
-                }
-                
-                contenedor.innerHTML = "";
-                
-                // Mapeo quirúrgico: Todas las orientaciones comparten la base 'comun'
-                let listaMaterias = [...configOrientaciones.comun];
-
-                if (ciclo.includes("Ciclo Básico")) {
-                    // Si es Ciclo Básico (1° a 3°), concatena el tronco básico general
-                    listaMaterias = listaMaterias.concat(configOrientaciones.basico);
-                } else if (ciclo.includes("Ciclo Orientado")) {
-                    // Si es Ciclo Orientado (4° a 6°), junta lo común y las de la especialidad elegida, aislando las materias del básico
-                    if (configOrientaciones[orientacion]) {
-                        listaMaterias = listaMaterias.concat(configOrientaciones[orientacion]);
-                    }
-                }
-
-                const materiasPreviamenteSeleccionadas = window.materiasEditarCarga || [];
-
-                listaMaterias.forEach((materia, i) => {
-                    const item = document.createElement('div');
-                    item.style.margin = "4px 0";
-                    item.style.display = "grid";
-                    item.style.gridTemplateColumns = "24px 1fr";
-                    item.style.alignItems = "center";
-                    
-                    const checkedAttr = materiasPreviamenteSeleccionadas.includes(materia) ? "checked" : "";
-                    
-                    item.innerHTML = `
-                        <input type="checkbox" name="materias-curso" value="${materia}" id="mat-${i}" ${checkedAttr} style="margin: 0; cursor: pointer;">
-                        <label for="mat-${i}" style="font-size: 13px; cursor: pointer; color: #3c4043; font-weight: normal; line-height: 1.2; text-align: left; width: 100%;">
-                            ${materia}
-                        </label>
-                    `;
-                    contenedor.appendChild(item);
-                });
-            }
-
-            async function procesarGuardarCurso(e) {
-                e.preventDefault();
-                const idEdicion = document.getElementById('idOriginalEdicion').value;
-                
-                const selectCiclo = document.getElementById('select-ciclo');
-                const selectDivision = document.getElementById('select-division');
-                const selectTurno = document.getElementById('select-turno');
-                const selectOrientacion = document.getElementById('select-orientacion');
-                if (!selectCiclo || !selectDivision || !selectTurno || !selectOrientacion) return;
-
-                const ciclo = selectCiclo.value;
-                const division = selectDivision.value;
-                const turno = selectTurno.value;
-                const orientacion = selectOrientacion.value;
-                const checkboxes = document.querySelectorAll('input[name="materias-curso"]:checked');
-
-                if (checkboxes.length === 0) {
-                    alert("Error: Debe asociar al menos una materia para registrar la estructura curricular del curso.");
-                    return;
-                }
-                const materiasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
-                const numeroAnio = ciclo.charAt(0);
-                const letraTurno = turno.substring(0, 1).toUpperCase();
-                const cursoId = `${numeroAnio}-${division}-${letraTurno}`;
-                
-                try {
-                    if (!idEdicion) {
-                        const docCursoRef = doc(db, "cursos", cursoId);
-                        const checkDoc = await getDoc(docCursoRef);
-                        if (checkDoc.exists()) {
-                            alert("Error: Esta estructura de curso, división y turno ya se encuentra registrada en Firestore.");
-                            return;
-                        }
-                    }
-
-                    if (idEdicion && idEdicion !== cursoId) {
-                        if (confirm(`Ha modificado parámetros clave del curso. Los alumnos asignados al ID anterior ("${idEdicion}") se enviarán a Mesa de Entrada de forma automática. ¿Desea continuar?`)) {
-                            await reubicarAlumnosAMesaEntrada(idEdicion);
-                            await deleteDoc(doc(db, "cursos", idEdicion));
-                        } else {
-                            return;
-                        }
-                    }
-
-                    const docDestinoRef = doc(db, "cursos", cursoId);
-                    const nuevoCurso = { id: cursoId, ciclo, division, turno, orientacion, materias: materiasSeleccionadas };
-                    await setDoc(docDestinoRef, nuevoCurso);
-                    
-                    alert(idEdicion ? "Estructura Curricular actualizada con éxito." : "Estructura Curricular registrada con éxito en Cloud Firestore.");
-                    salirModoEdicion();
-                    await renderizarTablaCursos();
-                } catch (error) {
-                    console.error("Error al persistir el curso:", error);
-                    alert("Error: No se pudieron guardar los cambios en el servidor.");
-                }
-            }
-
-            async function cargarCursoEnFormulario(idCurso) {
-                try {
-                    const docSnapshot = await getDoc(doc(db, "cursos", idCurso));
-                    if (!docSnapshot.exists()) return;
-                    
-                    const curso = docSnapshot.data();
-                    
-                    document.getElementById('idOriginalEdicion').value = curso.id;
-                    document.getElementById('formulario-titulo-curso').textContent = "Modificar Estructura Curricular";
-                    document.getElementById('btn-submit-formulario').textContent = "Guardar Cambios Estructurales";
-                    document.getElementById('banner-edicion-curso').style.display = "block";
-
-                    document.getElementById('select-ciclo').value = curso.ciclo || "";
-                    document.getElementById('select-division').value = curso.division || "";
-                    document.getElementById('select-turno').value = curso.turno || "";
-                    
-                    window.orientacionEditarCarga = curso.orientacion || "";
-                    window.materiasEditarCarga = curso.materias || [];
-                    
-                    actualizarFiltroOrientacionesPorAño();
-                    
-                    document.getElementById('formulario-titulo-curso').scrollIntoView({ behavior: 'smooth' });
-                } catch (error) {
-                    console.error("Error al recuperar el legajo del curso:", error);
-                    alert("No se pudo cargar la información para su edición.");
-                }
-            }
-
-            function salirModoEdicion() {
-                const form = document.getElementById('form-curso');
-                if (form) form.reset();
-                document.getElementById('idOriginalEdicion').value = "";
-                document.getElementById('formulario-titulo-curso').textContent = "Configurar Curso y Materias";
-                document.getElementById('btn-submit-formulario').textContent = "Registrar Estructura Completa";
-                document.getElementById('banner-edicion-curso').style.display = "none";
-                window.materiasEditarCarga = [];
-                window.orientacionEditarCarga = "";
-                actualizarFiltroOrientacionesPorAño();
-            }
-
-            async function reubicarAlumnosAMesaEntrada(idCurso) {
-                const q = query(collection(db, "alumnos"), where("cursoId", "==", idCurso));
-                const snapshot = await getDocs(q);
-                
-                if (!snapshot.empty) {
-                    const lote = writeBatch(db);
-                    snapshot.forEach((documento) => {
-                        const refAlumno = doc(db, "alumnos", documento.id);
-                        lote.update(refAlumno, {
-                            cursoId: "",
-                            estado: "Entrante",
-                            observaciones: (documento.data().observaciones || "") + `\n[Auditoría: Reubicado automáticamente en Mesa de Entrada por remoción o alteración del curso ${idCurso}].`
-                        });
-                    });
-                    await lote.commit();
-                }
-            }
-
-            async function renderizarTablaCursos() {
-                const tbody = document.getElementById('tabla-cursos-body');
-                if (!tbody) return;
-                tbody.innerHTML = "";
-                try {
-                    const querySnapshot = await getDocs(collection(db, "cursos"));
-                    if (querySnapshot.empty) {
-                        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">No hay estructuras curriculares configuradas.</td></tr>`;
-                        return;
-                    }
-                    querySnapshot.forEach((documento) => {
-                        const curso = documento.data();
-                        const tr = document.createElement('tr');
-                        tr.style.borderBottom = "1px solid #f1f3f4";
-                        const listaMateriasTexto = curso.materias ? curso.materias.join(", ") : "";
-                        
-                        let botonesAcciones = `<span style="color:#94a3b8; font-size:11px;">Restringido</span>`;
-                        if (rolNormalizado.includes("admin")) {
-                            botonesAcciones = `
-                                <div style="display: flex; gap: 6px; justify-content: center;">
-                                    <button type="button" class="btn-accion-editar" data-id="${curso.id}" style="background:#1a73e8; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Editar</button>
-                                    <button type="button" class="btn-accion-eliminar" data-id="${curso.id}" style="background:#ea4335; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Borrar</button>
-                                </div>
-                            `;
-                        }
-
-                        tr.innerHTML = `
-                            <td style="padding: 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
-                            <td style="padding: 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
-                            <td style="padding: 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">
-                                ${listaMateriasTexto}
-                            </td>
-                            <td style="padding: 12px; text-align: center;">
-                                ${botonesAcciones}
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-
-                    tbody.querySelectorAll('.btn-accion-editar').forEach(boton => {
-                        boton.addEventListener('click', (e) => {
-                            const idCurso = e.target.getAttribute('data-id');
-                            cargarCursoEnFormulario(idCurso);
-                        });
-                    });
-
-                    tbody.querySelectorAll('.btn-accion-eliminar').forEach(boton => {
-                        boton.addEventListener('click', async (e) => {
-                            const idCurso = e.target.getAttribute('data-id');
-                            if (confirm(`¿Está completamente seguro de eliminar la estructura curricular "${idCurso}"?\n\nTodos los alumnos inscritos en esta división perderán el curso asignado y se enviarán automáticamente a "Mesa de Entrada" bajo estado Entrante.`)) {
-                                try {
-                                    await reubicarAlumnosAMesaEntrada(idCurso);
-                                    await deleteDoc(doc(db, "cursos", idCurso));
-                                    
-                                    alert("Estructura curricular removida e integridad de alumnos resguardada en Mesa de Entrada.");
-                                    salirModoEdicion();
-                                    await renderizarTablaCursos();
-                                } catch (error) {
-                                    console.error("Error en proceso de baja relacional:", error);
-                                    alert("Error al intentar remover la estructura curricular.");
-                                }
-                            }
-                        });
-                    });
-
-                } catch (error) {
-                    console.error("Error al descargar listado de cursos:", error);
-                }
-            }
-
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", inicializarEstructura);
-            } else {
-                await inicializarEstructura();
-            }
-        })();
-    </script>
+if (document.readyState === "loading") {
+document.addEventListener("DOMContentLoaded", inicializarEstructura);
+} else {
+await inicializarEstructura();
+}
+})();
+</script>
 </body>
 </html>
