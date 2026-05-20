@@ -1,324 +1,366 @@
 /* ==========================================================================
-   CONFIGURACIÓN GENERAL Y TIPOGRAFÍA INSTITUCIONAL
-   ========================================================================== */
+CONFIGURACIÓN GENERAL Y TIPOGRAFÍA INSTITUCIONAL
+========================================================================== */
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* Fondo temático con gradiente suave celeste y naranja institucional */
+  background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%);
+  display: flex;
+  flex-direction: column; 
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
 }
 
 /* ==========================================================================
-   CONTENEDORES Y ARQUITECTURA HORIZONTAL (WIDESCREEN FLUIDO)
-   ========================================================================== */
+CONTENEDORES Y ARQUITECTURA DE LA TARJETA UNIFICADA (ESTILO REFERENCIA)
+========================================================================== */
 .login-container {
-    background-color: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
+  background-color: white;
+  border-radius: 20px; /* Bordes redondeados más pronunciados estilo UI moderna */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden; /* Obligatorio para encapsular las dos mitades limpiamente */
+  text-align: center;
+}
+
+/* Mitad Superior: Banner con degradado celeste/azul profundo tomado del cielo del escudo */
+.login-header {
+  background: linear-gradient(180deg, #1b4d82 0%, #3a78b3 100%);
+  padding: 30px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 3px solid #ff922b; /* Línea divisoria naranja sutil */
+}
+
+/* Escudo oficial: Se incrementa el tamaño para una presencia institucional imponente */
+.logo-colegio {
+  width: auto;
+  max-width: 95%;
+  height: 165px;      /* Altura optimizada y agrandada para resaltar las letras y detalles */
+  object-fit: contain; /* Garantiza simetría e integridad total del círculo sin aplastarse */
+  display: block;
+  margin: 0 auto;
+}
+
+/* Mitad Inferior: Cuerpo contenedor del formulario */
+.login-body {
+  padding: 35px 30px;
+  background-color: #ffffff;
 }
 
 .panel-container {
-    background-color: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    width: 96%; /* Adaptabilidad horizontal fluida */
-    max-width: 100% !important; /* Libera el límite rígido de 900px para PC */
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-/* Logo adaptable institucional */
-.logo-colegio {
-    width: 100%;
-    max-width: 300px;
-    height: auto;
-    margin-bottom: 15px;
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 96%; /* Adaptabilidad horizontal fluida */
+  max-width: 100% !important; /* Libera el límite rígido de 900px para PC */
+  text-align: center;
+  transition: all 0.3s ease;
 }
 
 h2 {
-    color: #1a73e8;
-    margin-bottom: 5px;
+  color: #1b4d82; /* Azul/celeste oscuro institucional */
+  font-size: 1.4rem;
+  margin-bottom: 6px;
 }
 
 h3 {
-    color: #555;
-    font-weight: 500;
-    margin-bottom: 20px;
+  color: #555;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
 }
 
 p {
-    color: #777;
-    margin-bottom: 20px;
+  color: #777;
+  font-size: 0.95rem;
+  margin-bottom: 25px;
 }
 
 /* ==========================================================================
-   COMPONENTES DE FORMULARIO
-   ========================================================================== */
+COMPONENTES DE FORMULARIO
+========================================================================== */
 .input-group {
-    text-align: left;
-    margin-bottom: 15px;
+  text-align: left;
+  margin-bottom: 18px;
 }
 
 label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #333;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #444;
+  font-size: 0.9rem;
 }
 
 input, select, textarea {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #b4cbe3; /* Borde celeste sutil en estado pasivo */
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  background-color: #fcfdfe;
+  transition: all 0.25s ease;
 }
 
+/* Al hacer foco, se ilumina con el naranja cálido del edificio del escudo */
 input:focus, select:focus, textarea:focus {
-    border-color: #1a73e8;
+  border-color: #ff922b;
+  box-shadow: 0 0 0 3px rgba(255, 146, 43, 0.15);
+  background-color: #ffffff;
 }
 
 /* ==========================================================================
-   BOTONES DEL SISTEMA (ACCIONES OPERATIVAS GENERALES)
-   ========================================================================== */
+BOTONES DEL SISTEMA (ACCIONES OPERATIVAS GENERALES)
+========================================================================== */
 .btn-principal, .btn-salir {
-    width: 100%;
-    padding: 12px;
-    background-color: #1a73e8;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.3s;
+  width: 100%;
+  padding: 13px;
+  background-color: #ff922b; /* Botón naranja predominante del escudo */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(255, 146, 43, 0.2);
+  transition: all 0.25s ease;
 }
 
 .btn-salir {
-    background-color: #d93025;
-    margin-top: 30px;
+  background-color: #d93025;
+  margin-top: 30px;
+  box-shadow: 0 4px 12px rgba(217, 48, 37, 0.2);
 }
 
 .btn-principal:hover {
-    background-color: #1557b0;
+  background-color: #e87c15; /* Naranja más profundo al pasar el mouse */
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(255, 146, 43, 0.3);
 }
 
 .btn-salir:hover {
-    background-color: #b52218;
+  background-color: #b52218;
+  transform: translateY(-1px);
+}
+
+/* Enlace de recuperación de contraseña en azul institucional */
+.forgot-pass {
+  color: #1b4d82 !important;
+}
+.forgot-pass:hover {
+  color: #3a78b3 !important;
 }
 
 /* ==========================================================================
-   BOTONES DE ACCIÓN INTERNA EN FILAS DE TABLAS MASIVAS
-   ========================================================================== */
+BOTONES DE ACCIÓN INTERNA EN FILAS DE TABLAS MASIVAS
+========================================================================== */
 .btn-accion-editar {
-    background-color: #ffc107;
-    color: #212529;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background-color 0.2s;
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
 }
 
 .btn-accion-editar:hover {
-    background-color: #e0a800;
+  background-color: #e0a800;
 }
 
 .btn-accion-eliminar {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background-color 0.2s;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
 }
 
 .btn-accion-eliminar:hover {
-    background-color: #bd2130;
+  background-color: #bd2130;
 }
 
 /* ==========================================================================
-   GRID DE MÓDULOS DEL DASHBOARD PRINCIPAL
-   ========================================================================== */
+GRID DE MÓDULOS DEL DASHBOARD PRINCIPAL
+========================================================================== */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* 1 columna en celular */
-    gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr; /* 1 columna en celular */
+  gap: 15px;
 }
 
 .modulo-card {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    cursor: pointer;
-    transition: all 0.2s;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .modulo-card:hover {
-    background: #e8f0fe;
-    transform: translateY(-3px);
+  background: #e8f0fe;
+  transform: translateY(-3px);
 }
 
 .icon {
-    font-size: 40px;
-    display: block;
-    margin-bottom: 10px;
+  font-size: 40px;
+  display: block;
+  margin-bottom: 10px;
 }
 
 .mensaje-alerta {
-    min-height: 25px;
-    font-size: 14px;
-    margin-bottom: 10px;
-    font-weight: bold;
+  min-height: 25px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
 
 /* ==========================================================================
-   ADAPTABILIDAD RESPONSIVA Y REGLAS MEDIA QUERIES
-   ========================================================================== */
+ADAPTABILIDAD RESPONSIVA Y REGLAS MEDIA QUERIES
+========================================================================== */
 @media (min-width: 600px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr 1fr; /* 2 columnas en tablets */
-    }
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr; /* 2 columnas en tablets */
+  }
 }
 
 @media (min-width: 900px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas en PC */
-    }
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas en PC */
+  }
 }
 
 /* ==========================================================================
-   ESTILOS DE LA VENTANA MODAL DE RECUPERACIÓN
-   ========================================================================== */
+ESTILOS DE LA VENTANA MODAL DE RECUPERACIÓN
+========================================================================== */
 .modal-contenedor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
 .modal-contenedor.mostrar-modal {
-    opacity: 1;
-    pointer-events: auto;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .modal-contenido {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 
 .modal-contenido h3 {
-    margin-top: 0;
-    color: #333333;
-    font-size: 1.4rem;
+  margin-top: 0;
+  color: #333333;
+  font-size: 1.4rem;
 }
 
 .modal-contenido p {
-    color: #666666;
-    font-size: 0.9rem;
-    margin-bottom: 20px;
+  color: #666666;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
 }
 
 .modal-botones {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 .btn-secundario {
-    background-color: #e0e0e0;
-    color: #333333;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
+  background-color: #e0e0e0;
+  color: #333333;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
 }
 
 .btn-secundario:hover {
-    background-color: #d4d4d4;
+  background-color: #d4d4d4;
 }
 
 .titulo-principal {
-    white-space: nowrap !important;
-    font-size: 1.35 rem !important;
-    display: block;
-    width: 100%;
-    text-align: center;
+  white-space: nowrap !important;
+  font-size: 1.35rem !important;
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 /* ==========================================================================
-   SEGURIDAD RBAC, CONTROL MASIVO Y NÓMINAS
-   ========================================================================== */
+SEGURIDAD RBAC, CONTROL MASIVO Y NÓMINAS
+========================================================================== */
 .modulo-bloqueado {
-    opacity: 0.4 !important;
-    cursor: not-allowed !important;
-    pointer-events: none !important;
-    user-select: none !important;
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  user-select: none !important;
 }
 
 input:disabled,
 select:disabled,
 textarea:disabled,
 button:disabled {
-    background-color: #f1f5f9 !important;
-    color: #64748b !important;
-    cursor: not-allowed !important;
-    border-color: #cbd5e1 !important;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  border-color: #cbd5e1 !important;
 }
 
 /* Cabeceras fijas para scrolling en listados masivos */
 .tabla-usuarios th,
 .tabla-usuarios-contenedor th {
-    position: sticky !important;
-    top: 0;
-    z-index: 10;
-    box-shadow: 0 1px 0 #cbd5e1;
+  position: sticky !important;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 0 #cbd5e1;
 }
 
 /* ==========================================================================
-   TAGS DEL ESCALAFÓN DOCENTE (SITUACIÓN DE REVISTA INLINE)
-   ========================================================================== */
+TAGS DEL ESCALAFÓN DOCENTE (SITUACIÓN DE REVISTA INLINE)
+========================================================================== */
 .catedra-tag {
-    transition: transform 0.15s ease;
+  transition: transform 0.15s ease;
 }
+
 .catedra-tag:hover {
-    transform: scale(1.02);
+  transform: scale(1.02);
 }

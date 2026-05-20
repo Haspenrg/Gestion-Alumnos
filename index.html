@@ -6,7 +6,7 @@
 <title>Acceso - Colegio HASPEN</title>
 <link rel="stylesheet" href="estilos.css">
 <style>
-/* Estilos de consistencia para el enlace de recuperación de contraseña */
+/* Estilos de consistency para el enlace de recuperación de contraseña */
 .forgot-pass {
 display: block;
 margin-top: 15px;
@@ -21,25 +21,39 @@ text-decoration: underline;
 </style>
 </head>
 <body>
+
+<!-- TARJETA UNIFICADA CON EL NUEVO ESCUDO TRANSPARENTE -->
 <div class="login-container">
-<!-- FORMULARIO DE LOGUEO PRINCIPAL POR DNI -->
-<form id="loginForm" novalidate>
-<img src="logo01.png" alt="Logo Colegio HASPEN" class="logo-colegio">
-<h2 class="titulo-principal">Sistema de Gestión de Alumnos</h2>
-<h3>Colegio Haspen</h3>
-<p>Inicie sesión para continuar</p>
-<div id="mensaje" class="mensaje-alerta"></div>
-<div class="input-group">
-<label for="usuario">Usuario (DNI)</label>
-<input type="text" id="usuario" placeholder="Ej: 22222222" required pattern="[0-9]+" inputmode="numeric">
-</div>
-<div class="input-group">
-<label for="password">Contraseña</label>
-<input type="password" id="password" placeholder="••••••••" required>
-</div>
-<button type="submit" class="btn-principal">Ingresar al Sistema</button>
-<a href="#" id="olvido-pass" class="forgot-pass">¿Olvidaste tu contraseña?</a>
-</form>
+  
+  <!-- MITAD SUPERIOR: CABECERA AZUL CON EL ESCUDO CIRCULAR LOGO1 -->
+  <div class="login-header">
+    <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" class="logo-colegio">
+  </div>
+
+  <!-- MITAD INFERIOR: FORMULARIO EN CUERPO BLANCO -->
+  <div class="login-body">
+    <form id="loginForm" novalidate>
+      <h2 class="titulo-principal">Sistema de Gestión de Alumnos</h2>
+      <h3>Colegio Haspen</h3>
+      <p>Inicie sesión para continuar</p>
+      
+      <div id="mensaje" class="mensaje-alerta"></div>
+      
+      <div class="input-group">
+        <label for="usuario">Usuario (DNI)</label>
+        <input type="text" id="usuario" placeholder="Ej: 22222222" required pattern="[0-9]+" inputmode="numeric">
+      </div>
+      
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" placeholder="••••••••" required>
+      </div>
+      
+      <button type="submit" class="btn-principal">Ingresar al Sistema</button>
+      <a href="#" id="olvido-pass" class="forgot-pass">¿Olvidaste tu contraseña?</a>
+    </form>
+  </div>
+
 </div>
 
 <!-- VENTANA MODAL DE RECUPERACIÓN POR DNI -->
@@ -69,58 +83,61 @@ const { doc, getDoc } = await import( b + 'firebase-firestore.js');
 
 // Vinculación directa y segura de eventos garantizando la carga completa del DOM
 const formLogin = document.getElementById('loginForm');
-if (formLogin) {
+if ( formLogin) {
 formLogin.addEventListener('submit', procesarAutenticacion);
 }
+
 const btnOlvido = document.getElementById('olvido-pass');
-if (btnOlvido) {
+if ( btnOlvido) {
 btnOlvido.addEventListener('click', abrirModalRecuperacion);
 }
+
 const btnCancelar = document.getElementById('btn-cancelar-modal');
-if (btnCancelar) {
+if ( btnCancelar) {
 btnCancelar.addEventListener('click', cerrarModalRecuperacion);
 }
+
 const btnConsultar = document.getElementById('btn-consultar-modal');
-if (btnConsultar) {
+if ( btnConsultar) {
 btnConsultar.addEventListener('click', procesarRecuperacionEnCaliente);
 }
 
 // Procesa el inicio de sesión buscando el Email Real asociado al DNI en Firestore
-async function procesarAutenticacion(e) {
+async function procesarAutenticacion( e) {
 e.preventDefault();
 const txtMensaje = document.getElementById('mensaje');
-if (!txtMensaje) return;
+if (! txtMensaje) return;
 txtMensaje.textContent = "";
 txtMensaje.style.color = "";
 
 const dniIngresado = document.getElementById('usuario').value.trim();
 const claveIngresada = document.getElementById('password').value;
 
-if (!dniIngresado || !claveIngresada) {
-mostrarAlertaUI(txtMensaje, "Por favor, complete todos los campos requeridos.", "#dc2626");
+if (! dniIngresado || ! claveIngresada) {
+mostrarAlertaUI( txtMensaje, "Por favor, complete todos los campos requeridos.", "#dc2626");
 return;
 }
 
 try {
 // 1. Buscamos el documento del usuario en Firestore usando el DNI como ID
-const docRef = doc(db, "usuarios", dniIngresado);
-const docSnapshot = await getDoc(docRef);
+const docRef = doc( db, "usuarios", dniIngresado);
+const docSnapshot = await getDoc( docRef);
 
-if (!docSnapshot.exists()) {
-mostrarAlertaUI(txtMensaje, "Credenciales inválidas. Verifique el DNI y la contraseña.", "#dc2626");
+if (! docSnapshot.exists()) {
+mostrarAlertaUI( txtMensaje, "Credenciales inválidas. Verifique el DNI and la contraseña.", "#dc2626");
 return;
 }
 
 const datosDb = docSnapshot.data();
 const emailReal = datosDb.email;
 
-if (!emailReal || emailReal.trim() === "") {
-mostrarAlertaUI(txtMensaje, "El usuario no posee un correo electrónico real asociado en la base de datos.", "#dc2626");
+if (! emailReal || emailReal.trim() === "") {
+mostrarAlertaUI( txtMensaje, "El usuario no posee un correo electrónico real asociado en la base de datos.", "#dc2626");
 return;
 }
 
 // 2. Realizamos la autenticación en Firebase utilizando su email real de fondo
-const credenciales = await signInWithEmailAndPassword(auth, emailReal, claveIngresada);
+const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveIngresada);
 const user = credenciales.user;
 
 let perfilUsuario = {
@@ -131,87 +148,91 @@ esProfesor: datosDb.esProfesor || false
 };
 
 // Conservación matemática del objeto JSON de sesión activa esperado por panel.html
-localStorage.setItem('usuarioActivo', JSON.stringify(perfilUsuario));
-mostrarAlertaUI(txtMensaje, "Acceso concedido. Redireccionando...", "#0d9488");
+localStorage.setItem('usuarioActivo', JSON.stringify( perfilUsuario));
+
+mostrarAlertaUI( txtMensaje, "Acceso concedido. Redireccionando...", "#0d9488");
 setTimeout(() => {
 window.location.href = "panel.html";
 }, 800);
 
-} catch (error) {
+} catch ( error) {
 console.error("Error en el proceso de logueo asíncrono Firebase:", error);
 let mensajeError = "Credenciales inválidas. Verifique el DNI y la contraseña.";
-if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+if ( error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
 mensajeError = "Credenciales inválidas. Verifique el DNI y la contraseña.";
-} else if (error.code === "auth/network-request-failed") {
+} else if ( error.code === "auth/network-request-failed") {
 mensajeError = "Error de conexión. Verifique su acceso a internet.";
 }
-mostrarAlertaUI(txtMensaje, mensajeError, "#dc2626");
+mostrarAlertaUI( txtMensaje, mensajeError, "#dc2626");
 }
 }
 
 // Recuperación definitiva: El usuario ingresa su DNI, buscamos su mail real en Firestore y Firebase envía allí el enlace
 async function procesarRecuperacionEnCaliente() {
 const txtModalMensaje = document.getElementById('modal-mensaje');
-if (!txtModalMensaje) return;
+if (! txtModalMensaje) return;
 txtModalMensaje.textContent = "";
 txtModalMensaje.style.color = "";
 
 const dniAVerificar = document.getElementById('modal-dni').value.trim();
-if (!dniAVerificar) {
-mostrarAlertaUI(txtModalMensaje, "Debe ingresar un número de DNI válido.", "#dc2626");
+
+if (! dniAVerificar) {
+mostrarAlertaUI( txtModalMensaje, "Debe ingresar un número de DNI válido.", "#dc2626");
 return;
 }
 
 try {
 // Consultamos el legajo en Firestore para extraer el correo real
-const docRef = doc(db, "usuarios", dniAVerificar);
-const docSnapshot = await getDoc(docRef);
+const docRef = doc( db, "usuarios", dniAVerificar);
+const docSnapshot = await getDoc( docRef);
 
-if (!docSnapshot.exists()) {
-mostrarAlertaUI(txtModalMensaje, "El DNI ingresado no corresponde a ningún operador registrado.", "#dc2626");
+if (! docSnapshot.exists()) {
+mostrarAlertaUI( txtModalMensaje, "El DNI ingresado no corresponde a ningún operador registrado.", "#dc2626");
 return;
 }
 
 const datosUsuario = docSnapshot.data();
 const emailReal = datosUsuario.email;
 
-if (!emailReal || emailReal.trim() === "" || emailReal.includes("@haspen.edu.ar")) {
-mostrarAlertaUI(txtModalMensaje, "Este usuario no cuenta con un correo real válido registrado para la recuperación.", "#dc2626");
+if (! emailReal || emailReal.trim() === "" || emailReal.includes("@haspen.edu.ar")) {
+mostrarAlertaUI( txtModalMensaje, "Este usuario no cuenta con un correo real válido registrado para la recuperación.", "#dc2626");
 return;
 }
 
 // Disparamos el restablecimiento directo al correo real obtenido de la consulta
-await sendPasswordResetEmail(auth, emailReal);
-mostrarAlertaUI(txtModalMensaje, `Verificación exitosa. Se envió un enlace de restauración a su correo real registrado: ${emailReal}`, "#0d9488");
-} catch (error) {
+await sendPasswordResetEmail( auth, emailReal);
+mostrarAlertaUI( txtModalMensaje, `Verificación exitosa. Se envió un enlace de restauración a su correo real registrado: ${ emailReal}`, "#0d9488");
+
+} catch ( error) {
 console.error("Error al recuperar credenciales Firebase:", error);
 let msg = "No se pudo procesar la solicitud en este momento.";
-if (error.code === "auth/user-not-found") {
+if ( error.code === "auth/user-not-found") {
 msg = "El correo de este operador no se encuentra registrado en el sistema de autenticación.";
-} else if (error.code === "auth/network-request-failed") {
+} else if ( error.code === "auth/network-request-failed") {
 msg = "Error de conexión. Verifique su acceso a internet.";
 }
-mostrarAlertaUI(txtModalMensaje, msg, "#dc2626");
+mostrarAlertaUI( txtModalMensaje, msg, "#dc2626");
 }
 }
 
-function abrirModalRecuperacion(e) {
+function abrirModalRecuperacion( e) {
 e.preventDefault();
 const inputDni = document.getElementById('modal-dni');
 const msgModal = document.getElementById('modal-mensaje');
-if (inputDni) inputDni.value = "";
-if (msgModal) msgModal.textContent = "";
+if ( inputDni) inputDni.value = "";
+if ( msgModal) msgModal.textContent = "";
+
 const divModal = document.getElementById('modalRecuperar');
-if (divModal) divModal.classList.add('mostrar-modal');
+if ( divModal) divModal.classList.add('mostrar-modal');
 }
 
 function cerrarModalRecuperacion() {
 const divModal = document.getElementById('modalRecuperar');
-if (divModal) divModal.classList.remove('mostrar-modal');
+if ( divModal) divModal.classList.remove('mostrar-modal');
 }
 
 // Inyección de alertas consistente con la UI
-function mostrarAlertaUI(contenedor, mensajeText, colorHex) {
+function mostrarAlertaUI( contenedor, mensajeText, colorHex) {
 contenedor.textContent = mensajeText;
 contenedor.style.color = colorHex;
 }
