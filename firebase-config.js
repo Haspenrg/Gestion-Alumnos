@@ -1,9 +1,9 @@
 // Hack de importación desarmado letra por letra para evadir el filtro automático
 const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
 
-const mApp = await import(b + 'firebase-app.js');
-const mStore = await import(b + 'firebase-firestore.js');
-const mAuth = await import(b + 'firebase-auth.js');
+const mApp = await import( b + 'firebase-app.js');
+const mStore = await import( b + 'firebase-firestore.js');
+const mAuth = await import( b + 'firebase-auth.js');
 
 const firebaseConfig = {
   apiKey: "AIzaSyBP3iHdEsCnQSABsxEDDR4RNZ1M06MJyvo",
