@@ -430,9 +430,22 @@
                             </div>
                         </div>
                         <div class="input-group">
-                            <label for="nombreTutor">Nombre Completo del Adulto Responsable / Tutor</label>
-                            <input type="text" id="nombreTutor" placeholder="Ej: Carlos Benítez" required>
-                        </div>
+<label for="nombreTutor">Nombre Completo del Adulto Responsable / Tutor</label>
+<input type="text" id="nombreTutor" placeholder="Ej: Carlos Benítez" required>
+</div>
+
+<!-- Nuevos campos del Adulto Responsable integrados simétricamente -->
+<div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+<div class="input-group">
+<label for="dniTutorAlumno">DNI del Adulto Responsable / Tutor</label>
+<input type="text" id="dniTutorAlumno" placeholder="Ej: 25123456" pattern="[0-9]+" inputmode="numeric" required>
+</div>
+<div class="input-group">
+<label for="emailTutor">Correo Electrónico del Tutor</label>
+<input type="email" id="emailTutor" placeholder="Ej: tutor@ejemplo.com" required>
+</div>
+</div>
+
                         <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
                                 <label for="estadoAlumno">Estado de la Matrícula</label>

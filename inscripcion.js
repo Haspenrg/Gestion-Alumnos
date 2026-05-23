@@ -18,6 +18,10 @@ const btnLoteBoletin = document.getElementById('btnEmitirLoteBoletin');
 const modalContenedor = document.getElementById('modalImpresionContenedor');
 const modalCuerpo = document.getElementById('modalImpresionCuerpo');
 const btnCerrarModal = document.getElementById('btnCerrarModalImpresion');
+// 🆕 AGREGAR ESTAS DOS LÍNEAS DEBAJO DE LAS REFERENCIAS DEL FORMULARIO:
+const dniTutorAlumno = document.getElementById('dniTutorAlumno');
+const emailTutor = document.getElementById('emailTutor');
+
 
 // Variables de contexto de sesión globales
 let usuarioLogueado = null;
@@ -519,6 +523,8 @@ function cargarLegajoEnFormulario(alumno) {
     document.getElementById('telefono1').value = alumno.telefono1 || "";
     document.getElementById('telefono2').value = alumno.telefono2 || "";
     document.getElementById('nombreTutor').value = alumno.nombreTutor || "";
+    if (dniTutorAlumno) dniTutorAlumno.value = alumno.dniTutor || "";
+    if (emailTutor) emailTutor.value = alumno.emailTutor || "";
     document.getElementById('estadoAlumno').value = alumno.estado || "Regular";
     ejecutarCalculoEdadDinamico();
 
@@ -581,7 +587,8 @@ function salirModoEdicion() {
     document.getElementById('btnGuardar').textContent = "Resguardar Legajo Digital";
     document.getElementById('bannerEdicion').style.display = "none";
     document.getElementById('edadAlumno').value = "";
-    
+    if (dniTutorAlumno) dniTutorAlumno.value = "";
+    if (emailTutor) emailTutor.value = "";
     const panelPPI = document.getElementById('panelCamposPPI');
     const filaDocPPI = document.getElementById('filaDocumentoPPI');
     if (panelPPI) panelPPI.style.display = 'none';
@@ -648,6 +655,8 @@ async function guardarLegajoDigital(e) {
         telefono1: document.getElementById('telefono1').value.trim(),
         telefono2: document.getElementById('telefono2').value.trim(),
         nombreTutor: document.getElementById('nombreTutor').value.trim(),
+        dniTutor: dniTutorAlumno ? dniTutorAlumno.value.trim() : "",
+        emailTutor: emailTutor ? emailTutor.value.trim() : "",    
         estado: estadoActual,
         cursoId: estadoActual === "Entrante" ? "" : document.getElementById('selectCursoAlumno').value,
         tienePPI: document.getElementById('chkHabilitarPPI').checked,
