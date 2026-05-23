@@ -98,12 +98,7 @@ if (selectCursoFiltro) {
     // ==========================================
     // 💥 AUTOMATIZACIÓN DE CUIL (ALUMNO Y TUTOR)
     // ==========================================
-    const inputDniAlumno = document.getElementById('dniAlumno');
-    const selectGeneroAlumno = document.getElementById('generoAlumno');
-    const inputCuilAlumno = document.getElementById('cuilAlumno');
-    const inputDniTutor = document.getElementById('dniTutorAlumno');
-    const selectGeneroTutor = document.getElementById('generoTutor');
-    const inputCuilTutor = document.getElementById('cuilTutor');
+   
 
     function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
         if (!inputDni || !inputCuil) return;
@@ -555,6 +550,8 @@ function cargarLegajoEnFormulario(alumno) {
     document.getElementById('nombreTutor').value = alumno.nombreTutor || "";
     if (dniTutorAlumno) dniTutorAlumno.value = alumno.dniTutor || "";
     if (emailTutor) emailTutor.value = alumno.emailTutor || "";
+    if (document.getElementById('cuilTutor')) document.getElementById('cuilTutor').value = alumno.cuilTutor || "";
+
     document.getElementById('estadoAlumno').value = alumno.estado || "Regular";
     ejecutarCalculoEdadDinamico();
 
@@ -619,6 +616,7 @@ function salirModoEdicion() {
     document.getElementById('edadAlumno').value = "";
     if (dniTutorAlumno) dniTutorAlumno.value = "";
     if (emailTutor) emailTutor.value = "";
+    if (document.getElementById('cuilTutor')) document.getElementById('cuilTutor').value = "";
     const panelPPI = document.getElementById('panelCamposPPI');
     const filaDocPPI = document.getElementById('filaDocumentoPPI');
     if (panelPPI) panelPPI.style.display = 'none';
@@ -685,9 +683,9 @@ async function guardarLegajoDigital(e) {
         telefono1: document.getElementById('telefono1').value.trim(),
         telefono2: document.getElementById('telefono2').value.trim(),
         nombreTutor: document.getElementById('nombreTutor').value.trim(),
-        cuilTutor: document.getElementById('cuilTutor') ? document.getElementById('cuilTutor').value : "",
-        dniTutor: dniTutorAlumno ? dniTutorAlumno.value.trim() : "",
-        emailTutor: emailTutor ? emailTutor.value.trim() : "",    
+        cuilTutor: document.getElementById('cuilTutor') ? document.getElementById('cuilTutor').value.trim() : "",
+        dniTutor: document.getElementById('dniTutorAlumno') ? document.getElementById('dniTutorAlumno').value.trim() : "",
+        emailTutor: document.getElementById('emailTutor') ? document.getElementById('emailTutor').value.trim() : "",    
         estado: estadoActual,
         cursoId: estadoActual === "Entrante" ? "" : document.getElementById('selectCursoAlumno').value,
         tienePPI: document.getElementById('chkHabilitarPPI').checked,
