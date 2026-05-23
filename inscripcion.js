@@ -88,36 +88,16 @@ async function inicializarModuloInscripciones() {
     document.getElementById('filtroAuditoriaDocs').addEventListener('change', procesarFiltrosYNomina);
     document.getElementById('filtroPPI')?.addEventListener('change', procesarFiltrosYNomina);
 
-    if (selectCursoFiltro) {
+if (selectCursoFiltro) {
         selectCursoFiltro.addEventListener('change', () => {
             gestionarHabilitacionBotoneraLote();
             procesarFiltrosYNomina();
         });
     }
-    // 🆕 DEBAJO DE ESE BLOQUE, PEGÁ TODO ESTO AQUÍ:
-const inputDniAlumno = document.getElementById('dniAlumno');
-const selectGeneroAlumno = document.getElementById('generoAlumno'); 
-const inputCuilAlumno = document.getElementById('cuilAlumno');
 
-const inputDniTutor = document.getElementById('dniTutorAlumno');
-const selectGeneroTutor = document.getElementById('generoTutor');
-const inputCuilTutor = document.getElementById('cuilTutor');
-
-function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
-    if (!inputDni || !inputCuil) return;
-    const dniVal = inputDni.value.replace(/[^0-9]/g, '').trim();
-    const generoVal = selectGenero ? selectGenero.value : "Masculino";
-
-    if (dniVal.length >= 7 && dniVal.length <= 8) {
-        const cuilCalculado = calcularCuilAutomatico(dniVal, generoVal);
-        if (cuilCalculado) {
-            inputCuil.value = cuilCalculado;
-        }
-    } else {
-        inputCuil.value = ""; 
-    }
-}
-    // Declaración de constantes de entrada para CUIL
+    // ==========================================
+    // 💥 AUTOMATIZACIÓN DE CUIL (ALUMNO Y TUTOR)
+    // ==========================================
     const inputDniAlumno = document.getElementById('dniAlumno');
     const selectGeneroAlumno = document.getElementById('generoAlumno');
     const inputCuilAlumno = document.getElementById('cuilAlumno');
@@ -139,7 +119,6 @@ function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
             inputCuil.value = "";
         }
     }
-
     // Escuchadores reactivos vinculados correctamente
     if (inputDniAlumno) inputDniAlumno.addEventListener('input', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
     if (selectGeneroAlumno) selectGeneroAlumno.addEventListener('change', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
