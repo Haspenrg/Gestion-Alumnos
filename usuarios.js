@@ -688,4 +688,5 @@ function desactivarModoEdicion() {
     actualizarTagsBolsaHoras();
     gestionarPanelesFormulario();
 }
+
 })();

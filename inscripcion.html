@@ -429,10 +429,30 @@
                                 <input type="tel" id="telefono2" placeholder="Opcional" inputmode="tel">
                             </div>
                         </div>
-                        <div class="input-group">
-<label for="nombreTutor">Nombre Completo del Adulto Responsable / Tutor</label>
-<input type="text" id="nombreTutor" placeholder="Ej: Carlos Benítez" required>
+ <div class="input-group">
+    <label for="nombreTutor">Nombre Completo del Adulto Responsable / Tutor</label>
+    <input type="text" id="nombreTutor" placeholder="Ej: Carlos Benítez" required>
 </div>
+
+<!-- NUEVOS CAMPOS DEL TUTOR CON GÉNERO Y CUIL AUTOMÁTICO -->
+<div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;">
+    <div class="input-group">
+        <label for="dniTutorAlumno">DNI del Adulto Responsable / Tutor</label>
+        <input type="text" id="dniTutorAlumno" placeholder="Ej: 25123456" pattern="[0-9]+" inputmode="numeric" required>
+    </div>
+    <div class="input-group">
+        <label for="generoTutor">Género del Tutor</label>
+        <select id="generoTutor" style="width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; height: 38px;">
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label for="cuilTutor">CUIL del Tutor (Automático)</label>
+        <input type="text" id="cuilTutor" placeholder="Se calcula solo" readonly style="background: #f1f5f9; width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; height: 38px;">
+    </div>
+</div>
+
 
 <!-- Nuevos campos del Adulto Responsable integrados simétricamente -->
 <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">

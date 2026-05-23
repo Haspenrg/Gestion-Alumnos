@@ -94,7 +94,35 @@ async function inicializarModuloInscripciones() {
             procesarFiltrosYNomina();
         });
     }
+    // 🆕 DEBAJO DE ESE BLOQUE, PEGÁ TODO ESTO AQUÍ:
+const inputDniAlumno = document.getElementById('dniAlumno');
+const selectGeneroAlumno = document.getElementById('generoAlumno'); 
+const inputCuilAlumno = document.getElementById('cuilAlumno');
 
+const inputDniTutor = document.getElementById('dniTutorAlumno');
+const selectGeneroTutor = document.getElementById('generoTutor');
+const inputCuilTutor = document.getElementById('cuilTutor');
+
+function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
+    if (!inputDni || !inputCuil) return;
+    const dniVal = inputDni.value.replace(/[^0-9]/g, '').trim();
+    const generoVal = selectGenero ? selectGenero.value : "Masculino";
+
+    if (dniVal.length >= 7 && dniVal.length <= 8) {
+        const cuilCalculado = calcularCuilAutomatico(dniVal, generoVal);
+        if (cuilCalculado) {
+            inputCuil.value = cuilCalculado;
+        }
+    } else {
+        inputCuil.value = ""; 
+    }
+}
+
+if (inputDniAlumno) inputDniAlumno.addEventListener('input', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
+if (selectGeneroAlumno) selectGeneroAlumno.addEventListener('change', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
+
+if (inputDniTutor) inputDniTutor.addEventListener('input', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
+if (selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
     btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
     btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
     btnCerrarModal?.addEventListener('click', cerrarModalPrevisualizacion);
@@ -655,6 +683,7 @@ async function guardarLegajoDigital(e) {
         telefono1: document.getElementById('telefono1').value.trim(),
         telefono2: document.getElementById('telefono2').value.trim(),
         nombreTutor: document.getElementById('nombreTutor').value.trim(),
+        cuilTutor: document.getElementById('cuilTutor') ? document.getElementById('cuilTutor').value : "",
         dniTutor: dniTutorAlumno ? dniTutorAlumno.value.trim() : "",
         emailTutor: emailTutor ? emailTutor.value.trim() : "",    
         estado: estadoActual,
@@ -914,6 +943,49 @@ function construirHojaA4BoletinOficial(alumno, cursoTexto, materias, calificacio
 function cerrarModalPrevisualizacion() {
     modalContenedor.style.display = "none";
     modalCuerpo.innerHTML = "";
+}
+// MOTOR MATEMÁTICO ADAPTATIVO PARA CÁLCULO DE CUIL (ALGORITMO ANSES)
+function calcularCuilAutomatico(dniStr, generoStr) {
+    const dniLimpio = dniStr.replace(/[^0-9]/g, '');
+    if (dniLimpio.length < 7 || dniLimpio.length > 8) return "";
+
+    // Completar con ceros a la izquierda si el DNI tiene 7 dígitos
+    const dniPad = dniLimpio.padStart(8, '0');
+    
+    // Determinar prefijo según género (Masculino: 20, Femenino: 27)
+    let prefijo = "20"; 
+    if (generoStr && generoStr.toLowerCase() === "femenino") {
+        prefijo = "27";
+    }
+
+    const baseXY = prefijo + dniPad;
+    const factores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    
+    let suma = 0;
+    for (let i = 0; i < 10; i++) {
+        suma += parseInt(baseXY[i]) * factores[i];
+    }
+
+    let resto = suma % 11;
+    let verificador = 0;
+
+    if (resto === 1) {
+        // Corrección reglamentaria de ANSES para evitar verificador de dos dígitos
+        if (prefijo === "20") prefijo = "23";
+        else if (prefijo === "27") prefijo = "23";
+        
+        const nuevaBase = prefijo + dniPad;
+        let nuevaSuma = 0;
+        for (let i = 0; i < 10; i++) {
+            nuevaSuma += parseInt(nuevaBase[i]) * factores[i];
+        }
+        let nuevoResto = nuevaSuma % 11;
+        verificador = nuevoResto === 0 ? 0 : 11 - nuevoResto;
+    } else if (resto > 1) {
+        verificador = 11 - resto;
+    }
+
+    return prefijo + dniPad + verificador;
 }
 
 })();
