@@ -386,7 +386,7 @@ async function procesarGuardarUsuario(e) {
     }
 
     try {
-        if (!dniOriginal) {
+                if (!dniOriginal) {
             const docRef = doc(db, "usuarios", dni);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
@@ -394,6 +394,7 @@ async function procesarGuardarUsuario(e) {
                 return;
             }
             try {
+                // Corrección de sintaxis estricta modular v10 para la instancia secundaria
                 await mAuth.createUserWithEmailAndPassword(secondaryAuth, email, valClave);
                 await mAuth.signOut(secondaryAuth);
             } catch (authError) {
