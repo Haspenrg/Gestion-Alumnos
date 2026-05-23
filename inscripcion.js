@@ -117,12 +117,35 @@ function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
         inputCuil.value = ""; 
     }
 }
+    // Declaración de constantes de entrada para CUIL
+    const inputDniAlumno = document.getElementById('dniAlumno');
+    const selectGeneroAlumno = document.getElementById('generoAlumno');
+    const inputCuilAlumno = document.getElementById('cuilAlumno');
+    const inputDniTutor = document.getElementById('dniTutorAlumno');
+    const selectGeneroTutor = document.getElementById('generoTutor');
+    const inputCuilTutor = document.getElementById('cuilTutor');
 
-if (inputDniAlumno) inputDniAlumno.addEventListener('input', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
-if (selectGeneroAlumno) selectGeneroAlumno.addEventListener('change', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
+    function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
+        if (!inputDni || !inputCuil) return;
+        const dniVal = inputDni.value.replace(/[^0-9]/g, '').trim();
+        const generoVal = selectGenero ? selectGenero.value : "Masculino";
 
-if (inputDniTutor) inputDniTutor.addEventListener('input', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
-if (selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
+        if (dniVal.length >= 7 && dniVal.length <= 8) {
+            const cuilCalculado = calcularCuilAutomatico(dniVal, generoVal);
+            if (cuilCalculado) {
+                inputCuil.value = cuilCalculado;
+            }
+        } else {
+            inputCuil.value = "";
+        }
+    }
+
+    // Escuchadores reactivos vinculados correctamente
+    if (inputDniAlumno) inputDniAlumno.addEventListener('input', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
+    if (selectGeneroAlumno) selectGeneroAlumno.addEventListener('change', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
+    if (inputDniTutor) inputDniTutor.addEventListener('input', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
+    if (selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
+
     btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
     btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
     btnCerrarModal?.addEventListener('click', cerrarModalPrevisualizacion);

@@ -387,16 +387,23 @@
                             <label for="nombreAlumno">Nombre y Apellido completo</label>
                             <input type="text" id="nombreAlumno" placeholder="Ej: Sofía Benítez" required>
                         </div>
-                        <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <label for="dniAlumno">DNI (Identificador)</label>
-                                <input type="text" id="dniAlumno" placeholder="Ej: 48123456" required pattern="[0-9]+" inputmode="numeric">
-                            </div>
-                            <div class="input-group">
-                                <label for="cuilAlumno">CUIL Estudiante</label>
-                                <input type="text" id="cuilAlumno" placeholder="Sin guiones">
-                            </div>
-                        </div>
+                        <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+    <div class="input-group">
+        <label for="dniAlumno">DNI (Identificador)</label>
+        <input type="text" id="dniAlumno" placeholder="Ej: 48123456" required pattern="[0-9]+" inputmode="numeric">
+    </div>
+    <div class="input-group">
+        <label for="generoAlumno">Género del Alumno</label>
+        <select id="generoAlumno" style="height: 38px;">
+            <option value="Masculino" selected>Masculino</option>
+            <option value="Femenino">Femenino</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label for="cuilAlumno">CUIL Estudiante</label>
+        <input type="text" id="cuilAlumno" placeholder="Sin guiones">
+    </div>
+</div>
                         <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 3fr 1.2fr; gap: 10px;">
                             <div class="input-group">
                                 <label for="fechaNacimiento">Fecha de Nacimiento</label>
@@ -435,35 +442,30 @@
 </div>
 
 <!-- NUEVOS CAMPOS DEL TUTOR CON GÉNERO Y CUIL AUTOMÁTICO -->
-<div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;">
+<!-- BLOQUE DEL TUTOR UNIFICADO Y CORREGIDO -->
+<div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
     <div class="input-group">
         <label for="dniTutorAlumno">DNI del Adulto Responsable / Tutor</label>
         <input type="text" id="dniTutorAlumno" placeholder="Ej: 25123456" pattern="[0-9]+" inputmode="numeric" required>
     </div>
     <div class="input-group">
         <label for="generoTutor">Género del Tutor</label>
-        <select id="generoTutor" style="width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; height: 38px;">
-            <option value="Masculino">Masculino</option>
+        <select id="generoTutor" style="height: 38px;">
+            <option value="Masculino" selected>Masculino</option>
             <option value="Femenino">Femenino</option>
         </select>
     </div>
+</div>
+
+<div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
     <div class="input-group">
         <label for="cuilTutor">CUIL del Tutor (Automático)</label>
-        <input type="text" id="cuilTutor" placeholder="Se calcula solo" readonly style="background: #f1f5f9; width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; height: 38px;">
+        <input type="text" id="cuilTutor" placeholder="Se calcula solo" readonly style="background: #f1f5f9;">
     </div>
-</div>
-
-
-<!-- Nuevos campos del Adulto Responsable integrados simétricamente -->
-<div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-<div class="input-group">
-<label for="dniTutorAlumno">DNI del Adulto Responsable / Tutor</label>
-<input type="text" id="dniTutorAlumno" placeholder="Ej: 25123456" pattern="[0-9]+" inputmode="numeric" required>
-</div>
-<div class="input-group">
-<label for="emailTutor">Correo Electrónico del Tutor</label>
-<input type="email" id="emailTutor" placeholder="Ej: tutor@ejemplo.com">
-</div>
+    <div class="input-group">
+        <label for="emailTutor">Correo Electrónico del Tutor</label>
+        <input type="email" id="emailTutor" placeholder="Ej: tutor@ejemplo.com">
+    </div>
 </div>
 
                         <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
