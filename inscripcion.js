@@ -468,16 +468,26 @@ function renderizarFilasEnTabla(alumnos) {
             ? `<span style="color:#e056fd; font-weight:bold; font-size:11px;">✨ Con PPI (${alumno.ppi?.resolucion || 'S/D'})</span>`
             : `<span style="color:#94a3b8; font-size:11px;">Estándar</span>`;
 
-        let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
-        if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
-            accionesHTML = `
-            <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
-                <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
-                <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
-                <button type="button" class="btn-accion-fila" data-dni="${alumno.dni}" style="background:#ef4444;">🗑</button>
-            </div>
-            `;
-        }
+           // ====== PARCHE: Botones de visualización individual para Preceptores ======
+    let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
+    
+    if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
+        accionesHTML = `
+        <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
+            <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
+            <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
+            <button type="button" class="btn-accion-fila" data-dni="${alumno.dni}" style="background:#ef4444;">🗑</button>
+        </div>
+        `;
+    } else if (rolNormalizado === "preceptor") {
+        // El preceptor ve los reportes pero no el tacho de eliminación institucional
+        accionesHTML = `
+        <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
+            <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
+            <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
+        </div>
+        `;
+    }
 
         tr.innerHTML = `
         <td style="padding: 10px 12px;"><strong>${alumno.nombre || ""}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
