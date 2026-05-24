@@ -471,9 +471,6 @@ function renderizarFilasEnTabla(alumnos) {
             // ====== PARCHE GENERALIZADO: Botones de visualización para todos los usuarios de Solo Lectura ======
     let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
     
-       // ====== PARCHE GENERALIZADO: Botones con inclusión de Ficha de Contacto Rápida ======
-    let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
-    
     if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
         accionesHTML = `
         <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
