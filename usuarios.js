@@ -373,8 +373,12 @@ async function procesarGuardarUsuario(e) {
     const esProfesor = document.getElementById('checkEsProfesor').checked;
     const dniOriginal = document.getElementById('dniOriginalEdicion').value;
 
-    const valClave = claveUsuario ? claveUsuario.value : "";
-    const valConfirmar = confirmarClaveUsuario ? confirmarClaveUsuario.value : "";
+        // ====== PARCHE: Corrección tipográfica de captura de contraseña ======
+    const inputClaveElement = document.getElementById('claveUsuario'); 
+    const inputConfirmarElement = document.getElementById('confirmarClaveUsuario'); 
+
+    const valClave = inputClaveElement ? inputClaveElement.value : "";
+    const valConfirmar = inputConfirmarElement ? inputConfirmarElement.value : "";
 
     if (!dni || !nombreCompleto || !email || !rol) {
         alert("Por favor, complete todos los campos obligatorios del formulario.");
