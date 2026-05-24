@@ -471,29 +471,26 @@ function renderizarFilasEnTabla(alumnos) {
             // ====== PARCHE GENERALIZADO: Botones de visualización para todos los usuarios de Solo Lectura ======
     let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
     
-       // ====== PARCHE: Botones con Data Inyectada de Forma Atómica ======
+       // ====== PARCHE: Botón Datos exclusivo para Modo Consulta (Solo Lectura) ======
+    const nombreEstudianteValido = alumno.nombreAlumno || alumno.nombre || 'Sin registrar';
+    const direccionEstudianteValida = alumno.direccionAlumno || alumno.direccion || 'No especificada';
+
     if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
+        // Modo Escritura (Administradores): Se remueve el botón Datos porque la info se ve a la izquierda
         accionesHTML = `
         <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
-            <button type="button" class="btn-accion-fila btn-fila-ficha" 
-                data-nombre="${alumno.nombreAlumno || ''}" 
-                data-direccion="${alumno.direccionAlumno || 'No especificada'}" 
-                data-tel1="${alumno.telefono1 || 'No registrado'}" 
-                data-tel2="${alumno.telefono2 || 'Ninguno'}" 
-                data-tutor="${alumno.nombreTutor || 'No registrado'}" 
-                data-tutordni="${alumno.dniTutorAlumno || 'Sin registrar'}" 
-                data-dni="${alumno.dni}" style="background:#4b5563;" title="Ver Datos de Contacto">👁 Datos</button>
             <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
             <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
             <button type="button" class="btn-accion-fila" data-dni="${alumno.dni}" style="background:#ef4444;">🗑</button>
         </div>
         `;
     } else {
+        // Modo Consulta (Preceptores / Solo Lectura): Conserva el botón Datos con su mapeo flexible
         accionesHTML = `
         <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
             <button type="button" class="btn-accion-fila btn-fila-ficha" 
-                data-nombre="${alumno.nombreAlumno || ''}" 
-                data-direccion="${alumno.direccionAlumno || 'No especificada'}" 
+                data-nombre="${nombreEstudianteValido}" 
+                data-direccion="${direccionEstudianteValida}" 
                 data-tel1="${alumno.telefono1 || 'No registrado'}" 
                 data-tel2="${alumno.telefono2 || 'Ninguno'}" 
                 data-tutor="${alumno.nombreTutor || 'No registrado'}" 
@@ -504,7 +501,6 @@ function renderizarFilasEnTabla(alumnos) {
         </div>
         `;
     }
-
 
         tr.innerHTML = `
         <td style="padding: 10px 12px;"><strong>${alumno.nombre || ""}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
