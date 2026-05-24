@@ -468,21 +468,25 @@ function renderizarFilasEnTabla(alumnos) {
             ? `<span style="color:#e056fd; font-weight:bold; font-size:11px;">✨ Con PPI (${alumno.ppi?.resolucion || 'S/D'})</span>`
             : `<span style="color:#94a3b8; font-size:11px;">Estándar</span>`;
 
-           // ====== PARCHE: Botones de visualización individual para Preceptores ======
+            // ====== PARCHE GENERALIZADO: Botones de visualización para todos los usuarios de Solo Lectura ======
+    let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
+    
+       // ====== PARCHE GENERALIZADO: Botones con inclusión de Ficha de Contacto Rápida ======
     let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
     
     if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
         accionesHTML = `
         <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
+            <button type="button" class="btn-accion-fila btn-fila-ficha" data-dni="${alumno.dni}" style="background:#4b5563;" title="Datos de Contacto">👁 Datos</button>
             <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
             <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
             <button type="button" class="btn-accion-fila" data-dni="${alumno.dni}" style="background:#ef4444;">🗑</button>
         </div>
         `;
-    } else if (rolNormalizado === "preceptor") {
-        // El preceptor ve los reportes pero no el tacho de eliminación institucional
+    } else {
         accionesHTML = `
         <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
+            <button type="button" class="btn-accion-fila btn-fila-ficha" data-dni="${alumno.dni}" style="background:#4b5563;" title="Datos de Contacto">👁 Datos</button>
             <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
             <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
         </div>
@@ -1004,5 +1008,46 @@ function calcularCuilAutomatico(dniStr, generoStr) {
 
     return prefijo + dniPad + verificador;
 }
+
+// ====== PARCHE 2 DE ESTABILIDAD: Controlador de Ficha de Contacto Rápida ======
+document.getElementById('tablaAlumnosBody')?.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-fila-ficha');
+    if (!btn) return;
+    
+    const dniBuscado = btn.getAttribute('data-dni');
+    
+    // Buscamos los datos del alumno en la lista global en memoria que usa tu script (listaAlumnosGlobal)
+    const estudiante = (typeof listaAlumnosGlobal !== 'undefined' ? listaAlumnosGlobal : []).find(a => a.dni === dniBuscado);
+                       
+    if (!estudiante) {
+        alert("No se pudieron recuperar los detalles del alumno en memoria.");
+        return;
+    }
+    
+    // Usamos los mismos contenedores modales que ya existen en tu HTML
+    const contenedorModal = document.getElementById('modalImpresionContenedor');
+    const cuerpoModal = document.getElementById('modalImpresionCuerpo');
+    
+    if (contenedorModal && cuerpoModal) {
+        cuerpoModal.innerHTML = `
+        <div style="padding: 20px; background: white; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; text-align: left; max-width: 550px; margin: 30px auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <h2 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0; font-size: 18px;">Ficha de Contacto Institucional</h2>
+            <p style="font-size: 15px; margin: 12px 0;"><strong>Estudiante:</strong> ${estudiante.nombreAlumno || 'Sin registrar'}</p>
+            <p style="font-size: 13px; margin: 8px 0; color: #475569;"><strong>DNI Alumno:</strong> ${estudiante.dniAlumno || dniBuscado}</p>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+            <div style="display: flex; flex-direction: column; gap: 10px; color: #334155; font-size: 14px;">
+                <div><strong>📍 Dirección de Residencia:</strong> ${estudiante.direccionAlumno || 'No especificada'}</div>
+                <div><strong>📞 Teléfono de Contacto 1:</strong> <span style="color: #2563eb; font-weight: bold;">${estudiante.telefono1 || 'No registrado'}</span></div>
+                <div><strong>📱 Teléfono Alternativo 2:</strong> ${estudiante.telefono2 || 'Ninguno'}</div>
+                <div style="background: #f8fafc; padding: 12px; border-left: 4px solid #10b981; margin-top: 5px; border-radius: 0 4px 4px 0;">
+                    <strong style="color: #065f46;">👤 Adulto Responsable / Tutor:</strong> ${estudiante.nombreTutor || 'No registrado'}<br>
+                    <span style="font-size: 12px; color: #64748b;">DNI Tutor: ${estudiante.dniTutorAlumno || 'Sin registrar'}</span>
+                </div>
+            </div>
+        </div>
+        `;
+        contenedorModal.style.display = "flex";
+    }
+});
 
 })();
