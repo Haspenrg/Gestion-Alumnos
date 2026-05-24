@@ -157,6 +157,104 @@
         .boletin-reverso-hoja {
             display: none;
         }
+   
+        /* =========================================================================
+   ANCLA DE BÚSQUEDA: @media screen and (max-width: 768px) {
+   REEMPLAZAR LOS SELECTORES DE CONTEXTO PARA FORZAR EL DISEÑO SOBRE EL ID DINÁMICO
+   ========================================================================= */
+@media screen and (max-width: 768px) {
+    /* Forzar el cambio sobre el contenedor dinámico de la carilla de frente */
+    div[id^="carillaFrente-"], 
+    .contenedor-media-hoja-pdf {
+        width: 100% !important;
+        max-width: 100vw !important;
+        height: auto !important;
+        min-height: auto !important;
+        padding: 15px 10px !important;
+        margin: 10px auto !important;
+        box-sizing: border-box !important;
+        display: block !important;
+    }
+
+    /* Desestructuración absoluta: convierte toda la tabla y sus celdas en bloques */
+    div[id^="carillaFrente-"] table,
+    div[id^="carillaFrente-"] thead,
+    div[id^="carillaFrente-"] tbody,
+    div[id^="carillaFrente-"] th,
+    div[id^="carillaFrente-"] tr,
+    div[id^="carillaFrente-"] td,
+    .contenedor-media-hoja-pdf table,
+    .contenedor-media-hoja-pdf thead,
+    .contenedor-media-hoja-pdf tbody,
+    .contenedor-media-hoja-pdf th,
+    .contenedor-media-hoja-pdf tr,
+    .contenedor-media-hoja-pdf td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Ocultar las cabeceras rígidas originales por completo */
+    div[id^="carillaFrente-"] thead,
+    .contenedor-media-hoja-pdf thead,
+    div[id^="carillaFrente-"] th,
+    .contenedor-media-hoja-pdf th {
+        display: none !important;
+    }
+
+
+
+    /* Convierte cada fila de asignatura en una tarjeta independiente */
+    .contenedor-media-hoja-pdf tr.fila-materia-responsiva {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 12px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 8px !important;
+        background: #f8fafc !important;
+    }
+
+    /* Alineación clave-valor para las notas en los extremos de la pantalla */
+    .contenedor-media-hoja-pdf tr.fila-materia-responsiva td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        border: none !important;
+        padding: 5px 4px !important;
+        border-bottom: 1px dashed #e2e8f0 !important;
+        text-align: right !important;
+        font-size: 11px !important;
+    }
+
+    /* Destacado visual superior de la materia dentro de la tarjeta */
+    .contenedor-media-hoja-pdf tr.fila-materia-responsiva td[data-label="Asignatura"] {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        border-radius: 4px !important;
+        margin-bottom: 6px !important;
+        padding: 6px !important;
+    }
+
+    /* Evita que aparezca el prefijo "Asignatura:" repetido */
+    .contenedor-media-hoja-pdf tr.fila-materia-responsiva td[data-label="Asignatura"]::before {
+        display: none !important;
+    }
+
+    /* Inyección dinámica del nombre de la columna a la izquierda de la nota */
+    .contenedor-media-hoja-pdf tr.fila-materia-responsiva td::before {
+        content: attr(data-label);
+        font-weight: bold !important;
+        color: #475569 !important;
+        float: left !important;
+        text-transform: uppercase !important;
+        font-size: 9px !important;
+    }
+}
 
         /* --- CONFIGURACIÓN ESTRICTA E INMUTABLE DE IMPRESIÓN FÍSICA --- */
         @media print {

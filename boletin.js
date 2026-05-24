@@ -135,17 +135,22 @@ function generarHTMLFrenteBoletin( alumno, cursoTexto, turnoTexto, materias, cal
             const feb = c. febrero || "0";
             const obs = c. observaciones || "";
 
-            filasMateriasHTML += `
-            <tr style="border-bottom: 1px solid #000000;">
-                <td style="text-align:left; font-weight:bold; font-size:9px; padding:3px 5px; border:1px solid #000000;">${ materia. toUpperCase()}</td>
-                <td style="border:1px solid #000000; text-align:center; font-size:10px;">${ c1}</td>
-                <td style="border:1px solid #000000; text-align:center; font-size:10px;">${ c2}</td>
-                <td style="border:1px solid #000000; text-align:center; font-weight:bold; font-size:10px; background:#f1f5f9;">${ fin}</td>
-                <td style="border:1px solid #000000; text-align:center; font-size:10px;">${ dic}</td>
-                <td style="border:1px solid #000000; text-align:center; font-size:10px;">${ feb}</td>
-                <td style="border:1px solid #000000; text-align:left; font-size:8px; padding:2px 4px;">${ obs}</td>
-            </tr>
-            `;
+           // =========================================================================
+// ANCLA DE BÚSQUEDA: filasMateriasHTML += ` <tr style="border-bottom: 1px solid #000000;">
+// MODIFICACIÓN QUIRÚRGICA: INYECTAR CLASE Y DATA-LABELS MANTENIENDO TU LÓGICA
+// =========================================================================
+        filasMateriasHTML += `
+        <tr class="fila-materia-responsiva" style="border-bottom: 1px solid #000000;">
+            <td data-label="Asignatura" style="text-align:left; font-weight:bold; font-size:9px; padding:3px 5px; border:1px solid #000000;">${materia.toUpperCase()}</td>
+            <td data-label="1er Cuatrimestre" style="border:1px solid #000000; text-align:center; font-size:10px;">${c1}</td>
+            <td data-label="2do Cuatrimestre" style="border:1px solid #000000; text-align:center; font-size:10px;">${c2}</td>
+            <td data-label="Final" style="border:1px solid #000000; text-align:center; font-weight:bold; font-size:10px; background:#f1f5f9;">${fin}</td>
+            <td data-label="Diciembre" style="border:1px solid #000000; text-align:center; font-size:10px;">${dic}</td>
+            <td data-label="Febrero" style="border:1px solid #000000; text-align:center; font-size:10px;">${feb}</td>
+            <td data-label="Observaciones" style="border:1px solid #000000; text-align:left; font-size:8px; padding:2px 4px;">${obs}</td>
+        </tr>
+        `;
+
         });
     }
 
