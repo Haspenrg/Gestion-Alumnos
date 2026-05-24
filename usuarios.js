@@ -142,21 +142,40 @@ async function cargarRolesEnSelector() {
 }
 
 // --- INICIALIZACIÓN DE SELECTORES DE CURSOS ---
+
+// ====== PARCHE SEGURO: Inicialización de Selectores con Fallback a Firestore ======
 async function inicializarSelectoresCursos() {
-    const cursosRaw = localStorage.getItem('cursosColegio');
-    const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+    let cursosRaw = localStorage.getItem('cursosColegio');
+    let cursos = [];
+
+    // FALLBACK: Si no hay datos en local, los descargamos de la base de datos
+    if (!cursosRaw) {
+        try {
+            // Buscamos la colección 'cursos' en Firestore de forma modular
+            const querySnapshot = await db.collection('cursos').get();
+            cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+        } catch (error) {
+            console.error("Error al traer cursos desde Firestore:", error);
+        }
+    } else {
+        cursos = JSON.parse(cursosRaw);
+    }
+
     const selectPrep1 = document.getElementById('altaAnio1');
     const selectPrep2 = document.getElementById('altaAnio2');
     const selectProfCurso = document.getElementById('anioProfesor');
 
     if (!selectPrep1 || !selectPrep2 || !selectProfCurso) return;
 
+    // Reiniciamos las opciones por defecto
     selectPrep1.innerHTML = '<option value="" disabled selected>Seleccione curso...</option><option value="Ninguno">Ninguno / Sin asignar</option>';
     selectPrep2.innerHTML = '<option value="" disabled selected>Seleccione curso...</option><option value="Ninguno">Ninguno / Sin asignar</option>';
     selectProfCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
 
     if (cursos.length === 0) return;
 
+    // Iteramos e inyectamos los cursos en los tres desplegables
     cursos.forEach(curso => {
         const textoOpcion = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
         selectPrep1.add(new Option(textoOpcion, curso.id));
@@ -164,6 +183,7 @@ async function inicializarSelectoresCursos() {
         selectProfCurso.add(new Option(textoOpcion, curso.id));
     });
 }
+
 async function cargarMateriasPorCursoSeleccionado() {
     const cursoId = document.getElementById('anioProfesor').value;
     const selectMateria = document.getElementById('materiaProfesor');
@@ -555,9 +575,13 @@ async function renderizarTablaUsuarios() {
             const cursosRaw = localStorage.getItem('cursosColegio');
             const listaCursos = cursosRaw ? JSON.parse(cursosRaw) : [];
             const nombresCursos = user.cursosAsignados.map(id => {
-                const c = listaCursos.find(cur => cur.id === id);
-                return c ? (c.ciclo.split("-").trim() + " ° " + c.division) : "Sin Asignar";
-            });
+            const c = listaCursos.find(cur => cur.id === id);
+            if (!c) return "Sin Asignar";
+    
+    // Primero hacemos el split, tomamos la primera parte del ciclo y a esa parte le aplicamos el trim
+    const cicloLimpio = c.ciclo.split("-")[0].trim(); 
+    return `${cicloLimpio} ° ${c.division}`;
+});
             const dPre = document.createElement('d' + 'i' + 'v');
             dPre.innerHTML = "🔹 <strong>Cursos Preceptoría:</strong> " + nombresCursos.join(" y ");
             tdResp.appendChild(dPre);
