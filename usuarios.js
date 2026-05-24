@@ -645,11 +645,18 @@ window.activarModoEdicion = async function(dni) {
     if (bannerEdicion) bannerEdicion.style.display = "block";
     gestionarPanelesFormulario();
 
-   const userRol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
+ const userRol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
 if (userRol === "preceptor" && usuario.cursosAsignados && usuario.cursosAsignados.length >= 2) {
-    document.getElementById('altaAnio1').value = usuario.cursosAsignados[0];
-    document.getElementById('altaAnio2').value = usuario.cursosAsignados[1];
+    setTimeout(() => {
+        const select1 = document.getElementById('altaAnio1');
+        const select2 = document.getElementById('altaAnio2');
+        if (select1 && select2) {
+            select1.value = usuario.cursosAsignados[0];
+            select2.value = usuario.cursosAsignados[1];
+        }
+    }, 80); // 80ms bastan para que GitHub active los contenedores del DOM ocultos
 }
+  
     catedrasTemporales = usuario.bolsaHoras ? [...usuario.bolsaHoras] : [];
     actualizarTagsBolsaHoras();
 };
