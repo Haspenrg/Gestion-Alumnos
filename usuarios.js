@@ -645,11 +645,11 @@ window.activarModoEdicion = async function(dni) {
     if (bannerEdicion) bannerEdicion.style.display = "block";
     gestionarPanelesFormulario();
 
-    const userRol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
-    if (userRol === "preceptor" && usuario.cursosAsignados && usuario.cursosAsignados.length >= 2) {
-        document.getElementById('altaAnio1').value = usuario.cursosAsignados;
-        document.getElementById('altaAnio2').value = usuario.cursosAsignados;
-    }
+   const userRol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
+if (userRol === "preceptor" && usuario.cursosAsignados && usuario.cursosAsignados.length >= 2) {
+    document.getElementById('altaAnio1').value = usuario.cursosAsignados[0];
+    document.getElementById('altaAnio2').value = usuario.cursosAsignados[1];
+}
     catedrasTemporales = usuario.bolsaHoras ? [...usuario.bolsaHoras] : [];
     actualizarTagsBolsaHoras();
 };
