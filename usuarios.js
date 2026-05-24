@@ -143,16 +143,17 @@ async function cargarRolesEnSelector() {
 
 // --- INICIALIZACIÓN DE SELECTORES DE CURSOS ---
 
-// ====== PARCHE SEGURO: Inicialización de Selectores con Fallback a Firestore ======
+// ====== PARCHE MODULAR: Consulta compatible con Firebase v9/v10 ======
 async function inicializarSelectoresCursos() {
     let cursosRaw = localStorage.getItem('cursosColegio');
     let cursos = [];
 
-    // FALLBACK: Si no hay datos en local, los descargamos de la base de datos
+    // FALLBACK: Si no hay datos en local, los descargamos usando la sintaxis modular correcta
     if (!cursosRaw) {
         try {
-            // Buscamos la colección 'cursos' en Firestore de forma modular
-            const querySnapshot = await db.collection('cursos').get();
+            // Importante: Usamos la función collection() global pasándole 'db' como argumento
+            const cursosRef = collection(db, 'cursos');
+            const querySnapshot = await getDocs(cursosRef);
             cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             localStorage.setItem('cursosColegio', JSON.stringify(cursos));
         } catch (error) {
@@ -183,6 +184,7 @@ async function inicializarSelectoresCursos() {
         selectProfCurso.add(new Option(textoOpcion, curso.id));
     });
 }
+
 
 async function cargarMateriasPorCursoSeleccionado() {
     const cursoId = document.getElementById('anioProfesor').value;
