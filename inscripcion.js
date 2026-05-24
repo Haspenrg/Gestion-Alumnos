@@ -954,6 +954,13 @@ function cerrarModalPrevisualizacion() {
     modalContenedor.style.display = "none";
     modalCuerpo.innerHTML = "";
 }
+document.getElementById('modalImpresionContenedor')?.addEventListener('click', function(e) {
+    if (e.target.id === 'btnCerrarModalImpresion' || e.target.closest('#btnCerrarModalImpresion')) {
+        modalContenedor.style.display = "none";
+        modalCuerpo.innerHTML = "";
+    }
+});
+
 // MOTOR MATEMÁTICO ADAPTATIVO PARA CÁLCULO DE CUIL (ALGORITMO ANSES)
 function calcularCuilAutomatico(dniStr, generoStr) {
     const dniLimpio = dniStr.replace(/[^0-9]/g, '');
