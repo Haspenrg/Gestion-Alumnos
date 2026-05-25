@@ -50,7 +50,7 @@ if(cuil.startsWith("27"))gen="Femenino";
 return{cuil,gen};
 }
 const partes=nombre.split(',');
-const n=partes?partes[partes.length-1].trim().toLowerCase().split(' ')[0]:"";
+const n=partes?partes[partes.length-1].trim().toLowerCase().split(' '):"";
 if(n.endsWith('a')||["gladys","belen","ines","zoe","uma","umma","mia","maia","ernestina","ayelen"].includes(n))gen="Femenino";
 if(typeof window.calcularCuilAutomatico==='function'){
 cuil=window.calcularCuilAutomatico(dni,gen);
@@ -79,8 +79,16 @@ const lineas=evt.target.result.split('\n');
 const db=getFirestore();
 alumnosEnMemoria=[];
 let cNuevos=0,cModif=0,dentroCurso=false,html="";
-const primeraLinea=lineas[0]||"";
-const cabecera=primeraLinea.split(/[;,]/).map(t=>t.trim().toLowerCase());
+let cabecera=[];
+let filaCabeceraIndex=-1;
+for(let i=0;i<Math.min(10,lineas.length);i++){
+const c=lineas[i].split(/[;,]/).map(t=>t.trim().toLowerCase());
+if(c.includes("apellido y nombre")||c.indexOf("apellido y nombre")>-1){
+cabecera=c;
+filaCabeceraIndex=i;
+break;
+}
+}
 const idxDni=cabecera.indexOf("dni. n°");
 const idxNombre=cabecera.indexOf("apellido y nombre");
 const idxCuil=cabecera.indexOf("cuil");
@@ -96,7 +104,8 @@ return alert("Error estructural: El CSV no contiene los encabezados mandatorios 
 }
 document.getElementById('tablaSimulacionBody').innerHTML='<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Mapeando archivo en memoria...</td></tr>';
 document.getElementById('modalSimulacionCarga').style.display='flex';
-for(let i=4; i<lineas.length; i++){
+const inicioDatos=filaCabeceraIndex>-1?filaCabeceraIndex+1:4;
+for(let i=inicioDatos;i<lineas.length;i++){
 const fila=lineas[i].split(/[;,]/);
 if(!fila||fila.length<2)continue;
 const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
