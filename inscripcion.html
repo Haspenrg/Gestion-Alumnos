@@ -608,53 +608,7 @@
                     </select>
                     <select id="filtroCicloLectivo" class="selector-ciclo-principal">
                         <!-- Inyección dinámica desde script -->
-                    </select>
-                    <!-- ========================================== -->
-<!-- BLOQUE DE INTERFAZ PARA CARGA MASIVA       -->
-<!-- ========================================== -->
-<div id="contenedorCargaMasiva" style="display: none; align-items: center; gap: 8px; background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; margin-left: 8px;">
-  <label for="selectCursoCarga" style="font-size: 11px; font-weight: bold; color: #475569;">Importar Sección:</label>
-  <select id="selectCursoCarga" style="height: 32px; width: 140px; font-size: 12px; padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1;"></select>
-  <input type="file" id="csvCargaMasiva" accept=".csv" style="display: none !important;" />
-  <button type="button" id="btnCargaMasiva" class="btn-emision-masiva" style="background: #1e293b; height: 32px; padding: 0 12px; font-size: 12px; gap: 4px;">
-    <span>⚡ Cargar CSV</span>
-  </button>
-</div>
-
-<div id="modalSimulacionCarga" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center; padding: 20px;">
-  <div style="background: white; width: 100%; max-width: 900px; max-height: 85vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-    <div style="background: #1e293b; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <h3 style="margin: 0; font-size: 16px; font-weight: bold;">📊 Simulación de Carga Masiva Controlada</h3>
-        <p id="resumenSimulacion" style="margin: 4px 0 0 0; font-size: 12px; color: #cbd5e1;"></p>
-      </div>
-      <button type="button" id="btnCerrarSimulacionX" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
-    </div>
-    <div style="padding: 16px; overflow-y: auto; flex: 1; background: #f1f5f9;">
-      <div style="background: white; border-radius: 6px; border: 1px solid #e2e8f0; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
-          <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: bold;">
-            <tr>
-              <th style="padding: 10px;">DNI</th>
-              <th style="padding: 10px;">Alumno (Apellido y Nombre)</th>
-              <th style="padding: 10px;">CUIL Calculado</th>
-              <th style="padding: 10px;">Contacto / Tutor Extraído</th>
-              <th style="padding: 10px; text-align: center;">Estado</th>
-            </tr>
-          </thead>
-          <tbody id="tablaSimulacionBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 16px; display: flex; justify-content: flex-end; gap: 12px;">
-      <button type="button" id="btnCancelarCarga" style="background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer;">❌ Cancelar</button>
-      <button type="button" id="btnConfirmarCarga" style="background: #16a34a; color: white; border: none; padding: 8px 20px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;">💾 Confirmar e Importar</button>
-    </div>
-  </div>
-</div>
-<!-- ========================================== -->
-
-                    
+                    </select>     
                     <div class="contenedor-emision-lote">
                         <span style="font-size: 11px; font-weight: bold; color: #475569;">ACCIONES EN LOTE DE SECCIÓN:</span>
                         <button type="button" id="btnEmitirLoteInforme" class="btn-emision-masiva btn-lote-informe" disabled>🖨 Emitir Informes Pedagógicos</button>
