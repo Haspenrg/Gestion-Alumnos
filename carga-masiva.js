@@ -61,8 +61,13 @@ return{cuil,gen};
 }
 async function simularCargaCSV(e){
 const f=e.target.files;
+if(!f||f.length===0)return;
 const s=document.getElementById('selectCursoCarga');
-if(!f||!s||!s.options[s.selectedIndex])return;
+if(!s||s.selectedIndex===-1||!s.options[s.selectedIndex]){
+alert("Por favor, seleccione primero el curso de destino en el panel de carga masiva.");
+e.target.value="";
+return;
+}
 const cursoId=s.value;
 const tagBusqueda=s.options[s.selectedIndex].dataset.tag||"";
 const cicloActivo=document.getElementById('filtroCicloLectivo')?.value||"2026";
@@ -72,7 +77,7 @@ const lineas=evt.target.result.split('\n');
 const db=getFirestore();
 alumnosEnMemoria=[];
 let cNuevos=0,cModif=0,dentroCurso=false,html="";
-const primeraLinea=lineas[0]||"";
+const primeraLinea=lineas||"";
 const cabecera=primeraLinea.split(/[;,]/).map(t=>t.trim().toLowerCase());
 const idxDni=cabecera.indexOf("dni. n°");
 const idxNombre=cabecera.indexOf("apellido y nombre");
@@ -91,11 +96,12 @@ document.getElementById('modalSimulacionCarga').style.display='flex';
 for(let i=4; i<lineas.length; i++){
 const fila=lineas[i].split(/[;,]/);
 if(!fila||fila.length<2)continue;
-const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
+const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
-const partesTag=tagBusqueda.split('"');
-const cicloTarget=partesTag[0]?partesTag[0].replace("curso:","").trim():"";
-const divisionTarget=partesTag[1]?partesTag[1].trim():"";
+const matchCiclo=tagBusqueda.match(/curso:\s*([^"°\s]+)/);
+const matchDiv=tagBusqueda.match(/"([^"]+)"/);
+const cicloTarget=matchCiclo?matchCiclo.replace("curso:","").trim():"";
+const divisionTarget=matchDiv?matchDiv.trim():"";
 dentroCurso=c0.includes(cicloTarget)&&c0.includes(divisionTarget);
 continue;
 }
@@ -109,8 +115,8 @@ if(dni.length<7)continue;
 const nombreCompleto=fila[idxNombre].trim();
 const{cuil,gen}=calcularGeneroYCuil(nombreCompleto,fila[idxCuil]||"",dni);
 const partes=nombreCompleto.split(',');
-const ap=partes[0]?partes[0].trim():"";
-const nom=partes[1]?partes[1].trim():nombreCompleto;
+const ap=partes?partes.trim():"";
+const nom=partes?partes.trim():nombreCompleto;
 const snap=await getDoc(doc(db,'alumnos',dni));
 const existe=snap.exists();
 let badge='<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:12px; font-weight:bold;">🟢 Nuevo</span>';
