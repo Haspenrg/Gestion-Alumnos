@@ -7,13 +7,18 @@
   let alumnosEnMemoria = []; // Almacenamiento volátil para el Modo Simulación
 
   document.addEventListener("DOMContentLoaded", () => {
-    const sesion = localStorage.getItem('usuarioActivo');
+       const sesion = localStorage.getItem('usuarioActivo');
     if (!sesion) return;
     const r = JSON.parse(sesion).rol?.toLowerCase().trim() || "";
-    if (!r.includes("admin") && !r.includes("direct") && !r.includes("dir")) return;
+    
+    // Validación lógica correcta con OR (||) para dar acceso
+    if (r.includes("admin") || r.includes("direct") || r.includes("dir")) {
+      const contenedor = document.getElementById('contenedorCargaMasiva');
+      if (contenedor) contenedor.style.display = 'inline-flex';
+    } else {
+      return; // Si es preceptor u otro rol, se frena acá
+    }
 
-    const contenedor = document.getElementById('contenedorCargaMasiva');
-    if (contenedor) contenedor.style.display = 'inline-flex';
     
     setTimeout(poblarCursosCarga, 600);
 
