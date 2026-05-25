@@ -6,20 +6,24 @@
 
   let alumnosEnMemoria = []; // Almacenamiento volátil para el Modo Simulación
 
-    document.addEventListener("DOMContentLoaded", () => {
+  // ANCLA_ARRANQUE_CONTROLADO: Forzado de visibilidad inmediato
+  document.addEventListener("DOMContentLoaded", () => {
     const sesion = localStorage.getItem('usuarioActivo');
     if (!sesion) return;
+    
     const r = JSON.parse(sesion).rol?.toLowerCase().trim() || "";
 
-    // Validación lógica OR (||) y forzado de visibilidad por encima del CSS Grid
+    // Garantizamos la aparición visual antes de procesar los datos de Firebase
     if (r.includes("admin") || r.includes("direct") || r.includes("dir")) {
       const contenedor = document.getElementById('contenedorCargaMasiva');
-      if (contenedor) contenedor.style.setProperty('display', 'inline-flex', 'important');
+      if (contenedor) {
+        contenedor.style.setProperty('display', 'inline-flex', 'important');
+      }
     } else {
       return; 
     }
 
-    // Intervalo dinámico para esperar la respuesta de Firestore sin usar setTimeout fijo
+    // Intervalo dinámico robusto para inyectar las secciones
     let intentos = 0;
     const relojCursos = setInterval(() => {
       if (window.cachedCursosColegio && window.cachedCursosColegio.length > 0) {
@@ -27,7 +31,7 @@
         clearInterval(relojCursos);
       }
       intentos++;
-      if (intentos > 30) clearInterval(relojCursos);
+      if (intentos > 40) clearInterval(relojCursos); // Freno a los 20 segundos
     }, 500);
 
     document.getElementById('btnCargaMasiva')?.addEventListener('click', () => document.getElementById('csvCargaMasiva').click());
@@ -37,15 +41,16 @@
     document.getElementById('btnConfirmarCarga')?.addEventListener('click', ejecutarEscrituraFirestore);
   });
 
-
-    function poblarCursosCarga() {
+  function poblarCursosCarga() {
     const s = document.getElementById('selectCursoCarga');
     if (!s || !window.cachedCursosColegio) return;
-    s.innerHTML = ""; // Limpieza de seguridad
+    s.innerHTML = ""; // Limpieza previa de control
+    
     window.cachedCursosColegio.forEach(c => {
       const o = new Option(`${c.ciclo} "${c.division}"`, c.id);
-      // Guardamos el número y la división limpios (Ej: "1" y "a")
-      o.dataset.anio = (c.ciclo ? c.ciclo.charAt(0) : "1").toLowerCase();
+      // Extraemos el año numérico limpiando espacios o caracteres especiales de tu base de datos
+      const anioLimpio = c.ciclo ? c.ciclo.replace(/[^0-9]/g, '').trim() : "1";
+      o.dataset.anio = anioLimpio;
       o.dataset.div = (c.division || "").toLowerCase().trim();
       s.add(o);
     });
