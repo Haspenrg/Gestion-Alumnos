@@ -62,9 +62,9 @@ return{cuil,gen};
 async function simularCargaCSV(e){
 const f=e.target.files;
 const s=document.getElementById('selectCursoCarga');
-if(!f||!s)return;
+if(!f||!s||!s.options[s.selectedIndex])return;
 const cursoId=s.value;
-const tagBusqueda=s.options[s.selectedIndex].dataset.tag;
+const tagBusqueda=s.options[s.selectedIndex].dataset.tag||"";
 const cicloActivo=document.getElementById('filtroCicloLectivo')?.value||"2026";
 const reader=new FileReader();
 reader.onload=async(evt)=>{
@@ -90,12 +90,12 @@ document.getElementById('tablaSimulacionBody').innerHTML='<tr><td colspan="5" st
 document.getElementById('modalSimulacionCarga').style.display='flex';
 for(let i=4; i<lineas.length; i++){
 const fila=lineas[i].split(/[;,]/);
-if(!fila||fila.length<2)continue;
+if(!fila||fila.length < 2)continue;
 const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const partesTag=tagBusqueda.split('"');
-const cicloTarget=partesTag.replace("curso:","").trim();
-const divisionTarget=partesTag?partesTag.trim():"";
+const cicloTarget=partesTag[0]?partesTag[0].replace("curso:","").trim():"";
+const divisionTarget=partesTag[1]?partesTag[1].trim():"";
 dentroCurso=c0.includes(cicloTarget)&&c0.includes(divisionTarget);
 continue;
 }
