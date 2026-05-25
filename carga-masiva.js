@@ -1,4 +1,4 @@
-// Motor de Carga Masiva Seguro - Versión Estable
+// Motor de Carga Masiva Seguro - Versión Estable Reparada
 (async function(){
 'use strict';
 const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+'t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
@@ -9,15 +9,19 @@ let intentosSesion=0;
 const relojSesion=setInterval(()=>{
 const sesion=localStorage.getItem('usuarioActivo');
 if(sesion){
-clearInterval(relojSesion);
 const r=JSON.parse(sesion).rol?.toLowerCase().trim()||"";
 if(r.includes("admin")||r.includes("direct")||r.includes("dir")){
 const contenedor=document.getElementById('contenedorCargaMasiva');
-if(contenedor)contenedor.style.setProperty('display','inline-flex','important');
+if(contenedor){
+contenedor.style.setProperty('display','inline-flex','important');
+if(intentosSesion>25)clearInterval(relojSesion);
+}
+}else{
+clearInterval(relojSesion);
 }
 }
 intentosSesion++;
-if(intentosSesion>30)clearInterval(relojSesion);
+if(intentosSesion>50)clearInterval(relojSesion);
 },200);
 let intentos=0;
 const relojCursos=setInterval(()=>{
@@ -57,7 +61,7 @@ if(cuil.startsWith("27"))gen="Femenino";
 return{cuil,gen};
 }
 const partes=nombre.split(',');
-const n=partes?partes.trim().toLowerCase().split(' '):"";
+const n=partes[1]?partes[1].trim().toLowerCase().split(' ')[0]:"";
 if(n.endsWith('a')||["gladys","belen","ines","zoe","uma","umma","mia","maia","ernestina","ayelen"].includes(n))gen="Femenino";
 if(typeof window.calcularCuilAutomatico==='function'){
 cuil=window.calcularCuilAutomatico(dni,gen);
@@ -79,7 +83,8 @@ const lineas=evt.target.result.split('\n');
 const db=getFirestore();
 alumnosEnMemoria=[];
 let cNuevos=0,cModif=0,dentroCurso=false,html="";
-const cabecera=lineas?lineas.split(/[;,]/).map(t=>t.trim().toLowerCase()):[];
+const primeraLinea=lineas[3]||"";
+const cabecera=primeraLinea.split(/[;,]/).map(t=>t.trim().toLowerCase());
 const idxDni=cabecera.indexOf("dni. n°");
 const idxNombre=cabecera.indexOf("apellido y nombre");
 const idxCuil=cabecera.indexOf("cuil");
@@ -97,11 +102,11 @@ document.getElementById('modalSimulacionCarga').style.display='flex';
 for(let i=4; i<lineas.length; i++){
 const fila=lineas[i].split(/[;,]/);
 if(!fila||fila.length<2)continue;
-const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
+const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const partesTag=tagBusqueda.split('"');
-const cicloTarget=partesTag.replace("curso:","").trim();
-const divisionTarget=partesTag?partesTag.trim():"";
+const cicloTarget=partesTag[0].replace("curso:","").trim();
+const divisionTarget=partesTag[1]?partesTag[1].trim():"";
 dentroCurso=c0.includes(cicloTarget)&&c0.includes(divisionTarget);
 continue;
 }
@@ -115,8 +120,8 @@ if(dni.length<7)continue;
 const nombreCompleto=fila[idxNombre].trim();
 const{cuil,gen}=calcularGeneroYCuil(nombreCompleto,fila[idxCuil]||"",dni);
 const partes=nombreCompleto.split(',');
-const ap=partes?partes.trim():"";
-const nom=partes?partes.trim():nombreCompleto;
+const ap=partes[0]?partes[0].trim():"";
+const nom=partes[1]?partes[1].trim():nombreCompleto;
 const snap=await getDoc(doc(db,'alumnos',dni));
 const existe=snap.exists();
 let badge='<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:12px; font-weight:bold;">🟢 Nuevo</span>';
