@@ -60,12 +60,13 @@ cuil=(gen==="Femenino"?"27":"20")+dni.padStart(8,'0')+"0";
 return{cuil,gen};
 }
 async function simularCargaCSV(e){
-const f=e.target.files;
+const inputNativo=document.getElementById('csvCargaMasiva');
+const f=inputNativo?inputNativo.files:null;
 if(!f||f.length===0)return;
 const s=document.getElementById('selectCursoCarga');
 if(!s||s.selectedIndex===-1||!s.options[s.selectedIndex]){
 alert("Por favor, seleccione primero el curso de destino en el panel de carga masiva.");
-e.target.value="";
+if(inputNativo)inputNativo.value="";
 return;
 }
 const cursoId=s.value;
@@ -89,6 +90,7 @@ const idxTutor=cabecera.indexOf("tutor");
 const idxDniTutor=cabecera.indexOf("dni",idxTutor>-1?idxTutor:0);
 const idxEmail=cabecera.indexOf("email");
 if(idxDni===-1||idxNombre===-1){
+if(inputNativo)inputNativo.value="";
 return alert("Error estructural: El CSV no contiene los encabezados mandatorios ('DNI. N°' o 'Apellido y Nombre').");
 }
 document.getElementById('tablaSimulacionBody').innerHTML='<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Mapeando archivo en memoria...</td></tr>';
@@ -100,8 +102,8 @@ const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const matchCiclo=tagBusqueda.match(/curso:\s*([^"°\s]+)/);
 const matchDiv=tagBusqueda.match(/"([^"]+)"/);
-const cicloTarget=matchCiclo?matchCiclo.replace("curso:","").trim():"";
-const divisionTarget=matchDiv?matchDiv.trim():"";
+const cicloTarget=matchCiclo?matchCiclo[1].trim():"";
+const divisionTarget=matchDiv?matchDiv[1].trim():"";
 dentroCurso=c0.includes(cicloTarget)&&c0.includes(divisionTarget);
 continue;
 }
