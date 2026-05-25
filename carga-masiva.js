@@ -38,15 +38,19 @@
   });
 
 
-  function poblarCursosCarga() {
+    function poblarCursosCarga() {
     const s = document.getElementById('selectCursoCarga');
     if (!s || !window.cachedCursosColegio) return;
+    s.innerHTML = ""; // Limpieza de seguridad
     window.cachedCursosColegio.forEach(c => {
       const o = new Option(`${c.ciclo} "${c.division}"`, c.id);
-      o.dataset.tag = `curso: ${c.ciclo} año "${c.division}"`.toLowerCase().replace(/\s+/g, ' ');
+      // Guardamos el número y la división limpios (Ej: "1" y "a")
+      o.dataset.anio = (c.ciclo ? c.ciclo.charAt(0) : "1").toLowerCase();
+      o.dataset.div = (c.division || "").toLowerCase().trim();
       s.add(o);
     });
   }
+
 
   function cerrarModal() {
     document.getElementById('modalSimulacionCarga').style.display = 'none';
@@ -79,9 +83,11 @@
     if (!f || !s) return;
 
     const cursoId = s.value;
-    const tagBusqueda = s.options[s.selectedIndex].dataset.tag;
+    const optSel = s.options[s.selectedIndex];
+    const anioBuscar = optSel.dataset.anio;
+    const divBuscar = optSel.dataset.div;
     const cicloActivo = document.getElementById('filtroCicloLectivo')?.value || "2026";
-    const reader = new FileReader();
+
 
     reader.onload = async (evt) => {
       const lineas = evt.target.result.split('\n');
@@ -113,10 +119,12 @@
         if (!fila || fila.length < 2) continue;
         const c0 = fila[0] ? fila[0].trim().toLowerCase().replace(/\s+/g, ' ') : "";
 
-        if (c0.includes("curso:")) {
-          dentroCurso = c0.includes(tagBusqueda);
+                if (c0.includes("curso:")) {
+          // El software valida de forma indestructible que la celda contenga el año y la división
+          dentroCurso = c0.includes(anioBuscar) && c0.includes(`"${divBuscar}"`);
           continue;
         }
+
         if (!dentroCurso) continue;
         if (c0.includes("baja") || c0.includes("preceptor") || !fila[idxNombre]) {
           if (alumnosEnMemoria.length > 0 && c0.includes("baja")) break;
