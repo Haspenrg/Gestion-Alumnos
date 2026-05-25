@@ -4,8 +4,7 @@
 const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+'t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
 const{doc,setDoc,getFirestore,collection,getDoc}=await import(cdn+'firebase-firestore.js');
 let alumnosEnMemoria=[];
-document.addEventListener("DOMContentLoaded",()=>{
-const forzarBotonVisibilidad=()=>{
+window.inicializarCargaMasivaSegura=function(){
 const sesion=localStorage.getItem('usuarioActivo');
 if(!sesion)return;
 const r=JSON.parse(sesion).rol?.toLowerCase().trim()||"";
@@ -13,10 +12,6 @@ if(r.includes("admin")||r.includes("direct")||r.includes("dir")){
 const contenedor=document.getElementById('contenedorCargaMasiva');
 if(contenedor)contenedor.style.setProperty('display','inline-flex','important');
 }
-};
-forzarBotonVisibilidad();
-const observador=new MutationObserver(()=>forzarBotonVisibilidad());
-observador.observe(document.body,{childList:true,subtree:true});
 let intentos=0;
 const relojCursos=setInterval(()=>{
 if(window.cachedCursosColegio&&window.cachedCursosColegio.length>0){
@@ -31,7 +26,7 @@ document.getElementById('csvCargaMasiva')?.addEventListener('change',simularCarg
 document.getElementById('btnCerrarSimulacionX')?.addEventListener('click',cerrarModal);
 document.getElementById('btnCancelarCarga')?.addEventListener('click',cerrarModal);
 document.getElementById('btnConfirmarCarga')?.addEventListener('click',ejecutarEscrituraFirestore);
-});
+};
 function poblarCursosCarga(){
 const s=document.getElementById('selectCursoCarga');
 if(!s||!window.cachedCursosColegio)return;

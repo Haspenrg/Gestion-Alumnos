@@ -136,6 +136,8 @@ if (typeof selectGeneroTutor !== 'undefined' && selectGeneroTutor) selectGeneroT
 
     // Sincronización inicial automática en el arranque (Adentro de la función)
     evaluarVisibilidadPanelPases();
+    if(typeof window.inicializarCargaMasivaSegura==='function')window.inicializarCargaMasivaSegura();
+
 }
 
 
