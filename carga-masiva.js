@@ -1,17 +1,16 @@
-// Motor de Carga Masiva Inteligente y Controlada - Gestión Alumnos 2026
+// Motor de Carga Masiva Seguro - Versión Estable
 (async function() {
   'use strict';
   const cdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
   const { doc, setDoc, getFirestore, collection, getDoc } = await import(cdn + 'firebase-firestore.js');
 
-  let alumnosEnMemoria = []; // Almacenamiento volátil para el Modo Simulación
+  let alumnosEnMemoria = [];
 
-    document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", () => {
     const sesion = localStorage.getItem('usuarioActivo');
     if (!sesion) return;
     const r = JSON.parse(sesion).rol?.toLowerCase().trim() || "";
 
-    // Validación lógica OR (||) y forzado de visibilidad por encima del CSS Grid
     if (r.includes("admin") || r.includes("direct") || r.includes("dir")) {
       const contenedor = document.getElementById('contenedorCargaMasiva');
       if (contenedor) contenedor.style.setProperty('display', 'inline-flex', 'important');
@@ -19,7 +18,6 @@
       return; 
     }
 
-    // Intervalo dinámico para esperar la respuesta de Firestore sin usar setTimeout fijo
     let intentos = 0;
     const relojCursos = setInterval(() => {
       if (window.cachedCursosColegio && window.cachedCursosColegio.length > 0) {
@@ -37,20 +35,17 @@
     document.getElementById('btnConfirmarCarga')?.addEventListener('click', ejecutarEscrituraFirestore);
   });
 
-
-    function poblarCursosCarga() {
+  function poblarCursosCarga() {
     const s = document.getElementById('selectCursoCarga');
     if (!s || !window.cachedCursosColegio) return;
-    s.innerHTML = ""; // Limpieza de seguridad
+    s.innerHTML = "";
     window.cachedCursosColegio.forEach(c => {
       const o = new Option(`${c.ciclo} "${c.division}"`, c.id);
-      // Guardamos el número y la división limpios (Ej: "1" y "a")
-      o.dataset.anio = (c.ciclo ? c.ciclo.charAt(0) : "1").toLowerCase();
-      o.dataset.div = (c.division || "").toLowerCase().trim();
+      // Volvemos al formato original exacto que usabas antes
+      o.dataset.tag = `curso: ${c.ciclo} año "${c.division}"`.toLowerCase().replace(/\s+/g, ' ');
       s.add(o);
     });
   }
-
 
   function cerrarModal() {
     document.getElementById('modalSimulacionCarga').style.display = 'none';
@@ -78,16 +73,14 @@
   }
 
   async function simularCargaCSV(e) {
-    const f = e.target.files[0];
+    const f = e.target.files;
     const s = document.getElementById('selectCursoCarga');
     if (!f || !s) return;
 
     const cursoId = s.value;
-    const optSel = s.options[s.selectedIndex];
-    const anioBuscar = optSel.dataset.anio;
-    const divBuscar = optSel.dataset.div;
+    const tagBusqueda = s.options[s.selectedIndex].dataset.tag;
     const cicloActivo = document.getElementById('filtroCicloLectivo')?.value || "2026";
-
+    const reader = new FileReader();
 
     reader.onload = async (evt) => {
       const lineas = evt.target.result.split('\n');
@@ -95,8 +88,7 @@
       alumnosEnMemoria = [];
       let cNuevos = 0, cModif = 0, dentroCurso = false, html = "";
       
-      // Mapeo Dinámico e Inteligente de Cabeceras Reales de tu Google Sheet
-      const cabecera = lineas[2] ? lineas[2].split(/[;,]/).map(t => t.trim().toLowerCase()) : [];
+      const cabecera = lineas[3] ? lineas[3].split(/[;,]/).map(t => t.trim().toLowerCase()) : [];
       const idxDni = cabecera.indexOf("dni. n°");
       const idxNombre = cabecera.indexOf("apellido y nombre");
       const idxCuil = cabecera.indexOf("cuil");
@@ -114,13 +106,14 @@
       document.getElementById('tablaSimulacionBody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Mapeando archivo en memoria...</td></tr>';
       document.getElementById('modalSimulacionCarga').style.display = 'flex';
 
-      for (let i = 3; i < lineas.length; i++) {
+      for (let i = 4; i < lineas.length; i++) {
         const fila = lineas[i].split(/[;,]/);
         if (!fila || fila.length < 2) continue;
         const c0 = fila[0] ? fila[0].trim().toLowerCase().replace(/\s+/g, ' ') : "";
 
         if (c0.includes("curso:")) {
-          dentroCurso = c0.includes(tagBusqueda);
+          // Buscador inteligente flexible que no depende del formato exacto de espacios de la celda
+          dentroCurso = c0.includes(tagBusqueda.split('"')[1]); 
           continue;
         }
         if (!dentroCurso) continue;
