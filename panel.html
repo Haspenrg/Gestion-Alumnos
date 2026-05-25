@@ -94,7 +94,10 @@
             <h4>Creación de Roles</h4>
         </div>
     </div>
-    <button id="btn-cerrar-sesion" class="btn-salir">Cerrar Sesión</button>
+    <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+    <button id="btn-cambiar-clave-perfil" style="background-color: #4b5563; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; flex: 1;">Cambiar Contraseña</button>
+    <button id="btn-cerrar-sesion" class="btn-salir" style="flex: 1; margin: 0;">Cerrar Sesión</button>
+</div>
 </div>
 
 <!-- SCRIPT DE CONTROL DE ROLES ADAPTADO PARA PERSONAL HÍBRIDO Y FIREBASE -->
@@ -102,6 +105,8 @@
 document.addEventListener("DOMContentLoaded", async function() {
     await verificarYConfigurarPanel();
     document.getElementById('btn-cerrar-sesion').addEventListener('click', cerrarSesion);
+    document.getElementById('btn-cambiar-clave-perfil').addEventListener('click', gestionarCambioClaveAutónomo);
+
 });
 
 async function obtenerSesionLocal() {
@@ -268,6 +273,40 @@ function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
         }
     };
 }
+async function gestionarCambioClaveAutónomo() {
+    const usuario = await obtenerSesionLocal();
+    if (!usuario || !usuario.dni) return;
+
+    const nuevaClave = prompt("Ingrese su nueva contraseña (mínimo 4 caracteres):");
+    if (nuevaClave === null) return; 
+    
+    const claveLimpia = nuevaClave.trim();
+    if (claveLimpia.length < 4) {
+        alert("Operación inválida: La contraseña debe tener al menos 4 caracteres.");
+        return;
+    }
+
+    try {
+        const rolesRaw = localStorage.getItem('usuariosColegio');
+        if (!rolesRaw) return;
+        
+        let listaUsuarios = JSON.parse(rolesRaw);
+        const indice = listaUsuarios.findIndex(u => String(u.dni).trim() === String(usuario.dni).trim());
+
+        if (indice !== -1) {
+            listaUsuarios[indice].clave = claveLimpia;
+            localStorage.setItem('usuariosColegio', JSON.stringify(listaUsuarios));
+            alert("¡Contraseña modificada con éxito!\nPor seguridad, su sesión se cerrará.");
+            cerrarSesion();
+        } else {
+            alert("Error: No se encontró su usuario en la base de datos.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Ocurrió un error al guardar la contraseña.");
+    }
+}
+
 
 // Remoción matemática de sesión local
 function cerrarSesion() {
