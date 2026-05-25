@@ -112,6 +112,7 @@ const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const tagLimpio=tagBusqueda.replace(/["']/g,'').replace("curso:","").trim();
 const c0Limpio=c0.replace(/["']/g,'').replace("curso:","").trim();
+alert("AUDITORÍA DE DATOS:\n\nCelda del CSV leída: ["+c0Limpio+"]\nTexto que busca el sistema: ["+tagLimpio+"]");
 dentroCurso=(c0Limpio===tagLimpio||c0Limpio.includes(tagLimpio)||tagLimpio.includes(c0Limpio));
 continue;
 }
