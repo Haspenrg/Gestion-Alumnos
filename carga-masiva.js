@@ -1,7 +1,7 @@
 // Motor de Carga Masiva Seguro - Versión Estable
 (async function(){
 'use strict';
-const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+'t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
+const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
 const{doc,setDoc,getFirestore,collection,getDoc}=await import(cdn+'firebase-firestore.js');
 let alumnosEnMemoria=[];
 window.inicializarCargaMasivaSegura=function(){
@@ -90,7 +90,7 @@ document.getElementById('tablaSimulacionBody').innerHTML='<tr><td colspan="5" st
 document.getElementById('modalSimulacionCarga').style.display='flex';
 for(let i=4; i<lineas.length; i++){
 const fila=lineas[i].split(/[;,]/);
-if(!fila||fila.length < 2)continue;
+if(!fila||fila.length<2)continue;
 const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const partesTag=tagBusqueda.split('"');
