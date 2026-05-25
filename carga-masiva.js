@@ -110,15 +110,14 @@ const fila=lineas[i].split(/[;,]/);
 if(!fila||fila.length<2)continue;
 const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
-const partesTag=tagBusqueda.split('"');
-const cicloTarget=partesTag[0]?partesTag[0].replace("curso:","").trim():"";
-const divisionTarget=partesTag[1]?partesTag[1].trim():"";
-dentroCurso=c0.includes(cicloTarget)&&c0.includes(divisionTarget);
+const tagLimpio=tagBusqueda.replace(/["']/g,'').replace("curso:","").trim();
+const c0Limpio=c0.replace(/["']/g,'').replace("curso:","").trim();
+dentroCurso=(c0Limpio===tagLimpio||c0Limpio.includes(tagLimpio)||tagLimpio.includes(c0Limpio));
 continue;
 }
 if(!dentroCurso)continue;
 if(c0.includes("baja")||c0.includes("preceptor")||!fila[idxNombre]){
-if(alumnosEnMemoria.length>0&&c0.includes("baja"))break;
+if(alumnosEnMemoria.length>0&&c0.includes("baja")) break;
 continue;
 }
 const dni=fila[idxDni]?fila[idxDni].replace(/[^0-9]/g,'').trim():"";
