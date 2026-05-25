@@ -72,7 +72,7 @@ const lineas=evt.target.result.split('\n');
 const db=getFirestore();
 alumnosEnMemoria=[];
 let cNuevos=0,cModif=0,dentroCurso=false,html="";
-const primeraLinea=lineas||"";
+const primeraLinea=lineas[0]||"";
 const cabecera=primeraLinea.split(/[;,]/).map(t=>t.trim().toLowerCase());
 const idxDni=cabecera.indexOf("dni. n°");
 const idxNombre=cabecera.indexOf("apellido y nombre");
@@ -91,7 +91,7 @@ document.getElementById('modalSimulacionCarga').style.display='flex';
 for(let i=4; i<lineas.length; i++){
 const fila=lineas[i].split(/[;,]/);
 if(!fila||fila.length<2)continue;
-const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
+const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const partesTag=tagBusqueda.split('"');
 const cicloTarget=partesTag[0]?partesTag[0].replace("curso:","").trim():"";
@@ -109,20 +109,20 @@ if(dni.length<7)continue;
 const nombreCompleto=fila[idxNombre].trim();
 const{cuil,gen}=calcularGeneroYCuil(nombreCompleto,fila[idxCuil]||"",dni);
 const partes=nombreCompleto.split(',');
-const ap=partes?partes.trim():"";
-const nom=partes?partes.trim():nombreCompleto;
+const ap=partes[0]?partes[0].trim():"";
+const nom=partes[1]?partes[1].trim():nombreCompleto;
 const snap=await getDoc(doc(db,'alumnos',dni));
 const existe=snap.exists();
 let badge='<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:12px; font-weight:bold;">🟢 Nuevo</span>';
 if(existe){badge='<span style="background:#fef9c3; color:#ca8a04; padding:2px 8px; border-radius:12px; font-weight:bold;">🟡 Modificar</span>';cModif++;}else{cNuevos++;}
 const email=fila[idxEmail]?fila[idxEmail].trim():"sin_correo@colegio.edu.ar";
-const telefono=fila[idxTel]?fila[idxTel].replace(/[^0-9]/g,'').trim():"2964000000";
+const telephone=fila[idxTel]?fila[idxTel].replace(/[^0-9]/g,'').trim():"2964000000";
 const tutor=fila[idxTutor]?fila[idxTutor].trim():"No registrado";
 const dniT=fila[idxDniTutor]?fila[idxDniTutor].replace(/[^0-9]/g,'').trim():"";
 html+=`<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px; font-weight: 500;">${dni}</td><td style="padding: 10px; font-weight: bold; color:#1e293b;">${ap.toUpperCase()}, ${nom}</td><td style="padding: 10px; font-family: monospace; color:#475569;">${cuil}</td><td style="padding: 10px; color: #64748b; font-size: 11px;"><b>Tutor:</b> ${tutor} (${dniT||'S/D'})<br><b>Mail:</b> ${email}</td><td style="padding: 10px; text-align: center;">${badge}</td></tr>`;
 alumnosEnMemoria.push({
 dni,nombre:`${nom} ${ap}`.trim(),cuil,genero:gen,estado:"Regular",cursoId,cicloLectivo:cicloActivo,
-email,telefono1:telefono,nombreTutor:tutor,dniTutor:dniT,fechaNacimiento:fila[idxF_Nac]?.trim()||"",
+email,telefono1:telephone,nombreTutor:tutor,dniTutor:dniT,fechaNacimiento:fila[idxF_Nac]?.trim()||"",
 lugarNacimiento:"Río Grande",nacionalidad:"Argentina",direccion:fila[idxDomicilio]?.trim()||"No especificada",
 documentosDigitales:{dni_alumno:null,partida_nac:null,cert_primaria:null,buena_salud:null,carnet_vacunas:null,dni_tutor:null,acta_ppi:null}
 });
