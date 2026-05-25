@@ -1,7 +1,7 @@
 // Motor de Carga Masiva Seguro - Versión Estable
 (async function(){
 'use strict';
-const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+'t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
+const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
 const{doc,setDoc,getFirestore,collection,getDoc}=await import(cdn+'firebase-firestore.js');
 let alumnosEnMemoria=[];
 window.inicializarCargaMasivaSegura=function(){
@@ -63,6 +63,7 @@ async function simularCargaCSV(e){
 const inputNativo=document.getElementById('csvCargaMasiva');
 const f=inputNativo?inputNativo.files:null;
 if(!f||f.length===0)return;
+const archivoSeleccionado=f[0];
 const s=document.getElementById('selectCursoCarga');
 if(!s||s.selectedIndex===-1||!s.options[s.selectedIndex]){
 alert("Por favor, seleccione primero el curso de destino en el panel de carga masiva.");
@@ -102,8 +103,8 @@ const c0=fila?fila.trim().toLowerCase().replace(/\s+/g,' '):"";
 if(c0.includes("curso:")){
 const matchCiclo=tagBusqueda.match(/curso:\s*([^"°\s]+)/);
 const matchDiv=tagBusqueda.match(/"([^"]+)"/);
-const cicloTarget=matchCiclo?matchCiclo[1].trim():"";
-const divisionTarget=matchDiv?matchDiv[1].trim():"";
+const cicloTarget=matchCiclo?matchCiclo.trim():"";
+const divisionTarget=matchDiv?matchDiv.trim():"";
 dentroCurso=c0.includes(cicloTarget)&&c0.includes(divisionTarget);
 continue;
 }
@@ -138,7 +139,7 @@ documentosDigitales:{dni_alumno:null,partida_nac:null,cert_primaria:null,buena_s
 document.getElementById('tablaSimulacionBody').innerHTML=html||'<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">❌ No se encontraron alumnos en la sección de este archivo.</td></tr>';
 document.getElementById('resumenSimulacion').innerText=`Sección Destino: ${s.options[s.selectedIndex].text} | Ciclo: ${cicloActivo} | Detectados: ${alumnosEnMemoria.length} (🟢 Nuevos: ${cNuevos} | 🟡 Modificaciones: ${cModif})`;
 };
-reader.readAsText(f,'UTF-8');
+reader.readAsText(archivoSeleccionado,'UTF-8');
 }
 async function ejecutarEscrituraFirestore(){
 if(alumnosEnMemoria.length===0)return;
