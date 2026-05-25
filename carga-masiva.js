@@ -1,7 +1,7 @@
 // Motor de Carga Masiva Seguro - Versión Estable
 (async function(){
 'use strict';
-const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
+const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+'t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
 const{doc,setDoc,getFirestore,collection,getDoc}=await import(cdn+'firebase-firestore.js');
 let alumnosEnMemoria=[];
 window.inicializarCargaMasivaSegura=function(){
