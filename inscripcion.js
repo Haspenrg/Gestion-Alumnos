@@ -115,10 +115,16 @@ if (selectCursoFiltro) {
         }
     }
     // Escuchadores reactivos vinculados correctamente
-    if (inputDniAlumno) inputDniAlumno.addEventListener('input', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
-    if (selectGeneroAlumno) selectGeneroAlumno.addEventListener('change', () => dispararAutocompletadoCuil(inputDniAlumno, selectGeneroAlumno, inputCuilAlumno));
-    if (inputDniTutor) inputDniTutor.addEventListener('input', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
-    if (selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, inputCuilTutor));
+    // ANCLA_REPARACION_REACTIVA: Selectores directos para evitar caídas del hilo principal
+const elDniAlu = document.getElementById('dniAlumno');
+const elGenAlu = document.getElementById('generoAlumno');
+const elCuiAlu = document.getElementById('cuilAlumno');
+
+if (elDniAlu) elDniAlu.addEventListener('input', () => dispararAutocompletadoCuil(elDniAlu, elGenAlu, elCuiAlu));
+if (elGenAlu) elGenAlu.addEventListener('change', () => dispararAutocompletadoCuil(elDniAlu, elGenAlu, elCuiAlu));
+if (typeof inputDniTutor !== 'undefined' && inputDniTutor) inputDniTutor.addEventListener('input', () => dispararAutocompletadoCuil(inputDniTutor, typeof selectGeneroTutor !== 'undefined' ? selectGeneroTutor : null, typeof inputCuilTutor !== 'undefined' ? inputCuilTutor : null));
+if (typeof selectGeneroTutor !== 'undefined' && selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, typeof inputCuilTutor !== 'undefined' ? inputCuilTutor : null));
+
 
     btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
     btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
