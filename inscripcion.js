@@ -510,13 +510,27 @@ function renderizarFilasEnTabla(alumnos) {
         `;
     }
 
+               // Parche Seguro: Limpieza automática de nombres duplicados de la carga masiva
+        let nombreParaMostrar = alumno.nombre || "";
+        const palabrasNombre = nombreParaMostrar.trim().split(/\s+/);
+        
+        if (palabrasNombre.length >= 4) {
+            const mitad = Math.floor(palabrasNombre.length / 2);
+            const primeraMitad = palabrasNombre.slice(0, mitad).join(" ").toLowerCase();
+            const segundaMitad = palabrasNombre.slice(mitad).join(" ").toLowerCase();
+            
+            if (primeraMitad === segundaMitad) {
+                nombreParaMostrar = palabrasNombre.slice(0, mitad).join(" ");
+            }
+        }
         tr.innerHTML = `
-        <td style="padding: 10px 12px;"><strong>${alumno.nombre || ""}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
+        <td style="padding: 10px 12px;"><strong>${nombreParaMostrar}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
         <td style="padding: 10px 12px;">${celdaCurso}</td>
         <td style="padding: 10px 12px;">${celdaAuditoria}</td>
         <td style="padding: 10px 12px;">${celdaInclusion}</td>
         <td style="padding: 10px 12px; text-align: left;">${accionesHTML}</td>
         `;
+
 
         tr.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.classList.contains('btn-accion-fila')) return;
@@ -571,9 +585,21 @@ function cargarLegajoEnFormulario(alumno) {
     document.getElementById('nombreAlumno').value = alumno.nombre || "";
     document.getElementById('dniAlumno').value = alumno.dni || "";
     document.getElementById('dniAlumno').disabled = true;
-    document.getElementById('cuilAlumno').value = alumno.cuil || "";
-    document.getElementById('fechaNacimiento').value = alumno.fechaNacimiento || "";
-    document.getElementById('lugarNacimiento').value = alumno.lugarNacimiento || "";
+    document.getElementById('cuilAlumno').value = alumno.cuil || "";   
+         // Parche Seguro: Mapeo y traducción cruzada de formatos para inputs HTML5
+        const fNacRaw = alumno.fechaNacimiento || alumno.fechaNac || "";
+        if (fNacRaw.includes('/')) {
+            const pf = fNacRaw.split('/');
+            if (pf.length === 3) {
+                const dia = pf[0].trim().padStart(2, '0');
+                const mes = pf[1].trim().padStart(2, '0');
+                const anio = pf[2].trim();
+                document.getElementById('fechaNacimiento').value = `${anio}-${mes}-${dia}`;
+            }
+        } else {
+            document.getElementById('fechaNacimiento').value = fNacRaw;
+        }
+  document.getElementById('lugarNacimiento').value = alumno.lugarNacimiento || "";
     document.getElementById('nacionalidad').value = alumno.nacionalidad || "Argentina";
     document.getElementById('direccionAlumno').value = alumno.direccion || "";
     document.getElementById('telefono1').value = alumno.telefono1 || "";
