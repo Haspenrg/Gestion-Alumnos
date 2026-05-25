@@ -6,21 +6,29 @@
 
   let alumnosEnMemoria = []; // Almacenamiento volátil para el Modo Simulación
 
-  document.addEventListener("DOMContentLoaded", () => {
-       const sesion = localStorage.getItem('usuarioActivo');
+    document.addEventListener("DOMContentLoaded", () => {
+    const sesion = localStorage.getItem('usuarioActivo');
     if (!sesion) return;
     const r = JSON.parse(sesion).rol?.toLowerCase().trim() || "";
-    
-    // Validación lógica correcta con OR (||) para dar acceso
+
+    // Validación lógica OR (||) y forzado de visibilidad por encima del CSS Grid
     if (r.includes("admin") || r.includes("direct") || r.includes("dir")) {
       const contenedor = document.getElementById('contenedorCargaMasiva');
-      if (contenedor) contenedor.style.display = 'inline-flex';
+      if (contenedor) contenedor.style.setProperty('display', 'inline-flex', 'important');
     } else {
-      return; // Si es preceptor u otro rol, se frena acá
+      return; 
     }
 
-    
-    setTimeout(poblarCursosCarga, 600);
+    // Intervalo dinámico para esperar la respuesta de Firestore sin usar setTimeout fijo
+    let intentos = 0;
+    const relojCursos = setInterval(() => {
+      if (window.cachedCursosColegio && window.cachedCursosColegio.length > 0) {
+        poblarCursosCarga();
+        clearInterval(relojCursos);
+      }
+      intentos++;
+      if (intentos > 30) clearInterval(relojCursos);
+    }, 500);
 
     document.getElementById('btnCargaMasiva')?.addEventListener('click', () => document.getElementById('csvCargaMasiva').click());
     document.getElementById('csvCargaMasiva')?.addEventListener('change', simularCargaCSV);
@@ -28,6 +36,7 @@
     document.getElementById('btnCancelarCarga')?.addEventListener('click', cerrarModal);
     document.getElementById('btnConfirmarCarga')?.addEventListener('click', ejecutarEscrituraFirestore);
   });
+
 
   function poblarCursosCarga() {
     const s = document.getElementById('selectCursoCarga');
