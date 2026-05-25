@@ -71,17 +71,16 @@ if(inputNativo)inputNativo.value="";
 return;
 }
 const cursoId=s.value;
-const tagBusqueda=s.options[s.selectedIndex].dataset.tag||"";
 const cicloActivo=document.getElementById('filtroCicloLectivo')?.value||"2026";
 const reader=new FileReader();
 reader.onload=async(evt)=>{
 const lineas=evt.target.result.split('\n');
 const db=getFirestore();
 alumnosEnMemoria=[];
-let cNuevos=0,cModif=0,dentroCurso=false,html="";
+let cNuevos=0,cModif=0,html="";
 let cabecera=[];
 let filaCabeceraIndex=-1;
-for(let i=0;i<Math.min(10,lineas.length);i++){
+for(let i=0;i<Math.min(15,lineas.length);i++){
 const c=lineas[i].split(/[;,]/).map(t=>t.trim().toLowerCase());
 if(c.includes("apellido y nombre")||c.indexOf("apellido y nombre")>-1){
 cabecera=c;
@@ -109,21 +108,14 @@ for(let i=inicioDatos;i<lineas.length;i++){
 const fila=lineas[i].split(/[;,]/);
 if(!fila||fila.length<2)continue;
 const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
-if(c0.includes("curso:")){
-const tagLimpio=tagBusqueda.replace(/["']/g,'').replace("curso:","").trim();
-const c0Limpio=c0.replace(/["']/g,'').replace("curso:","").trim();
-alert("AUDITORÍA DE DATOS:\n\nCelda del CSV leída: ["+c0Limpio+"]\nTexto que busca el sistema: ["+tagLimpio+"]");
-dentroCurso=(c0Limpio===tagLimpio||c0Limpio.includes(tagLimpio)||tagLimpio.includes(c0Limpio));
-continue;
-}
-if(!dentroCurso)continue;
-if(c0.includes("baja")||c0.includes("preceptor")||!fila[idxNombre]){
-if(alumnosEnMemoria.length>0&&c0.includes("baja")) break;
+if(c0.includes("baja")||c0.includes("preceptor")||c0.includes("curso")||c0.includes("ciclo")||!fila[idxNombre]){
+if(alumnosEnMemoria.length>0&&c0.includes("baja"))break;
 continue;
 }
 const dni=fila[idxDni]?fila[idxDni].replace(/[^0-9]/g,'').trim():"";
 if(dni.length<7)continue;
 const nombreCompleto=fila[idxNombre].trim();
+if(nombreCompleto.toLowerCase().includes("apellido y nombre")||nombreCompleto==="")continue;
 const{cuil,gen}=calcularGeneroYCuil(nombreCompleto,fila[idxCuil]||"",dni);
 const partes=nombreCompleto.split(',');
 const ap=partes[0]?partes[0].trim():"";
@@ -144,7 +136,7 @@ lugarNacimiento:"Río Grande",nacionalidad:"Argentina",direccion:fila[idxDomicil
 documentosDigitales:{dni_alumno:null,partida_nac:null,cert_primaria:null,buena_salud:null,carnet_vacunas:null,dni_tutor:null,acta_ppi:null}
 });
 }
-document.getElementById('tablaSimulacionBody').innerHTML=html||'<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">❌ No se encontraron alumnos en la sección de este archivo.</td></tr>';
+document.getElementById('tablaSimulacionBody').innerHTML=html||'<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">❌ No se encontraron alumnos válidos en este archivo.</td></tr>';
 document.getElementById('resumenSimulacion').innerText=`Sección Destino: ${s.options[s.selectedIndex].text} | Ciclo: ${cicloActivo} | Detectados: ${alumnosEnMemoria.length} (🟢 Nuevos: ${cNuevos} | 🟡 Modificaciones: ${cModif})`;
 };
 reader.readAsText(archivoSeleccionado,'UTF-8');
