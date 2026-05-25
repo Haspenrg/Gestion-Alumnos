@@ -2,7 +2,7 @@
 (async function(){
 'use strict';
 const cdn='h'+'t'+'t'+'p'+'s'+':'+'/'+'/'+'w'+'w'+'w'+'.'+'g'+'s'+'t'+'a'+'t'+'i'+'c'+'.'+'c'+'o'+'m'+'/f'+'i'+'r'+'e'+'b'+'a'+'s'+'e'+'j'+'s'+'/10.12.0/';
-const{doc,setDoc,getFirestore,collection,getDoc}=await import(cdn+'firebase-firestore.js');
+const{doc,setDoc,getFirestore,collection,getDocs}=await import(cdn+'firebase-firestore.js');
 let alumnosEnMemoria=[];
 window.inicializarCargaMasivaSegura=function(){
 const sesion=localStorage.getItem('usuarioActivo');
@@ -50,8 +50,10 @@ if(cuil.startsWith("27"))gen="Femenino";
 return{cuil,gen};
 }
 const partes=nombre.split(',');
-const n=partes?partes[partes.length-1].trim().toLowerCase().split(' '):"";
-if(n.endsWith('a')||["gladys","belen","ines","zoe","uma","umma","mia","maia","ernestina","ayelen"].includes(n))gen="Femenino";
+const subNombre=partes?partes[partes.length-1].trim().toLowerCase():nombre.trim().toLowerCase();
+const palabras=subNombre.split(' ');
+const primerNombre=palabras[0]||"";
+if(primerNombre.endsWith('a')||["gladys","belen","ines","zoe","uma","umma","mia","maia","ernestina","ayelen"].includes(primerNombre))gen="Femenino";
 if(typeof window.calcularCuilAutomatico==='function'){
 cuil=window.calcularCuilAutomatico(dni,gen);
 }else{
@@ -74,65 +76,82 @@ const cursoId=s.value;
 const cicloActivo=document.getElementById('filtroCicloLectivo')?.value||"2026";
 const reader=new FileReader();
 reader.onload=async(evt)=>{
-const lineas=evt.target.result.split('\n');
+const lineas=evt.target.result.split(/\r?\n/);
 const db=getFirestore();
 alumnosEnMemoria=[];
 let cNuevos=0,cModif=0,html="";
 let cabecera=[];
 let filaCabeceraIndex=-1;
 for(let i=0;i<Math.min(15,lineas.length);i++){
-const c=lineas[i].split(/[;,]/).map(t=>t.trim().toLowerCase());
-if(c.includes("apellido y nombre")||c.indexOf("apellido y nombre")>-1){
+if(!lineas[i])continue;
+const c=lineas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(t=>t.trim().toLowerCase().replace(/"/g,''));
+const unificado=c.join('|');
+if(unificado.includes("apellido y nombre")||unificado.includes("dni. n")){
 cabecera=c;
 filaCabeceraIndex=i;
 break;
 }
 }
-const idxDni=cabecera.indexOf("dni. n°");
-const idxNombre=cabecera.indexOf("apellido y nombre");
-const idxCuil=cabecera.indexOf("cuil");
-const idxF_Nac=cabecera.indexOf("fecha nac");
-const idxDomicilio=cabecera.indexOf("domicilio");
-const idxTel=cabecera.indexOf("tel");
-const idxTutor=cabecera.indexOf("tutor");
-const idxDniTutor=cabecera.indexOf("dni",idxTutor>-1?idxTutor:0);
-const idxEmail=cabecera.indexOf("email");
+let idxDni=-1,idxNombre=-1,idxCuil=-1,idxF_Nac=-1,idxDomicilio=-1,idxTel=-1,idxTutor=-1,idxDniTutor=-1,idxCuilTutor=-1,idxEmail=-1;
+cabecera.forEach((h,idx)=>{
+if(h.includes("dni. n"))idxDni=idx;
+if(h.includes("apellido"))idxNombre=idx;
+if(h.includes("cuil")&&idxCuil===-1)idxCuil=idx;
+if(h.includes("fecha nac")||h.includes("nac")||h.includes("f.nac"))idxF_Nac=idx;
+if(h.includes("domicilio"))idxDomicilio=idx;
+if(h.includes("tel"))idxTel=idx;
+if(h.includes("tutor"))idxTutor=idx;
+if(h.includes("email"))idxEmail=idx;
+});
+if(idxTutor>-1){
+for(let k=idxTutor+1;k<cabecera.length;k++){
+if(cabecera[k].includes("dni")&&idxDniTutor===-1)idxDniTutor=k;
+if(cabecera[k].includes("cuil")&&idxCuilTutor===-1)idxCuilTutor=k;
+}
+}
 if(idxDni===-1||idxNombre===-1){
 if(inputNativo)inputNativo.value="";
 return alert("Error estructural: El CSV no contiene los encabezados mandatorios ('DNI. N°' o 'Apellido y Nombre').");
 }
 document.getElementById('tablaSimulacionBody').innerHTML='<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Mapeando archivo en memoria...</td></tr>';
 document.getElementById('modalSimulacionCarga').style.display='flex';
-const inicioDatos=filaCabeceraIndex>-1?filaCabeceraIndex+1:4;
+const dnisExistentes=new Set();
+try{
+const snapAlumnos=await getDocs(collection(db,'alumnos'));
+snapAlumnos.forEach(docSnap=>dnisExistentes.add(docSnap.id));
+}catch(err){console.error("Error en precarga:",err);}
+const inicioDatos=filaCabeceraIndex>-1?filaCabeceraIndex+1:3;
 for(let i=inicioDatos;i<lineas.length;i++){
-const fila=lineas[i].split(/[;,]/);
+if(!lineas[i]||lineas[i].trim()==="")continue;
+const fila=lineas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
 if(!fila||fila.length<2)continue;
-const c0=fila[0]?fila[0].trim().toLowerCase().replace(/\s+/g,' '):"";
-if(c0.includes("baja")||c0.includes("preceptor")||c0.includes("curso")||c0.includes("ciclo")||!fila[idxNombre]){
+const c0=fila[0]?fila[0].trim().toLowerCase():"";
+if(c0.includes("baja")||c0.includes("preceptor")||c0.includes("curso")||c0.includes("ciclo")||c0.includes("orden")||!fila[idxNombre]||fila[idxNombre].trim()===""){
 if(alumnosEnMemoria.length>0&&c0.includes("baja"))break;
 continue;
 }
-const dni=fila[idxDni]?fila[idxDni].replace(/[^0-9]/g,'').trim():"";
-if(dni.length<7)continue;
-const nombreCompleto=fila[idxNombre].trim();
-if(nombreCompleto.toLowerCase().includes("apellido y nombre")||nombreCompleto==="")continue;
-const{cuil,gen}=calcularGeneroYCuil(nombreCompleto,fila[idxCuil]||"",dni);
+const dniRaw=fila[idxDni]?fila[idxDni].replace(/[^0-9]/g,'').trim():"";
+if(dniRaw.length<6)continue;
+const nombreCompleto=fila[idxNombre].replace(/"/g,'').trim();
+if(nombreCompleto.toLowerCase().includes("apellido")||nombreCompleto==="")continue;
+const cuilRaw=idxCuil>-1?fila[idxCuil]:"";
+const{cuil,gen}=calcularGeneroYCuil(nombreCompleto,cuilRaw,dniRaw);
 const partes=nombreCompleto.split(',');
 const ap=partes[0]?partes[0].trim():"";
 const nom=partes[1]?partes[1].trim():nombreCompleto;
-const snap=await getDoc(doc(db,'alumnos',dni));
-const existe=snap.exists();
+const existe=dnisExistentes.has(dniRaw);
 let badge='<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:12px; font-weight:bold;">🟢 Nuevo</span>';
 if(existe){badge='<span style="background:#fef9c3; color:#ca8a04; padding:2px 8px; border-radius:12px; font-weight:bold;">🟡 Modificar</span>';cModif++;}else{cNuevos++;}
-const email=fila[idxEmail]?fila[idxEmail].trim():"sin_correo@colegio.edu.ar";
-const telephone=fila[idxTel]?fila[idxTel].replace(/[^0-9]/g,'').trim():"2964000000";
-const tutor=fila[idxTutor]?fila[idxTutor].trim():"No registrado";
-const dniT=fila[idxDniTutor]?fila[idxDniTutor].replace(/[^0-9]/g,'').trim():"";
-html+=`<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px; font-weight: 500;">${dni}</td><td style="padding: 10px; font-weight: bold; color:#1e293b;">${ap.toUpperCase()}, ${nom}</td><td style="padding: 10px; font-family: monospace; color:#475569;">${cuil}</td><td style="padding: 10px; color: #64748b; font-size: 11px;"><b>Tutor:</b> ${tutor} (${dniT||'S/D'})<br><b>Mail:</b> ${email}</td><td style="padding: 10px; text-align: center;">${badge}</td></tr>`;
+const email=(idxEmail>-1&&fila[idxEmail])?fila[idxEmail].trim():"sin_correo@colegio.edu.ar";
+const telephone=(idxTel>-1&&fila[idxTel])?fila[idxTel].replace(/[^0-9]/g,'').trim():"2964000000";
+const tutor=(idxTutor>-1&&fila[idxTutor])?fila[idxTutor].replace(/"/g,'').trim():"No registrado";
+const dniT=(idxDniTutor>-1&&fila[idxDniTutor])?fila[idxDniTutor].replace(/[^0-9]/g,'').trim():"";
+const cuilT=(idxCuilTutor>-1&&fila[idxCuilTutor])?fila[idxCuilTutor].replace(/[^0-9]/g,'').trim():"";
+html+=`<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px; font-weight: 500;">${dniRaw}</td><td style="padding: 10px; font-weight: bold; color:#1e293b;">${ap.toUpperCase()}, ${nom}</td><td style="padding: 10px; font-family: monospace; color:#475569;">${cuil}</td><td style="padding: 10px; color: #64748b; font-size: 11px;"><b>Tutor:</b> ${tutor} (${dniT||'S/D'}) - <b>CUIL T:</b> ${cuilT||'S/D'}<br><b>Mail:</b> ${email}</td><td style="padding: 10px; text-align: center;">${badge}</td></tr>`;
 alumnosEnMemoria.push({
-dni,nombre:`${nom} ${ap}`.trim(),cuil,genero:gen,estado:"Regular",cursoId,cicloLectivo:cicloActivo,
-email,telefono1:telephone,nombreTutor:tutor,dniTutor:dniT,fechaNacimiento:fila[idxF_Nac]?.trim()||"",
-lugarNacimiento:"Río Grande",nacionalidad:"Argentina",direccion:fila[idxDomicilio]?.trim()||"No especificada",
+dni:dniRaw,nombre:`${nom} ${ap}`.trim(),cuil,genero:gen,estado:"Regular",cursoId,cicloLectivo:cicloActivo,
+email,telefono1:telephone,nombreTutor:tutor,dniTutor:dniT,cuilTutor:cuilT,fechaNacimiento:(idxF_Nac>-1&&fila[idxF_Nac])?fila[idxF_Nac].trim():"",
+lugarNacimiento:"Río Grande",nacionalidad:"Argentina",direccion:(idxDomicilio>-1&&fila[idxDomicilio])?fila[idxDomicilio].trim():"No especificada",
 documentosDigitales:{dni_alumno:null,partida_nac:null,cert_primaria:null,buena_salud:null,carnet_vacunas:null,dni_tutor:null,acta_ppi:null}
 });
 }
