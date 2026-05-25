@@ -6,24 +6,20 @@
 
   let alumnosEnMemoria = []; // Almacenamiento volátil para el Modo Simulación
 
-  // ANCLA_ARRANQUE_CONTROLADO: Forzado de visibilidad inmediato
-  document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
     const sesion = localStorage.getItem('usuarioActivo');
     if (!sesion) return;
-    
     const r = JSON.parse(sesion).rol?.toLowerCase().trim() || "";
 
-    // Garantizamos la aparición visual antes de procesar los datos de Firebase
+    // Validación lógica OR (||) y forzado de visibilidad por encima del CSS Grid
     if (r.includes("admin") || r.includes("direct") || r.includes("dir")) {
       const contenedor = document.getElementById('contenedorCargaMasiva');
-      if (contenedor) {
-        contenedor.style.setProperty('display', 'inline-flex', 'important');
-      }
+      if (contenedor) contenedor.style.setProperty('display', 'inline-flex', 'important');
     } else {
       return; 
     }
 
-    // Intervalo dinámico robusto para inyectar las secciones
+    // Intervalo dinámico para esperar la respuesta de Firestore sin usar setTimeout fijo
     let intentos = 0;
     const relojCursos = setInterval(() => {
       if (window.cachedCursosColegio && window.cachedCursosColegio.length > 0) {
@@ -31,7 +27,7 @@
         clearInterval(relojCursos);
       }
       intentos++;
-      if (intentos > 40) clearInterval(relojCursos); // Freno a los 20 segundos
+      if (intentos > 30) clearInterval(relojCursos);
     }, 500);
 
     document.getElementById('btnCargaMasiva')?.addEventListener('click', () => document.getElementById('csvCargaMasiva').click());
@@ -41,16 +37,15 @@
     document.getElementById('btnConfirmarCarga')?.addEventListener('click', ejecutarEscrituraFirestore);
   });
 
-  function poblarCursosCarga() {
+
+    function poblarCursosCarga() {
     const s = document.getElementById('selectCursoCarga');
     if (!s || !window.cachedCursosColegio) return;
-    s.innerHTML = ""; // Limpieza previa de control
-    
+    s.innerHTML = ""; // Limpieza de seguridad
     window.cachedCursosColegio.forEach(c => {
       const o = new Option(`${c.ciclo} "${c.division}"`, c.id);
-      // Extraemos el año numérico limpiando espacios o caracteres especiales de tu base de datos
-      const anioLimpio = c.ciclo ? c.ciclo.replace(/[^0-9]/g, '').trim() : "1";
-      o.dataset.anio = anioLimpio;
+      // Guardamos el número y la división limpios (Ej: "1" y "a")
+      o.dataset.anio = (c.ciclo ? c.ciclo.charAt(0) : "1").toLowerCase();
       o.dataset.div = (c.division || "").toLowerCase().trim();
       s.add(o);
     });
@@ -124,12 +119,10 @@
         if (!fila || fila.length < 2) continue;
         const c0 = fila[0] ? fila[0].trim().toLowerCase().replace(/\s+/g, ' ') : "";
 
-                if (c0.includes("curso:")) {
-          // El software valida de forma indestructible que la celda contenga el año y la división
-          dentroCurso = c0.includes(anioBuscar) && c0.includes(`"${divBuscar}"`);
+        if (c0.includes("curso:")) {
+          dentroCurso = c0.includes(tagBusqueda);
           continue;
         }
-
         if (!dentroCurso) continue;
         if (c0.includes("baja") || c0.includes("preceptor") || !fila[idxNombre]) {
           if (alumnosEnMemoria.length > 0 && c0.includes("baja")) break;
