@@ -152,8 +152,47 @@ background-color: #1557b0;
 <!-- CONTENEDOR DE LA TABLA COMPLETA -->
 <div class="tabla-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
 <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Estructuras y Planes Registrados</h3>
-<div class="table-responsive" style="width: 100%; overflow-x: auto;">
-<table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left;">
+<!-- ========================================================================= -->
+<!-- PARCHE DE REPARACIÓN: Filtros de 3 Columnas + Apertura Correcta de Tabla   -->
+<!-- Ubicación: Reemplazar exactamente de la línea 159 a la 181                -->
+<!-- ========================================================================= -->
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; text-align: left;">
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label for="filtro-anio" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Año / Ciclo:</label>
+        <select id="filtro-anio" style="width: 100%; padding: 8px; font-size: 13px;">
+            <option value="">-- Todos los Años --</option>
+            <option value="1">1° Año</option>
+            <option value="2">2° Año</option>
+            <option value="3">3° Año</option>
+            <option value="4">4° Año</option>
+            <option value="5">5° Año</option>
+            <option value="6">6° Año</option>
+        </select>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label for="filtro-orientacion" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Orientación:</label>
+        <select id="filtro-orientacion" style="width: 100%; padding: 8px; font-size: 13px;">
+            <option value="">-- Todas las Orientaciones --</option>
+            <option value="Ciclo Básico">Ciclo Básico</option>
+            <option value="Economía y Administración">Economía y Administración</option>
+            <option value="Ciencias Sociales">Ciencias Sociales</option>
+            <option value="Agro y Ambiente">Agro y Ambiente</option>
+        </select>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+    <label for="filtro-turno" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Turno:</label>
+    <select id="filtro-turno" style="width: 100%; padding: 8px; font-size: 13px;">
+        <option value="">-- Todos los Turnos --</option>
+        <option value="Mañana">Mañana</option>
+        <option value="Tarde">Tarde</option>
+    </select>
+</div>
+</div>
+
+<!-- REESTABLECIMIENTO DEL CONTENEDOR DE LA TABLA CON SCROLL VERTICAL -->
+<div class="table-responsive" style="width: 100%; max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+    <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left;">
+
 <thead>
 <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
 <th style="padding: 12px; text-align: left; width: 25%;">Curso / Turno</th>
@@ -193,6 +232,8 @@ basico: ["HISTORIA", "GEOGRAFÍA", "BIOLOGÍA", "FÍSICO-QUÍMICA", "CONSTRUCCI�
 "Economía y Administración": ["ADMINISTRACIÓN", "SISTEMA INFORMACIÓN CONTABLE", "MICROECONOMÍA", "FILOSOFÍA", "DERECHO ECONÓMICO", "FÍSICA ORIENTADA", "LEGISLACIÓN IMPOSITIVA", "MICROEMPRENDIMIENTO", "ECONOMÍA"],
 "Agro y Ambiente": ["CIENCIAS DE LA TIERRA", "AGROECOSISTEMA", "PRODUCCION VEGETAL", "EMPRENDIMIENTO", "PROCESOS PRODUCTIVOS"]
 };
+let cacheCursos = []; // Guarda temporalmente los registros de Firestore para filtrar en memoria
+
 
 // Inicialización del DOM y verificación de accesos RBAC
 const datosSesion = localStorage.getItem('usuarioActivo');
@@ -226,6 +267,11 @@ if (contenedorForm) contenedorForm.style.display = "none";
 const gridPrincipal = document.querySelector('.grid-formulario');
 if (gridPrincipal) gridPrincipal.style.gridTemplateColumns = "1fr";
 }
+  // Escuchadores reactivos para los selectores de filtrado
+  const filtroAnioElement = document.getElementById('filtro-anio');
+  const filtroOriElement = document.getElementById('filtro-orientacion');
+  if (filtroAnioElement) filtroAnioElement.addEventListener('change', aplicarFiltrosCurriculares);
+  if (filtroOriElement) filtroOriElement.addEventListener('change', aplicarFiltrosCurriculares);
 
 await cargarConfiguracionBaseFirestore();
 inicializarSelectoresBase();
@@ -495,71 +541,98 @@ await lote.commit();
 }
 }
 
+// =========================================================================
+// PARCHE PASO 4: Sincronización con Caché y Filtrado Dinámico en Memoria
+// Ubicación: Reemplazar por completo la función renderizarTablaCursos()
+// =========================================================================
 async function renderizarTablaCursos() {
-const tbody = document.getElementById('tabla-cursos-body');
-if (!tbody) return;
-tbody.innerHTML = "";
-try {
-const querySnapshot = await getDocs(collection(db, "cursos"));
-if (querySnapshot.empty) {
-tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">No hay estructuras curriculares configuradas.</td></tr>`;
-return;
+  const tbody = document.getElementById('tabla-cursos-body');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando registros curriculares con Cloud Firestore...</td></tr>`;
+  try {
+    const querySnapshot = await getDocs(collection(db, "cursos"));
+    cacheCursos = []; // Vaciamos la caché vieja
+    querySnapshot.forEach((documento) => {
+      cacheCursos.push(documento.data()); // Guardamos la colección en memoria
+    });
+    aplicarFiltrosCurriculares(); // Llamamos al motor de filtrado
+  } catch (error) {
+    console.error("Error al descargar listado de cursos:", error);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #ea4335;">Error al cargar datos.</td></tr>`;
+  }
 }
-querySnapshot.forEach((documento) => {
-const curso = documento.data();
-const tr = document.createElement('tr');
-tr.style.borderBottom = "1px solid #f1f3f4";
-const listaMateriasTexto = curso.materias ? curso.materias.join(", ") : "";
-let botonesAcciones = `<span style="color:#94a3b8; font-size:11px;">Restringido</span>`;
-if (rolNormalizado.includes("admin")) {
-botonesAcciones = `
-<div style="display: flex; gap: 6px; justify-content: center;">
-<button type="button" class="btn-accion-editar" data-id="${curso.id}" style="background:#1a73e8; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Editar</button>
-<button type="button" class="btn-accion-eliminar" data-id="${curso.id}" style="background:#ea4335; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Borrar</button>
-</div>
-`;
-}
-tr.innerHTML = `
-<td style="padding: 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
-<td style="padding: 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
-<td style="padding: 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">
-${listaMateriasTexto}
-</td>
-<td style="padding: 12px; text-align: center;">
-${botonesAcciones}
-</td>
-`;
-tbody.appendChild(tr);
-});
 
-tbody.querySelectorAll('.btn-accion-editar').forEach(boton => {
-boton.addEventListener('click', (e) => {
-const idCurso = e.target.getAttribute('data-id');
-cargarCursoEnFormulario(idCurso);
-});
-});
+// =========================================================================
+// PARCHE CORRECCIÓN: Comparación Limpia de Datos para Turnos
+// Ubicación: Reemplazar el bloque inicial de aplicarFiltrosCurriculares()  
+// =========================================================================
+function aplicarFiltrosCurriculares() {
+  const tbody = document.getElementById('tabla-cursos-body');
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-tbody.querySelectorAll('.btn-accion-eliminar').forEach(boton => {
-boton.addEventListener('click', async (e) => {
-const idCurso = e.target.getAttribute('data-id');
-if (confirm(`¿Está completamente seguro de eliminar la estructura curricular "${idCurso}"?\n\nTodos los alumnos inscritos en esta división perderán el curso asignado y se enviarán automáticamente a "Mesa de Entrada" bajo estado Entrante.`)) {
-try {
-await reubicarAlumnosAMesaEntrada(idCurso);
-await deleteDoc(doc(db, "cursos", idCurso));
-alert("Estructura curricular removida e integridad de alumnos resguardada en Mesa de Entrada.");
-salirModoEdicion();
-await renderizarTablaCursos();
-} catch (error) {
-console.error("Error en proceso de baja relacional:", error);
-alert("Error al intentar remover la estructura curricular.");
+  const valAnio = document.getElementById('filtro-anio').value;
+  const valOri = document.getElementById('filtro-orientacion').value;
+  const valTurno = document.getElementById('filtro-turno').value ? document.getElementById('filtro-turno').value.trim() : "";
+
+  // Filtrado lógico cruzado multidimensional
+  const registrosFiltrados = cacheCursos.filter(curso => {
+    const cumpleAnio = !valAnio || (curso.ciclo && curso.ciclo.startsWith(valAnio));
+    const cumpleOri = !valOri || (curso.orientacion === valOri);
+    
+    // Extracción limpia y segura evitando errores si el registro viene nulo
+    const turnoCursoLimpio = curso.turno ? curso.turno.toString().trim() : "";
+    const cumpleTurno = !valTurno || (turnoCursoLimpio === valTurno);
+    
+    return cumpleAnio && cumpleOri && cumpleTurno;
+  });
+
+
+  if (registrosFiltrados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">No se encontraron estructuras con los filtros aplicados.</td></tr>`;
+    return;
+  }
+
+  // Renderizado dinámico de la nómina filtrada
+  registrosFiltrados.forEach((curso) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = "1px solid #f1f3f4";
+    const listaMateriasTexto = curso.materias ? curso.materias.join(", ") : "";
+    let botonesAcciones = `<span style="color:#94a3b8; font-size:11px;">Restringido</span>`;
+    
+    if (rolNormalizado.includes("admin")) {
+      botonesAcciones = `
+      <div style="display: flex; gap: 6px; justify-content: center;">
+        <button type="button" class="btn-accion-editar" data-id="${curso.id}" style="background:#1a73e8; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Editar</button>
+        <button type="button" class="btn-accion-eliminar" data-id="${curso.id}" style="background:#ea4335; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Borrar</button>
+      </div>`;
+    }
+
+    tr.innerHTML = `
+    <td style="padding: 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
+    <td style="padding: 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
+    <td style="padding: 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">${listaMateriasTexto}</td>
+    <td style="padding: 12px; text-align: center;">${botonesAcciones}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Re-vinculación exacta de listeners nativos de tu código para mantener compatibilidad
+  tbody.querySelectorAll('.btn-accion-editar').forEach(b => b.addEventListener('click', e => cargarCursoEnFormulario(e.target.getAttribute('data-id'))));
+  tbody.querySelectorAll('.btn-accion-eliminar').forEach(b => b.addEventListener('click', async e => {
+    const idCurso = e.target.getAttribute('data-id');
+    if (confirm(`¿Está completamente seguro de eliminar la estructura curricular "${idCurso}"?\n\nTodos los alumnos inscritos perderán el curso asignado.`)) {
+      try {
+        await reubicarAlumnosAMesaEntrada(idCurso);
+        await deleteDoc(doc(db, "cursos", idCurso));
+        salirModoEdicion();
+        await renderizarTablaCursos();
+      } catch (error) {
+        console.error("Error en baja relacional:", error);
+      }
+    }
+  }));
 }
-}
-});
-});
-} catch (error) {
-console.error("Error al descargar listado de cursos:", error);
-}
-}
+
 
 if (document.readyState === "loading") {
 document.addEventListener("DOMContentLoaded", inicializarEstructura);
