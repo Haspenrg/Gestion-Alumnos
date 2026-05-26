@@ -95,7 +95,8 @@ background-color: #1557b0;
 </div>
 </div>
 </div>
-<div class="grid-formulario" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start; width: 100%; box-sizing: border-box;">
+<div class="grid-formulario" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; align-items: start; width: 100%; box-sizing: border-box;">
+
 <!-- CONTENEDOR DEL FORMULARIO -->
 <div class="form-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
 <!-- BANNER DE EDICIÓN ACTIVA -->
@@ -156,7 +157,8 @@ background-color: #1557b0;
 <!-- PARCHE DE REPARACIÓN: Filtros de 3 Columnas + Apertura Correcta de Tabla   -->
 <!-- Ubicación: Reemplazar exactamente de la línea 159 a la 181                -->
 <!-- ========================================================================= -->
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; text-align: left;">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5 text-left w-full">
+
     <div style="display: flex; flex-direction: column; gap: 5px;">
         <label for="filtro-anio" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Año / Ciclo:</label>
         <select id="filtro-anio" style="width: 100%; padding: 8px; font-size: 13px;">
@@ -261,17 +263,41 @@ const btnAddOrientacion = document.getElementById('btn-add-orientacion');
 if (btnAddOrientacion) btnAddOrientacion.addEventListener('click', agregarNuevaOrientacionCaliente);
 }
 
-if (rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
-const contenedorForm = document.querySelector('.form-container');
-if (contenedorForm) contenedorForm.style.display = "none";
+// =========================================================================
+// PARCHE DE REPARACIÓN: Control Dinámico de Layout Responsivo (Desktop/Tablet/Mobile)
+// =========================================================================
 const gridPrincipal = document.querySelector('.grid-formulario');
-if (gridPrincipal) gridPrincipal.style.gridTemplateColumns = "1fr";
+if (gridPrincipal) {
+    if (rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
+        const contenedorForm = document.querySelector('.form-container');
+        if (contenedorForm) contenedorForm.style.display = "none";
+        gridPrincipal.style.gridTemplateColumns = "1fr";
+    } else {
+        // Si es administrador o preceptor, evaluamos el ancho de pantalla actual
+        const adaptarLayout = () => {
+            if (window.innerWidth >= 1024) {
+                gridPrincipal.style.gridTemplateColumns = "1fr 2fr"; // PC: Formulario chico, Tabla grande
+            } else {
+                gridPrincipal.style.gridTemplateColumns = "1fr"; // Celular/Tablet: Uno abajo del otro
+            }
+        };
+        adaptarLayout();
+        window.addEventListener('resize', adaptarLayout); // Escucha activa si giran la pantalla
+    }
 }
-  // Escuchadores reactivos para los selectores de filtrado
-  const filtroAnioElement = document.getElementById('filtro-anio');
-  const filtroOriElement = document.getElementById('filtro-orientacion');
-  if (filtroAnioElement) filtroAnioElement.addEventListener('change', aplicarFiltrosCurriculares);
-  if (filtroOriElement) filtroOriElement.addEventListener('change', aplicarFiltrosCurriculares);
+// =========================================================================
+
+// =========================================================================
+// PARCHE DE REPARACIÓN: Activación de Escuchador Reactivo para Filtro Turnos
+// =========================================================================
+const filtroAnioElement = document.getElementById('filtro-anio');
+const filtroOriElement = document.getElementById('filtro-orientacion');
+const filtroTurnoElement = document.getElementById('filtro-turno');
+
+if (filtroAnioElement) filtroAnioElement.addEventListener('change', aplicarFiltrosCurriculares);
+if (filtroOriElement) filtroOriElement.addEventListener('change', aplicarFiltrosCurriculares);
+if (filtroTurnoElement) filtroTurnoElement.addEventListener('change', aplicarFiltrosCurriculares);
+// =========================================================================
 
 await cargarConfiguracionBaseFirestore();
 inicializarSelectoresBase();
