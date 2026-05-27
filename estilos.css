@@ -364,3 +364,82 @@ TAGS DEL ESCALAFÓN DOCENTE (SITUACIÓN DE REVISTA INLINE)
 .catedra-tag:hover {
   transform: scale(1.02);
 }
+/* ==========================================================================
+PARCHE DE ESTILOS PARA LA BOTONERA DE PAGINACIÓN UNIFICADA
+========================================================================== */
+.paginacion-contenedor {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 12px 15px;
+    margin-top: 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.paginacion-texto {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.paginacion-texto span {
+    color: #1b4d82;
+}
+
+.paginacion-botones {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-paginacion-nav {
+    background-color: #ffffff;
+    color: #1b4d82;
+    border: 1px solid #b4cbe3;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-paginacion-nav:hover {
+    background-color: #e8f0fe;
+    border-color: #1b4d82;
+}
+
+.btn-paginacion-reset {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-paginacion-reset:hover {
+    background-color: #cbd5e1;
+    color: #1e293b;
+}
+/* ==========================================================================
+PARCHE: BORDES AZULES PARA CONTENEDORES PRINCIPALES (INSCRIPCIONES)
+========================================================================== */
+/* Tarjetas, paneles y secciones del formulario principal */
+.workspace-layout > div,
+.workspace-container,
+form section,
+.panel-seccion,
+div[style*="border"] {
+    border-color: #2c3ab3 !important;
+}
+
+/* Forzar el grosor para que resalte el diseño institucional */
+.paginacion-contenedor {
+    border-color: #1b4d82;
+}

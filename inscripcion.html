@@ -561,6 +561,14 @@
                                 <textarea id="ppiObservaciones" placeholder="Detalles de configuraciones de acceso..." rows="1"></textarea>
                             </div>
                         </div>
+                        <!-- ANCLA_CHECKBOX_TRAYECTORIAS_FLEXIBLES -->
+                        <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin-top: 12px; margin-bottom: 15px;">
+                            <input type="checkbox" id="chkTrayectoriasFlexibles" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
+                            <label for="chkTrayectoriasFlexibles" style="margin: 0; font-weight: bold; cursor: pointer; color: #1e293b;">
+                                ¿Presenta proyecto de Trayectorias flexibles?
+                            </label>
+                        </div>
+
                         <div class="grupo-documentacion">
                             <label style="font-weight: bold; font-size: 13px; color: #1e293b; margin-bottom: 2px;">Auditoría Documental Digitalizada</label>
                             <div class="linea-documento-digital">
@@ -613,6 +621,13 @@
                                 <input type="file" id="file-acta_ppi" class="input-archivo-oculto" data-key="acta_ppi" accept="image/*,application/pdf">
                             </div>
                         </div>
+                        <!-- ANCLA_NUEVO_CAMPO_OBSERVACIONES_GENERAL -->
+                        <div class="input-group" style="margin-top: 20px; margin-bottom: 15px; width: 100%;">
+                            <label for="txtObservacionesLegajo" style="display: block; font-size: 13px; font-weight: bold; color: #1b4d82; margin-bottom: 6px;">Observaciones Generales del Alumno:</label>
+                            <textarea id="txtObservacionesLegajo" style="width: 100% !important; height: 160px !important; padding: 10px !important; font-size: 14px !important; line-height: 1.5 !important; border: 2px solid #1b4d82 !important; border-radius: 6px !important; background-color: #ffffff !important; color: #334155 !important; resize: none !important; box-sizing: border-box !important;" placeholder="Escriba aquí notas médicas, conducta o datos generales del legajo..."></textarea>
+                        </div>
+
+
                         <button type="submit" id="btnGuardar" class="btn-principal" style="width: 100%; margin-top: 10px; height: 42px;">Resguardar Legajo Digital</button>
                     </div>
                 </form>
@@ -713,28 +728,24 @@
                         </tbody>
                     </table>
                 </div>
-                       
-        <!-- ANCLA_PAGINACION_UI: Controles de navegación unificados de alta densidad -->
-    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2 mt-3">
-        <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-gray-700">
-                Página: <span id="lblPaginaActual" class="text-blue-600 font-bold">1</span>
-            </span>
-        </div>
-        <div class="flex items-center gap-1">
-            <button id="btnPrevDesktop" type="button" class="cursor-pointer inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors">&lt; Anterior</button>
-            <button id="btnNextDesktop" type="button" class="cursor-pointer inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors">Siguiente &gt;</button>
-            <button id="btnResetPagina" type="button" class="cursor-pointer inline-flex items-center justify-center rounded border border-gray-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-slate-200 active:bg-slate-300 transition-colors ml-2">Reiniciar</button>
-        </div>
-    </div>
+        </div> 
+                      
+<!-- ANCLA_REPARACION_PAGINACION_ESTABLE -->
+<div class="paginacion-contenedor">
+  <div class="paginacion-texto">
+    Página: <span id="lblPaginaActual">1</span>
+  </div>
+  <div class="paginacion-botones">
+    <button id="btnPrevDesktop" type="button" class="btn-paginacion-nav">&lt; Anterior</button>
+    <button id="btnNextDesktop" type="button" class="btn-paginacion-nav">Siguiente &gt;</button>
+    <button id="btnResetPagina" type="button" class="btn-paginacion-reset">Reiniciar</button>
+  </div>
+</div>
+
 
     <div style="margin-top: 15px; text-align: left;">
         <button type="button" class="btn-salir" onclick="window.location.href='panel.html'">Volver al Panel</button>
     </div>
-
-                <div style="margin-top: 15px; text-align: left;">
-                    <button type="button" class="btn-salir" onclick="window.location.href='panel.html'">Volver al Panel</button>
-                </div>
             </div>
         </div>
     </div>

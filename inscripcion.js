@@ -1108,6 +1108,41 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             `;
             contenedorModal.style.display = "flex";
         }
+       }); // <-- ESTE ERA EL CIERRE FALTA DE LA TABLA ALUMNOS
+
+    // ANCLA_REPARACION_LOGICA_PAGINACION_FINAL
+    document.getElementById('btnPrevDesktop')?.addEventListener('click', () => {
+        if (window.paginaActualAlumnos > 1) {
+            window.paginaActualAlumnos--;
+            const lbl = document.getElementById('lblPaginaActual');
+            if (lbl) lbl.textContent = window.paginaActualAlumnos;
+            if (window.currentAlumnosFiltradosCached) {
+                renderizarFilasEnTabla(window.currentAlumnosFiltradosCached);
+            }
+        }
     });
 
-})();
+    document.getElementById('btnNextDesktop')?.addEventListener('click', () => {
+        const totalRegistros = window.totalAlumnosFiltradosPaginacion || 0;
+        const limitePorPagina = window.registrosPorPaginaAlumnos || 25;
+        const maxPaginas = Math.ceil(totalRegistros / limitePorPagina);
+        if (window.paginaActualAlumnos < maxPaginas) {
+            window.paginaActualAlumnos++;
+            const lbl = document.getElementById('lblPaginaActual');
+            if (lbl) lbl.textContent = window.paginaActualAlumnos;
+            if (window.currentAlumnosFiltradosCached) {
+                renderizarFilasEnTabla(window.currentAlumnosFiltradosCached);
+            }
+        }
+    });
+
+    document.getElementById('btnResetPagina')?.addEventListener('click', () => {
+        window.paginaActualAlumnos = 1;
+        const lbl = document.getElementById('lblPaginaActual');
+        if (lbl) lbl.textContent = window.paginaActualAlumnos;
+        if (window.currentAlumnosFiltradosCached) {
+            renderizarFilasEnTabla(window.currentAlumnosFiltradosCached);
+        }
+    });
+
+})(); // <-- CIERRE FINAL DE TODO EL ARCHIVO JS
