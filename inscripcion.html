@@ -30,12 +30,17 @@
                 grid-template-columns: minmax(0, auto) 1fr;
             }
         }
+        /* ANCLA_REPARACION_VISUAL: Grilla base compactada */
         .grid-formulario {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 12px;
+            gap: 6px; /* Reducido de 12px a 6px para juntar los campos */
             text-align: left;
         }
+        .grid-formulario .input-group {
+            margin-bottom: 0px !important; /* Elimina márgenes extra innecesarios en la grilla */
+        }
+
         .form-contenedor {
             background: #ffffff;
             padding: 18px;
@@ -54,15 +59,29 @@
             font-weight: 600;
             color: #475569;
         }
+      
+        /* ANCLA_LISTADO_COMPACTO: Reducción de celdas generales y cabeceras */
         th, td {
-            padding: 12px 10px;
+            padding: 6px 8px !important; /* Reducido drásticamente para ganar densidad */
             text-align: left;
             font-size: 13px;
         }
-        .fila-alumno {
-            cursor: pointer;
-            transition: background 0.15s;
+        th {
+            padding-top: 4px !important;   /* Ajuste extra superior exclusivo para títulos */
+            padding-bottom: 4px !important;/* Ajuste extra inferior exclusivo para títulos */
+            font-size: 12px !important;    /* Texto de título ligeramente más técnico */
         }
+
+        /* ANCLA_LISTADO_COMPACTO: Reducción vertical de filas de alumnos */
+        .fila-alumno {
+            transition: background-color 0.2s;
+        }
+        .fila-alumno td {
+            padding-top: 3px !important;    /* Reduce el aire superior del registro */
+            padding-bottom: 3px !important; /* Reduce el aire inferior del registro */
+            vertical-align: middle;          /* Mantiene alineados los textos y los botones */
+        }
+
         .fila-alumno:hover {
             background: #f1f5f9 !important;
         }
@@ -103,21 +122,21 @@
         .badge-baja { background: #fee2e2; color: #ef4444; padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; }
         .grupo-documentacion {
             background: #f8fafc;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 6px;
+            border-radius: 8%;
             border: 1px solid #e2e8f0;
             text-align: left;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
         }
         .linea-documento-digital {
             display: grid;
             grid-template-columns: auto 1fr auto auto;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
             background: #ffffff;
-            padding: 6px 10px;
+            padding: 3px 8px;
             border-radius: 6px;
             border: 1px solid #e2e8f0;
         }
@@ -131,15 +150,15 @@
         }
         .btn-accion-digital {
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
+            width: 26px;
+            height: 26px;
             transition: background 0.2s;
         }
         .btn-subir-doc { background: #e0f2fe; color: #0369a1; }
@@ -159,17 +178,19 @@
         }
         .alerta-documentos { color: #dc2626; font-size: 11px; font-weight: bold; }
         .documentos-completos { color: #16a34a; font-size: 11px; font-weight: bold; }
+       /* ANCLA_REPARACION_VISUAL: Normalización estricta de controles */
         select, textarea, input {
             width: 100%;
-            padding: 8px 10px;
+            padding: 4px 8px !important; /* El !important neutraliza el py-2 de Tailwind */
             border: 1px solid #cbd5e1;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             background: white;
             font-family: inherit;
             box-sizing: border-box;
-            height: 38px;
+            height: 30px !important; /* Asegura la altura exacta en selects con clases utilitarias */
         }
+
         textarea { height: auto; }
         .seccion-filtros {
             background: #f8fafc;
@@ -222,15 +243,28 @@
         }
         .contador-registros { font-size: 13px; color: #475569; font-weight: 600; margin-bottom: 8px; text-align: right; }
         .selector-ciclo-principal { background: #fff8e1; border: 1px solid #ffe082; font-weight: bold; color: #b78103; }
+        
+        /* ANCLA_LISTADO_COMPACTO: Contención del listado masivo en pantalla */
         .tabla-seccion-widescreen {
             background: #ffffff;
-            padding: 20px;
+            padding: 16px !important;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             width: 100%;
             box-sizing: border-box;
             flex-grow: 1;
         }
+
+        /* Aplicación del límite vertical sobre el contenedor real del proyecto */
+        .tabla-usuarios-contenedor {
+            max-height: 520px !important; /* Altura física calculada para contener los 25 registros */
+            overflow-y: auto !important;   /* Activa la barra de scroll vertical cuando excede la altura */
+            overflow-x: auto;              /* Permite scroll horizontal si la pantalla se achica */
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+
         .btn-accion-fila {
             border: none;
             padding: 6px 10px;
@@ -662,7 +696,7 @@
                     <span id="contadorEstudiantes">Matrículas Visualizadas: 0</span>
                     <span id="contadorTotalEstudiantes" style="margin-left: 20px; color: #1e293b; font-weight: bold;">Total Matrículas: 0</span>
                 </div>
-                <div class="table-responsive" style="width: 100%; max-height: 400px; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <div class="table-responsive" style="width: 100%; max-height: 880px; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                          <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
@@ -679,6 +713,25 @@
                         </tbody>
                     </table>
                 </div>
+                       
+        <!-- ANCLA_PAGINACION_UI: Controles de navegación unificados de alta densidad -->
+    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2 mt-3">
+        <div class="flex items-center gap-2">
+            <span class="text-sm font-medium text-gray-700">
+                Página: <span id="lblPaginaActual" class="text-blue-600 font-bold">1</span>
+            </span>
+        </div>
+        <div class="flex items-center gap-1">
+            <button id="btnPrevDesktop" type="button" class="cursor-pointer inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors">&lt; Anterior</button>
+            <button id="btnNextDesktop" type="button" class="cursor-pointer inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-bold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors">Siguiente &gt;</button>
+            <button id="btnResetPagina" type="button" class="cursor-pointer inline-flex items-center justify-center rounded border border-gray-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-slate-200 active:bg-slate-300 transition-colors ml-2">Reiniciar</button>
+        </div>
+    </div>
+
+    <div style="margin-top: 15px; text-align: left;">
+        <button type="button" class="btn-salir" onclick="window.location.href='panel.html'">Volver al Panel</button>
+    </div>
+
                 <div style="margin-top: 15px; text-align: left;">
                     <button type="button" class="btn-salir" onclick="window.location.href='panel.html'">Volver al Panel</button>
                 </div>

@@ -353,6 +353,7 @@ function gestionarHabilitacionBotoneraLote() {
 }
 
 async function procesarFiltrosYNomina() {
+    window.paginaActualAlumnos = 1; // Resetea a la primera página ante cualquier cambio de filtro
     if (!tbodyAlumnos) return;
     tbodyAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Descargando legajos digitalizados desde Cloud Firestore...</td></tr>`;
     let listaAlumnos = [];
@@ -442,9 +443,27 @@ async function procesarFiltrosYNomina() {
     window.currentAlumnosFiltradosCached = alumnosFiltrados;
     renderizarFilasEnTabla(alumnosFiltrados);
 }
+/* ==========================================================================
+   ANCLA_PAGINACION: Segmentación estricta de 25 registros por página
+   ========================================================================== */
 function renderizarFilasEnTabla(alumnos) {
     tbodyAlumnos.innerHTML = "";
-    alumnos.forEach(alumno => {
+
+    if (typeof window.paginaActualAlumnos === 'undefined') {
+        window.paginaActualAlumnos = 1;
+    }
+    if (typeof window.registrosPorPaginaAlumnos === 'undefined') {
+        window.registrosPorPaginaAlumnos = 25;
+    }
+
+    window.totalAlumnosFiltradosPaginacion = alumnos.length;
+
+    const indiceInicio = (window.paginaActualAlumnos - 1) * window.registrosPorPaginaAlumnos;
+    const indiceFin = indiceInicio + window.registrosPorPaginaAlumnos;
+    const alumnosPaginados = alumnos.slice(indiceInicio, indiceFin);
+
+    alumnosPaginados.forEach(alumno => {
+
         const tr = document.createElement('tr');
         tr.className = "fila-alumno";
         tr.style.borderBottom = "1px solid #e2e8f0";
