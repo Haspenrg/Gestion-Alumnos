@@ -122,40 +122,29 @@
             let dentroDelCursoCorrecto = false;
 
                     for (let i = 0; i < lineas.length; i++) {
-            if (!lineas[i] || lineas[i].trim() === "") continue;
+                   /* ==========================================================================
+           ANCLA_PARSER_CURSOS: Extracción Exacta Multicurso anti Falsos Positivos
+           ========================================================================== */
+        if (!lineas[i] || lineas[i].trim() === "") continue;
+
+        if (lineas[i].toUpperCase().includes("CURSO:")) {
+            const coincidenciaCurso = lineas[i].toUpperCase().match(/CURSO:\s*([1-6])\s*([A-E])/);
             
-                         if (lineas[i].toLowerCase().includes("curso:")) {
-                const cabecera = lineas[i].toLowerCase();
+            if (coincidenciaCurso) {
+                const numCSV = coincidenciaCurso[1]; // Extrae el número (ej: 1 o 2)
+                const divCSV = coincidenciaCurso[2].toLowerCase(); // Extrae la división (ej: e o a)
                 
-                // Extraemos el número del curso de forma directa por texto
-                let numCSV = "";
-                if (cabecera.includes("1")) numCSV = "1";
-                else if (cabecera.includes("2")) numCSV = "2";
-                else if (cabecera.includes("3")) numCSV = "3";
-                else if (cabecera.includes("4")) numCSV = "4";
-                else if (cabecera.includes("5")) numCSV = "5";
-                else if (cabecera.includes("6")) numCSV = "6";
-                
-                     // Extraemos la letra de la división de forma directa por texto
-        let divCSV = "a";
-        if (cabecera.includes('b')) divCSV = "b";
-        else if (cabecera.includes('e')) divCSV = "e";
-        else if (cabecera.includes('c')) divCSV = "c";
-        else if (cabecera.includes('d')) divCSV = "d";
-
-        // Comparamos el número y la división con lo que seleccionaste en la pantalla
-        if (numCSV === numCurso && divCSV === divCurso) {
-            dentroDelCursoCorrecto = true;
-            idxDni = -1; idxNombre = -1; idxCuil = -1; idxF_Nac = -1; idxDomicilio = -1; idxTel = -1; idxTutor = -1; idxDniTutor = -1; idxCuilTutor = -1; idxEmail = -1;
-            continue;
-        } else {
-            // Si es otra cabecera de curso, apagamos la captura y seguimos recorriendo
-            dentroDelCursoCorrecto = false;
-            continue;
+                if (numCSV === numCurso && divCSV === divCurso) {
+                    dentroDelCursoCorrecto = true;
+                    idxDni = -1; idxNombre = -1; idxCuil = -1; idxF_Nac = -1; idxDomicilio = -1; 
+                    idxTel = -1; idxTutor = -1; idxDniTutor = -1; idxCuilTutor = -1; idxEmail = -1;
+                    continue;
+                } else {
+                    dentroDelCursoCorrecto = false;
+                    continue;
+                }
+            }
         }
-    }
-
-
             if (!dentroDelCursoCorrecto) continue;
 
 

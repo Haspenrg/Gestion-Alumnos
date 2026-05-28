@@ -126,19 +126,25 @@ if (typeof inputDniTutor !== 'undefined' && inputDniTutor) inputDniTutor.addEven
 if (typeof selectGeneroTutor !== 'undefined' && selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, typeof inputCuilTutor !== 'undefined' ? inputCuilTutor : null));
 
 
-    btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
-    btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
-    btnCerrarModal?.addEventListener('click', cerrarModalPrevisualizacion);
-        document.getElementById('estadoAlumno')?.addEventListener('change', () => {
-        evaluarEstadoMesaEntrada();
-        evaluarVisibilidadPanelPases();
-    });
+   /* ==========================================================================
+   ANCLA_REPARACION_CONSOLA: Parche de Seguridad de Carga Masiva
+   ========================================================================== */
+btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
+btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
 
-    // Sincronización inicial automática en el arranque (Adentro de la función)
+document.getElementById('estadoAlumno')?.addEventListener('change', () => {
+    evaluarEstadoMesaEntrada();
     evaluarVisibilidadPanelPases();
-    if(typeof window.inicializarCargaMasivaSegura==='function')window.inicializarCargaMasivaSegura();
+});
 
+evaluarVisibilidadPanelPases();
+
+// Ejecución garantizada y blindada del Motor de Carga Masiva para el Administrador
+if (typeof window.inicializarCargaMasivaSegura === 'function') {
+    window.inicializarCargaMasivaSegura();
 }
+}
+
 
 
 // --- CÁLCULO DE EDAD DINÁMICO ---
@@ -1041,12 +1047,19 @@ function cerrarModalPrevisualizacion() {
     modalContenedor.style.display = "none";
     modalCuerpo.innerHTML = "";
 }
-document.getElementById('modalImpresionContenedor')?.addEventListener('click', function(e) {
-    if (e.target.id === 'btnCerrarModalImpresion' || e.target.closest('#btnCerrarModalImpresion')) {
-        modalContenedor.style.display = "none";
-        modalCuerpo.innerHTML = "";
-    }
-});
+/* ==========================================================================
+   ANCLA_REPARACION_DIRECTA: Cierre del modal adaptado a la estructura actual
+   ========================================================================== */
+const botonCerrarInterno = document.getElementById('btnCerrarModalImpresion');
+if (botonCerrarInterno) {
+    botonCerrarInterno.addEventListener('click', () => {
+        const mContenedor = document.getElementById('modalImpresionContenedor');
+        const mCuerpo = document.getElementById('modalImpresionCuerpo');
+        if (mContenedor) mContenedor.style.display = 'none';
+        if (mCuerpo) mCuerpo.innerHTML = '';
+    });
+}
+
 
 // MOTOR MATEMÁTICO ADAPTATIVO PARA CÁLCULO DE CUIL (ALGORITMO ANSES)
 function calcularCuilAutomatico(dniStr, generoStr) {
