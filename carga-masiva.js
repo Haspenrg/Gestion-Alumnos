@@ -99,10 +99,16 @@
         const cursoId = s.value;
         const cicloActivo = document.getElementById('filtroCicloLectivo')?.value || "2026";
         
-        // Extracción por patrones de la interfaz de usuario
-        const rawSelect = s.options[s.selectedIndex].text.toLowerCase();
+                const rawSelect = s.options[s.selectedIndex].text.toLowerCase();
+        // Extraemos solo el número (ej: 2)
         const numCurso = rawSelect.match(/\d/)?.[0] || "";
-        const divCurso = rawSelect.includes('b') ? 'b' : 'a';
+        // Extraemos solo la letra que está adentro de las comillas de la división (ej: "a")
+        const matchLetra = rawSelect.match(/"([a-z])"/i);
+        const divCurso = matchLetra ? matchLetra[1].toLowerCase() : "a";
+        
+        // Juntamos ambos para armar la clave única del curso elegido (ej: "2" + "a" = "2a")
+        const claveCursoBuscado = numCurso + divCurso;
+
 
         const reader = new FileReader();
 
@@ -115,27 +121,43 @@
             let idxDni = -1, idxNombre = -1, idxCuil = -1, idxF_Nac = -1, idxDomicilio = -1, idxTel = -1, idxTutor = -1, idxDniTutor = -1, idxCuilTutor = -1, idxEmail = -1;
             let dentroDelCursoCorrecto = false;
 
-            for (let i = 0; i < lineas.length; i++) {
-                if (!lineas[i] || lineas[i].trim() === "") continue;
+                    for (let i = 0; i < lineas.length; i++) {
+            if (!lineas[i] || lineas[i].trim() === "") continue;
+            
+                         if (lineas[i].toLowerCase().includes("curso:")) {
+                const cabecera = lineas[i].toLowerCase();
+                
+                // Extraemos el número del curso de forma directa por texto
+                let numCSV = "";
+                if (cabecera.includes("1")) numCSV = "1";
+                else if (cabecera.includes("2")) numCSV = "2";
+                else if (cabecera.includes("3")) numCSV = "3";
+                else if (cabecera.includes("4")) numCSV = "4";
+                else if (cabecera.includes("5")) numCSV = "5";
+                else if (cabecera.includes("6")) numCSV = "6";
+                
+                     // Extraemos la letra de la división de forma directa por texto
+        let divCSV = "a";
+        if (cabecera.includes('b')) divCSV = "b";
+        else if (cabecera.includes('e')) divCSV = "e";
+        else if (cabecera.includes('c')) divCSV = "c";
+        else if (cabecera.includes('d')) divCSV = "d";
 
-                const lineaLimpia = lineas[i].toLowerCase();
+        // Comparamos el número y la división con lo que seleccionaste en la pantalla
+        if (numCSV === numCurso && divCSV === divCurso) {
+            dentroDelCursoCorrecto = true;
+            idxDni = -1; idxNombre = -1; idxCuil = -1; idxF_Nac = -1; idxDomicilio = -1; idxTel = -1; idxTutor = -1; idxDniTutor = -1; idxCuilTutor = -1; idxEmail = -1;
+            continue;
+        } else {
+            // Si es otra cabecera de curso, apagamos la captura y seguimos recorriendo
+            dentroDelCursoCorrecto = false;
+            continue;
+        }
+    }
 
-                // 1. CONTROL DE SECCIÓN INTELIGENTE
-                if (lineaLimpia.includes("curso:")) {
-                    const numCSV = lineaLimpia.match(/\d/)?.[0] || "";
-                    const divCSV = lineaLimpia.includes('b') ? 'b' : 'a';
 
-                    if (numCSV === numCurso && divCSV === divCurso) {
-                        dentroDelCursoCorrecto = true;
-                        idxDni = -1; idxNombre = -1; idxCuil = -1; idxF_Nac = -1; idxDomicilio = -1; idxTel = -1; idxTutor = -1; idxDniTutor = -1; idxCuilTutor = -1; idxEmail = -1;
-                        continue;
-                    } else {
-                        if (dentroDelCursoCorrecto) break;
-                        continue;
-                    }
-                }
+            if (!dentroDelCursoCorrecto) continue;
 
-                if (!dentroDelCursoCorrecto) continue;
 
                 const fila = lineas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 if (!fila || fila.length < 2) continue;

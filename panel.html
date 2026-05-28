@@ -50,13 +50,30 @@
 </head>
 <body>
 <div class="panel-container">
-    <header class="header-dashboard">
+     <header class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-b border-gray-200 pb-4 mb-6" style="display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
+        <!-- Columna Izquierda: Datos del Usuario (IDs Intactos) -->
         <div class="header-textos">
-            <h1 id="saludo-usuario">Sistema HASPEN</h1>
-            <p id="rol-usuario">Panel de Administración Principal</p>
+            <h1 id="saludo-usuario" style="font-size: 1.5rem; font-weight: bold; margin: 0;">Sistema HASPEN</h1>
+            <p id="rol-usuario" style="font-size: 0.85rem; color: #777; margin: 5px 0 0 0;">Panel de Administración Principal</p>
         </div>
-        <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" class="logo-panel-chico">
+
+            <!-- Columna Central: Título Institucional con Mayor Jerarquía Visual -->
+        <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <h2 style="color: #1b4d82; font-size: 2.1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 0; white-space: nowrap; line-height: 1;">
+                COLEGIO PROVINCIAL HASPEN
+            </h2>
+            <p style="color: #555; font-size: 1.05rem; font-weight: 600; font-style: italic; margin: 6px 0 0 0;">
+                Prof. Luis Felippa Adam
+            </p>
+        </div>
+
+        <!-- Columna Derecha: Escudo Agrandado (Evitando cortes de línea) -->
+        <div style="display: flex; justify-content: flex-end; align-items: center;">
+            <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" style="height: 110px !important; width: auto !important; object-fit: contain;">
+        </div>
     </header>
+
+
     <div class="dashboard-grid">
         <!-- 1. Gestión de Usuarios -->
         <div id="mod-usuarios" class="modulo-card">

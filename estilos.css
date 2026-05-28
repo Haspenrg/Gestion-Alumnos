@@ -212,10 +212,11 @@ GRID DE MÓDULOS DEL DASHBOARD PRINCIPAL
   background: #f8f9fa;
   padding: 20px;
   border-radius: 12px;
-  border: 1px solid #eee;
+  border: 1px solid #1b4d82;
   cursor: pointer;
   transition: all 0.2s;
 }
+
 
 .modulo-card:hover {
   background: #e8f0fe;
