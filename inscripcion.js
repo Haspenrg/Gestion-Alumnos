@@ -780,26 +780,47 @@ async function guardarLegajoDigital(e) {
         documentosDigitales: { ...base64DocumentosTemporales }
     };
 
-    try {
-        await setDoc(doc(db, "alumnos", dni), nuevoLegajo);
-        localStorage.setItem('ultimoCicloTrabajado', cicloLectivo);
+      try {
+        await setDoc( doc( db, "alumnos", dni), nuevoLegajo);
+        localStorage. setItem('ultimoCicloTrabajado', cicloLectivo);
+        
+        // --- Registro en el historial independiente ---
+        try {
+            const { registrarEventoLegajo } = await import('./historial.js');
+            if (idEdicion) {
+                await registrarEventoLegajo(dni, "MATRICULA", "MODIFICACION_LEGAJO", `Se actualizaron los datos generales del legajo digital. Estado actual: ${estadoActual}.`);
+            } else {
+                await registrarEventoLegajo(dni, "MATRICULA", "ALTA_INSCRIPCION", `Matriculación inicial exitosa del estudiante en el sistema.`);
+            }
+        } catch (moduloErr) {
+            console.error("Error no bloqueante al cargar el historial:", moduloErr);
+        }
 
-        alert(idEdicion ? "Legajo digital modificado con éxito." : "Estudiante matriculado con éxito.");
+        alert( idEdicion ? "Legajo digital modificado con éxito." : "Estudiante matriculado con éxito.");
         salirModoEdicion();
         await procesarFiltrosYNomina();
     } catch (error) {
         console.error("Error al persistir legajo:", error);
         alert("Error crítico: No se completó el resguardo remoto.");
     }
-}
+
 
 async function ejecutarBajaEstudianteFirestore(dni) {
     if (!confirm(`¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`)) return;
-    try {
+        try {
+        // --- Registro automático en el historial antes de borrar al alumno ---
+        try {
+            const { registrarEventoLegajo } = await import('./historial.js');
+            await registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
+        } catch (moduloErr) {
+            console.error("Error no bloqueante al cargar el historial en baja:", moduloErr);
+        }
+
         await deleteDoc(doc(db, "alumnos", dni));
         alert("Legajo digital purgado correctamente.");
         if (document.getElementById('idOriginalEdicion').value === dni) salirModoEdicion();
         await procesarFiltrosYNomina();
+
     } catch (error) {
         alert("No se pudo completar la baja.");
     }
@@ -1144,5 +1165,6 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             renderizarFilasEnTabla(window.currentAlumnosFiltradosCached);
         }
     });
+}
+})();
 
-})(); // <-- CIERRE FINAL DE TODO EL ARCHIVO JS
