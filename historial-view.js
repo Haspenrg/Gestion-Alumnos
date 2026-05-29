@@ -59,22 +59,27 @@
 
         const querySnapshot = await getDocs(consultaEstructurada);
         
-        // Limpiar el contenedor de carga e interactuar con los paneles ocultos
-        statusCarga.classList.add('hidden');
-        tarjetaAlumno.classList.remove('hidden');
-        contenedorTimeline.classList.remove('hidden');
+        // Ocultar y mostrar paneles usando estilos nativos directos seguros
+        statusCarga.style.display = 'none';
+        tarjetaAlumno.style.display = 'block';
+        contenedorTimeline.style.display = 'block';
 
         listaEventos.innerHTML = "";
 
         if (querySnapshot.empty) {
-            listaEventos.innerHTML = `
-                <div class="bg-slate-700/30 p-4 rounded-lg border border-slate-700/60 text-center">
-                    <p class="text-xs text-slate-400">No se registran firmas o movimientos forenses para este legajo digital bajo el nuevo módulo de trazabilidad.</p>
-                </div>
-            `;
-            return;
-        }
+    // Apagamos el panel de carga y encendemos los paneles del alumno
+    statusCarga.style.display = "none";
+    tarjetaAlumno.style.display = "block";
+    contenedorTimeline.style.display = "block";
+    
+    // Inyectamos el mensaje directamente en el contenedor preexistente de tu HTML
+    const listaEventos = document.getElementById("listaEventosTimeline");
+    if (listaEventos) {
+        listaEventos.innerHTML = `<p style="color: #94a3b8; font-size: 0.875rem; padding: 10px 0;">No se registran firmas o movimientos forenses para este legajo digital bajo el nuevo módulo de trazabilidad.</p>`;
+    }
+    return;
 
+        }
         // Renderizado dinámico de la Línea de Tiempo (Timeline)
         querySnapshot.forEach(docSnap => {
             const ev = docSnap.data();
@@ -113,8 +118,26 @@
         });
 
     } catch (error) {
-        console.error("Fallo forense en la renderización del historial:", error);
-        statusCarga.innerHTML = `<p class="text-sm text-rose-400 font-medium">⚠️ Error crítico de conexión al procesar la línea de tiempo escolar.</p>`;
+    console.error("Fallo forense en la renderización del historial:", error);
+    
+    // Verificación específica de falta de índice compuesto requerido por Firebase
+    if (error.message && error.message.includes("index")) {
+        statusCarga.innerHTML = `
+            <div style="padding: 20px; border: 1px solid #f43f5e; background-color: #881337; border-radius: 8px; text-align: left;">
+                <p class="text-sm text-rose-400 font-bold">⚠ Falta el Índice Compuesto en Firestore</p>
+                <p class="text-xs text-slate-200" style="margin-top: 8px;">Para que esta consulta funcione, Google requiere un índice ordenado. Por favor:</p>
+                <ol class="text-xs text-slate-300" style="margin-top: 6px; padding-left: 20px; line-height: 1.5;">
+                    <li>Presioná la tecla <b>F12</b> en tu teclado para abrir las Herramientas de Desarrollador.</li>
+                    <li>Hacé clic en la pestaña <b>Consola (Console)</b>.</li>
+                    <li>Buscá el enlace azul de Firebase que empieza con <i>https://google.com...</i> y hacé clic.</li>
+                    <li>Presioná el botón <b>"Crear índice"</b> en la web de Google y esperá 3 minutos.</li>
+                </ol>
+            </div>
+        `;
+    } else {
+        statusCarga.innerHTML = `<p class="text-sm text-rose-400 font-medium">⚠ Error crítico de conexión al procesar la línea de tiempo escolar. Detalles: ${error.message || error}</p>`;
     }
+}
+
 
 })();

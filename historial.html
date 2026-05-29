@@ -4,11 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Trazabilidad - Colegio HASPEN</title>
-    <script src="https://tailwindcss.com"></script>
-    <link href="https://googleapis.com" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+<link rel="stylesheet" href="estilos.css">
+<style>
+    /* Estilos Locales de Emergencia para Entornos sin Conexión */
+    body { font-family: 'Inter', system-ui, sans-serif; background-color: #0f172a !important; color: #f8fafc !important; margin: 0; padding: 0; }
+    header { background-color: #1e293b; border-bottom: 1px solid #334155; padding: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    main { max-width: 896px; margin: 0 auto; padding: 24px 16px; }
+    section, .bg-slate-800 { background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 12px !important; padding: 20px !important; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); margin-bottom: 24px; }
+    h1 { margin: 0; font-size: 1.125rem; color: #ffffff; }
+    h2 { margin: 0; font-size: 1.25rem; color: #ffffff; }
+    p { margin: 4px 0 0 0; }
+    button { cursor: pointer; background-color: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 6px 16px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; transition: background 0.2s; }
+    button:hover { background-color: #475569; }
+    .text-rose-400 { color: #fb7185 !important; font-weight: 500; }
+    .animate-spin { width: 32px; height: 32px; border: 3px solid #334155; border-bottom-color: #3b82f6; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; margin-bottom: 16px; }
+    @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .text-center { text-align: center; padding: 48px 0; }
+    footer { background-color: #1e293b; border-top: 1px solid #334155; padding: 12px; text-align: center; color: #64748b; font-size: 0.75rem; }
+</style>
+
+
 </head>
 <body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col">
 
@@ -32,43 +47,89 @@
         </div>
     </header>
 
-    <!-- Contenedor Principal Balanceado -->
-    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-6 space-y-6">
+    <!-- CONTENEDOR PRINCIPAL: Configurado en Pantalla Completa Ancha -->
+<main class="flex-grow w-full max-w-none px-6 py-6">
+    
+    <!-- REJILLA DISTRIBUIDA (Mínimo en celular, 2 columnas en Monitor Grande) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Ficha Resumen del Alumno Seleccionado -->
-        <section id="tarjetaAlumnoFicha" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg hidden">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950/50 px-2.5 py-1 rounded-md border border-blue-900/40">Legajo Digital Activo</span>
-                    <h2 id="nombreAlumnoHistorial" class="text-xl font-bold text-white mt-2">Cargando datos del estudiante...</h2>
-                    <p id="dniAlumnoHistorial" class="text-sm text-slate-400 mt-0.5">DNI: --</p>
+        <!-- ========================================== -->
+        <!-- COLUMNA IZQUIERDA (30%): CONTROL Y FICHA  -->
+        <!-- ========================================== -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Ficha del Estudiante -->
+            <section id="tarjetaAlumnoFicha" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg hidden">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/50">Legajo Digital</span>
                 </div>
-                <div class="text-left md:text-right border-t md:border-t-0 border-slate-700 pt-3 md:pt-0 w-full md:w-auto">
-                    <p id="cursoAlumnoHistorial" class="text-sm font-medium text-slate-300">Curso: --</p>
-                    <p id="cicloAlumnoHistorial" class="text-xs text-slate-400 mt-0.5">Ciclo Lectivo: --</p>
+                <h2 id="nombreAlumnoHistorial" class="text-xl font-bold text-white mt-2">Cargando datos del estudiante...</h2>
+                
+                <div class="mt-4 pt-4 border-t border-slate-700/60 space-y-2 text-sm text-slate-400">
+                    <p><strong>DNI:</strong> <span id="dniAlumnoHistorial" class="text-slate-200">-</span></p>
+                    <p><strong>Curso:</strong> <span id="cursoAlumnoHistorial" class="text-slate-200">-</span></p>
+                    <p><strong>Ciclo Lectivo:</strong> <span id="cicloAlumnoHistorial" class="text-slate-200">-</span></p>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Indicador de Carga Inicial -->
-        <div id="statusCargaHistorial" class="text-center py-12 bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p class="text-sm text-blue-400 font-medium">Sincronizando registros con Cloud Firestore...</p>
+            <!-- PANEL DE FILTROS INTEGRADOS (6 AÑOS) -->
+            <section id="panelFiltrosTrayectoria" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Control de Trayectoria</h4>
+                
+                <!-- Selector por Año Escolar -->
+                <div class="space-y-2 mb-4">
+                    <span class="text-[11px] text-slate-500 block">Año de Cursada:</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-blue-600 text-white border border-blue-500 cursor-pointer">Todos</button>
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">1° Año</button>
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">2° Año</button>
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">3° Año</button>
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">4° Año</button>
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">5° Año</button>
+                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">6° Año</button>
+                    </div>
+                </div>
+
+                <!-- Selector por Tipo de Contenido -->
+                <div class="space-y-2 pt-2 border-t border-slate-700/60">
+                    <span class="text-[11px] text-slate-500 block">Tipo de Registro:</span>
+                    <div class="flex flex-col gap-1.5">
+                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-600 text-white border border-slate-500 cursor-pointer">📋 Mostrar Todo</button>
+                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">📝 Calificaciones Trimestrales</button>
+                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">📄 Informes y Boletines</button>
+                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">⚠️ Registro de Asistencias</button>
+                    </div>
+                </div>
+            </section>
         </div>
 
-        <!-- Panel Contenedor de la Línea de Tiempo (Timeline) -->
-        <section id="contenedorTimelineAuditoria" class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hidden">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 flex items-center gap-2">
-                <span>📜</span> Cronología de Movimientos y Acciones Registradas
-            </h3>
+        <!-- ========================================== -->
+        <!-- COLUMNA DERECHA (70%): HISTORIAL ANCHO    -->
+        <!-- ========================================== -->
+        <div class="lg:col-span-8">
             
-            <!-- Lista Dinámica de Eventos -->
-            <div id="listaEventosTimeline" class="relative border-l-2 border-slate-700 ml-4 pl-6 space-y-6">
-                <!-- Los eventos se inyectarán de forma reactiva mediante JavaScript desde el más nuevo al más viejo -->
+            <!-- Indicador de Carga Inicial -->
+            <div id="statusCargaHistorial" class="text-center py-12 bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p class="text-sm text-blue-400 font-medium">Sincronizando registros con Cloud Firestore...</p>
             </div>
-        </section>
 
-    </main>
+            <!-- Panel de la Línea de Tiempo Extendida -->
+            <section id="contenedorTimelineAuditoria" class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hidden">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 flex items-center gap-2">
+                    <span>📘</span> Historial y Auditoría del Legajo Escolar
+                </h3>
+                
+                <!-- Lista Dinámica de Eventos Ancha -->
+                <div id="listaEventosTimeline" class="relative border-l-2 border-slate-700 ml-4 pl-6 space-y-6">
+                    <!-- Los eventos se inyectarán aquí mediante JavaScript ocupando todo el ancho -->
+                </div>
+            </section>
+        </div>
+
+    </div>
+</main>
+
 
     <!-- Pie de Página Institucional -->
     <footer class="bg-slate-800 border-t border-slate-700 py-3 text-center text-slate-500 text-xs">
