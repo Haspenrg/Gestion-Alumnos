@@ -627,12 +627,35 @@ function renderizarFilasEnTabla(alumnos) {
         });
     });
 
-    tbodyAlumnos.querySelectorAll('button[style*="background:#ef4444"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            ejecutarBajaEstudianteFirestore(e.target.getAttribute('data-dni'));
+            // Inyección dinámica y asignación de eventos para el botón de Historial ("📜")
+        tbodyAlumnos.querySelectorAll('button[style*="background:#ef4444"]').forEach(btnBaja => {
+            const contenedorAcciones = btnBaja.parentElement;
+            if (contenedorAcciones && !contenedorAcciones.querySelector('.btn-historial-dinamico')) {
+                const dniAlumnoFila = btnBaja.getAttribute('data-dni');
+                
+                // Crear el botón de historial con diseño Tailwind integrado
+                const btnHistorial = document.createElement('button');
+                btnHistorial.className = 'btn-historial-dinamico px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 font-semibold rounded-md border border-slate-600 transition-colors shadow-sm ml-1';
+                btnHistorial.title = 'Ver Historial de Trazabilidad';
+                btnHistorial.innerHTML = '📜 Historial';
+                
+                btnHistorial.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (dniAlumnoFila) {
+                        window.open(`historial.html?dni=${dniAlumnoFila}`, '_blank');
+                    }
+                });
+                
+                contenedorAcciones.insertBefore(btnHistorial, btnBaja);
+            }
+
+            // Mantener el escuchador nativo de la baja preexistente
+            btnBaja.addEventListener('click', (e) => {
+                e.stopPropagation();
+                ejecutarBajaEstudianteFirestore(e.target.getAttribute('data-dni'));
+            });
         });
-    });
+
 }
 
 function cargarLegajoEnFormulario(alumno) {
