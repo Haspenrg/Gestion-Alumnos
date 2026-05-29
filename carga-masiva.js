@@ -58,27 +58,36 @@
         alumnosEnMemoria = [];
     }
 
-    function calcularGeneroYCuil(nombre, cuilRaw, dni) {
-        let cuil = cuilRaw.replace(/[^0-9]/g, '').trim();
-        let gen = "Masculino";
-        if (cuil.length === 11) {
-            if (cuil.startsWith("27")) gen = "Femenino";
-            return { cuil, gen };
-        }
-        const partes = nombre.split(',');
-        const subNombre = partes ? partes[partes.length - 1].trim().toLowerCase() : nombre.trim().toLowerCase();
-        const palabras = subNombre.split(' ');
-        const primerNombre = palabras[0] || "";
-        
-        if (primerNombre.endsWith('a') || ["gladys", "belen", "ines", "zoe", "uma", "umma", "mia", "maia", "ernestina", "ayelen"].includes(primerNombre)) gen = "Femenino";
-        
-        if (typeof window.calcularCuilAutomatico === 'function') {
-            cuil = window.calcularCuilAutomatico(dni, gen);
-        } else {
-            cuil = (gen === "Femenino" ? "27" : "20") + dni.padStart(8, '0') + "0";
-        }
+    function calcularGeneroyCuil(nombre, cuilRaw, dni) {
+    let cuil = cuilRaw.replace(/[^0-9]/g, '').trim();
+    let gen = "Masculino";
+    if (cuil.length === 11) {
+        if (cuil.startsWith("27")) gen = "Femenino";
         return { cuil, gen };
     }
+    const nombreLimpio = nombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '').trim().toLowerCase();
+    const palabras = nombreLimpio.split(/\s+/);
+    
+    // Matriz extendida de nombres femeninos invariantes (que no finalizan con la letra A)
+    const excepcionesFem = ["gladys", "helen", "ines", "zoe", "uma", "umma", "mia", "maia", "ernestina", "ayelen", "nair", "abigail", "belen", "carola", "carmen", "iris", "isabel", "lujan", "miriam", "noe", "noemi", "pilar", "rocio", "ruth", "sol", "solange", "yamil"];
+    
+    // Analiza cada palabra del campo. Si al menos una es femenina, se determina el género Femenino
+    for (let i = 0; i < palabras.length; i++) {
+        const p = palabras[i];
+        if (p.length > 1 && (p.endsWith('a') || excepcionesFem.includes(p))) {
+            gen = "Femenino";
+            break;
+        }
+    }
+    
+    if (typeof window.calcularCuilAutomatico === 'function') {
+        cuil = window.calcularCuilAutomatico(dni, gen);
+    } else {
+        cuil = (gen === "Femenino" ? "27" : "20") + dni.padStart(8, '0') + "0";
+    }
+    return { cuil, gen };
+}
+
 
     function fmtF(val) {
         if (!val) return "";
@@ -219,17 +228,20 @@
                 const telephone = (idxTel > -1 && fila[idxTel]) ? fila[idxTel].replace(/[^0-9]/g, '').trim() : "2964000000";
                 const tutor = (idxTutor > -1 && fila[idxTutor]) ? fila[idxTutor].replace(/"/g, '').trim() : "No registrado";
                 const dniT = (idxDniTutor > -1 && fila[idxDniTutor]) ? fila[idxDniTutor].replace(/[^0-9]/g, '').trim() : "";
-                const cuilT = (idxCuilTutor > -1 && fila[idxCuilTutor]) ? fila[idxCuilTutor].replace(/[^0-9]/g, '').trim() : "";
+                const cuilTutorRaw = (idxCuilTutor > -1 && fila[idxCuilTutor]) ? fila[idxCuilTutor].replace(/[^0-9]/g, '').trim() : "";
+                
+                // Deducción inteligente de género y CUIL para el Adulto Responsable
+                const { cuil: cuilT, gen: genT } = calcularGeneroyCuil(tutor, cuilTutorRaw, dniT);
 
                 alumnosEnMemoria.push({
-                    dni: dniRaw, nombre: `${nom} ${ap}`.trim(), cuil, genero: gen, estado: "Regular", cursoId, cicloLectivo: cicloActivo,
-                    email, telefono1: telephone, nombreTutor: tutor, dniTutor: dniT, cuilTutor: cuilT,
+                    dni: dniRaw, nombre: `${nom} ${ap}`.trim(), cuil, genero: gen, estado: "Regular", cursoId, cicloLectivo: cicloActual,
+                    email, telefono1: telephone, nombretutor: tutor, dniTutor: dniT, cuilTutor: cuilT, generoTutor: genT,
                     fechaNacimiento: fmtF(fila[idxF_Nac]),
                     lugarNacimiento: "Río Grande", nacionalidad: "Argentina",
                     direccion: (idxDomicilio > -1 && fila[idxDomicilio]) ? fila[idxDomicilio].trim() : "No especificada",
-                    documentosDigitales: { dni_alumno: null, partida_nac: null, cert_primaria: null, buena_salud: null, carnet_vacunas: null, dni_tutor: null, acta_ppi: null }
+                    documentosDigitales: { dni_alumno: null, partida_nac: null, cert_primaria: null, buena_salud: null, carnet_vacunacion: null, debye: null }
                 });
-            }
+
 
             // 4. PRECARGA CRUZADA PARA LA INTERFAZ FLOTANTE
             document.getElementById('tablaSimulacionBody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Validando base de datos en tiempo real...</td></tr>';
@@ -264,28 +276,31 @@
                 }
 
                 htmlFinal += `<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px; font-weight: 500;">${a.dni}</td><td style="padding: 10px; font-weight: bold; color:#1e293b;">${nombreLimpioModal}</td><td style="padding: 10px; font-family: monospace; color:#475569;">${a.cuil}</td><td style="padding: 10px; color: #64748b; font-size: 11px;"><b>Tutor:</b> ${a.nombreTutor}<br><b>Mail:</b> ${a.email}</td><td style="padding: 10px; text-align: center;">${badge}</td></tr>`;
-            });
+     });
 
+    document.getElementById('tablaSimulacionBody').innerHTML = htmlFinal || '<tr><td colspan="5" style="text-align:center; padding:20px;">Sin registros</td></tr>';
+    document.getElementById('resumenSimulacion').innerText = `Sección Destino: ${s.options[s.selectedIndex].text} | Detectados: ${alumnosEnMemoria.length} alumnos ready.`;
+}
 
-            document.getElementById('tablaSimulacionBody').innerHTML = htmlFinal || '<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">❌ No se encontraron alumnos para el curso seleccionado en esta planilla.</td></tr>';
-            document.getElementById('resumenSimulacion').innerText = `Sección Destino: ${s.options[s.selectedIndex].text} | Detectados: ${alumnosEnMemoria.length} (🟢 Nuevos: ${cNuevos} | 🟡 Modificaciones: ${cModif})`;
-        };
-
-        reader.readAsText(archivoSeleccionado, 'UTF-8');
+async function ejecutarEscrituraFirestore() {
+    if (alumnosEnMemoria.length === 0) return;
+    const b = document.getElementById('btnConfirmarCarga');
+    if (b) {
+        b.disabled = true;
+        b.innerHTML = "⏳ Guardando...";
     }
-
-    async function ejecutarEscrituraFirestore() {
-        if (alumnosEnMemoria.length === 0) return;
-        const b = document.getElementById('btnConfirmarCarga');
-        b.disabled = true; b.innerText = "⏳ Guardando...";
-        const db = getFirestore();
-        let total = 0;
-        for (const a of alumnosEnMemoria) {
-            await setDoc(doc(collection(db, 'alumnos'), a.dni), a, { merge: true });
-            total++;
-        }
-        alert(`¡Carga masiva finalizada! Se procesaron ${total} legajos digitales con éxito.`);
-        cerrarModal();
-        if (typeof window.procesarFiltrosYNomina === 'function') window.procesarFiltrosYNomina();
+    const db = getFirestore();
+    let total = 0;
+    for (const a of alumnosEnMemoria) {
+        await setDoc(doc(collection(db, 'alumnos'), a.dni), a, { merge: true });
+        total++;
     }
+    alert(`¡Carga masiva finalizada! Se procesaron ${total} legajos digitales con éxito.`);
+    cerrarModal();
+    if (typeof window.procesarFiltrosYNomina === 'function') window.procesarFiltrosYNomina();
+}
+
+window.simularCargaCSV = simularCargaCSV;
+window.ejecutarEscrituraFirestore = ejecutarEscrituraFirestore;
 })();
+
