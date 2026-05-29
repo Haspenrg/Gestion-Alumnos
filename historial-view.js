@@ -67,10 +67,12 @@
         listaEventos.innerHTML = "";
 
         if (querySnapshot.empty) {
-    // Apagamos el panel de carga y encendemos los paneles del alumno
-    statusCarga.style.display = "none";
-    tarjetaAlumno.style.display = "block";
-    contenedorTimeline.style.display = "block";
+    // Ocultar y mostrar paneles usando estilos nativos directos seguros
+        statusCarga.style.display = 'none';
+        tarjetaAlumno.style.display = 'block';
+        contenedorTimeline.style.display = 'block';
+        document.getElementById('panelFiltrosTrayectoria').style.display = 'block';
+
     
     // Inyectamos el mensaje directamente en el contenedor preexistente de tu HTML
     const listaEventos = document.getElementById("listaEventosTimeline");

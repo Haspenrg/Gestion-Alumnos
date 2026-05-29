@@ -6,46 +6,95 @@
     <title>Historial de Trazabilidad - Colegio HASPEN</title>
 <link rel="stylesheet" href="estilos.css">
 <style>
-    /* Estilos Locales de Emergencia para Entornos sin Conexión */
-    body { font-family: 'Inter', system-ui, sans-serif; background-color: #0f172a !important; color: #f8fafc !important; margin: 0; padding: 0; }
-    header { background-color: #1e293b; border-bottom: 1px solid #334155; padding: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-    main { max-width: 896px; margin: 0 auto; padding: 24px 16px; }
-    section, .bg-slate-800 { background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 12px !important; padding: 20px !important; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); margin-bottom: 24px; }
-    h1 { margin: 0; font-size: 1.125rem; color: #ffffff; }
-    h2 { margin: 0; font-size: 1.25rem; color: #ffffff; }
-    p { margin: 4px 0 0 0; }
-    button { cursor: pointer; background-color: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 6px 16px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; transition: background 0.2s; }
-    button:hover { background-color: #475569; }
-    .text-rose-400 { color: #fb7185 !important; font-weight: 500; }
-    .animate-spin { width: 32px; height: 32px; border: 3px solid #334155; border-bottom-color: #3b82f6; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; margin-bottom: 16px; }
-    @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .text-center { text-align: center; padding: 48px 0; }
-    footer { background-color: #1e293b; border-top: 1px solid #334155; padding: 12px; text-align: center; color: #64748b; font-size: 0.75rem; }
+    /* 🏫 Diseño Institucional Renovado - Colegio HASPEN */
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9 !important; color: #1e293b !important; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Encabezado Superior de Presencia Ancha */
+    header { background-color: #1b4d82; border-bottom: 4px solid #13365b; padding: 20px 32px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); }
+    .header-contenedor { max-width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+    .header-info { display: flex; align-items: center; gap: 16px; }
+    .logo-badge { background-color: #ffffff; color: #1b4d82; font-weight: 800; padding: 10px 16px; border-radius: 8px; font-size: 1.1rem; letter-spacing: 0.05em; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    h1 { margin: 0; font-size: 1.75rem !important; color: #ffffff !important; font-weight: 800; letter-spacing: -0.02em; }
+    .header-sub { margin: 4px 0 0 0; font-size: 0.85rem; color: #93c5fd; font-weight: 500; }
+    
+    /* Botón Volver al Panel Estilizado */
+    .btn-panel { background: #13365b; color: #ffffff; border: 1px solid #2563eb; padding: 10px 20px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em; }
+    .btn-panel:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+    
+    /* Contenedor de Trabajo de Escritorio Ancho */
+    main { flex: 1; width: 100% !important; max-width: none !important; margin: 0 auto; padding: 32px; box-sizing: border-box; }
+    
+    /* Rejilla Forzada de Doble Columna sobre Fondo Claro */
+    @media (min-width: 1024px) {
+        .grid { display: flex !important; flex-direction: row !important; gap: 32px !important; align-items: start !important; width: 100% !important; }
+        .lg\:col-span-4 { width: 28% !important; min-width: 300px !important; flex-shrink: 0 !important; }
+        .lg\:col-span-8 { width: 72% !important; flex-grow: 1 !important; }
+    }
+    
+    /* Paneles Estilo Ficha Blanca Con Contraste Elebado */
+    section { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 12px !important; padding: 28px !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03) !important; margin-bottom: 0px; }
+    .space-y-6 > * + * { margin-top: 24px; }
+    
+    /* Ficha del Alumno Clara y Destacada */
+    .ficha-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; tracking: 0.05em; color: #1d4ed8; background-color: #dbeafe; padding: 4px 10px; border-radius: 6px; border: 1px solid #bfdbfe; }
+    h2 { margin: 14px 0 6px 0; font-size: 1.6rem !important; color: #1e293b !important; font-weight: 800; }
+    .alumno-meta-grid { border-top: 1px solid #e2e8f0; margin-top: 18px; padding-top: 16px; }
+    .meta-txt { font-size: 0.95rem; color: #475569; margin: 8px 0 0 0; }
+    .meta-txt strong { color: #0f172a; font-weight: 600; }
+    
+    /* Botoneras Profesionales Izquierdas */
+    h4 { margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.05em; }
+    .grid-cols-3 { display: grid; grid-template-cols: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    
+    .btn-filtro, .btn-cat { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; text-align: center; }
+    .btn-filtro:hover, .btn-cat:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
+    .btn-filtro.active { background: #1b4d82 !important; color: #ffffff !important; border-color: #13365b !important; }
+    .btn-cat.active { background: #475569 !important; color: #ffffff !important; border-color: #334155 !important; }
+    
+    /* Panel de Historial Derecho Claro */
+    h3 { margin: 0 0 24px 0; font-size: 1rem !important; font-weight: 700; text-transform: uppercase; color: #1b4d82 !important; display: flex; align-items: center; gap: 8px; letter-spacing: 0.02em; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    .no-eventos-box { background-color: #f8fafc; border: 2px dashed #cbd5e1; padding: 40px; border-radius: 8px; text-align: center; color: #64748b; font-size: 0.95rem; font-weight: 500; }
+    
+    /* Caja de Carga */
+    #statusCargaHistorial { text-align: center; padding: 60px 20px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; }
+    .spinner-institucional { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-bottom-color: #1b4d82; border-radius: 50%; display: inline-block; animation: girar 1s linear infinite; margin-bottom: 16px; }
+    @keyframes girar { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    footer { background-color: #ffffff; border-top: 1px solid #e2e8f0; padding: 16px; text-align: center; color: #64748b; font-size: 0.8rem; font-weight: 500; margin-top: auto; }
 </style>
 
 
 </head>
 <body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col">
 
-    <!-- Cabecera Institucional Superior -->
-    <header class="bg-slate-800 border-b border-slate-700 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-lg text-white font-bold tracking-wider text-sm shadow-inner">
-                    HSP
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-white tracking-tight">Colegio Provincial HASPEN</h1>
-                    <p class="text-xs text-slate-400">Sistema de Trazabilidad y Auditoría Escolar</p>
-                </div>
-            </div>
+    
+   <!-- Cabecera Institucional Superior de Pantalla Completa Expandida -->
+<header style="background-color: #1b4d82; border-bottom: 4px solid #13365b; padding: 20px 32px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+    <div style="width: 100%; max-width: none; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+        
+        <!-- Bloque de Identidad Institucional Grande -->
+        <div style="display: flex; align-items: center; gap: 16px;">
+            
             <div>
-                <button onclick="window.close()" class="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-md border border-slate-600 transition-colors shadow-sm">
-                    Volver al Panel
-                </button>
+                <h1 style="margin: 0; font-size: 2rem !important; color: #ffffff !important; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;">
+                    Colegio Provincial HASPEN
+                </h1>
+                <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: #93c5fd; font-weight: 500; letter-spacing: 0.02em;">
+                    Sistema Integrado de Trazabilidad y Auditoría del Legajo Escolar
+                </p>
             </div>
         </div>
-    </header>
+
+        <!-- Bloque de Acciones del Preceptor -->
+        <div>
+            <button onclick="window.close()" style="background: #13365b; color: #ffffff; border: 1px solid #3b82f6; padding: 12px 24px; font-size: 0.85rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em;">
+                Volver al Panel
+            </button>
+        </div>
+
+    </div>
+</header>
+
 
     <!-- CONTENEDOR PRINCIPAL: Configurado en Pantalla Completa Ancha -->
 <main class="flex-grow w-full max-w-none px-6 py-6">
@@ -59,7 +108,7 @@
         <div class="lg:col-span-4 space-y-6">
             
             <!-- Ficha del Estudiante -->
-            <section id="tarjetaAlumnoFicha" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg hidden">
+            <section id="tarjetaAlumnoFicha" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg" style="display: none;">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/50">Legajo Digital</span>
                 </div>
@@ -80,13 +129,14 @@
                 <div class="space-y-2 mb-4">
                     <span class="text-[11px] text-slate-500 block">Año de Cursada:</span>
                     <div class="grid grid-cols-3 gap-1.5">
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-blue-600 text-white border border-blue-500 cursor-pointer">Todos</button>
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">1° Año</button>
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">2° Año</button>
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">3° Año</button>
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">4° Año</button>
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">5° Año</button>
-                        <button class="px-2 py-1 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">6° Año</button>
+                                                <button class="btn-filtro active">Todos</button>
+                        <button class="btn-filtro">1° Año</button>
+                        <button class="btn-filtro">2° Año</button>
+                        <button class="btn-filtro">3° Año</button>
+                        <button class="btn-filtro">4° Año</button>
+                        <button class="btn-filtro">5° Año</button>
+                        <button class="btn-filtro">6° Año</button>
+
                     </div>
                 </div>
 
@@ -94,10 +144,23 @@
                 <div class="space-y-2 pt-2 border-t border-slate-700/60">
                     <span class="text-[11px] text-slate-500 block">Tipo de Registro:</span>
                     <div class="flex flex-col gap-1.5">
-                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-600 text-white border border-slate-500 cursor-pointer">📋 Mostrar Todo</button>
-                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">📝 Calificaciones Trimestrales</button>
-                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">📄 Informes y Boletines</button>
-                        <button class="w-full text-left px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 cursor-pointer">⚠️ Registro de Asistencias</button>
+                        <button class="btn-cat active" style="display: flex; align-items: center; gap: 8px;">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            Mostrar Todo
+                        </button>
+                        <button class="btn-cat" style="display: flex; align-items: center; gap: 8px;">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Calificaciones Trimestrales
+                        </button>
+                        <button class="btn-cat" style="display: flex; align-items: center; gap: 8px;">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            Informes y Boletines
+                        </button>
+                        <button class="btn-cat" style="display: flex; align-items: center; gap: 8px;">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Registro de Asistencias
+                        </button>
+
                     </div>
                 </div>
             </section>
@@ -115,7 +178,7 @@
             </div>
 
             <!-- Panel de la Línea de Tiempo Extendida -->
-            <section id="contenedorTimelineAuditoria" class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hidden">
+            <section id="contenedorTimelineAuditoria" class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg" style="display: none;">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 flex items-center gap-2">
                     <span>📘</span> Historial y Auditoría del Legajo Escolar
                 </h3>
