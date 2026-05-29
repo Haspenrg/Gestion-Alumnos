@@ -26,7 +26,15 @@
             if (intentos > 30) clearInterval(relojCursos);
         }, 500);
 
-        document.getElementById('btnCargaMasiva')?.addEventListener('click', () => document.getElementById('csvCargaMasiva').click());
+        /* ==========================================================================
+   ANCLA_RESET_EVENTO: Forzar disparo del change anulando el cache del archivo
+   ========================================================================== */
+        document.getElementById('btnCargaMasiva')?.addEventListener('click', () => {
+            const inputCsv = document.getElementById('csvCargaMasiva');
+            if (inputCsv) inputCsv.value = ""; 
+            inputCsv?.click();
+        });
+
         document.getElementById('csvCargaMasiva')?.addEventListener('change', simularCargaCSV);
         document.getElementById('btnCerrarSimulacionX')?.addEventListener('click', cerrarModal);
         document.getElementById('btnCancelarCarga')?.addEventListener('click', cerrarModal);
@@ -113,9 +121,16 @@
         const reader = new FileReader();
 
         reader.onload = async (evt) => {
-            const lineas = evt.target.result.split(/\r?\n/);
-            const db = getFirestore();
-            alumnosEnMemoria = [];
+                    /* ==========================================================================
+           ANCLA_BLINDAJE_SIMULACION: Reset absoluto antes de procesar el archivo
+           ========================================================================== */
+        alumnosEnMemoria = [];
+        const tablaBody = document.getElementById('tablaSimulacionBody');
+        if (tablaBody) tablaBody.innerHTML = '';
+        
+        const lineas = evt.target.result.split(/\r?\n/);
+        const db = getFirestore();
+
             let cNuevos = 0, cModif = 0;
 
             let idxDni = -1, idxNombre = -1, idxCuil = -1, idxF_Nac = -1, idxDomicilio = -1, idxTel = -1, idxTutor = -1, idxDniTutor = -1, idxCuilTutor = -1, idxEmail = -1;
@@ -127,24 +142,29 @@
            ========================================================================== */
         if (!lineas[i] || lineas[i].trim() === "") continue;
 
+                /* ==========================================================================
+           ANCLA_PARSER_INDERRUPTIBLE: Validacion de Curso en Bloque Limpio
+           ========================================================================== */
         if (lineas[i].toUpperCase().includes("CURSO:")) {
-            const coincidenciaCurso = lineas[i].toUpperCase().match(/CURSO:\s*([1-6])\s*([A-E])/);
+            const textoLimpio = lineas[i].toUpperCase().replace(/"/g, ' ');
             
-            if (coincidenciaCurso) {
-                const numCSV = coincidenciaCurso[1]; // Extrae el número (ej: 1 o 2)
-                const divCSV = coincidenciaCurso[2].toLowerCase(); // Extrae la división (ej: e o a)
-                
-                if (numCSV === numCurso && divCSV === divCurso) {
-                    dentroDelCursoCorrecto = true;
-                    idxDni = -1; idxNombre = -1; idxCuil = -1; idxF_Nac = -1; idxDomicilio = -1; 
-                    idxTel = -1; idxTutor = -1; idxDniTutor = -1; idxCuilTutor = -1; idxEmail = -1;
-                    continue;
-                } else {
-                    dentroDelCursoCorrecto = false;
-                    continue;
-                }
+            // Verificamos si la linea contiene exactamente el numero y la letra del curso seleccionado
+            const tieneNumero = textoLimpio.includes(numCurso);
+            const tieneDivision = textoLimpio.includes(divCurso.toUpperCase());
+            
+            if (tieneNumero && tieneDivision) {
+                // Es el curso que buscamos: encendemos la lectura y limpiamos indices
+                dentroDelCursoCorrecto = true;
+                idxDni = -1; idxNombre = -1; idxCuil = -1; idxF_Nac = -1; idxDomicilio = -1; 
+                idxTel = -1; idxTutor = -1; idxDniTutor = -1; idxCuilTutor = -1; idxEmail = -1;
+                continue;
+            } else {
+                // Es otra cabecera de otro curso: APAGAMOS la lectura obligatoriamente
+                dentroDelCursoCorrecto = false;
+                continue;
             }
         }
+
             if (!dentroDelCursoCorrecto) continue;
 
 

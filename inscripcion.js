@@ -122,8 +122,28 @@ const elCuiAlu = document.getElementById('cuilAlumno');
 
 if (elDniAlu) elDniAlu.addEventListener('input', () => dispararAutocompletadoCuil(elDniAlu, elGenAlu, elCuiAlu));
 if (elGenAlu) elGenAlu.addEventListener('change', () => dispararAutocompletadoCuil(elDniAlu, elGenAlu, elCuiAlu));
-if (typeof inputDniTutor !== 'undefined' && inputDniTutor) inputDniTutor.addEventListener('input', () => dispararAutocompletadoCuil(inputDniTutor, typeof selectGeneroTutor !== 'undefined' ? selectGeneroTutor : null, typeof inputCuilTutor !== 'undefined' ? inputCuilTutor : null));
-if (typeof selectGeneroTutor !== 'undefined' && selectGeneroTutor) selectGeneroTutor.addEventListener('change', () => dispararAutocompletadoCuil(inputDniTutor, selectGeneroTutor, typeof inputCuilTutor !== 'undefined' ? inputCuilTutor : null));
+    // Escuchadores reactivos opcionales para el CUIL del Tutor o Tutora
+    const elDniTut = document.getElementById('dniTutorAlumno');
+    const elGenTut = document.getElementById('generoTutor');
+    const elCuiTut = document.getElementById('cuilTutor');
+
+    if (elDniTut) {
+        elDniTut.addEventListener('input', () => {
+            if (!elDniTut.value.trim()) {
+                if (elCuiTut) elCuiTut.value = "";
+                return;
+            }
+            dispararAutocompletadoCuil(elDniTut, elGenTut, elCuiTut);
+        });
+    }
+    if (elGenTut) {
+        elGenTut.addEventListener('change', () => {
+            if (elDniTut && elDniTut.value.trim()) {
+                dispararAutocompletadoCuil(elDniTut, elGenTut, elCuiTut);
+            }
+        });
+    }
+
 
 
    /* ==========================================================================
