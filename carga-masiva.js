@@ -278,8 +278,14 @@
                 htmlFinal += `<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px; font-weight: 500;">${a.dni}</td><td style="padding: 10px; font-weight: bold; color:#1e293b;">${nombreLimpioModal}</td><td style="padding: 10px; font-family: monospace; color:#475569;">${a.cuil}</td><td style="padding: 10px; color: #64748b; font-size: 11px;"><b>Tutor:</b> ${a.nombreTutor}<br><b>Mail:</b> ${a.email}</td><td style="padding: 10px; text-align: center;">${badge}</td></tr>`;
      });
 
-    document.getElementById('tablaSimulacionBody').innerHTML = htmlFinal || '<tr><td colspan="5" style="text-align:center; padding:20px;">Sin registros</td></tr>';
+            document.getElementById('tablaSimulacionBody').innerHTML = htmlFinal || '<tr><td colspan="5" style="text-align:center; padding:20px;">Sin registros</td></tr>';
     document.getElementById('resumenSimulacion').innerText = `Sección Destino: ${s.options[s.selectedIndex].text} | Detectados: ${alumnosEnMemoria.length} alumnos ready.`;
+};
+
+    reader.readAsText(archivoSeleccionado, 'UTF-8');
+}
+
+    reader.readAsText(archivoSeleccionado, 'UTF-8');
 }
 
 async function ejecutarEscrituraFirestore() {
@@ -302,5 +308,6 @@ async function ejecutarEscrituraFirestore() {
 
 window.simularCargaCSV = simularCargaCSV;
 window.ejecutarEscrituraFirestore = ejecutarEscrituraFirestore;
+
 })();
 
