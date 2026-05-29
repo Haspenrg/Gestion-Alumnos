@@ -846,16 +846,13 @@ async function guardarLegajoDigital(e) {
         await setDoc( doc( db, "alumnos", dni), nuevoLegajo);
         localStorage. setItem('ultimoCicloTrabajado', cicloLectivo);
         
-        // --- Registro en el historial independiente ---
-        try {
-            const { registrarEventoLegajo } = await import('./historial.js');
+                // --- Registro inmutable en el historial global del Colegio HASPEN ---
+        if (typeof window.registrarEventoLegajo === 'function') {
             if (idEdicion) {
-                await registrarEventoLegajo(dni, "MATRICULA", "MODIFICACION_LEGAJO", `Se actualizaron los datos generales del legajo digital. Estado actual: ${estadoActual}.`);
+                await window.registrarEventoLegajo(dni, "MATRICULA", "MODIFICACION_LEGAJO", `Se actualizaron los datos generales del legajo digital de forma manual. Estado actual: ${estadoActual}.`);
             } else {
-                await registrarEventoLegajo(dni, "MATRICULA", "ALTA_INSCRIPCION", `Matriculación inicial exitosa del estudiante en el sistema.`);
+                await window.registrarEventoLegajo(dni, "MATRICULA", "ALTA_INSCRIPCION", `Matriculación inicial exitosa del estudiante en el sistema a través del formulario analógico.`);
             }
-        } catch (moduloErr) {
-            console.error("Error no bloqueante al cargar el historial:", moduloErr);
         }
 
         alert( idEdicion ? "Legajo digital modificado con éxito." : "Estudiante matriculado con éxito.");
@@ -870,12 +867,9 @@ async function guardarLegajoDigital(e) {
 async function ejecutarBajaEstudianteFirestore(dni) {
     if (!confirm(`¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`)) return;
         try {
-        // --- Registro automático en el historial antes de borrar al alumno ---
-        try {
-            const { registrarEventoLegajo } = await import('./historial.js');
-            await registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
-        } catch (moduloErr) {
-            console.error("Error no bloqueante al cargar el historial en baja:", moduloErr);
+               // --- Registro automático en el historial global antes de purgar al estudiante ---
+        if (typeof window.registrarEventoLegajo === 'function') {
+            await window.registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
         }
 
         await deleteDoc(doc(db, "alumnos", dni));

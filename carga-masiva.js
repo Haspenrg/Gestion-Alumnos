@@ -298,7 +298,13 @@ async function ejecutarEscrituraFirestore() {
     const db = getFirestore();
     let total = 0;
     for (const a of alumnosEnMemoria) {
-        await setDoc(doc(collection(db, 'alumnos'), a.dni), a, { merge: true });
+                await setDoc(doc(collection(db, 'alumnos'), a.dni), a, { merge: true });
+        
+        // Registro automático en el historial por lote de carga masiva
+        if (typeof window.registrarEventoLegajo === 'function') {
+            await window.registrarEventoLegajo(a.dni, "MATRICULA", "ALTA_LOTE", `Alta y matriculación digital automatizada mediante procesamiento por lote de archivo Excel.`);
+        }
+        
         total++;
     }
     alert(`¡Carga masiva finalizada! Se procesaron ${total} legajos digitales con éxito.`);

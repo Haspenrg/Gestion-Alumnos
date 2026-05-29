@@ -18,13 +18,21 @@ export async function registrarEventoLegajo(dniAlumno, categoria, subcategoria, 
         
         const db = getFirestore();
         // Detecta el ciclo lectivo desde el selector de la UI o usa el año corriente
-        const cicloLectivoActual = document.getElementById('filtroCicloLectivo')?.value || new Date().getFullYear().toString();
+               const cicloLectivoActual = document.getElementById('filtroCicloLectivo')?.value || new Date().getFullYear().toString();
         
+        // Extracción dinámica del operador logueado en la sesión activa
+        let nombreOperador = "Operador no identificado";
+        const sesion = localStorage.getItem('usuarioActivo');
+        if (sesion) {
+            const usuarioObj = JSON.parse(sesion);
+            if (usuarioObj.nombre) nombreOperador = usuarioObj.nombre.trim();
+        }
+
         const evento = {
             dni_alumno: dniAlumno,
-            ciclo_lectivo: parseInt(cicloLectivoActual),
+            ciclo_lectivo: cicloLectivoActual, // Guardado como texto para consistencia de datos
             fecha_hora: new Date().toISOString(),
-            operador_nombre: "Prof. Luis Felippa Adam", // Operador predeterminado de auditoría
+            operador_nombre: nombreOperador,
             categoria: categoria,
             subcategoria: subcategoria,
             descripcion: descripcion,
@@ -39,3 +47,5 @@ export async function registrarEventoLegajo(dniAlumno, categoria, subcategoria, 
         return false;
     }
 }
+window.registrarEventoLegajo = registrarEventoLegajo;
+
