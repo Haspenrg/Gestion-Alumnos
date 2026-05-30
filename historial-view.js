@@ -83,41 +83,80 @@
 
         }
         // Renderizado dinámico de la Línea de Tiempo (Timeline)
+              // Guardamos todos los eventos en memoria para poder filtrarlos con los botones
+        const todosLosEventosBici = [];
         querySnapshot.forEach(docSnap => {
-            const ev = docSnap.data();
-            
-            // Configuración cromática de badges según la severidad de la categoría
-            let badgeEstilo = "bg-blue-950 text-blue-400 border-blue-900";
-            if (ev.subcategoria === "BAJA_PURGADO") badgeEstilo = "bg-rose-950 text-rose-400 border-rose-900";
-            if (ev.subcategoria === "MODIFICACION_LEGAJO") badgeEstilo = "bg-amber-950 text-amber-400 border-amber-900";
-            if (ev.subcategoria === "ALTA_LOTE") badgeEstilo = "bg-emerald-950 text-emerald-400 border-emerald-900";
-
-            // Formatear la fecha ISO a algo legible
-            const fObj = new Date(ev.fecha_hora);
-            const fechaFormateada = !isNaN(fObj.getTime()) 
-                ? `${fObj.getDate().toString().padStart(2,'0')}/${(fObj.getMonth()+1).toString().padStart(2,'0')}/${fObj.getFullYear()} - ${fObj.getHours().toString().padStart(2,'0')}:${fObj.getMinutes().toString().padStart(2,'0')} hs`
-                : "Fecha no especificada";
-
-            const itemHtml = `
-                <div class="relative pl-2">
-                    <div class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-slate-600 ring-4 ring-slate-800"></div>
-                    <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-lg shadow-sm hover:border-slate-600 transition-colors">
-                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-                            <span class="px-2 py-0.5 border ${badgeEstilo} text-[10px] font-bold tracking-wide rounded-md uppercase w-fit">
-                                ${ev.subcategoria ? ev.subcategoria.replace('_', ' ') : ev.categoria}
-                            </span>
-                            <span class="text-slate-500 text-[10px] font-medium">${fechaFormateada}</span>
-                        </div>
-                        <p class="text-slate-200 text-xs leading-relaxed">${ev.descripcion || "Sin detalles de acción."}</p>
-                        <div class="mt-3 pt-2 border-t border-slate-700/40 flex flex-wrap justify-between items-center text-[10px] text-slate-400 gap-2">
-                            <span><strong>Módulo Base:</strong> ${ev.categoria}</span>
-                            <span><strong>Firmado por:</strong> <span class="text-slate-300 font-semibold">${ev.operador_nombre || "Operador Desconocido"}</span></span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            listaEventos.insertAdjacentHTML('beforeend', itemHtml);
+            todosLosEventosBici.push({ id: docSnap.id, ...docSnap.data() });
         });
+
+        // Función para renderizar la línea de tiempo con tus estilos originales
+        function dibujarEventosEnPantalla(listaFiltrada) {
+            listaEventos.innerHTML = ""; // Limpiamos el contenedor
+            
+            if (listaFiltrada.length === 0) {
+                listaEventos.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">No se encontraron movimientos registrados para los filtros seleccionados.</p>`;
+                return;
+            }
+
+            listaFiltrada.forEach(ev => {
+                // Configuración cromática de badges original tuya
+                let badgeEstilo = "bg-blue-950 text-blue-400 border-blue-900";
+                if (ev.subcategoria === "BAJA_PURGADO") badgeEstilo = "bg-rose-950 text-rose-400 border-rose-900";
+                if (ev.subcategoria === "MODIFICACION_LEGAJO") badgeEstilo = "bg-amber-950 text-amber-400 border-amber-900";
+                if (ev.subcategoria === "ALTA_LOTE") badgeEstilo = "bg-emerald-950 text-emerald-400 border-emerald-900";
+
+                // Formateador de fecha exacto tuyo
+                const fObj = new Date(ev.fecha_hora);
+                const fechaFormateada = !isNaN(fObj.getTime())
+                    ? `${fObj.getDate().toString().padStart(2,'0')}/${(fObj.getMonth()+1).toString().padStart(2,'0')}/${fObj.getFullYear()}`
+                    : "Fecha no especificada";
+
+                const itemHtml = `
+                    <div class="relative pl-2">
+                        <div class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-slate-600 ring-4 ring-slate-800"></div>
+                        <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-lg shadow-sm hover:border-slate-600 transition-all">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                                <span class="px-2 py-0.5 border ${badgeEstilo} text-[10px] font-bold tracking-wide rounded-md uppercase">
+                                    ${ev.subcategoria ? ev.subcategoria.replace('_', ' ') : ev.categoria}
+                                </span>
+                                <span class="text-slate-500 text-[10px] font-medium">${fechaFormateada}</span>
+                            </div>
+                            <p class="text-slate-200 text-xs leading-relaxed">${ev.descripcion || "Sin detalles de acción."}</p>
+                            <div class="mt-3 pt-2 border-t border-slate-700/40 flex flex-wrap justify-between items-center text-[10px] text-slate-400">
+                                <span><strong>Módulo Base:</strong> ${ev.categoria}</span>
+                                <span><strong>Firmado por:</strong> <span class="text-slate-300 font-semibold">${ev.operador_nombre || "Operador"}</span></span>
+                            </div>
+                        </div>
+                    </div>`;
+                listaEventos.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        // Dibujamos todos los eventos la primera vez
+        dibujarEventosEnPantalla(todosLosEventosBici);
+
+        // Exponemos la función para los botones de historial.html
+        window.filtrarHistorial = function(anio, categoria) {
+            let resultado = todosLosEventosBici;
+
+            // Filtro 1: Año de Cursada (ej: filtra por el número de año escrito en la descripción o ciclo)
+            if (anio !== "Todos") {
+                const numeroAnio = anio.charAt(0); // Extrae el "1", "2", etc.
+                resultado = resultado.filter(ev => 
+                    (ev.ciclo_lectivo && ev.ciclo_lectivo.toString().includes(anio)) || 
+                    (ev.descripcion && (ev.descripcion.includes(anio) || ev.descripcion.includes(`${numeroAnio}°`)))
+                );
+            }
+
+            // Filtro 2: Tipo de Registro
+            if (categoria !== "TODOS") {
+                resultado = resultado.filter(ev => ev.categoria === categoria);
+            }
+
+            // Actualizamos la pantalla con los datos filtrados
+            dibujarEventosEnPantalla(resultado);
+        };
+
 
     } catch (error) {
     console.error("Fallo forense en la renderización del historial:", error);

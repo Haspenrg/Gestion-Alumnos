@@ -543,12 +543,13 @@ function renderizarFilasEnTabla(alumnos) {
 
     if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
         // Modo Escritura (Administradores): Se remueve el botón Datos porque la info se ve a la izquierda
-        accionesHTML = `
-        <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
-            <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
-            <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
-            <button type="button" class="btn-accion-fila" data-dni="${alumno.dni}" style="background:#ef4444;">🗑</button>
-        </div>
+                accionesHTML = `
+            <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
+                <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨</button>
+                <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📋</button>
+                <button type="button" class="btn-accion-fila" onclick="window.location.href='historial.html?dni=${alumno.dni}'" title="Historial del Legajo">📜</button>
+                <button type="button" class="btn-accion-fila btn-fila-borrar" data-dni="${alumno.dni}" title="Eliminar Alumno">🗑️</button>
+            </div>
         `;
     } else {
         // Modo Consulta (Preceptores / Solo Lectura): Conserva el botón Datos con su mapeo flexible
@@ -599,12 +600,16 @@ function renderizarFilasEnTabla(alumnos) {
         tbodyAlumnos.appendChild(tr);
     });
 
-    tbodyAlumnos.querySelectorAll('.btn-fila-informe').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            emitirDocumentoIndividual('INFORME', e.target.getAttribute('data-dni'));
+            // Escuchador dinámico e indestructible para el botón de Informe Pedagógico
+        tbodyAlumnos.addEventListener('click', (e) => {
+            const botonInforme = e.target.closest('.btn-fila-informe');
+            if (botonInforme) {
+                e.stopPropagation();
+                const dniExtraido = botonInforme.getAttribute('data-dni');
+                emitirDocumentoIndividual('INFORME', dniExtraido);
+            }
         });
-    });
+
 
     tbodyAlumnos.querySelectorAll('.btn-fila-boletin').forEach(btn => {
         btn.addEventListener('click', (e) => {

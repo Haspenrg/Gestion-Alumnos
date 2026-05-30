@@ -265,21 +265,35 @@
         }
 
 
-        .btn-accion-fila {
-            border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            margin: 2px;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            min-height: 32px;
-        }
-        .btn-fila-informe { background: #0284c7; }
-        .btn-fila-boletin { background: #7c3aed; }
+       .btn-accion-fila {
+    border: 1px solid #13365b !important;
+    background-color: #1b4d82 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    height: 32px !important;
+    margin: 2px !important;
+    font-size: 15px !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+.btn-accion-fila:hover {
+    background-color: #13365b !important;
+}
+.btn-fila-borrar {
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
+    border: 1px solid #fca5a5 !important;
+}
+.btn-fila-borrar:hover {
+    background-color: #fca5a5 !important;
+    color: #b91c1c !important;
+}
+
         .modal-impresion-externo {
             display: none;
             position: fixed;
@@ -701,11 +715,12 @@
   </div>
 </div>
   
-                    <div class="contenedor-emision-lote">
-                        <span style="font-size: 11px; font-weight: bold; color: #475569;">ACCIONES EN LOTE DE SECCIÓN:</span>
-                        <button type="button" id="btnEmitirLoteInforme" class="btn-emision-masiva btn-lote-informe" disabled>🖨 Emitir Informes Pedagógicos</button>
-                        <button type="button" id="btnEmitirLoteBoletin" class="btn-emision-masiva btn-lote-boletin" disabled>📋 Emitir Boletines del Curso</button>
-                    </div>
+                    <div class="contenedor-emision-lote" style="display: flex; align-items: center; gap: 8px;">
+<span style="font-size: 11px; font-weight: bold; color: #475569; margin-right: 4px;">ACCIONES EN LOTE DE SECCIÓN:</span>
+<button type="button" id="btnEmitirLoteInforme" class="btn-emision-masiva" disabled style="background-color: #1b4d82; color: white; border: 1px solid #13365b; border-radius: 6px; width: 42px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px;" title="Emitir Informes Pedagógicos">🖨</button>
+<button type="button" id="btnEmitirLoteBoletin" class="btn-emision-masiva" disabled style="background-color: #1b4d82; color: white; border: 1px solid #13365b; border-radius: 6px; width: 42px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px;" title="Emitir Boletines del Curso">📋</button>
+</div>
+
                 </div>
                 <div class="contador-registros">
                     <span id="contadorEstudiantes">Matrículas Visualizadas: 0</span>

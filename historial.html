@@ -10,7 +10,30 @@
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9 !important; color: #1e293b !important; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
     
     /* Encabezado Superior de Presencia Ancha */
-    header { background-color: #1b4d82; border-bottom: 4px solid #13365b; padding: 20px 32px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); }
+    main { 
+    flex: 1; 
+    width: 100% !important; 
+    max-width: none !important; 
+    margin: 0 auto; 
+    padding: 12px 32px 32px 32px !important; 
+    box-sizing: border-box; 
+}
+
+.btn-cat { 
+    background: #f8fafc; 
+    color: #475569; 
+    border: 1px solid #cbd5e1; 
+    padding: 10px 16px; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    transition: all 0.15s ease; 
+    text-align: left; 
+    width: 100% !important; 
+    box-sizing: border-box;
+}
+
     .header-contenedor { max-width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
     .header-info { display: flex; align-items: center; gap: 16px; }
     .logo-badge { background-color: #ffffff; color: #1b4d82; font-weight: 800; padding: 10px 16px; border-radius: 8px; font-size: 1.1rem; letter-spacing: 0.05em; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
@@ -26,17 +49,18 @@
     
     /* Rejilla Forzada de Doble Columna sobre Fondo Claro */
     @media (min-width: 1024px) {
-        .grid { display: flex !important; flex-direction: row !important; gap: 32px !important; align-items: start !important; width: 100% !important; }
+        .grid { display: flex !important; flex-direction: row !important; gap: 16px !important; align-items: stretch !important; width: 100% !important; }
         .lg\:col-span-4 { width: 28% !important; min-width: 300px !important; flex-shrink: 0 !important; }
-        .lg\:col-span-8 { width: 72% !important; flex-grow: 1 !important; }
+        .lg\:col-span-8 { width: 72% !important; flex-grow: 1 !important; display: flex !important; flex-direction: column !important; }
+
     }
     
     /* Paneles Estilo Ficha Blanca Con Contraste Elebado */
-    section { background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 12px !important; padding: 28px !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03) !important; margin-bottom: 0px; }
+    section { background-color: #ffffff !important; border: 1px solid #1b4d82 !important; border-radius: 12px !important; padding: 24px !important; }
     .space-y-6 > * + * { margin-top: 24px; }
     
     /* Ficha del Alumno Clara y Destacada */
-    .ficha-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; tracking: 0.05em; color: #1d4ed8; background-color: #dbeafe; padding: 4px 10px; border-radius: 6px; border: 1px solid #bfdbfe; }
+    .ficha-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #1d4ed8; background-color: #dbeafe; padding: 4px 10px; border-radius: 6px; border: 1px solid #bfdbfe; }
     h2 { margin: 14px 0 6px 0; font-size: 1.6rem !important; color: #1e293b !important; font-weight: 800; }
     .alumno-meta-grid { border-top: 1px solid #e2e8f0; margin-top: 18px; padding-top: 16px; }
     .meta-txt { font-size: 0.95rem; color: #475569; margin: 8px 0 0 0; }
@@ -44,7 +68,7 @@
     
     /* Botoneras Profesionales Izquierdas */
     h4 { margin: 0 0 16px 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.05em; }
-    .grid-cols-3 { display: grid; grid-template-cols: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    
     
     .btn-filtro, .btn-cat { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; text-align: center; }
     .btn-filtro:hover, .btn-cat:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
@@ -128,29 +152,29 @@
                 <!-- Selector por Año Escolar -->
                 <div class="space-y-2 mb-4">
                     <span class="text-[11px] text-slate-500 block">Año de Cursada:</span>
-                    <div class="grid grid-cols-3 gap-1.5">
-                                                <button class="btn-filtro active">Todos</button>
-                        <button class="btn-filtro">1° Año</button>
-                        <button class="btn-filtro">2° Año</button>
-                        <button class="btn-filtro">3° Año</button>
-                        <button class="btn-filtro">4° Año</button>
-                        <button class="btn-filtro">5° Año</button>
-                        <button class="btn-filtro">6° Año</button>
-
+                    <div class="contenedor-años">
+                    <button class="btn-filtro active">Todos</button>
+                    <button class="btn-filtro">1° Año</button>
+                    <button class="btn-filtro">2° Año</button>
+                    <button class="btn-filtro">3° Año</button>
+                    <button class="btn-filtro">4° Año</button>
+                    <button class="btn-filtro">5° Año</button>
+                    <button class="btn-filtro">6° Año</button>
                     </div>
+
                 </div>
 
                 <!-- Selector por Tipo de Contenido -->
                 <div class="space-y-2 pt-2 border-t border-slate-700/60">
                     <span class="text-[11px] text-slate-500 block">Tipo de Registro:</span>
                     <div class="flex flex-col gap-1.5">
-                        <button class="btn-cat active" style="display: flex; align-items: center; gap: 8px;">
+                        <button class="btn-cat" style="display: flex; align-items: center; gap: 8px; background-color: #1b4d82; color: #ffffff;">
                             <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                             Mostrar Todo
                         </button>
                         <button class="btn-cat" style="display: flex; align-items: center; gap: 8px;">
                             <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            Calificaciones Trimestrales
+                            Calificaciones Cuatrimestrales
                         </button>
                         <button class="btn-cat" style="display: flex; align-items: center; gap: 8px;">
                             <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
@@ -201,6 +225,65 @@
 
     <!-- Script de Configuración del Cliente Modular -->
     <script type="module" src="historial-view.js"></script>
+
+
+<!-- Control visual y conexión de filtros con el Historial Forense -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Variables para guardar qué filtros eligió el operador
+        let anioSeleccionado = "Todos";
+        let categoriaSeleccionada = "TODOS";
+
+        // Función interna para avisarle al sistema que actualice la vista
+        function aplicarFiltrosLegajo() {
+            // Buscamos si la función global de historial-view existe en la ventana
+            if (typeof window.filtrarHistorial === "function") {
+                window.filtrarHistorial(anioSeleccionado, categoriaSeleccionada);
+            }
+        }
+
+        // 1. Control para los botones de Año de Cursada (Arriba)
+        const botonesFiltro = document.querySelectorAll(".btn-filtro");
+        
+        // Forzar que el botón "Todos" arranque pintado de azul institucional al cargar la página
+        if(botonesFiltro.length > 0) {
+            botonesFiltro[0].style.setProperty('background-color', '#1b4d82', 'important');
+            botonesFiltro[0].style.setProperty('color', '#ffffff', 'important');
+        }
+
+        botonesFiltro.forEach(btn => {
+            btn.addEventListener("click", () => {
+                botonesFiltro.forEach(b => {
+                    b.style.setProperty('background-color', '#ffffff', 'important');
+                    b.style.setProperty('color', '#475569', 'important');
+                });
+                btn.style.setProperty('background-color', '#1b4d82', 'important');
+                btn.style.setProperty('color', '#ffffff', 'important');
+                
+                // Guardamos el año de cursada seleccionado (ej: "1° Año")
+                anioSeleccionado = btn.textContent.trim();
+                aplicarFiltrosLegajo();
+            });
+        });
+
+        // 2. Control para los botones de Tipo de Registro (Abajo)
+        const botonesCat = document.querySelectorAll(".btn-cat");
+        botonesCat.forEach(btn => {
+            btn.addEventListener("click", () => {
+                botonesCat.forEach(b => {
+                    b.style.setProperty('background-color', '#f8fafc', 'important');
+                    b.style.setProperty('color', '#475569', 'important');
+                });
+                btn.style.setProperty('background-color', '#1b4d82', 'important');
+                btn.style.setProperty('color', '#ffffff', 'important');
+                
+                // Guardamos la categoría técnica (ej: "CALIFICACIONES") usando su atributo data-cat
+                categoriaSeleccionada = btn.getAttribute("data-cat") || "TODOS";
+                aplicarFiltrosLegajo();
+            });
+        });
+    });
+</script>
 
 </body>
 </html>
