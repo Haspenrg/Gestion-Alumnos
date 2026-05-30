@@ -600,15 +600,19 @@ function renderizarFilasEnTabla(alumnos) {
         tbodyAlumnos.appendChild(tr);
     });
 
-            // Escuchador dinámico e indestructible para el botón de Informe Pedagógico
-        tbodyAlumnos.addEventListener('click', (e) => {
-            const botonInforme = e.target.closest('.btn-fila-informe');
-            if (botonInforme) {
-                e.stopPropagation();
-                const dniExtraido = botonInforme.getAttribute('data-dni');
-                emitirDocumentoIndividual('INFORME', dniExtraido);
+            // =========================================================================
+    // UBICACIÓN: Líneas 554 a 563 (Reemplazo exacto del bloque del informe)
+    // REPARACIÓN: Asignación por recorrido para independizar el hilo del evento click
+    // =========================================================================
+    tbodyAlumnos.querySelectorAll('.btn-fila-informe').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const dniAlumno = e.target.getAttribute('data-dni') || e.target.closest('button').getAttribute('data-dni');
+            if (dniAlumno && typeof window.emitirDocumentoIndividual === 'function') {
+                await window.emitirDocumentoIndividual('INFORME', dniAlumno);
             }
         });
+    });
 
 
     tbodyAlumnos.querySelectorAll('.btn-fila-boletin').forEach(btn => {
@@ -910,156 +914,6 @@ async function ejecutarBajaEstudianteFirestore(dni) {
     }
 }
 
-async function emitirDocumentoIndividual(tipo, dni) {
-    try {
-        const snapAlumno = await getDoc(doc(db, "alumnos", dni));
-        if (!snapAlumno.exists()) return;
-        const alumno = snapAlumno.data();
-        let cursoTexto = "Mesa de Entrada";
-        let materiasEstructura = [];
-
-        if (alumno.cursoId) {
-            const snapCurso = await getDoc(doc(db, "cursos", alumno.cursoId));
-            if (snapCurso.exists()) {
-                const cData = snapCurso.data();
-                cursoTexto = `${cData.ciclo} - "${cData.division}" (${cData.turno})`;
-                materiasEstructura = cData.materias || [];
-            }
-        }
-
-        let calificacionesMapeadas = {};
-        try {
-            const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
-            snapCalificaciones.forEach(cDoc => {
-                const cData = cDoc.data();
-                if (cData.alumnoDni === dni) {
-                    calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
-                }
-            });
-        } catch (err) {
-            console.warn("No se pudo sincronizar la matriz de calificaciones.");
-        }
-
-        let inasistenciasTotales = 0;
-        try {
-            const snapAsistencias = await getDocs(collection(db, "asistencias"));
-            snapAsistencias.forEach(aDoc => {
-                const aData = aDoc.data();
-                if (aData.alumnoDni === dni && aData.valor) {
-                    inasistenciasTotales += parseFloat(aData.valor);
-                }
-            });
-        } catch (err) {
-            console.warn("No se pudo sincronizar del total de inasistencias.");
-        }
-
-        modalCuerpo.innerHTML = tipo === 'INFORME'
-            ? construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales)
-            : construirHojaA4BoletinOficial(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas);
-        modalContenedor.style.display = "flex";
-    } catch (error) {
-        console.error("Fallo de composición en reportes:", error);
-    }
-}
-
-async function emitirDocumentosEnLote(tipo) {
-    const cursoId = selectCursoFiltro.value;
-    const cicloLectivo = document.getElementById('filtroCicloLectivo').value;
-    if (!cursoId) return;
-
-    if (tipo === 'BOLETIN') {
-        if (window.firebaseConfig) {
-            localStorage.setItem('firebaseConfig', JSON.stringify(window.firebaseConfig));
-        } else {
-            const backupConfig = {
-                apiKey: localStorage.getItem('apiKey') || "",
-                authDomain: localStorage.getItem('authDomain') || "",
-                projectId: localStorage.getItem('projectId') || "",
-                storageBucket: localStorage.getItem('storageBucket') || "",
-                messagingSenderId: localStorage.getItem('messagingSenderId') || "",
-                appId: localStorage.getItem('appId') || ""
-            };
-            localStorage.setItem('firebaseConfig', JSON.stringify(backupConfig));
-        }
-        window.open(`boletin.html?cursoId=${cursoId}&ciclo=${cicloLectivo}`, '_blank');
-        return;
-    }
-
-    if (!window.currentAlumnosFiltradosCached) return;
-    let htmlAcumulado = "";
-    const cRef = window.cachedCursosColegio.find(c => c.id === cursoId);
-    const cursoTexto = cRef ? `${cRef.ciclo} - "${cRef.division}" (${cRef.turno})` : "";
-    const materiasEstructura = cRef ? (cRef.materias || []) : [];
-
-    let todasCalificaciones = [];
-    try {
-        const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
-        snapCalificaciones.forEach(cDoc => todasCalificaciones.push(cDoc.data()));
-    } catch (err) {
-        console.warn("Fallo masivo de calificaciones.");
-    }
-
-    let todasAsistencias = [];
-    try {
-        const snapAsistencias = await getDocs(collection(db, "asistencias"));
-        snapAsistencias.forEach(aDoc => todasAsistencias.push(aDoc.data()));
-    } catch (err) {
-        console.warn("Fallo masivo de asistencias.");
-    }
-
-    window.currentAlumnosFiltradosCached.forEach(alumno => {
-        let calificacionesMapeadas = {};
-        todasCalificaciones.forEach(cData => {
-            if (cData.alumnoDni === alumno.dni) {
-                calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
-            }
-        });
-        let inasistenciasTotales = 0;
-        todasAsistencias.forEach(aData => {
-            if (aData.alumnoDni === alumno.dni && aData.valor) {
-                inasistenciasTotales += parseFloat(aData.valor);
-            }
-        });
-        htmlAcumulado += construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales);
-    });
-    modalCuerpo.innerHTML = htmlAcumulado;
-    modalContenedor.style.display = "flex";
-}
-
-function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calificaciones, inasistencias) {
-    let filasHTML = "";
-    if (materias.length === 0) {
-        filasHTML = `<tr><td colspan="10" style="padding:10px; color:#666;">Sin asignaturas asignadas.</td></tr>`;
-    } else {
-        materias.forEach(materia => {
-            const c = calificaciones[materia] || {};
-            const inf1_1 = c.c1_inf1 || "0";
-            const inf1_2 = c.c1_inf2 || "0";
-            const forta1 = c.c1_forta || "0";
-            const notaC1 = c.c1_nota || "0";
-            const inf2_1 = c.c2_inf1 || "0";
-            const inf2_2 = c.c2_inf2 || "0";
-            const forta2 = c.c2_forta || "0";
-            const notaC2 = c.c2_nota || "0";
-            const finalNota = c.nota_final || "0";
-
-            filasHTML += `
-            <tr>
-                <td style="text-align:left; font-weight:bold; font-size:9px; padding:3px;">${materia}</td>
-                <td>${inf1_1}</td>
-                <td>${inf1_2}</td>
-                <td>${forta1}</td>
-                <td style="background:#f1f5f9; font-weight:bold;">${notaC1}</td>
-                <td>${inf2_1}</td>
-                <td>${inf2_2}</td>
-                <td>${forta2}</td>
-                <td style="background:#f1f5f9; font-weight:bold;">${notaC2}</td>
-                <td style="background:#e2e8f0; font-weight:bold; font-size:11px;">${finalNota}</td>
-            </tr>
-            `;
-        });
-    }
-
     return `
     <div class="contenedor-media-hoja-pdf">
         <div style="text-align:center; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px;">
@@ -1256,6 +1110,214 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             renderizarFilasEnTabla(window.currentAlumnosFiltradosCached);
         }
     });
-}
-})();
 
+window.emitirDocumentoIndividual = async function(tipo, dni) {
+    try {
+        const snapAlumno = await getDoc(doc(db, "alumnos", dni));
+        if (!snapAlumno.exists()) return;
+        const alumno = snapAlumno.data();
+        let cursoTexto = "Mesa de Entrada";
+        let materiasEstructura = [];
+
+        if (alumno.cursoId) {
+            const snapCurso = await getDoc(doc(db, "cursos", alumno.cursoId));
+            if (snapCurso.exists()) {
+                const cData = snapCurso.data();
+                cursoTexto = `${cData.ciclo} - "${cData.division}" (${cData.turno})`;
+                materiasEstructura = cData.materias || [];
+            }
+        }
+
+        let calificacionesMapeadas = {};
+        try {
+            const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
+            snapCalificaciones.forEach(cDoc => {
+                const cData = cDoc.data();
+                if (cData.alumnoDni === dni) {
+                    calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
+                }
+            });
+        } catch (err) {
+            console.warn("No se pudo sincronizar la matriz de calificaciones.");
+        }
+
+        let inasistenciasTotales = 0;
+        try {
+            const snapAsistencias = await getDocs(collection(db, "asistencias"));
+            snapAsistencias.forEach(aDoc => {
+                const aData = aDoc.data();
+                if (aData.alumnoDni === dni && aData.valor) {
+                    inasistenciasTotales += parseFloat(aData.valor);
+                }
+            });
+        } catch (err) {
+            console.warn("No se pudo sincronizar del total de inasistencias.");
+        }
+
+        modalCuerpo.innerHTML = tipo === 'INFORME'
+            ? construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales)
+            : construirHojaA4BoletinOficial(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas);
+        modalContenedor.style.display = "flex";
+    } catch (error) {
+        console.error("Fallo de composición en reportes:", error);
+    }
+}
+function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calificaciones, inasistencias) {
+    let filasHTML = "";
+    if (materias.length === 0) {
+        filasHTML = `<tr><td colspan="10" style="padding:10px; color:#666;">Sin asignaturas asignadas.</td></tr>`;
+    } else {
+        materias.forEach(materia => {
+            const c = calificaciones[materia] || {};
+            const inf1_1 = c.c1_inf1 || "0";
+            const inf1_2 = c.c1_inf2 || "0";
+            const forta1 = c.c1_forta || "0";
+            const notaC1 = c.c1_nota || "0";
+            const inf2_1 = c.c2_inf1 || "0";
+            const inf2_2 = c.c2_inf2 || "0";
+            const forta2 = c.c2_forta || "0";
+            const notaC2 = c.c2_nota || "0";
+            const finalNota = c.nota_final || "0";
+
+            filasHTML += `
+            <tr>
+                <td style="text-align:left; font-weight:bold; font-size:9px; padding:3px;">${materia}</td>
+                <td>${inf1_1}</td>
+                <td>${inf1_2}</td>
+                <td>${forta1}</td>
+                <td style="background:#f1f5f9; font-weight:bold;">${notaC1}</td>
+                <td>${inf2_1}</td>
+                <td>${inf2_2}</td>
+                <td>${forta2}</td>
+                <td style="background:#f1f5f9; font-weight:bold;">${notaC2}</td>
+                <td style="background:#e2e8f0; font-weight:bold; font-size:11px;">${finalNota}</td>
+            </tr>
+            `;
+        });
+    // =========================================================================
+// UBICACIÓN: Final de la función construirMediaHojaInformePedagogico
+// REEMPLAZO DEFINITIVO: Recuperación del diseño institucional del Colegio HASPEN
+// =========================================================================
+    return `
+    <div class="contenedor-media-hoja-pdf">
+        <div style="text-align:center; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px;">
+            <h2 style="margin:0; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">INFORME PEDAGÓGICO COLEGIO HASPEN</h2>
+        </div>
+        <table style="width:100%; font-size:10px; margin-bottom:5px; text-align:left; line-height:1.2;">
+            <tr>
+                <td style="font-weight:bold; width:12%;">Estudiante:</td>
+                <td style="border-bottom:1px solid #000; width:38%; font-weight:bold;">${alumno.nombre || ''}</td>
+                <td style="font-weight:bold; width:8%;">D.N.I.:</td>
+                <td style="border-bottom:1px solid #000; width:17%;">${alumno.dni || ''}</td>
+                <td style="font-weight:bold; width:8%;">Ciclo:</td>
+                <td style="border-bottom:1px solid #000; width:17%;">${alumno.cicloLectivo || ''}</td>
+            </tr>
+            <tr>
+                <td style="font-weight:bold;">CURSO:</td>
+                <td style="border-bottom:1px solid #000;">${cursoTexto}</td>
+                <td style="font-weight:bold;">TURNO:</td>
+                <td style="border-bottom:1px solid #000;" colspan="3">${alumno.cursoId ? window.cachedCursosColegio.find(c => c.id === alumno.cursoId)?.turno.toUpperCase() : 'S/D'}</td>
+            </tr>
+        </table>
+        <table class="tabla-hoja-documento">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width:28%; text-align:left;">ESPACIO CURRICULAR</th>
+                    <th colspan="4" style="background:#e0f2fe !important;">1° CUATRIMESTRE</th>
+                    <th colspan="4" style="background:#fef3c7 !important;">2° CUATRIMESTRE</th>
+                    <th rowspan="2" style="width:8%; background:#cbd5e1 !important;">FINAL</th>
+                </tr>
+                <tr>
+                    <th style="width:7%;">1° INF</th>
+                    <th style="width:7%;">2° INF</th>
+                    <th style="width:7%;">FORTA.</th>
+                    <th style="width:8%; background:#bae6fd !important;">1° CUATRI</th>
+                    <th style="width:7%;">1° INF</th>
+                    <th style="width:7%;">2° INF</th>
+                    <th style="width:7%;">FORTA.</th>
+                    <th style="width:8%; background:#fcd34d !important;">2° CUATRI</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filasHTML}
+            </tbody>
+        </table>
+        <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center; font-size:10px;">
+            <div style="border:1px solid #000; padding:4px 10px; font-weight:bold; background:#f8fafc;">
+                INASISTENCIAS TOTALES REGISTRADAS: <span style="font-size:11px; color:#ef4444;">${inasistencias}</span>
+            </div>
+            <div style="display:flex; gap:30px; font-size:8px; margin-top:15px;">
+                <div style="width:110px; border-top:1px solid #000; text-align:center; padding-top:2px;">Firma del Preceptor/a</div>
+                <div style="width:110px; border-top:1px solid #000; text-align:center; padding-top:2px;">Sello del Establecimiento</div>
+            </div>
+        </div>
+    </div>
+    `;
+  
+    }
+    }
+    window.emitirDocumentosEnLote = async function(tipo) {
+    const cursoId = selectCursoFiltro.value;
+    const cicloLectivo = document.getElementById('filtroCicloLectivo').value;
+    if (!cursoId) return;
+
+    if (tipo === 'BOLETIN') {
+        if (window.firebaseConfig) {
+            localStorage.setItem('firebaseConfig', JSON.stringify(window.firebaseConfig));
+        } else {
+            const backupConfig = {
+                apiKey: localStorage.getItem('apiKey') || "",
+                authDomain: localStorage.getItem('authDomain') || "",
+                projectId: localStorage.getItem('projectId') || "",
+                storageBucket: localStorage.getItem('storageBucket') || "",
+                messagingSenderId: localStorage.getItem('messagingSenderId') || "",
+                appId: localStorage.getItem('appId') || ""
+            };
+            localStorage.setItem('firebaseConfig', JSON.stringify(backupConfig));
+        }
+        window.open(`boletin.html?cursoId=${cursoId}&ciclo=${cicloLectivo}`, '_blank');
+        return;
+    }
+
+    if (!window.currentAlumnosFiltradosCached) return;
+    let htmlAcumulado = "";
+    const cRef = window.cachedCursosColegio.find(c => c.id === cursoId);
+    const cursoTexto = cRef ? `${cRef.ciclo} - "${cRef.division}" (${cRef.turno})` : "";
+    const materiasEstructura = cRef ? (cRef.materias || []) : [];
+
+    let todasCalificaciones = [];
+    try {
+        const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
+        snapCalificaciones.forEach(cDoc => todasCalificaciones.push(cDoc.data()));
+    } catch (err) {
+        console.warn("Fallo masivo de calificaciones.");
+    }
+
+    let todasAsistencias = [];
+    try {
+        const snapAsistencias = await getDocs(collection(db, "asistencias"));
+        snapAsistencias.forEach(aDoc => todasAsistencias.push(aDoc.data()));
+    } catch (err) {
+        console.warn("Fallo masivo de asistencias.");
+    }
+
+    window.currentAlumnosFiltradosCached.forEach(alumno => {
+        let calificacionesMapeadas = {};
+        todasCalificaciones.forEach(cData => {
+            if (cData.alumnoDni === alumno.dni) {
+                calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
+            }
+        });
+        let inasistenciasTotales = 0;
+        todasAsistencias.forEach(aData => {
+            if (aData.alumnoDni === alumno.dni && aData.valor) {
+                inasistenciasTotales += parseFloat(aData.valor);
+            }
+        });
+        htmlAcumulado += construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales);
+    });
+    modalCuerpo.innerHTML = htmlAcumulado;
+    modalContenedor.style.display = "flex";
+}
+
+})();
