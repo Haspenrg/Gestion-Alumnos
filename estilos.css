@@ -444,3 +444,21 @@ div[style*="border"] {
 .paginacion-contenedor {
     border-color: #1b4d82;
 }
+
+/* ==========================================================================
+EXPANSIÓN HORIZONTAL EXCLUSIVA PARA EL MODO SOLO LECTURA
+========================================================================== */
+body.modo-lectura-activo {
+    align-items: stretch !important;
+    padding: 10px 25px !important;
+}
+
+body.modo-lectura-activo .panel-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+}
+body.modo-lectura-activo .workspace-layout {
+    display: block !important;
+    width: 100% !important;
+}

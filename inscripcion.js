@@ -77,11 +77,13 @@ async function inicializarModuloInscripciones() {
         window.esSoloLectura = true;
     }
 
-    if (window.esSoloLectura === true) {
-        const formulario = document.getElementById('contenedorFormularioAlta');
-        const banner = document.getElementById('bannerPreceptor');
-        if (formulario) formulario.style.display = "none";
-        if (banner) banner.style.display = "block";
+    if ( window. esSoloLectura === true) {
+        const formulario = document. getElementById('contenedorFormularioAlta');
+        const banner = document. getElementById('bannerPreceptor');
+        if ( formulario) formulario. style. display = "none";
+        if ( banner) banner. style. display = "block";
+        // Agregamos la clase de control para el modo solo lectura
+        document.body.classList.add('modo-lectura-activo');
     }
 
     inicializarCiclosLectivosDinamicos();
