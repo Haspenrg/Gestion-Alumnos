@@ -51,7 +51,7 @@ margin-bottom: 15px;
 
 @media (min-width: 768px) {
 .grid-formulario {
-grid-template-columns: 1fr 1fr;
+grid-template-columns: 1fr 1fr 1fr;
 }
 }
 
@@ -59,11 +59,12 @@ grid-template-columns: 1fr 1fr;
 background: #ffffff;
 padding: 20px;
 border-radius: 8px;
-border: 1px solid #e2e8f0;
+border: 2px solid #1a73e8;
 margin-top: 20px;
 position: relative;
-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+box-shadow: 0 4 px 6 px rgba( 0, 0, 0, 0.02);
 }
+
 
 th, td {
 padding: 12px 10px;
@@ -176,15 +177,72 @@ box-sizing: border-box;
 grid-template-columns: 2fr 1fr;
 }
 }
+
+/* PARCHE DE DENSIDAD VISUAL COMPACTA */
+
+/* 1. Achica la altura de todos los cuadros de texto y desplegables */
+#formUsuario input[type="text"],
+#formUsuario input[type="number"],
+#formUsuario input[type="email"],
+#formUsuario input[type="password"],
+#formUsuario select {
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 13px !important;
+    margin-top: 2px !important;
+}
+
+/* 2. Junta las filas haciendo el espacio entre ellas mucho más fino */
+.grid-formulario {
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+/* 3. Achica los textos de los títulos de cada campo (etiquetas) */
+.input-group label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+}
+
+/* 4. Comprime el bloque amarillo de la función docente */
+.contenedor-multirrol-check {
+    padding: 6px 10px !important;
+    margin-top: 2px !important;
+    grid-column: span 3 / span 3 !important;
+}
+
+/* 5. Comprime y achica las cajas de Preceptor y de Profesor */
+#grupoCursosPreceptor, 
+#grupoAsignacionProfesor {
+    padding: 10px !important;
+    margin-top: 4px !important;
+}
+
+#grupoCursosPreceptor label, 
+#grupoAsignacionProfesor label {
+    margin-bottom: 2px !important;
+}
+
+/* 6. Achica la altura de los selectores y el botón dentro de la sección de Profesor */
+#grupoCursosPreceptor select,
+#grupoAsignacionProfesor select,
+#btnAgregarCatedra {
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+}
+
 </style>
 </head>
 <body>
 <div class="panel-container">
-<header class="header-dashboard">
-<h2>Gestión de Usuarios</h2>
-<h3>Colegio HASPEN</h3>
-<p>Administración de accesos, roles y responsabilidades híbridas del sistema</p>
+<header class="header-dashboard" style="width: 100%; text-align: center; margin-bottom: 25px;">
+    <h2 style="color: #1a73e8; font-size: 28px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">COLEGIO HASPEN</h2>
+    <h3 style="color: #334155; font-size: 20px; font-weight: 600; margin-bottom: 8px;">Gestión de Usuarios</h3>
+    <p style="color: #64748b; font-size: 15px; font-weight: 400; margin: 0 auto; max-width: 600px;">Administración de accesos, roles y responsabilidades híbridas del sistema</p>
 </header>
+
 <!-- Sección 1: Formulario Responsivo Multirrol -->
 <div class="form-registro-usuario">
 <div id="bannerEdicion" class="indicador-edicion">
@@ -195,32 +253,44 @@ grid-template-columns: 2fr 1fr;
 <form id="formUsuario">
 <input type="hidden" id="dniOriginalEdicion" value="">
 <div class="grid-formulario">
-<div class="input-group">
-<label for="nombreApellido">Nombre y Apellido</label>
-<input type="text" id="nombreApellido" placeholder="Ej: Juan Pérez" required>
+<!-- CAMPO 1: NOMBRE Y APELLIDO (COLUMNA 1 DE 3) -->
+<div class="col-span-12 md:col-span-4">
+    <label class="block text-sm font-medium text-gray-700">Nombre y Apellido</label>
+    <input type="text" id="nombreApellido" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
 </div>
-<div class="input-group">
-<label for="dniUsuario">DNI (Será su usuario inicial)</label>
-<input type="number" id="dniUsuario" placeholder="Ej: 35123456" pattern="[0-9]+" inputmode="numeric" required>
+
+<!-- CAMPO 2: DNI (COLUMNA 2 DE 3) -->
+<div class="col-span-12 md:col-span-4">
+    <label class="block text-sm font-medium text-gray-700">DNI (Será su usuario inicial)</label>
+    <input type="text" id="dniUsuario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
 </div>
-<div class="input-group">
-<label for="emailUsuario">Correo Electrónico</label>
-<input type="email" id="emailUsuario" placeholder="ejemplo@haspen.edu.ar" required>
+
+<!-- CAMPO 3: CORREO ELECTRÓNICO (COLUMNA 3 DE 3) -->
+<div class="col-span-12 md:col-span-4">
+    <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+    <input type="email" id="emailUsuario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
 </div>
-<div class="input-group">
-<label for="rolUsuario">Seleccionar Cargo / Rol Base</label>
-<select id="rolUsuario" required>
-<option value="" disabled selected>Seleccione un rol...</option>
-</select>
+
+<!-- CAMPO 4: SELECCIONAR CARGO / ROL BASE (COLUMNA 1 DE 3) -->
+<div class="col-span-12 md:col-span-4">
+    <label class="block text-sm font-medium text-gray-700">Seleccionar Cargo / Rol Base</label>
+    <select id="rolUsuario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+        <!-- Las opciones se cargan dinámicamente -->
+    </select>
 </div>
-<div class="input-group">
-<label for="claveUsuario">Contraseña Inicial</label>
-<input type="password" id="claveUsuario" placeholder="Mínimo 6 caracteres">
+
+<!-- CAMPO 5: CONTRASEÑA INICIAL (COLUMNA 2 DE 3) -->
+<div class="col-span-12 md:col-span-4">
+    <label class="block text-sm font-medium text-gray-700">Contraseña Inicial</label>
+    <input type="password" id="claveUsuario" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Mínimo 6 caracteres">
 </div>
-<div class="input-group">
-<label for="confirmarClaveUsuario">Confirmar Contraseña</label>
-<input type="password" id="confirmarClaveUsuario" placeholder="Repita la contraseña">
+
+<!-- CAMPO 6: CONFIRMAR CONTRASEÑA (COLUMNA 3 DE 3) -->
+<div class="col-span-12 md:col-span-4">
+    <label class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+    <input type="password" id="confirmarClaveUsuario" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Repita la contraseña">
 </div>
+
 <!-- Checkbox de Habilitación de Función Docente Simultánea -->
 <div id="bloqueCheckProfesor" class="contenedor-multirrol-check">
 <input type="checkbox" id="checkEsProfesor">
