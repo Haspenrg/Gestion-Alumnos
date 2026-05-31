@@ -602,9 +602,12 @@ function renderizarFilasEnTabla(alumnos) {
             ? `<span class="documentos-completos">✓ Completo (6/6)</span>`
             : `<span class="alerta-documentos">⚠ Incompleto (${cargados}/6)</span>`;
 
-        const celdaInclusion = alumno.tienePPI
-            ? `<span style="color:#e056fd; font-weight:bold; font-size:11px;">✨ Con PPI (${alumno.ppi?.resolucion || 'S/D'})</span>`
-            : `<span style="color:#94a3b8; font-size:11px;">Estándar</span>`;
+                const celdaInclusion = (alumno.trayectoriaPPI === true || alumno.tienePPI === true)
+            ? `<span style="color:#e056fd; font-weight:bold; font-size:11px;">🗲 Con PPI</span>`
+            : (alumno.trayectoriaFlexible === true
+                ? `<span style="color:#0ea5e9; font-weight:bold; font-size:11px;">🗲 Flexible</span>`
+                : `<span style="color:#94a3b8; font-size:11px;">Estándar</span>`);
+
 
             // ====== PARCHE GENERALIZADO: Botones de visualización para todos los usuarios de Solo Lectura ======
     let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
