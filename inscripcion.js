@@ -54,7 +54,30 @@ async function inicializarModuloInscripciones() {
     usuarioLogueado = JSON.parse(datosSesionRaw);
     rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
 
-    if (rolNormalizado === "preceptor") {
+        // Variables globales de control por capacidad
+    window.permisoMatricula = "ninguno";
+    window.esSoloLectura = true;
+
+    try {
+        // Consultamos la matriz de permisos real en la colección "roles" de Firestore
+        const docRefRol = doc(db, "roles", rolNormalizado);
+        const snapRol = await getDoc(docRefRol);
+        
+        if (snapRol.exists()) {
+            const datosRol = snapRol.data();
+            window.permisoMatricula = datosRol.permisos?.legajoDigital ? datosRol.permisos.legajoDigital.toLowerCase().trim() : "ninguno";
+        } else if (rolNormalizado.includes("admin")) {
+            window.permisoMatricula = "escritura";
+        }
+
+        // Definimos la capacidad basada en el nivel del módulo
+        window.esSoloLectura = (window.permisoMatricula !== "escritura");
+    } catch (errSecurity) {
+        console.warn("Fallo de sincronización RBAC. Aplicando Solo Lectura preventivo.");
+        window.esSoloLectura = true;
+    }
+
+    if (window.esSoloLectura === true) {
         const formulario = document.getElementById('contenedorFormularioAlta');
         const banner = document.getElementById('bannerPreceptor');
         if (formulario) formulario.style.display = "none";
@@ -386,7 +409,7 @@ async function inicializarSelectoresCursosDesdeCloud() {
 
 function gestionarHabilitacionBotoneraLote() {
     const cursoSeleccionado = selectCursoFiltro.value;
-    const deshabilitar = (cursoSeleccionado === "");
+    const deshabilitar = (cursoSeleccionado === "" || cursoSeleccionado === "todos");
     if (btnLoteInforme) btnLoteInforme.disabled = deshabilitar;
     if (btnLoteBoletin) btnLoteBoletin.disabled = deshabilitar;
 }
@@ -420,19 +443,21 @@ async function procesarFiltrosYNomina() {
     // TOTAL MATRÍCULAS POR CICLO (Fijo y absoluto: No lo alteran los filtros secundarios)
     const totalMatriculasBrutasSinFiltro = listaAlumnos.filter(alumno => alumno.cicloLectivo === ciclo).length;
 
-    if (rolNormalizado.includes("preceptor")) {
-        try {
-            const usersSnapshot = await getDocs(collection(db, "usuarios"));
-            let usuarios = [];
-            usersSnapshot.forEach(u => usuarios.push(u.data()));
-            const preceptorReal = usuarios.find(u => u.dni === usuarioLogueado.dni);
-            const cursosAsignados = preceptorReal ? (preceptorReal.cursosAsignados || []) : [];
-            // Los pases y bajas siguen estando visibles para auditoría del preceptor si pertenecían a sus cursos
-            listaAlumnos = listaAlumnos.filter(a => cursosAsignados.includes(a.cursoId));
-        } catch (err) {
-            console.error("Fallo relacional en matriz de preceptoría:", err);
+       // =========================================================================
+    // UBICACIÓN: Líneas 446 a 458 (Filtro por trayectoria institucional)
+    // REPARACIÓN: Restricción por territorio explícito (Aplica a preceptores comunes)
+    // =========================================================================
+    if (window.esSoloLectura === true) {
+        // Obtenemos los cursos asignados que ya vienen en el usuario logueado de la sesión
+        const cursosPermitidos = usuarioLogueado.cursosAsignados || [];
+        
+        // REGLA SENIOR: Si tiene cursos asignados en su ficha, se restringe (Preceptor).
+        // Si el arreglo está vacío, es un rango superior y ve toda la escuela (Jefe / Directivo).
+        if (cursosPermitidos.length > 0) {
+            listaAlumnos = listaAlumnos.filter(al => cursosPermitidos.includes(al.cursoId));
         }
     }
+
 
     let alumnosFiltrados = listaAlumnos.filter(alumno => {
         if (alumno.cicloLectivo !== ciclo) return false;
@@ -553,21 +578,29 @@ function renderizarFilasEnTabla(alumnos) {
         `;
     } else {
         // Modo Consulta (Preceptores / Solo Lectura): Conserva el botón Datos con su mapeo flexible
+        // =========================================================================
+    // UBICACIÓN: Líneas 581 a 594 (Contenedor de Acciones en Modo Consulta)
+    // REPARACIÓN: Unificación de iconos nativos compactos anti-amontonamiento
+    // =========================================================================
         accionesHTML = `
-        <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
-            <button type="button" class="btn-accion-fila btn-fila-ficha" 
-                data-nombre="${nombreEstudianteValido}" 
-                data-direccion="${direccionEstudianteValida}" 
-                data-tel1="${alumno.telefono1 || 'No registrado'}" 
-                data-tel2="${alumno.telefono2 || 'Ninguno'}" 
-                data-tutor="${alumno.nombreTutor || 'No registrado'}" 
-                data-tutordni="${alumno.dniTutorAlumno || 'Sin registrar'}" 
-                data-dni="${alumno.dni}" style="background:#4b5563;" title="Ver Datos de Contacto">👁 Datos</button>
-            <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}">Informe</button>
-            <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}">Boletín</button>
-        </div>
+            <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
+                <button type="button" class="btn-accion-fila btn-fila-ficha" 
+                    data-nombre="${nombreEstudianteValido}" 
+                    data-direccion="${direccionEstudianteValida}" 
+                    data-tel1="${alumno.telefono1 || 'No registrado'}" 
+                    data-tel2="${alumno.telefono2 || 'Ninguno'}" 
+                    data-tutor="${alumno.nombreTutor || 'No registrado'}" 
+                    data-tutordni="${alumno.dniTutorAlumno || 'Sin registrar'}" 
+                    data-dni="${alumno.dni}" 
+                    style="background: #4b5563;" title="Ver Datos de Contacto">👁️</button>
+                
+                <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨️</button>
+                <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📄</button>
+            </div>
         `;
     }
+
+    
 
                // Parche Seguro: Limpieza automática de nombres duplicados de la carga masiva
         let nombreParaMostrar = alumno.nombre || "";
