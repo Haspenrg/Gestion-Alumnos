@@ -77,17 +77,55 @@ async function inicializarModuloInscripciones() {
         window.esSoloLectura = true;
     }
 
-    if ( window. esSoloLectura === true) {
+        if ( window. esSoloLectura === true) {
         const formulario = document. getElementById('contenedorFormularioAlta');
         const banner = document. getElementById('bannerPreceptor');
         if ( formulario) formulario. style. display = "none";
         if ( banner) banner. style. display = "block";
-        // Agregamos la clase de control para el modo solo lectura
         document.body.classList.add('modo-lectura-activo');
     }
 
     inicializarCiclosLectivosDinamicos();
     await inicializarSelectoresCursosDesdeCloud();
+
+    // FILTRO REAL DE PRECEPTORES: Consulta a Firebase usando el DNI de la sesión activa
+    const sesionLocal = localStorage.getItem('usuarioActivo');
+    if (window.esSoloLectura === true && selectCursoFiltro && window.cachedCursosColegio && sesionLocal) {
+        const usuarioReal = JSON.parse(sesionLocal);
+        
+        // Vamos a la base de datos a buscar el documento de este usuario usando su DNI
+        if (usuarioReal.dni) {
+            getDoc(doc(db, "usuarios", usuarioReal.dni)).then((userDocSnap) => {
+                if (userDocSnap.exists()) {
+                    const datosNube = userDocSnap.data();
+                    // Extraemos los cursosAsignados directos de la base de datos (Ej: ["1-A-M", "1-B-M"])
+                    const permitidos = datosNube.cursosAsignados || [];
+                    
+                    if (permitidos.length > 0) {
+                        const cursosFiltrados = window.cachedCursosColegio.filter(curso => {
+                            const nombreFormateado = `${curso.ciclo} "${curso.division}"`;
+                            return permitidos.includes(curso.id) || permitidos.includes(nombreFormateado);
+                        });
+                        
+                        selectCursoFiltro.innerHTML = '<option value="">Todos los Cursos</option>';
+                        cursosFiltrados.forEach(curso => {
+                            const numeroAnio = curso.ciclo ? curso.ciclo.charAt(0) : "1";
+                            selectCursoFiltro.add(new Option(`${numeroAnio}° "${curso.division}"`, curso.id));
+                        });
+                        
+                        // Forzamos a la tabla a refrescarse con el primer curso permitido de la lista
+                        if (cursosFiltrados.length > 0 && typeof procesarFiltrosYNomina === 'function') {
+                            selectCursoFiltro.value = cursosFiltrados[0].id;
+                            procesarFiltrosYNomina();
+                        }
+                    }
+                }
+            }).catch(err => console.error("Error al recuperar cursos del preceptor:", err));
+        }
+    }
+
+
+
     await procesarFiltrosYNomina();
     inicializarManejadoresArchivosDigitales();
     inicializarManejadorReactivoPPI();
@@ -387,27 +425,34 @@ function evaluarEstadoMesaEntrada() {
 async function inicializarSelectoresCursosDesdeCloud() {
     const selectForm = document.getElementById('selectCursoAlumno');
     if (!selectForm || !selectCursoFiltro) return;
+    
     selectForm.innerHTML = '<option value="" disabled selected>Seleccione el curso destino...</option>';
     selectCursoFiltro.innerHTML = '<option value="">Todos los Cursos</option>';
 
     try {
         const querySnapshot = await getDocs(collection(db, "cursos"));
         const listaCursos = [];
-        querySnapshot.forEach(docSnap => {
-            listaCursos.push(docSnap.data());
+        querySnapshot.forEach((docSnap) => {
+            // Guardamos el ID del documento de Firebase junto con sus datos
+            listaCursos.push({ id: docSnap.id, ...docSnap.data() });
         });
+
         listaCursos.sort((a, b) => (a.ciclo || "").localeCompare(b.ciclo || ""));
         window.cachedCursosColegio = listaCursos;
+
         listaCursos.forEach(curso => {
             const texto = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
             selectForm.add(new Option(texto, curso.id));
             const numeroAnio = curso.ciclo ? curso.ciclo.charAt(0) : "1";
-            selectCursoFiltro.add(new Option(`${numeroAnio} ° "${curso.division}"`, curso.id));
+            selectCursoFiltro.add(new Option(`${numeroAnio}° "${curso.division}"`, curso.id));
         });
     } catch (error) {
         console.error("Fallo al descargar la grilla de cursos:", error);
     }
 }
+
+
+
 
 function gestionarHabilitacionBotoneraLote() {
     const cursoSeleccionado = selectCursoFiltro.value;

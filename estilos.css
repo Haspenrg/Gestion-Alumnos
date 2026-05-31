@@ -462,3 +462,10 @@ body.modo-lectura-activo .workspace-layout {
     display: block !important;
     width: 100% !important;
 }
+/* ==========================================================================
+REDUCCIÓN DE ALTO DE FILAS EXCLUSIVO MODO LECTURA
+========================================================================== */
+body.modo-lectura-activo .tabla-alumnos td,
+body.modo-lectura-activo .tabla-alumnos th {
+    padding: 6px 12px !important;
+}
