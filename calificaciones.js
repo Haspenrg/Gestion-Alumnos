@@ -14,7 +14,10 @@
     // Variables de contexto operativo
     let usuarioLogueado = null;
     let rolNormalizado = "";
-    let esModoLectura = false; 
+    let esModoLectura = false;
+    let permiteCargaTotalNotas = false;
+    const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+
 
     document.addEventListener("DOMContentLoaded", async () => {
         await verificarAutenticacion();
@@ -36,6 +39,8 @@
 
         usuarioLogueado = JSON.parse(datosSesion);
         rolNormalizado = usuarioLogueado.rol.toLowerCase().trim();
+        permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
+
 
         // Directivos entran de forma global en modo lectura sobre la planta institucional
         if (rolNormalizado === "directivo") {
@@ -58,7 +63,7 @@
         const bolsaDocente = usuarioReal.bolsaHoras || usuarioReal.bolsaHours || [];
 
         // Si es profesor o tiene la función activa (incluso siendo preceptor en otro módulo)
-        if (rolNormalizado === "profesor" || usuarioLogueado.esProfesor) {
+       if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
             cursos.forEach(curso => {
                 const divLimpia = curso.division.toLowerCase().trim();
                 
@@ -107,7 +112,7 @@
         const bolsaDocente = profesorReal.bolsaHoras || profesorReal.bolsaHours || [];
         const divLimpia = cursoEncontrado.division.toLowerCase().trim();
 
-        if (rolNormalizado === "profesor" || profesorReal.esProfesor) {
+        if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
             cursoEncontrado.materias.forEach(materia => {
                 const matLimpia = materia.toLowerCase().trim();
 
@@ -144,11 +149,37 @@
         const materiaId = selectMateria.value;
         if (!cursoId || !materiaId) return;
 
-        tablaNotasBody.innerHTML = "";
+        tablaNotasBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:15px; color:#1a73e8; font-weight:500;">🔄 Descargando nómina real desde Cloud Firestore...</td></tr>`;
 
-        const usuariosRaw = localStorage.getItem('usuariosColegio');
-        const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
-        
+let usuarios = [];
+let alumnosReales = [];
+
+try {
+    // 1. Importación modular usando la CDN fragmentada 'b' de la cabecera
+    const { collection, getDocs, query, where } = await import(b + 'firebase-firestore.js');
+    
+    // 2. Descarga en lote de los usuarios del colegio para el mapeo de docentes/preceptores
+    const usuariosSnapshot = await getDocs(collection(db, "usuarios"));
+    usuarios = usuariosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // 3. Descarga y filtrado en caliente de alumnos regulares asignados a este curso
+    const alumnosSnapshot = await getDocs(collection(db, "alumnos"));
+    alumnosReales = alumnosSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(al => al.cursoId === cursoId && al.estado === "Regular");
+
+    // 4. Ordenamiento alfabético por apellido y nombre
+    alumnosReales.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+} catch (error) {
+    console.error("Error en la sincronización viva con Firestore:", error);
+    // Mecanismo de respaldo local si falla la conexión
+    const usuariosRaw = localStorage.getItem('usuariosColegio');
+    usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
+}
+
+tablaNotasBody.innerHTML = "";
+
         const cursosRaw = localStorage.getItem('cursosColegio');
         const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
         const cursoActual = cursos.find(c => c.id === cursoId) || {};
@@ -177,9 +208,7 @@
             console.error("Error al procesar cabeceras:", err);
         }
 
-        const alumnosRaw = localStorage.getItem('alumnosColegio');
-        const alumnos = alumnosRaw ? JSON.parse(alumnosRaw) : [];
-        const alumnosCurso = alumnos.filter(a => a.cursoId === cursoId && a.estado === "Regular");
+        const alumnosCurso = alumnosReales;    
 
         if (alumnosCurso.length === 0) {
             tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">No hay alumnos Regulares inscritos en esta división estructural.</td></tr>`;

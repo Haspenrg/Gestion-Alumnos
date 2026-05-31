@@ -232,6 +232,64 @@ grid-template-columns: 2fr 1fr;
     padding: 4px 8px !important;
     font-size: 12px !important;
 }
+/* AJUSTES PARA LA SECCIÓN DE USUARIOS REGISTRADOS */
+
+/* 1. Aplica el mismo borde azul al contenedor de abajo */
+.tabla-usuarios-container, 
+#formUsuario + div.bg-white,
+div.form-registro-usuario + div {
+    border: 2px solid #1a73e8 !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+}
+
+/* 2. Centra el título "Usuarios Registrados" y le da un tono formal */
+div.form-registro-usuario + div h3,
+.tabla-usuarios-container h3,
+h3:contains("Usuarios Registrados") {
+    text-align: center !important;
+    width: 100% !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin-bottom: 12px !important;
+}
+
+/* 3. Hace que los campos de búsqueda y filtro de auditoría sean más finos */
+#buscarUsuario,
+#filtroAuditoria,
+div.form-registro-usuario + div input[type="text"],
+div.form-registro-usuario + div select {
+    height: 32px !important;
+    padding: 4px 10px !important;
+    font-size: 13px !important;
+}
+
+/* 4. Sube los títulos de las columnas de la tabla (reduce el espacio superior) */
+.thead-usuarios th,
+table th {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    font-size: 12px !important;
+    background-color: #f8fafc !important;
+}
+
+/* 5. Junta mucho más a los usuarios entre sí (filas bien compactas) */
+.tbody-usuarios td,
+table td {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+}
+
+/* 6. Reduce el tamaño de los botones Editar y Borrar para acompañar el diseño fino */
+table button,
+table a {
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    height: auto !important;
+}
 
 </style>
 </head>
@@ -292,12 +350,20 @@ grid-template-columns: 2fr 1fr;
 </div>
 
 <!-- Checkbox de Habilitación de Función Docente Simultánea -->
-<div id="bloqueCheckProfesor" class="contenedor-multirrol-check">
-<input type="checkbox" id="checkEsProfesor">
-<label for="checkEsProfesor" style="margin: 0; font-weight: 600; color: #b78103; cursor: pointer; font-size: 13px;">
-¿Este usuario también dicta materias frente a curso como Profesor / Horas Cátedra?
-</label>
+<div class="contenedor-multirrol-check" style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+    <!-- Opción Docente (Existente) -->
+    <label class="checkbox-label-personalizado" style="display: flex; align-items: center; margin: 0;">
+        <input type="checkbox" id="checkEsProfesor">
+        <span style="margin-left: 8px;">¿Este usuario también dicta materias frente a curso como Profesor / Horas Cátedra?</span>
+    </label>
+
+    <!-- Nueva Opción: Permiso Global de Notas -->
+    <label class="checkbox-label-personalizado" style="display: flex; align-items: center; margin: 0; border-top: 1px solid #fef08a; padding-top: 6px;">
+        <input type="checkbox" id="permiteCargaTotalNotasAlta">
+        <span style="margin-left: 8px; font-weight: 700; color: #854d0e;">¿Habilitar carga total de calificaciones de forma global para este usuario?</span>
+    </label>
 </div>
+
 <!-- Campos Dinámicos Responsivos para Preceptores -->
 <div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
 <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Responsabilidad (2 Cursos Estructurales)</label>
@@ -351,7 +417,7 @@ grid-template-columns: 2fr 1fr;
 </div>
 <!-- Sección 2: Tabla de Datos con Barra de Auditoría Masiva -->
 <div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">
-<h3 style="color: #333; margin-bottom: 5px;">Usuarios Registrados</h3>
+<h3 class="text-lg font-bold text-gray-800 mb-2 text-center" style="text-align: center !important; width: 100% !important; color: #1e293b; font-size: 20px;">Usuarios Registrados</h3>
 <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Utilice la barra de controles inferiores para auditar superpoblaciones o buscar perfiles.</p>
 <div class="grid-barra-auditoria">
 <div>

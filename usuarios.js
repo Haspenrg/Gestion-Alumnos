@@ -145,23 +145,20 @@ async function cargarRolesEnSelector() {
 
 // ====== PARCHE MODULAR: Consulta compatible con Firebase v9/v10 ======
 async function inicializarSelectoresCursos() {
+let cursos = [];
+try {
+    // Consulta directa y limpia a Firebase Firestore para traer la planta completa
+    const cursosRef = collection(db, 'cursos');
+    const querySnapshot = await getDocs(cursosRef);
+    cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+} catch (error) {
+    console.error("Error al traer cursos desde firestore:", error);
+    // Si falla Firebase, usa el respaldo local para que el sistema no se rompa
     let cursosRaw = localStorage.getItem('cursosColegio');
-    let cursos = [];
+    if (cursosRaw) cursos = JSON.parse(cursosRaw);
+}
 
-    // FALLBACK: Si no hay datos en local, los descargamos usando la sintaxis modular correcta
-    if (!cursosRaw) {
-        try {
-            // Importante: Usamos la función collection() global pasándole 'db' como argumento
-            const cursosRef = collection(db, 'cursos');
-            const querySnapshot = await getDocs(cursosRef);
-            cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            localStorage.setItem('cursosColegio', JSON.stringify(cursos));
-        } catch (error) {
-            console.error("Error al traer cursos desde Firestore:", error);
-        }
-    } else {
-        cursos = JSON.parse(cursosRaw);
-    }
 
     const selectPrep1 = document.getElementById('altaAnio1');
     const selectPrep2 = document.getElementById('altaAnio2');
@@ -371,6 +368,7 @@ async function procesarGuardarUsuario(e) {
     const email = document.getElementById('emailUsuario').value.trim();
     const rol = document.getElementById('rolUsuario').value.toLowerCase().trim();
     const esProfesor = document.getElementById('checkEsProfesor').checked;
+    const permiteCargaTotalNotas = document.getElementById('permiteCargaTotalNotasAlta').checked;
     const dniOriginal = document.getElementById('dniOriginalEdicion').value;
 
         // ====== PARCHE: Corrección tipográfica de captura de contraseña ======
@@ -442,7 +440,8 @@ async function procesarGuardarUsuario(e) {
             rol: rol,
             esProfesor: esProfesor,
             cursosAsignados: rolesCursos,
-            bolsaHoras: bolsaFinal
+            bolsaHoras: bolsaFinal,
+            permiteCargaTotalNotas: permiteCargaTotalNotas // <- Guarda la bandera en Firebase
         };
 
         if (!dniOriginal) {
@@ -669,6 +668,7 @@ window.activarModoEdicion = async function(dni) {
     document.getElementById('emailUsuario').value = usuario.email || "";
     document.getElementById('rolUsuario').value = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
     document.getElementById('checkEsProfesor').checked = usuario.esProfesor || false;
+    document.getElementById('permiteCargaTotalNotasAlta').checked = usuario.permiteCargaTotalNotas || false;
     document.getElementById('dniOriginalEdicion').value = usuario.dni;
     document.getElementById('formTitulo').textContent = "Modificar Datos de Usuario";
 
@@ -721,6 +721,7 @@ function desactivarModoEdicion() {
     if (confirmarClaveUsuario) confirmarClaveUsuario.value = "";
 
     document.getElementById('checkEsProfesor').checked = false;
+    document.getElementById('permiteCargaTotalNotasAlta').checked = false;
     catedrasTemporales = [];
     actualizarTagsBolsaHoras();
     gestionarPanelesFormulario();
