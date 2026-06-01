@@ -28,6 +28,7 @@ const nombreApellido = document.getElementById('nombreApellido');
 const dniUsuario = document.getElementById('dniUsuario');
 const emailUsuario = document.getElementById('emailUsuario');
 const rolUsuario = document.getElementById('rolUsuario');
+const checkGestionPeriodos = document. getElementById('checkGestionPeriodos');
 const checkEsProfesor = document.getElementById('checkEsProfesor');
 const dniOriginalEdicion = document.getElementById('dniOriginalEdicion');
 const formTitulo = document.getElementById('formTitulo');
@@ -369,6 +370,7 @@ async function procesarGuardarUsuario(e) {
     const rol = document.getElementById('rolUsuario').value.toLowerCase().trim();
     const esProfesor = document.getElementById('checkEsProfesor').checked;
     const permiteCargaTotalNotas = document.getElementById('permiteCargaTotalNotasAlta').checked;
+    const valorGestionPeriodos = document.getElementById('checkGestionPeriodos').checked;
     const dniOriginal = document.getElementById('dniOriginalEdicion').value;
 
         // ====== PARCHE: Corrección tipográfica de captura de contraseña ======
@@ -441,7 +443,8 @@ async function procesarGuardarUsuario(e) {
             esProfesor: esProfesor,
             cursosAsignados: rolesCursos,
             bolsaHoras: bolsaFinal,
-            permiteCargaTotalNotas: permiteCargaTotalNotas // <- Guarda la bandera en Firebase
+            permiteCargaTotalNotas: permiteCargaTotalNotas,
+            permisoGestionPeriodos: valorGestionPeriodos
         };
 
         if (!dniOriginal) {
@@ -669,6 +672,7 @@ window.activarModoEdicion = async function(dni) {
     document.getElementById('rolUsuario').value = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
     document.getElementById('checkEsProfesor').checked = usuario.esProfesor || false;
     document.getElementById('permiteCargaTotalNotasAlta').checked = usuario.permiteCargaTotalNotas || false;
+    document.getElementById('checkGestionPeriodos').checked = usuario.permisoGestionPeriodos || false;
     document.getElementById('dniOriginalEdicion').value = usuario.dni;
     document.getElementById('formTitulo').textContent = "Modificar Datos de Usuario";
 
@@ -722,6 +726,7 @@ function desactivarModoEdicion() {
 
     document.getElementById('checkEsProfesor').checked = false;
     document.getElementById('permiteCargaTotalNotasAlta').checked = false;
+    document.getElementById('checkGestionPeriodos').checked = false;
     catedrasTemporales = [];
     actualizarTagsBolsaHoras();
     gestionarPanelesFormulario();

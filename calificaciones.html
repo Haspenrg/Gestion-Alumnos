@@ -147,10 +147,13 @@
             </div>
 
             <!-- Panel Informativo Informatizado de Cátedra -->
-            <div id="infoCatedraDocente" style="display: flex; flex-direction: column; justify-content: center; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                <span>👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
-                <span style="margin-top: 4px;">🛡️ <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
-            </div>
+            <div id="infoCatedraDocente" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; background: #ffffff; padding: 12px 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; font-size: 14px;">
+        <div style="display: flex; flex-direction: column; justify-content: center;">
+            <span>👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
+            <span style="margin-top: 4px;">🛡️ <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
+        </div>
+        <button type="button" id="btnAbrirModalPeriodos" style="display: none; background: #1b4d82; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; align-items: center; gap: 4px;">⚙️ Control Períodos</button>
+    </div>
         </div>
 
         <!-- Banner de advertencia de solo lectura para Preceptores/Directivos -->
