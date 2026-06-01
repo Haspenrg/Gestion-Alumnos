@@ -229,12 +229,16 @@ tablaNotasBody.innerHTML = "";
             const persistenciaNota = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === cursoId && n.materia === materiaId) || {};
             const d = persistenciaNota.notas || { trim1: {}, trim2: {} };
 
-            const esPPI = alumno.nombre.toUpperCase().includes("PPI") || (alumno.observaciones && alumno.observaciones.toUpperCase().includes("PPI"));
-            const badgePPI = esPPI ? '<span class="tag-ppi">PPI</span>' : '';
+            let badgePPI = "";
+        if (alumno.tienePPI === true || alumno.trayectoriaPPI === true || alumno.nombre.toUpperCase().includes("PPI")) {
+            badgePPI = ` <span style="display:inline-block; background-color:#fae8ff; color:#a21caf; border:1px solid #f0abfc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 PPI</span>`;
+        } else if (alumno.trayectoriaFlexible === true) {
+            badgePPI = ` <span style="display:inline-block; background-color:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 Flex</span>`;
+        }
 
-            tr.innerHTML = `
-                <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${index + 1}</td>
-                <td style="font-weight:500; padding: 2px 4px;">${alumno.nombre} ${badgePPI}<br><span style="font-size:11px; color:#94a3b8;">DNI: ${alumno.dni}</span></td>
+            tr. innerHTML = `
+                <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${ index + 1}</td>
+                <td style="font-weight:500; padding: 2px 4px;">${ alumno. nombre} ${ badgePPI}</td>
                 <!-- 1ER CUATRIMESTRE -->
                 <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d.trim1?.n1 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
                 <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d.trim1?.n2 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
