@@ -31,13 +31,14 @@
         .cabecera-planilla {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 15px;
+            gap: 8px;
             background: #f8fafc;
-            padding: 15px;
+            padding: 6px 12px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
+
         @media (min-width: 768px) {
             .cabecera-planilla {
                 grid-template-columns: 1fr 1fr 1fr;
@@ -132,20 +133,20 @@
         <div class="cabecera-planilla">
             <div class="input-group" style="margin: 0;">
                 <label for="selectCursoNotas" style="font-size: 12px; color: #475569;">Curso / División Destino:</label>
-                <select id="selectCursoNotas" style="height: 40px;" required>
+                <select id="selectCursoNotas" style="height: 32px; font-size: 13px; padding: 4px;" required>
                     <option value="" disabled selected>Seleccione estructura...</option>
                 </select>
             </div>
             
             <div class="input-group" style="margin: 0;">
                 <label for="selectMateriaNotas" style="font-size: 12px; color: #475569;">Asignatura / Espacio Curricular:</label>
-                <select id="selectMateriaNotas" style="height: 40px;" required>
+                <select id="selectMateriaNotas" style="height: 32px; font-size: 13px; padding: 4px;" required>
                     <option value="" disabled selected>Seleccione primero un curso...</option>
                 </select>
             </div>
 
             <!-- Panel Informativo Informatizado de Cátedra -->
-            <div id="infoCatedraDocente" style="display: flex; flex-direction: column; justify-content: center; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1; font-size: 12px; color: #64748b; text-align: left;">
+            <div id="infoCatedraDocente" style="display: flex; flex-direction: column; justify-content: center; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
                 <span>👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
                 <span style="margin-top: 4px;">🛡️ <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
             </div>

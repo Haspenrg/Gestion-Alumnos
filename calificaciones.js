@@ -233,23 +233,24 @@ tablaNotasBody.innerHTML = "";
             const badgePPI = esPPI ? '<span class="tag-ppi">PPI</span>' : '';
 
             tr.innerHTML = `
-                <td style="text-align:center; font-weight:bold; color:#64748b;">${index + 1}</td>
-                <td style="font-weight:500;">${alumno.nombre} ${badgePPI}<br><span style="font-size:11px; color:#94a3b8;">DNI: ${alumno.dni}</span></td>
+                <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${index + 1}</td>
+                <td style="font-weight:500; padding: 2px 4px;">${alumno.nombre} ${badgePPI}<br><span style="font-size:11px; color:#94a3b8;">DNI: ${alumno.dni}</span></td>
                 <!-- 1ER CUATRIMESTRE -->
-                <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada">-</td>
+                <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d.trim1?.n1 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d.trim1?.n2 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d.trim1?.ef || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
                 <!-- 2DO CUATRIMESTRE -->
-                <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada">-</td>
+                <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d.trim2?.n1 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d.trim2?.n2 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d.trim2?.ef || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
                 <!-- INSTANCIAS ANUALES DE EXAMEN -->
-                <td class="col-calculada">-</td>
-                <td><input type="number" class="input-nota inst-dic" min="1" max="10" value="${persistenciaNota.diciembre || ''}" data-dni="${alumno.dni}" disabled></td>
-                <td><input type="number" class="input-nota inst-feb" min="1" max="10" value="${persistenciaNota.febrero || ''}" data-dni="${alumno.dni}" disabled></td>
-                <td class="col-calculada">-</td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+                <td><input type="number" class="input-nota inst-dic" min="1" max="10" value="${persistenciaNota.diciembre || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td><input type="number" class="input-nota inst-feb" min="1" max="10" value="${persistenciaNota.febrero || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
+
             `;
 
             tablaNotasBody.appendChild(tr);
