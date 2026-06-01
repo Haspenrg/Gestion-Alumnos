@@ -17,9 +17,12 @@
     let esModoLectura = false;
     let permiteCargaTotalNotas = false;
     const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+    let db = null;
 
 
     document.addEventListener("DOMContentLoaded", async () => {
+        db = (await import('./firebase-config.js')).db;
+
         await verificarAutenticacion();
         await cargarSelectoresIniciales();
 
