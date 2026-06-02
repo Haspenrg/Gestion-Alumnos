@@ -10,7 +10,7 @@ const mApp = await import(b + 'firebase-app.js');
 // Instancia secundaria aislada para registrar credenciales sin desloguear al Admin
 const firebaseConfigSecondary = {
     apiKey: "AIzaSyBP3iHdEsCnQSABsxEDDR4RNZ1M06MJyvo",
-    authDomain: "://firebaseapp.com",
+    authDomain: "gestion-alumnos-eeb24" + "." + "firebaseapp" + "." + "com",
     projectId: "gestion-alumnos-eeb24",
     storageBucket: "gestion-alumnos-eeb24.firebasestorage.app",
     messagingSenderId: "824391106851",
@@ -420,20 +420,16 @@ async function procesarGuardarUsuario(e) {
                 return;
             }
             try {
-                // Corrección de sintaxis estricta modular v10 para la instancia secundaria
                 await mAuth.createUserWithEmailAndPassword(secondaryAuth, email, valClave);
                 await mAuth.signOut(secondaryAuth);
             } catch (authError) {
                 console.error("Error al registrar credenciales en Firebase Auth:", authError);
-                if (authError.code === "auth/email-already-in-use") {
-                    console.log("El correo ya existía en el canal de autenticación.");
-                } else {
+                if (authError.code !== "auth/email-already-in-use") {
                     alert("Error Auth: " + authError.message);
                     return;
                 }
             }
         }
-
         const bolsaFinal = (rol === "profesor" || esProfesor) ? [...catedrasTemporales] : [];
         const payloadUsuario = {
             dni: dni,
