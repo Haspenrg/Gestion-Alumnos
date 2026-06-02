@@ -218,7 +218,7 @@
                 if (nombreCompleto.toLowerCase().includes("apellido") || nombreCompleto === "") continue;
 
                 const cuilRaw = idxCuil > -1 ? fila[idxCuil] : "";
-                const { cuil, gen } = calcularGeneroYCuil(nombreCompleto, cuilRaw, dniRaw);
+                const { cuil, gen } = calcularGeneroyCuil(nombreCompleto, cuilRaw, dniRaw);
 
                 const partes = nombreCompleto.split(',');
                 const ap = partes[0] ? partes[0].trim() : "";
@@ -234,7 +234,7 @@
                 const { cuil: cuilT, gen: genT } = calcularGeneroyCuil(tutor, cuilTutorRaw, dniT);
 
                 alumnosEnMemoria.push({
-                    dni: dniRaw, nombre: `${nom} ${ap}`.trim(), cuil, genero: gen, estado: "Regular", cursoId, cicloLectivo: cicloActual,
+                    dni: dniRaw, nombre: `${nom} ${ap}`.trim(), cuil, genero: gen, estado: "Regular", cursoId, cicloLectivo: cicloActivo,
                     email, telefono1: telephone, nombretutor: tutor, dniTutor: dniT, cuilTutor: cuilT, generoTutor: genT,
                     fechaNacimiento: fmtF(fila[idxF_Nac]),
                     lugarNacimiento: "Río Grande", nacionalidad: "Argentina",
@@ -284,8 +284,6 @@
 
     reader.readAsText(archivoSeleccionado, 'UTF-8');
 }
-
-    reader.readAsText(archivoSeleccionado, 'UTF-8');
 }
 
 async function ejecutarEscrituraFirestore() {
