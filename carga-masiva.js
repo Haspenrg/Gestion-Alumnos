@@ -313,4 +313,3 @@ window.simularCargaCSV = simularCargaCSV;
 window.ejecutarEscrituraFirestore = ejecutarEscrituraFirestore;
 }
 })();
-
