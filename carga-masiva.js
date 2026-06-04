@@ -147,9 +147,19 @@ async function simularCargaCSV(e) {
                         continue;
                     }
 
+                    
+                    if (typeof filasOmitidas === 'undefined') window.filasOmitidas = [];
                     const rawDni = campos[2] ? campos[2].replace(/"/g, '').trim() : "";
                     const dniLimpio = rawDni.replace(/\D/g, '').trim();
-                    if (!dniLimpio) continue;
+
+                    if (!dniLimpio || dniLimpio.length < 6) {
+                        const nombreFila = campos[1] ? campos[1].replace(/"/g, '').trim() : "Desconocido";
+                        if (nombreFila && !nombreFila.includes("APELLIDO")) {
+                            window.filasOmitidas.push(`Línea: ${nombreFila}`);
+                        }
+                        continue;
+                    }
+
 
                     const apellidoYNombre = campos[1] ? campos[1].replace(/"/g, '').trim().toUpperCase() : "";
                     if (!apellidoYNombre || apellidoYNombre.includes("RESGUARDO") || apellidoYNombre.includes("Nº ORDEN")) {
@@ -218,6 +228,11 @@ async function simularCargaCSV(e) {
                 </tr>
                         `;
                     }).join('');
+                }
+
+                if (window.filasOmitidas && window.filasOmitidas.length > 0) {
+                alert(`⚠️ Se omitieron ${window.filasOmitidas.length} filas corruptas o sin DNI válido.`);
+                window.filasOmitidas = [];
                 }
 
                 const resumenText = document.getElementById('resumenSimulacion');
