@@ -31,11 +31,10 @@ async function ejecutarEscrituraFirestore() {
 async function simularCargaCSV(e) {
     try {
         const inputNativo = document.getElementById('csvCargaMasiva');
-        const f = inputNativo ? inputNativo.files : null;
-        if (!f || f.length === 0) return;
+        const files = inputNativo ? inputNativo.files : null;
+        if (!files || files.length === 0) return;
 
-        const archivoSeleccionado = f[0];
-        
+        const archivoSeleccionado = files[0];
         const s = document.getElementById('selectCursoCarga');
         if (!s || !s.value) {
             alert("Por favor, seleccione la sección de destino en el importador.");
@@ -46,69 +45,153 @@ async function simularCargaCSV(e) {
         const cursoid = s.value;
         const cicloActivo = document.getElementById('filtroCicloLectivo')?.value || "2026";
         const rawSelect = s.options[s.selectedIndex].text.toLowerCase();
-        
         const matchNum = rawSelect.match(/\d/);
         const numCurso = matchNum ? matchNum[0] : "";
+        const matchLetra = rawSelect.match(/["'“']?([a-z])["'”']?\s*$/i) || rawSelect.match(/\s+([a-z])$/i);
         
-        const matchLetra = rawSelect.match(/["'“’]?([a-z])["'”’]?\s*$/i) || rawSelect.match(/\s+([a-z])$/i);
         let divCurso = "a";
-        if (matchLetra && matchLetra[1]) {
+        if (matchLetra) {
             divCurso = matchLetra[1].toLowerCase();
         }
-
         const claveCursoBuscado = numCurso + divCurso;
+
+        const alumnosEnBaseLocal = window.cachedAlumnosGlobal || [];
+
         const reader = new FileReader();
-
+        
         reader.onload = async (evt) => {
-            const lineas = evt.target.result.split(/\r?\n/);
-            alumnosEnMemoria = [];
-            
-            for (let i = 1; i < lineas.length; i++) {
-                const fila = lineas[i].trim();
-                if (!fila) continue;
+            try {
+                const lineas = evt.target.result.split(/\r?\n/);
+                alumnosEnMemoria = [];
                 
-                const campos = fila.split(/,|;/);
-                if (campos.length < 3) continue;
+                let cursoRastreadoEnCsv = ""; 
+                const claveFiltroLimpia = claveCursoBuscado.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-                const dniLimpio = campos[0].replace(/\D/g, '').trim();
-                if (!dniLimpio) continue;
+                for (let i = 0; i < lineas.length; i++) {
+                    const fila = lineas[i].trim();
+                    if (!fila) continue;
 
-                alumnosEnMemoria.push({
-                    dni: dniLimpio,
-                    apellido: campos[1].toUpperCase().trim(),
-                    nombre: campos[2].toUpperCase().trim(),
-                    idCursoActual: cursoid,
-                    cursoClave: claveCursoBuscado,
-                    cicloLectivo: cicloActivo,
-                    estado: "REGULAR"
-                });
+                    if (fila.toUpperCase().includes("CURSO:")) {
+                        const camposCurso = fila.split(',');
+                        const celdaCurso = camposCurso.find(c => c.toUpperCase().includes("CURSO:"));
+                        if (celdaCurso) {
+                            cursoRastreadoEnCsv = celdaCurso.toUpperCase().replace("CURSO:", "").toLowerCase().replace(/[^a-z0-9]/g, '');
+                        }
+                        continue;
+                    }
+
+                    if (cursoRastreadoEnCsv !== claveFiltroLimpia) {
+                        continue; 
+                    }
+
+                    const campos = fila.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    if (fila.toUpperCase().includes("APELLIDO Y NOMBRE") || campos.length < 3) {
+                        continue;
+                    }
+
+                    const primerCelda = campos[0] ? campos[0].trim().toUpperCase() : "";
+                    if (primerCelda.includes("CURSO") || primerCelda.includes("PRECEPTOR") || primerCelda === "BAJA") {
+                        continue;
+                    }
+
+                    const rawDni = campos[2] ? campos[2].replace(/"/g, '').trim() : "";
+                    const dniLimpio = rawDni.replace(/\D/g, '').trim();
+                    if (!dniLimpio) continue;
+
+                    const apellidoYNombre = campos[1] ? campos[1].replace(/"/g, '').trim().toUpperCase() : "";
+                    if (!apellidoYNombre || apellidoYNombre.includes("RESGUARDO") || apellidoYNombre.includes("Nº ORDEN")) {
+                        continue;
+                    }
+
+                    if (alumnosEnMemoria.some(al => al.dni === dniLimpio)) continue;
+
+                    const cuilExtraido = campos[3] ? campos[3].replace(/"/g, '').trim() : "";
+                    const fechaNacExtraida = campos[4] ? campos[4].replace(/"/g, '').trim() : "";
+                    const edadExtraida = campos[5] ? campos[5].replace(/"/g, '').trim() : "";
+                    const lugarNacExtraido = campos[6] ? campos[6].replace(/"/g, '').trim() : "";
+                    const nacionalidadExtraida = campos[7] ? campos[7].replace(/"/g, '').trim() : "Argentina";
+                    const domicilioExtraido = campos[8] ? campos[8].replace(/"/g, '').trim() : "";
+                    const telefonoExtraido = campos[9] ? campos[9].replace(/"/g, '').trim() : "";
+                    
+                    const emailDetectado = campos.find(c => c && c.includes('@')) ? campos.find(c => c && c.includes('@')).replace(/"/g, '').trim() : "";
+
+                    const yaExisteEnBaseColegio = alumnosEnBaseLocal.some(alBase => {
+                    const dniBase = alBase && alBase.dni ? String(alBase.dni).replace(/\D/g, '').trim() : '';
+                    return dniBase === dniLimpio;
+                    });
+                    const estadoAuditoria = yaExisteEnBaseColegio ? "MODIFICADO" : "NUEVO";
+
+
+                    alumnosEnMemoria.push({
+                        dni: dniLimpio,
+                        nombre: apellidoYNombre,
+                        cuil: cuilExtraido,
+                        fechaNacimiento: fechaNacExtraida,
+                        edad: edadExtraida,
+                        lugarNacimiento: lugarNacExtraido,
+                        nacionalidad: nacionalidadExtraida,
+                        direccion: domicilioExtraido,
+                        telefono1: telefonoExtraido,
+                        emailTutor: emailDetectado,
+                        idCursoActual: cursoid,
+                        cursoClave: claveCursoBuscado,
+                        cicloLectivo: cicloActivo,
+                        auditoria: estadoAuditoria,
+                        estado: "Regular"
+                    });
+                }
+
+                const cuerpoTabla = document.getElementById('tablaSimulacionBody');
+                if (cuerpoTabla) {
+                    cuerpoTabla.innerHTML = alumnosEnMemoria.map(a => {
+                        const badgeStyle = a.auditoria === "MODIFICADO" 
+                            ? "background-color: #ef4444; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;"
+                            : "background-color: #3b82f6; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;";
+
+                        return `
+                            <tr style="border-bottom: 1px solid #cbd5e1; font-size: 13px;">
+                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-family: monospace; color: #333;">${a.dni}</td>
+                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: 500; color: #1e293b;">${a.nombre}</td>
+                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.cuil}</td>
+                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.telefono1 || a.emailTutor}</td>
+                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center;">
+                                    <span style="${badgeStyle}">${a.auditoria}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                const resumenText = document.getElementById('resumenSimulacion');
+                if (resumenText) {
+                    resumenText.innerText = `Sección Destino: ${s.options[s.selectedIndex].text.toUpperCase()} | Registros validados: ${alumnosEnMemoria.length}`;
+                }
+
+                const modal = document.getElementById('modalSimulacionCarga');
+                if (modal) {
+                    modal.style.setProperty('display', 'flex', 'important');
+                }
+
+            } catch (errInterno) {
+                console.error("Error en procesamiento analítico del CSV:", errInterno);
             }
-
-            const cuerpoTabla = document.getElementById('tablaSimulacionCuerpo');
-            if (cuerpoTabla) {
-                cuerpoTabla.innerHTML = alumnosEnMemoria.map(a => `
-                    <tr>
-                        <td style="padding:8px; border:1px solid #1b4d82; color:#333;">${a.dni}</td>
-                        <td style="padding:8px; border:1px solid #1b4d82; color:#333;">${a.apellido}, ${a.nombre}</td>
-                        <td style="padding:8px; border:1px solid #1b4d82; text-align:center;"><span class="badge state-regular" style="background-color:#28a745; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">REGULAR</span></td>
-                    </tr>
-                `).join('');
-            }
-
-            const resumenText = document.getElementById('resumenSimulacion');
-            if (resumenText) {
-                resumenText.innerText = `Sección Destino: ${s.options[s.selectedIndex].text.toUpperCase()} | Registros detectados: ${alumnosEnMemoria.length}`;
-            }
-
-            const modal = document.getElementById('modalSimulacionCarga');
-            if (modal) modal.style.setProperty('display', 'flex', 'important');
         };
 
         reader.readAsText(archivoSeleccionado, 'UTF-8');
+
     } catch (err) {
         console.error("Error crítico controlado en simularCargaCSV:", err);
     }
 }
+
+
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'csvCargaMasiva') {
+        simularCargaCSV(e);
+    }
+});
+
+
 
 function cerrarModal() {
     const modal = document.getElementById('modalSimulacionCarga');
@@ -117,35 +200,36 @@ function cerrarModal() {
     if (inputCsv) inputCsv.value = "";
 }
 
+/* ==========================================================================
+   PARCHE: Preservación de Selección Activa - Gestion-Alumnos
+   ========================================================================== */
 window.poblarCursosCarga = function() {
     const target = document.getElementById('selectCursoCarga');
     if (!target) return;
-
+    
+    // 1. Guardar la selección actual
+    const seleccionActual = target.value; 
+    
     const fuenteCursos = window.cachedCursosColegio || [];
     if (fuenteCursos.length > 0) {
+        // 2. Reconstruir opciones
         target.innerHTML = '<option value="">-- Seleccionar Sección --</option>';
-        
         fuenteCursos.forEach(c => {
-            // CORRECCIÓN FORENSE: Mapeo exacto de las claves reales de tu Firestore
-            const idCurso = c.id || "";
-            
-            // Armamos el nombre visual uniendo Ciclo + División (Ej: 1° Año - Ciclo Básico "A")
-            let nombreVisual = "";
-            if (c.ciclo && c.division) {
-                nombreVisual = `${c.ciclo} "${c.division}"`;
-            } else {
-                nombreVisual = c.ciclo || c.orientacion || idCurso;
-            }
-            
-            if (idCurso) {
+            if (c.id) {
                 const nuevaOpt = document.createElement('option');
-                nuevaOpt.value = idCurso;
-                nuevaOpt.textContent = String(nombreVisual).toUpperCase().trim();
+                nuevaOpt.value = c.id;
+                nuevaOpt.textContent = (c.ciclo && c.division) ? `${c.ciclo} "${c.division}"` : (c.ciclo || c.id);
                 target.appendChild(nuevaOpt);
             }
         });
+
+        // 3. Restaurar la selección previa
+        if (seleccionActual) {
+            target.value = seleccionActual;
+        }
     }
 };
+
 
 
 window.inicializarCargaMasivaSegura = function() {
@@ -172,29 +256,36 @@ window.inicializarCargaMasivaSegura = function() {
 };
 
 
+/* ==========================================================================
+   PARCHE FORENSE: CORRECCIÓN DE DELEGACIÓN CON CLOSEST PARA CLICS INTERNOS
+   ========================================================================== */
 document.addEventListener('click', function(e) {
     if (!e.target) return;
-    if (e.target.id === 'btnCargaMasiva') {
+
+    // Buscamos si el clic ocurrió dentro del botón de carga masiva
+    const botonCarga = e.target.closest('#btnCargaMasiva');
+    if (botonCarga) {
+        e.preventDefault();
         window.poblarCursosCarga();
         const inputCsv = document.getElementById('csvCargaMasiva');
         if (inputCsv) {
             inputCsv.value = "";
-            inputCsv.click();
+            inputCsv.click(); // Ahora sí va a levantar la ventana de Windows siempre
         }
+        return; // Cortamos la ejecución para este caso
     }
-    if (e.target.id === 'btnCerrarSimulacion' || e.target.id === 'btnCerrarSimulacionX' || e.target.id === 'btnCancelarCarga') {
+
+    // Botones de cierre usando closest por seguridad de maquetación
+    if (e.target.closest('#btnCerrarSimulacion') || e.target.closest('#btnCerrarSimulacionX') || e.target.closest('#btnCancelarCarga')) {
         cerrarModal();
     }
+
+    // Botón de confirmación
     if (e.target.id === 'btnConfirmarCarga') {
         ejecutarEscrituraFirestore();
     }
 });
 
-document.addEventListener('change', function(e) {
-    if (e.target && e.target.id === 'csvCargaMasiva') {
-        simularCargaCSV(e);
-    }
-});
 
 // ====== CONTROLÁ QUE EL FINAL ABSOLUTO DE TU ARCHIVO QUEDE ASÍ ======
 window.simularCargaCSV = simularCargaCSV;

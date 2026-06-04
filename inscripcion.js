@@ -550,7 +550,7 @@ async function procesarFiltrosYNomina() {
         tbodyAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No se encontraron legajos con los criterios seleccionados.</td></tr>`;
         return;
     }
-
+    window.cachedAlumnosGlobal = listaAlumnos;
     window.currentAlumnosFiltradosCached = alumnosFiltrados;
     renderizarFilasEnTabla(alumnosFiltrados);
 }
