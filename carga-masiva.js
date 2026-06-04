@@ -9,24 +9,77 @@ let alumnosEnMemoria = [];
 
 async function ejecutarEscrituraFirestore() {
     if (alumnosEnMemoria.length === 0) return;
+
     const b = document.getElementById('btnConfirmarCarga');
     if (b) {
         b.disabled = true;
         b.innerHTML = "⏳ Guardando...";
     }
+
     const db = getFirestore();
+    const alumnosBaseLocal = window.cachedAlumnosGlobal || [];
     let total = 0;
+
     for (const a of alumnosEnMemoria) {
+        const registroPrevio = alumnosBaseLocal.find(al => String(al.dni).replace(/\D/g, '').trim() === a.dni);
+        
+        let subcatForense = "ALTA_LOTE";
+        let descripcionForense = `Alta digital por lote en la sección ${a.cursoClave.toUpperCase()}.`;
+        let omitirHistorial = false;
+
+        if (registroPrevio) {
+            const cursoViejo = registroPrevio.cursoClave ? registroPrevio.cursoClave.toUpperCase() : "Desconocido/Mesa Entrada";
+            const cursoNuevo = a.cursoClave ? a.cursoClave.toUpperCase() : "Desconocido";
+            
+            if (cursoViejo !== cursoNuevo) {
+                subcatForense = "MODIFICACION_LEGAJO";
+                descripcionForense = `Cambio de sección por lote: El alumno fue promovido/trasladado desde ${cursoViejo} hacia ${cursoNuevo}.`;
+            } else {
+                const nombreIgual = (registroPrevio.nombre || "").trim().toUpperCase() === (a.nombre || "").trim().toUpperCase();
+                const telIgual = (registroPrevio.telefono1 || "") === (a.telefono1 || "");
+                const dirIgual = (registroPrevio.direccion || "").trim().toUpperCase() === (a.direccion || "").trim().toUpperCase();
+                const mailIgual = (registroPrevio.emailTutor || "").trim().toLowerCase() === (a.emailTutor || "").trim().toLowerCase();
+
+                if (nombreIgual && telIgual && dirIgual && mailIgual) {
+                    omitirHistorial = true;
+                } else {
+                    subcatForense = "MODIFICACION_LEGAJO";
+                    descripcionForense = `Actualización masiva de datos de contacto y legajo familiar en la sección ${cursoNuevo}.`;
+                }
+            }
+        }
+
         await setDoc(doc(collection(db, 'alumnos'), a.dni), a, { merge: true });
-        if (typeof window.registrarEventoLegajo === 'function') {
-            await window.registrarEventoLegajo(a.dni, "MATRICULA", "ALTA_LOTE", `Alta digital por lote.`);
+
+        if (!omitirHistorial && typeof window.registrarEventoLegajo === 'function') {
+            await window.registrarEventoLegajo(a.dni, "MATRICULA", subcatForense, descripcionForense, {
+                cursoOrigen: registroPrevio ? (registroPrevio.cursoClave || "") : "",
+                cursoDestino: a.cursoClave || ""
+            });
         }
         total++;
     }
-    alert(`¡Carga masiva finalizada! Se procesaron ${total} legajos con éxito.`);
-    cerrarModal();
-    if (typeof window.procesarFiltrosYNomina === 'function') window.procesarFiltrosYNomina();
+
+    alumnosEnMemoria = [];
+
+    setTimeout(() => {
+        alert(`¡Carga masiva finalizada con éxito!\nSe procesaron y auditaron ${total} registros en el sistema.`);
+        
+        if (b) {
+            b.disabled = false;
+            b.innerHTML = "🚀 Confirmar e Impactar Base de Datos";
+        }
+        
+        cerrarModal();
+
+        if (typeof window.procesarFiltrosYNomina === 'function') {
+            window.procesarFiltrosYNomina();
+        } else {
+            console.warn("[Carga Masiva] No se detectó la función global 'procesarFiltrosYNomina' para refrescar la grilla.");
+        }
+    }, 350); 
 }
+
 
 async function simularCargaCSV(e) {
     try {
@@ -141,31 +194,42 @@ async function simularCargaCSV(e) {
                     });
                 }
 
+                // ==========================================================================
+                // PARCHE: COLORES INSTITUCIONALES Y CONTEO DE MODIFICADOS EN MODAL
+                // Ubicación: Reemplazar desde 'const cuerpoTabla' hasta la apertura del modal
+                // ==========================================================================
                 const cuerpoTabla = document.getElementById('tablaSimulacionBody');
                 if (cuerpoTabla) {
                     cuerpoTabla.innerHTML = alumnosEnMemoria.map(a => {
-                        const badgeStyle = a.auditoria === "MODIFICADO" 
-                            ? "background-color: #ef4444; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;"
-                            : "background-color: #3b82f6; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;";
+                        // Punto 2: Cambio de colores (Verde para Nuevo, Amarillo/Oro para Modificado)
+                const badgeStyle = a.auditoria === "MODIFICADO"
+                    ? "background-color: #d97706; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;" // Amarillo/Ámbar oscuro para legibilidad
+                    : "background-color: #16a34a; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;"; // Verde regular
 
                         return `
-                            <tr style="border-bottom: 1px solid #cbd5e1; font-size: 13px;">
-                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-family: monospace; color: #333;">${a.dni}</td>
-                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: 500; color: #1e293b;">${a.nombre}</td>
-                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.cuil}</td>
-                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.telefono1 || a.emailTutor}</td>
-                                <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center;">
-                                    <span style="${badgeStyle}">${a.auditoria}</span>
-                                </td>
-                            </tr>
+                <tr style="border-bottom: 1px solid #cbd5e1; font-size: 13px;">
+                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-family: monospace; color: #333;">${a.dni}</td>
+                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: 500; color: #1e293b;">${a.nombre}</td>
+                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.cuil}</td>
+                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.telefono1 || a.emailTutor}</td>
+                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center;">
+                        <span style="${badgeStyle}">${a.auditoria}</span>
+                    </td>
+                </tr>
                         `;
                     }).join('');
                 }
 
                 const resumenText = document.getElementById('resumenSimulacion');
                 if (resumenText) {
-                    resumenText.innerText = `Sección Destino: ${s.options[s.selectedIndex].text.toUpperCase()} | Registros validados: ${alumnosEnMemoria.length}`;
+                    // Punto 1: Cálculo e informe de Modificados y Nuevos en la cabecera
+                const totalModificados = alumnosEnMemoria.filter(al => al.auditoria === "MODIFICADO").length;
+                const totalNuevos = alumnosEnMemoria.length - totalModificados;
+
+                    resumenText.innerText = `Sección: ${s.options[s.selectedIndex].text.toUpperCase()} | Total: ${alumnosEnMemoria.length} (Nuevos: ${totalNuevos} | Modificados: ${totalModificados})`;
                 }
+                // ==========================================================================
+
 
                 const modal = document.getElementById('modalSimulacionCarga');
                 if (modal) {
