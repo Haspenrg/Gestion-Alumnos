@@ -142,18 +142,27 @@ return;
 const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveIngresada);
 const user = credenciales.user;
 
-// ====== PARCHE: INYECCIÓN DE PERMISOS DE PERÍODOS EN SESIÓN (index.html) ======
-let perfilUsuario = {
-    nombre: datosDb.nombre || user.displayName || "Personal Haspen",
-    rol: datosDb.rol || "preceptor",
-    dni: dniIngresado,
-    esProfesor: datosDb.esProfesor || false,
-    // Se extrae directamente desde el documento de Firestore en la nube
-    permisoGestionPeriodos: datosDb.permisoGestionPeriodos === true || datosDb.permisoGestionPeriodos === "true",
-    permiteCargaTotalNotas: datosDb.permiteCargaTotalNotas === true || datosDb.permiteCargaTotalNotas === "true"
-};
-// ==============================================================================
+      // ====== PARCHE ARQUITECTÓNICO: HIDRATACIÓN DE MATRIZ DE PERMISOS RBAC DINÁMICA ======
+        let matrizPermisosRol = {};
+        try {
+            const idRolUsuario = datosDb.rol ? datosDb.rol.toLowerCase().trim() : "preceptor";
+            const rolSnapshot = await getDoc(doc(db, "roles", idRolUsuario));
+            if (rolSnapshot.exists()) {
+                matrizPermisosRol = rolSnapshot.data().permisos || {};
+            }
+        } catch (errorRol) { 
+            console.error("Error al mapear permisos del rol:", errorRol); 
+        }
 
+        let perfilUsuario = {
+            nombre: datosDb.nombre || user.displayName || "Personal Haspen",
+            rol: datosDb.rol || "preceptor",
+            dni: dniIngresado,
+            esProfesor: datosDb.esProfesor || false,
+            permisoGestionPeriodos: datosDb.permisoGestionPeriodos === true || datosDb.permisoGestionPeriodos === "true",
+            permiteCargaTotalNotas: datosDb.permiteCargaTotalNotas === true || datosDb.permiteCargaTotalNotas === "true",
+            permisosDelRol: matrizPermisosRol // <-- Inyección clave de las capacidades
+        };
 
 // Conservación matemática del objeto JSON de sesión activa esperado por panel.html
 localStorage.setItem('usuarioActivo', JSON.stringify( perfilUsuario));

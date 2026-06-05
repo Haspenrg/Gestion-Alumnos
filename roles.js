@@ -285,20 +285,22 @@ formRol.addEventListener('submit', async (e) => {
             return rol;
         });
         alert("Perfil de seguridad actualizado y sincronizado en la matriz RBAC.");
-    } else {
-        const idNuevo = sanitizarIdRol(nombre);
-        if (listaRoles.some(r => r.id === idNuevo)) {
-            alert("Error de duplicación: Ya existe un perfil registrado con un nombre idéntico o identificador equivalente.");
-            return;
-        }
-        const nuevoRolEstructura = {
-            id: idNuevo,
-            nombre: nombre,
-            permisos: structurePermisosMapeada
-        };
-        listaRoles.push(nuevoRolEstructura);
-        alert("Nuevo rol institucional incorporado con éxito a la base de datos en la nube.");
+    // REEMPLAZAR POR (Corrección de tipografía en el mapeo de permisos):
+} else {
+    const idNuevo = sanitizarIdRol(nombre);
+    if (listaRoles.some(r => r.id === idNuevo)) {
+        alert("Error de duplicación: Ya existe un perfil registrado con un nombre idéntico o identificador equivalente.");
+        return;
     }
+    const nuevoRolEstructura = {
+        id: idNuevo,
+        nombre: nombre,
+        permisos: estructuraPermisosMapeada // <-- CORREGIDO: ahora coincide con la variable de arriba
+    };
+    listaRoles.push(nuevoRolEstructura);
+    alert("Nuevo rol institucional incorporado con éxito a la base de datos en la nube.");
+}
+
 
     const guardadoExitoso = await guardarRolesEnStorage(listaRoles);
     if (guardadoExitoso) {

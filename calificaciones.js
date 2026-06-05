@@ -276,14 +276,40 @@ tablaNotasBody.innerHTML = "";
 
             tablaNotasBody.appendChild(tr);
 
-            const inputsFila = tr.querySelectorAll('.input-nota');
-            inputsFila.forEach(input => {
-                if (esModoLectura) input.disabled = true;
-                input.addEventListener('input', (e) => {
-                    sanitizarEntradaNotaEntera(e.target);
-                    calcularMatrizFilaCalificaciones(tr);
-                });
-            });
+    const inputsFila = tr.querySelectorAll('.input-nota');
+
+    // Cargar la configuración de períodos real del colegio
+    const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
+    const configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+
+    inputsFila.forEach(input => {
+        // 1. Si es modo lectura global (Directivo), se bloquea incondicionalmente
+        if (esModoLectura) {
+            input.disabled = true;
+        } else if (!permiteCargaTotalNotas) {
+            // 2. Mapear de forma forense las clases del input con los IDs del control de períodos
+            let idPeriodoAsociado = "";
+            if (input.classList.contains('c1-n1')) idPeriodoAsociado = 'p_c1-n1';
+            else if (input.classList.contains('c1-n2')) idPeriodoAsociado = 'p_c1-n2';
+            else if (input.classList.contains('c1-ef')) idPeriodoAsociado = 'p_c1-ef';
+            else if (input.classList.contains('c2-n1')) idPeriodoAsociado = 'p_c2-n1';
+            else if (input.classList.contains('c2-n2')) idPeriodoAsociado = 'p_c2-n2';
+            else if (input.classList.contains('c2-ef')) idPeriodoAsociado = 'p_c2-ef';
+            else if (input.classList.contains('inst-dic')) idPeriodoAsociado = 'p_dic';
+            else if (input.classList.contains('inst-feb')) idPeriodoAsociado = 'p_feb';
+
+            // 3. Si el período no está explícitamente habilitado, se bloquea coercitivamente
+            if (idPeriodoAsociado && configPeriodos[idPeriodoAsociado] !== true) {
+                input.disabled = true;
+            }
+        }
+
+        input.addEventListener('input', (e) => {
+            sanitizarEntradaNotaEntera(e.target);
+            calcularMatrizFilaCalificaciones(tr);
+        });
+    });
+
 
             calcularMatrizFilaCalificaciones(tr);
         });
@@ -489,27 +515,55 @@ const IDs_PERIODOS_REALES = [
 function procesarGuardarConfiguracionPeriodos() {
     const configuracionPeriodos = {};
     
-    // Recolección exacta de los 8 checkboxes reales
     IDs_PERIODOS_REALES.forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento) {
-            configuracionPeriodos[id] = elemento.checked; // Guarda true o false
+            configuracionPeriodos[id] = elemento.checked;
         }
     });
 
-    // Guardado en el almacenamiento local
     localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
-    alert('Configuración de períodos guardada correctamente. Las habilitaciones han sido actualizadas.');
+    alert('Configuración de períodos guardada correctamente. Las habilitaciones han sido de aplicación coercitiva.');
     
     const modal = document.getElementById('modalGestionPeriodos');
     if (modal) modal.style.display = 'none';
 
-    // Refresca la tabla en pantalla para aplicar los bloqueos en el acto
-    if (typeof cargarNominaEstudiantes === 'function' && document.getElementById('select-materia')?.value) {
+    // Corrección del selector relacional estructural para refrescar la grilla en el acto
+    if (typeof cargarNominaEstudiantes === 'function' && document.getElementById('selectMateriaNotas')?.value) {
         cargarNominaEstudiantes();
     }
 }
-// ==================================================================
 
+// Inyección forense para restaurar visualmente los checkboxes guardados al presionar el botón de apertura
+if (btnAbrirModalPeriodos) {
+    // Eliminamos el listener simple anterior y ponemos este estructurado
+    btnAbrirModalPeriodos.replaceWith(btnAbrirModalPeriodos.cloneNode(true));
+    const btnRefrescado = document.getElementById('btnAbrirModalPeriodos');
+    
+    btnRefrescado.addEventListener('click', () => {
+        const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
+        const configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+        
+        IDs_PERIODOS_REALES.forEach(id => {
+            const elemento = document.getElementById(id);
+            if (elemento) {
+                elemento.checked = configPeriodos[id] === true;
+            }
+        });
+        if (modalPeriodos) modalPeriodos.style.display = 'flex';
+    });
+}
+
+// Escuchador para cerrar el modal de forma segura
+if (btnCerrarModalPeriodos) {
+    btnCerrarModalPeriodos.addEventListener('click', () => {
+        if (modalPeriodos) modalPeriodos.style.display = 'none';
+    });
+}
+if (btnGuardarPeriodosConfig) {
+    btnGuardarPeriodosConfig.replaceWith(btnGuardarPeriodosConfig.cloneNode(true));
+    document.getElementById('btnGuardarPeriodosConfig').addEventListener('click', procesarGuardarConfiguracionPeriodos);
+}
 
 })();
+
