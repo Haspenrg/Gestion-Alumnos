@@ -142,12 +142,18 @@ return;
 const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveIngresada);
 const user = credenciales.user;
 
+// ====== PARCHE: INYECCIÓN DE PERMISOS DE PERÍODOS EN SESIÓN (index.html) ======
 let perfilUsuario = {
-nombre: datosDb.nombre || user.displayName || "Personal Haspen",
-rol: datosDb.rol || "preceptor",
-dni: dniIngresado,
-esProfesor: datosDb.esProfesor || false
+    nombre: datosDb.nombre || user.displayName || "Personal Haspen",
+    rol: datosDb.rol || "preceptor",
+    dni: dniIngresado,
+    esProfesor: datosDb.esProfesor || false,
+    // Se extrae directamente desde el documento de Firestore en la nube
+    permisoGestionPeriodos: datosDb.permisoGestionPeriodos === true || datosDb.permisoGestionPeriodos === "true",
+    permiteCargaTotalNotas: datosDb.permiteCargaTotalNotas === true || datosDb.permiteCargaTotalNotas === "true"
 };
+// ==============================================================================
+
 
 // Conservación matemática del objeto JSON de sesión activa esperado por panel.html
 localStorage.setItem('usuarioActivo', JSON.stringify( perfilUsuario));

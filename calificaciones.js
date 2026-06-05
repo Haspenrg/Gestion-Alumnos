@@ -27,25 +27,26 @@
     let db = null;
 
 
-    document.addEventListener("DOMContentLoaded", async () => {
-        const btnAbrirModalPeriodos = document.getElementById('btnAbrirModalPeriodos');
-        const btnCerrarModalPeriodos = document.getElementById('btnCerrarModalPeriodos');
-        const btnGuardarPeriodosConfig = document.getElementById('btnGuardarPeriodosConfig');
-        const modalPeriodos = document.getElementById('modalGestionPeriodos');
+   // ====== PARCHE: CORRECCIÓN DE ÁMBITO Y DUPLICACIÓN EN DOMCONTENTLOADED ======
+document.addEventListener("DOMContentLoaded", async () => {
+    // SE ELIMINAN LAS REDECLARACIONES CON 'CONST' QUE HACÍAN SOMBRA A LAS VARIABLES GLOBALES
+    db = (await import('./firebase-config.js')).db;
+    
+    await verificarAutenticacion();
+    await cargarSelectoresIniciales();
 
-        db = (await import('./firebase-config.js')).db;
+    // Escuchadores reactivos en cascada
+    if (selectCurso) selectCurso.addEventListener('change', gestionarCambioCurso);
+    if (selectMateria) selectMateria.addEventListener('change', cargarNominaEstudiantes);
+    if (formPlanilla) formPlanilla.addEventListener('submit', procesarGuardarPlanilla);
 
-        await verificarAutenticacion();
-        await cargarSelectoresIniciales();
-        // Escuchadores reactivos en cascada
-        if (selectCurso) selectCurso.addEventListener('change', gestionarCambioCurso);
-        if (selectMateria) selectMateria.addEventListener('change', cargarNominaEstudiantes);
-        if (formPlanilla) formPlanilla.addEventListener('submit', procesarGuardarPlanilla);
-        // Manejo de eventos del modal de control de periodos
-        if (btnAbrirModalPeriodos) btnAbrirModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'flex'; });
-        if (btnCerrarModalPeriodos) btnCerrarModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'none'; });
-        if (btnGuardarPeriodosConfig) btnGuardarPeriodosConfig.addEventListener('click', procesarGuardarConfiguracionPeriodos);
-    });
+    // Manejo de eventos del modal utilizando directamente las referencias globales ya declaradas
+    if (btnAbrirModalPeriodos) btnAbrirModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'flex'; });
+    if (btnCerrarModalPeriodos) btnCerrarModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'none'; });
+    if (btnGuardarPeriodosConfig) btnGuardarPeriodosConfig.addEventListener('click', procesarGuardarConfiguracionPeriodos);
+});
+// ============================================================================
+
     // --- CONTROL DE ACCESO INSTITUCIONAL RBAC ---
     async function verificarAutenticacion() {
         const datosSesion = localStorage.getItem('usuarioActivo');
@@ -478,38 +479,37 @@ tablaNotasBody.innerHTML = "";
         await cargarNominaEstudiantes();
     }
 
-    // FUNCIÓN CENTRAL PARA GUARDAR LAS CONFIGURACIONES DE APERTURA DE PERÍODOS
+// ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
+const IDs_PERIODOS_REALES = [
+    'p_c1-n1', 'p_c1-n2', 'p_c1-ef',
+    'p_c2-n1', 'p_c2-n2', 'p_c2-ef',
+    'p_dic', 'p_feb'
+];
+
 function procesarGuardarConfiguracionPeriodos() {
-    const periodosIds = [
-        'c1-n1', 'c1-n2', 'c1-ef', 'c1-prom',
-        'c2-n1', 'c2-n2', 'c2-ef', 'c2-prom',
-        'inst-dic', 'inst-feb'
-    ];
-    
     const configuracionPeriodos = {};
     
-    // Recolección del estado atómico de cada checkbox del modal
-    periodosIds.forEach(id => {
-        const checkElement = document.getElementById(`p_${id}`);
-        // Si el elemento no existe, por defecto se asume true para no bloquear el flujo base
-        configuracionPeriodos[id] = checkElement ? checkElement.checked : true;
+    // Recolección exacta de los 8 checkboxes reales
+    IDs_PERIODOS_REALES.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            configuracionPeriodos[id] = elemento.checked; // Guarda true o false
+        }
     });
-    
-    // Persistencia centralizada del estado de la matriz académica
+
+    // Guardado en el almacenamiento local
     localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
-    
-    // Cierre reactivo de la interfaz flotante
-    const modalPeriodos = document.getElementById('modalGestionPeriodos');
-    if (modalPeriodos) {
-        modalPeriodos.style.display = 'none';
-    }
-    
     alert('Configuración de períodos guardada correctamente. Las habilitaciones han sido actualizadas.');
     
-    // Si la nómina ya está en pantalla, forzamos su actualización para aplicar restricciones
-    if (typeof cargarNominaEstudiantes === 'function') {
+    const modal = document.getElementById('modalGestionPeriodos');
+    if (modal) modal.style.display = 'none';
+
+    // Refresca la tabla en pantalla para aplicar los bloqueos en el acto
+    if (typeof cargarNominaEstudiantes === 'function' && document.getElementById('select-materia')?.value) {
         cargarNominaEstudiantes();
     }
 }
+// ==================================================================
+
 
 })();

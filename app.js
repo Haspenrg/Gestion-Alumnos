@@ -28,48 +28,66 @@ const btnCancelarModal = document.getElementById('btn-cancelar-modal');
 const btnCambiarModal = document.getElementById('btn-cambiar-modal');
 const modalMensaje = document.getElementById('modal-mensaje');
 
-// 2. Control del Login Institucional Asíncrono Multirrol
+// ====== PARCHE: VALIDACIÓN DE ACCESO EN VIVO CONTRA FIRESTORE ======
 if (formulario) {
     formulario.addEventListener('submit', async function(evento) {
         evento.preventDefault();
-        
         const usuarioIngresado = document.getElementById('usuario').value.trim();
         const claveIngresada = document.getElementById('password').value;
-        
+
         if (!contenedorMensaje) return;
         contenedorMensaje.textContent = "";
         contenedorMensaje.style.color = "red";
 
-        // Implementación estricta de async/await para simular llamadas al servidor
-        const listaUsuarios = await obtenerUsuarios();
-        const usuarioEncontrado = listaUsuarios.find(u => u.dni === usuarioIngresado);
+        try {
+            // Importación bajo demanda de los módulos necesarios desde la configuración central
+            const { db } = await import('./firebase-config.js');
+            const { doc, getDoc } = await import('https://gstatic.com');
 
-        if (usuarioEncontrado && usuarioEncontrado.clave === claveIngresada) {
-            // REPLANTEO: Inyección obligatoria de la condición híbrida esProfesor en el token de sesión
-            const tokenSesion = {
-                nombre: usuarioEncontrado.nombre,
-                rol: usuarioEncontrado.rol,
-                dni: usuarioEncontrado.dni,
-                esProfesor: usuarioEncontrado.esProfesor || false,
-                permisoGestionPeriodos: usuarioEncontrado.permisoGestionPeriodos || false
+            // Consulta directa a la colección 'usuarios' usando el DNI ingresado como ID del documento
+            const docRef = doc(db, "usuarios", usuarioIngresado);
+            const docSnap = await getDoc(docRef);
 
-            };
+            if (docSnap.exists()) {
+                const datosUsuario = docSnap.data();
+
+                // Validación de la contraseña almacenada en la base de datos
+                if (datosUsuario.clave === claveIngresada) {
+                    
+                    // Inyección y normalización dinámica de los permisos recuperados de la nube
+                    const tokenSesion = {
+                        nombre: datosUsuario.nombre,
+                        rol: datosUsuario.rol,
+                        dni: datosUsuario.dni,
+                        esProfesor: datosUsuario.esProfesor || false,
+                        permisoGestionPeriodos: datosUsuario.permisoGestionPeriodos === true || datosUsuario.permisoGestionPeriodos === "true"
+                    };
+
+                    localStorage.setItem('usuarioActivo', JSON.stringify(tokenSesion));
+                    
+                    contenedorMensaje.style.color = "green";
+                    contenedorMensaje.textContent = `¡Acceso en vivo concedido! Bienvenido/a ${datosUsuario.nombre}...`;
+                    
+                    setTimeout(() => {
+                        window.location.href = "panel.html";
+                    }, 1000);
+                    return;
+                }
+            }
             
-            localStorage.setItem('usuarioActivo', JSON.stringify(tokenSesion));
-            
-            contenedorMensaje.style.color = "green";
-            contenedorMensaje.textContent = `¡Acceso concedido! Bienvenido/a ${usuarioEncontrado.nombre}...`;
-            
-            setTimeout(() => {
-                window.location.href = "panel.html";
-            }, 1000);
-        } else {
+            // Mensaje de error genérico unificado por seguridad
             contenedorMensaje.textContent = "DNI o contraseña incorrectos";
             const passInput = document.getElementById('password');
             if (passInput) passInput.value = "";
+
+        } catch (error) {
+            console.error("Error en la conexión viva de autenticación con Firestore:", error);
+            contenedorMensaje.textContent = "Error de conexión: No se pudo verificar sus credenciales en la nube.";
         }
     });
 }
+// ==================================================================
+
 
 // 3. Abrir y Cerrar la Ventana Modal Autónoma
 if (btnOlvido) {
