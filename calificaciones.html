@@ -211,6 +211,66 @@
         <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
     </div>
     
+      <!-- INICIO PERMANENTE DEL CONTROL DE PERÍODOS -->
+  <div id="modalGestionPeriodos" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div style="background-color: #ffffff; margin: auto; padding: 20px; border: 2px solid #1b4d82; width: 90%; max-width: 1000px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box;">
+      
+      <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+        <h3 style="color: #1b4d82; font-size: 16px; font-weight: 700; margin: 0; text-transform: uppercase;">⚙️ Control de Apertura y Cierre de Períodos Académicos</h3>
+        <button type="button" id="btnCerrarModalPeriodos" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 20px; font-weight: bold; padding: 0 5px;">&times;</button>
+      </header>
+      
+      <p style="font-size: 12px; color: #475569; margin-top: 0; margin-bottom: 15px;">Marque como <strong>Habilitado</strong> el casillero correspondiente al período que desea abrir para la escritura de notas por parte de los docentes. Los períodos desmarcados se bloquearán de forma coercitiva.</p>
+      
+      <div style="width: 100%; overflow-x: auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; min-width: 800px;">
+          <thead>
+            <tr>
+              <th colspan="4" style="background: #e8f0fe; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">1ER CUATRIMESTRE</th>
+              <th colspan="4" style="background: #fef8e7; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">2DO CUATRIMESTRE</th>
+              <th rowspan="2" style="background: #f1f5f9; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Anual</th>
+              <th rowspan="2" style="background: #fee2e2; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Dic.</th>
+              <th rowspan="2" style="background: #fee2e2; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Feb.</th>
+              <th rowspan="2" style="background: #e2f0d9; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Def.</th>
+            </tr>
+            <tr>
+              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">1° Inf</th>
+              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">2° Inf</th>
+              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">E.Fort</th>
+              <th style="background: #dbeafe; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">1°Cua</th>
+              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">1° Inf</th>
+              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">2° Inf</th>
+              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">E.Fort</th>
+              <th style="background: #fef3c7; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">2°Cua</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_c1-n1" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_c1-n2" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_c1-ef" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px; background: #f0f7ff;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; font-weight:bold;"><input type="checkbox" id="p_c1-prom" class="check-periodo-control" checked>Habilitado</label></td>
+              
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_c2-n1" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_c2-n2" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_c2-ef" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px; background: #fffdf5;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; font-weight:bold;"><input type="checkbox" id="p_c2-prom" class="check-periodo-control" checked>Habilitado</label></td>
+              
+              <td style="border: 1px solid #e2e8f0; padding: 12px; background: #f8fafc;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:#64748b;">🔒 Calculado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_inst-dic" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px;"><input type="checkbox" id="p_inst-feb" class="check-periodo-control" checked>Habilitado</label></td>
+              <td style="border: 1px solid #e2e8f0; padding: 12px; background: #f4fbf0;"><label style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:#16a34a;">🔒 Calculado</label></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="text-align: right; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+        <button type="button" id="btnGuardarPeriodosConfig" class="btn-principal" style="max-width: 220px; height: 36px; padding: 0 15px; font-size: 13px;">Guardar Habilitaciones</button>
+      </div>
+    </div>
+  </div>
+
     <!-- Vinculación del motor de gobernación lógica cuatrimestral -->
     <script src="calificaciones.js"></script>
 </body>

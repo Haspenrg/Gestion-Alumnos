@@ -50,7 +50,9 @@ if (formulario) {
                 nombre: usuarioEncontrado.nombre,
                 rol: usuarioEncontrado.rol,
                 dni: usuarioEncontrado.dni,
-                esProfesor: usuarioEncontrado.esProfesor || false
+                esProfesor: usuarioEncontrado.esProfesor || false,
+                permisoGestionPeriodos: usuarioEncontrado.permisoGestionPeriodos || false
+
             };
             
             localStorage.setItem('usuarioActivo', JSON.stringify(tokenSesion));

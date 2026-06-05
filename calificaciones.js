@@ -11,6 +11,13 @@
     const txtDocente = document.getElementById('txtDocentePlanilla');
     const txtPreceptor = document.getElementById('txtPreceptorPlanilla');
 
+    // Referencias para el control atómico del modal de periodos
+    const modalPeriodos = document.getElementById('modalGestionPeriodos');
+    const btnAbrirModalPeriodos = document.getElementById('btnAbrirModalPeriodos');
+    const btnCerrarModalPeriodos = document.getElementById('btnCerrarModalPeriodos');
+    const btnGuardarPeriodosConfig = document.getElementById('btnGuardarPeriodosConfig');
+
+
     // Variables de contexto operativo
     let usuarioLogueado = null;
     let rolNormalizado = "";
@@ -21,17 +28,24 @@
 
 
     document.addEventListener("DOMContentLoaded", async () => {
+        const btnAbrirModalPeriodos = document.getElementById('btnAbrirModalPeriodos');
+        const btnCerrarModalPeriodos = document.getElementById('btnCerrarModalPeriodos');
+        const btnGuardarPeriodosConfig = document.getElementById('btnGuardarPeriodosConfig');
+        const modalPeriodos = document.getElementById('modalGestionPeriodos');
+
         db = (await import('./firebase-config.js')).db;
 
         await verificarAutenticacion();
         await cargarSelectoresIniciales();
-
         // Escuchadores reactivos en cascada
         if (selectCurso) selectCurso.addEventListener('change', gestionarCambioCurso);
         if (selectMateria) selectMateria.addEventListener('change', cargarNominaEstudiantes);
         if (formPlanilla) formPlanilla.addEventListener('submit', procesarGuardarPlanilla);
+        // Manejo de eventos del modal de control de periodos
+        if (btnAbrirModalPeriodos) btnAbrirModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'flex'; });
+        if (btnCerrarModalPeriodos) btnCerrarModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'none'; });
+        if (btnGuardarPeriodosConfig) btnGuardarPeriodosConfig.addEventListener('click', procesarGuardarConfiguracionPeriodos);
     });
-
     // --- CONTROL DE ACCESO INSTITUCIONAL RBAC ---
     async function verificarAutenticacion() {
         const datosSesion = localStorage.getItem('usuarioActivo');
@@ -39,18 +53,20 @@
             window.location.href = "index.html";
             return;
         }
-
         usuarioLogueado = JSON.parse(datosSesion);
         rolNormalizado = usuarioLogueado.rol.toLowerCase().trim();
         permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
-
-
-        // Directivos entran de forma global en modo lectura sobre la planta institucional
-        if (rolNormalizado === "directivo") {
-            esModoLectura = true;
-            if (bannerLectura) bannerLectura.style.display = "block";
-        }
+         if (rolNormalizado === "directivo") {
+        esModoLectura = true;
+        if (bannerLectura) bannerLectura.style.display = "block";
     }
+
+    // Habilitación universal del botón de períodos por atributo de usuario
+    if (usuarioLogueado && usuarioLogueado.permisoGestionPeriodos === true) {
+        const btnControlReal = document.getElementById('btnAbrirModalPeriodos');
+        if (btnControlReal) btnControlReal.style.display = 'inline-flex';
+    }
+}
 
     // --- CARGA DINÁMICA DE CURSOS FILTRADOS POR BOLSA DE HORAS ---
     async function cargarSelectoresIniciales() {
@@ -461,4 +477,39 @@ tablaNotasBody.innerHTML = "";
         alert("Planilla de calificaciones guardada y sincronizada con éxito en el sistema central.");
         await cargarNominaEstudiantes();
     }
+
+    // FUNCIÓN CENTRAL PARA GUARDAR LAS CONFIGURACIONES DE APERTURA DE PERÍODOS
+function procesarGuardarConfiguracionPeriodos() {
+    const periodosIds = [
+        'c1-n1', 'c1-n2', 'c1-ef', 'c1-prom',
+        'c2-n1', 'c2-n2', 'c2-ef', 'c2-prom',
+        'inst-dic', 'inst-feb'
+    ];
+    
+    const configuracionPeriodos = {};
+    
+    // Recolección del estado atómico de cada checkbox del modal
+    periodosIds.forEach(id => {
+        const checkElement = document.getElementById(`p_${id}`);
+        // Si el elemento no existe, por defecto se asume true para no bloquear el flujo base
+        configuracionPeriodos[id] = checkElement ? checkElement.checked : true;
+    });
+    
+    // Persistencia centralizada del estado de la matriz académica
+    localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
+    
+    // Cierre reactivo de la interfaz flotante
+    const modalPeriodos = document.getElementById('modalGestionPeriodos');
+    if (modalPeriodos) {
+        modalPeriodos.style.display = 'none';
+    }
+    
+    alert('Configuración de períodos guardada correctamente. Las habilitaciones han sido actualizadas.');
+    
+    // Si la nómina ya está en pantalla, forzamos su actualización para aplicar restricciones
+    if (typeof cargarNominaEstudiantes === 'function') {
+        cargarNominaEstudiantes();
+    }
+}
+
 })();
