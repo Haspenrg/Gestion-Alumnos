@@ -335,8 +335,41 @@ function inicializarManejadorReactivoPPI() {
     });
 }
 
+// --- MANEJADOR DE AUDITORÍA DIGITAL CON COMPRESIÓN DE ALTA FIDELIDAD ---
 function inicializarManejadoresArchivosDigitales() {
     const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
+    
+    // Función interna para comprimir imágenes mediante Canvas manteniendo alta nitidez
+    function procesarYComprimirImagen(base64Original) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64Original;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const MAX_WIDTH = 1600; // Resolución optimizada para lectura de textos finos
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Exporta como JPEG al 75% de fidelidad (equilibrio perfecto nitidez/peso)
+                resolve(canvas.toDataURL('image/jpeg', 0.75));
+            };
+            img.onerror = function() {
+                resolve(base64Original); // PDFs o archivos no gráficos pasan sin alteración
+            };
+        });
+    }
+
     inputsArchivos.forEach(input => {
         input.addEventListener('click', function(e) {
             const key = this.getAttribute('data-key');
@@ -351,20 +384,21 @@ function inicializarManejadoresArchivosDigitales() {
         });
 
         input.addEventListener('change', function(e) {
-            const archivo = e.target.files;
+            const archivo = e.target.files[0]; // Captura segura del archivo individual
             const key = this.getAttribute('data-key');
             if (!archivo) return;
 
-            const limiteMaximoBytes = 1024 * 1024;
-            if (archivo.size > limiteMaximoBytes) {
-                alert(`El archivo supera el límite de 1MB establecido.`);
-                this.value = "";
-                return;
-            }
-
             const lectorBinario = new FileReader();
-            lectorBinario.onload = function(evt) {
-                const stringBase64Final = evt.target.result;
+            lectorBinario.onload = async function(evt) {
+                let stringBase64Final = evt.target.result;
+                const umbralSeguroBytes = 300 * 1024; // 300 KB
+
+                // Intercepta solo si supera el umbral y es formato gráfico
+                if (archivo.size > umbralSeguroBytes && archivo.type.startsWith('image/')) {
+                    console.log(`[Compresor HD] Optimizando imagen pesada de ${(archivo.size / 1024).toFixed(1)} KB.`);
+                    stringBase64Final = await procesarYComprimirImagen(stringBase64Final);
+                }
+
                 base64DocumentosTemporales[key] = stringBase64Final;
                 actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
             };
@@ -373,6 +407,7 @@ function inicializarManejadoresArchivosDigitales() {
         });
     });
 }
+
 
 function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
     const chk = document.getElementById(`chk-${key}`);
