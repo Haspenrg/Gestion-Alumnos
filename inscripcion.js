@@ -235,10 +235,23 @@ document.getElementById('estadoAlumno')?.addEventListener('change', () => {
 
 evaluarVisibilidadPanelPases();
 
-// Ejecución garantizada y blindada del Motor de Carga Masiva para el Administrador
-if (typeof window.inicializarCargaMasivaSegura === 'function') {
-    window.inicializarCargaMasivaSegura();
+// --- CONTROL COERCITIVO EXCLUSIVO DE CARGA MASIVA PARA EL ADMINISTRADOR ---
+const divCargaMasiva = document.getElementById('contenedorCargaMasiva');
+if (divCargaMasiva) {
+    const rolUsuarioActivo = usuarioLogueado && usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
+    
+    if (rolUsuarioActivo === "administrador") {
+        divCargaMasiva.style.display = "flex";
+        // Ejecución segura del Motor de Carga Masiva solo para el Administrador
+        if (typeof window.inicializarCargaMasivaSegura === 'function') {
+            window.inicializarCargaMasivaSegura();
+        }
+    } else {
+        // Se oculta y bloquea de raíz para cualquier otro operador (Preceptores, Directivos, etc.)
+        divCargaMasiva.style.display = "none";
+    }
 }
+
 }
 
 
@@ -644,48 +657,41 @@ function renderizarFilasEnTabla(alumnos) {
                 : `<span style="color:#94a3b8; font-size:11px;">Estándar</span>`);
 
 
-            // ====== PARCHE GENERALIZADO: Botones de visualización para todos los usuarios de Solo Lectura ======
-    let accionesHTML = `<span style="color:#94a3b8; font-size:11px;">Lectura</span>`;
-    
-       // ====== PARCHE: Botón Datos exclusivo para Modo Consulta (Solo Lectura) ======
-    const nombreEstudianteValido = alumno.nombreAlumno || alumno.nombre || 'Sin registrar';
-    const direccionEstudianteValida = alumno.direccionAlumno || alumno.direccion || 'No especificada';
+        // Renderizado de la celda de acciones basada en la matriz de capacidades oficiales (RBAC)
+        let accionesHTML = "";
 
-    if (rolNormalizado.includes("admin") || rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
-        // Modo Escritura (Administradores): Se remueve el botón Datos porque la info se ve a la izquierda
-                accionesHTML = `
+        const nombreEstudianteValido = alumno.nombreAlumno || alumno.nombre || 'Sin registrar';
+        const direccionEstudianteValida = alumno.direccionAlumno || alumno.direccion || 'No especificada';
+
+        if (window.permisoMatricula === "escritura") {
+            // Modo Escritura Completa (Alta Dirección y Administradores autorizados en roles.html)
+            accionesHTML = `
             <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
                 <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨</button>
                 <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📋</button>
                 <button type="button" class="btn-accion-fila" onclick="window.location.href='historial.html?dni=${alumno.dni}'" title="Historial del Legajo">📜</button>
-                <button type="button" class="btn-accion-fila btn-fila-borrar" data-dni="${alumno.dni}" title="Eliminar Alumno">🗑️</button>
+                <button type="button" class="btn-accion-fila btn-fila-borrar" data-dni="${alumno.dni}" title="Eliminar Alumno">🗑</button>
             </div>
-        `;
-    } else {
-        // Modo Consulta (Preceptores / Solo Lectura): Conserva el botón Datos con su mapeo flexible
-        // =========================================================================
-    // UBICACIÓN: Líneas 581 a 594 (Contenedor de Acciones en Modo Consulta)
-    // REPARACIÓN: Unificación de iconos nativos compactos anti-amontonamiento
-    // =========================================================================
-        accionesHTML = `
+            `;
+        } else {
+            // Modo Consulta Estricto (Preceptores u Operadores con permiso de Lectura o Ninguno)
+            accionesHTML = `
             <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
-                <button type="button" class="btn-accion-fila btn-fila-ficha" 
-                    data-nombre="${nombreEstudianteValido}" 
-                    data-direccion="${direccionEstudianteValida}" 
-                    data-tel1="${alumno.telefono1 || 'No registrado'}" 
-                    data-tel2="${alumno.telefono2 || 'Ninguno'}" 
-                    data-tutor="${alumno.nombreTutor || 'No registrado'}" 
-                    data-tutordni="${alumno.dniTutorAlumno || 'Sin registrar'}" 
-                    data-dni="${alumno.dni}" 
-                    style="background: #4b5563;" title="Ver Datos de Contacto">👁️</button>
-                
-                <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨️</button>
+                <button type="button" class="btn-accion-fila btn-fila-ficha"
+                    data-nombre="${nombreEstudianteValido}"
+                    data-direccion="${direccionEstudianteValida}"
+                    data-tel1="${alumno.telefono1 || 'No registrado'}"
+                    data-tel2="${alumno.telefono2 || 'Ninguno'}"
+                    data-tutor="${alumno.nombreTutor || 'No registrado'}"
+                    data-tutordni="${alumno.dniTutorAlumno || 'Sin registrar'}"
+                    data-dni="${alumno.dni}"
+                    style="background: #4b5563;" title="Ver Datos de Contacto">👁</button>
+                <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨</button>
                 <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📄</button>
             </div>
-        `;
-    }
+            `;
+        }
 
-    
 
                // Parche Seguro: Limpieza automática de nombres duplicados de la carga masiva
         let nombreParaMostrar = alumno.nombre || "";

@@ -159,9 +159,11 @@ const user = credenciales.user;
             rol: datosDb.rol || "preceptor",
             dni: dniIngresado,
             esProfesor: datosDb.esProfesor || false,
+            bolsaHoras: datosDb.bolsaHoras || [], // <-- INYECCIÓN DE HORAS ACADÉMICAS OBLIGATORIA
             permisoGestionPeriodos: datosDb.permisoGestionPeriodos === true || datosDb.permisoGestionPeriodos === "true",
             permiteCargaTotalNotas: datosDb.permiteCargaTotalNotas === true || datosDb.permiteCargaTotalNotas === "true",
-            permisosDelRol: matrizPermisosRol // <-- Inyección clave de las capacidades
+            permisosDelRol: matrizPermisosRol
+
         };
 
 // Conservación matemática del objeto JSON de sesión activa esperado por panel.html

@@ -250,7 +250,7 @@ async function obtenerUsuariosDesdeFirestore() {
     }
 }
 
-// --- BOLSA DE HORAS CON ESCALAFÓN Y AUDITORÍA ---
+// REEMPLAZAR FUNCIÓN COMPLETA EN usuarios.js (Líneas 254 a 314)
 async function agregarCatedraProfesorBolsa() {
     const selectCurso = document.getElementById('anioProfesor');
     const selectMateria = document.getElementById('materiaProfesor');
@@ -261,12 +261,16 @@ async function agregarCatedraProfesorBolsa() {
         return;
     }
 
-    const textoCurso = selectCurso.options[selectCurso.selectedIndex].text;
+    const cursoIdReal = selectCurso.value; // ID inmutable de Firebase (ej: 1-A-M)
+    const textoCurso = selectCurso.options[selectCurso.selectedIndex].text; // Respaldo visual
     const nombreMateria = selectMateria.value;
     const situacionRevista = selectRevista.value;
-    const baseCatedraId = `${textoCurso} -> ${nombreMateria}`;
+
+    // Eje de sincronización: Usamos el ID del curso y la materia de forma unívoca
+    const baseCatedraId = `${cursoIdReal} - ${nombreMateria}`;
     const identificadorCompleto = `[${situacionRevista}] ${baseCatedraId}`;
 
+    // 1. Control de duplicados en la sesión del formulario actual
     if (catedrasTemporales.some(c => c.includes(baseCatedraId))) {
         alert("Este profesor ya posee una asignación registrada para esta misma materia y curso.");
         return;
@@ -277,6 +281,7 @@ async function agregarCatedraProfesorBolsa() {
         const dniEdicion = document.getElementById('dniOriginalEdicion').value;
         let docentesAsignados = [];
 
+        // 2. Auditoría en caliente cruzada contra otros docentes en la base de datos
         usuariosTotales.forEach(u => {
             if (dniEdicion && u.dni === dniEdicion) return;
             const bolsa = u.bolsaHoras || [];
@@ -299,7 +304,7 @@ async function agregarCatedraProfesorBolsa() {
             const listaDetalle = docentesAsignados.map(d => `• ${d.nombre} (${d.revista})`).join("\n");
             const autorizar = confirm(
                 `⚠ AUDITORÍA EN CALIENTE - DETECCIÓN DE MULTI-DOCENTES:\n\n` +
-                `La cátedra [ ${baseCatedraId} ] ya tiene personal asociado:\n${listaDetalle}\n\n` +
+                `La cátedra [ ${nombreMateria} en ${textoCurso} ] ya tiene personal asociado:\n${listaDetalle}\n\n` +
                 `¿Desea autorizar el ingreso de este nuevo registro bajo la condición de ${situacionRevista}?`
             );
             if (!autorizar) return;
@@ -308,9 +313,11 @@ async function agregarCatedraProfesorBolsa() {
         console.error("Error en validación de revista:", e);
     }
 
+    // 3. Inyección segura en el array temporal de la vista
     catedrasTemporales.push(identificadorCompleto);
     actualizarTagsBolsaHoras();
 }
+
 function actualizarTagsBolsaHoras() {
     const contenedor = document.getElementById('listaCatedrasProfesor');
     if (!contenedor) return;
@@ -600,19 +607,42 @@ async function renderizarTablaUsuarios() {
             }
             flagResp = true;
             const dDoc = document.createElement('d' + 'i' + 'v');
-            dDoc.innerHTML = "💼 <strong>Bolsa de Horas Docente:</strong>";
+            dDoc.innerHTML = "💼 <strong>Horas Catedras:</strong>";
             const dLista = document.createElement('s' + 'p' + 'a' + 'n');
             dLista.style.cssText = "font-size:11px; display:block; margin-top:2px; line-height:1.4;";
             
-            bolsaUser.forEach(h => {
-                let estiloColor = "color: #0d9488; font-weight:600; display:block;";
-                if (h.includes("[SUPLENTE]")) estiloColor = "color: #b78103; font-weight:600; display:block;";
-                if (h.includes("[SUPL_SUPL]")) estiloColor = "color: #dc2626; font-weight:600; display:block;";
-                const sItem = document.createElement('s' + 'p' + 'a' + 'n');
-                sItem.style.cssText = estiloColor;
-                sItem.textContent = h;
-                dLista.appendChild(sItem);
-            });
+                    // REEMPLAZAR EN usuarios.js (Bucle de renderizado de horas cátedra en la tabla)
+        bolsaUser.forEach(h => {
+            let estiloColor = "color: #0d9488; font-weight:600; display:block;";
+            if (h.includes("[SUPLENTE]")) estiloColor = "color: #b78103; font-weight:600; display:block;";
+            if (h.includes("[SUPL_SUPL]")) estiloColor = "color: #dc2626; font-weight:600; display:block;";
+
+            let textoMapeadoParaMostrar = h;
+            const cursosRaw = localStorage.getItem('cursosColegio');
+            const listaCursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+
+            // Limpiamos la cabecera de la situación de revista [TITULAR], etc.
+            const firmaPura = h.replace(/\[.*?\]\s*/, "").trim();
+            const partesFirma = firmaPura.split(" - ");
+
+            if (partesFirma.length >= 2) {
+                const cId = partesFirma[0].trim();
+                const mNombre = partesFirma[1].trim();
+                
+                // Buscamos la estructura real del curso por su ID inmutable
+                const cRef = listaCursos.find(cur => cur.id === cId);
+                if (cRef) {
+                    const revistaTag = h.match(/\[(.*?)\]/)?.[0] || "[TITULAR]";
+                    textoMapeadoParaMostrar = `${revistaTag} ${cRef.ciclo} ° "${cRef.division}" ➔ ${mNombre}`;
+                }
+            }
+
+            const sItem = document.createElement('span');
+            sItem.style.cssText = estiloColor;
+            sItem.textContent = textoMapeadoParaMostrar;
+            dLista.appendChild(sItem);
+        });
+
             tdResp.appendChild(dDoc);
             tdResp.appendChild(dLista);
         }

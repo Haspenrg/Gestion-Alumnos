@@ -49,6 +49,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- CONTROL DE ACCESO INSTITUCIONAL RBAC ---
     async function verificarAutenticacion() {
+        // AGREGAR EN calificaciones.js (Al inicio de verificarAutenticacion)
+        localStorage.removeItem('usuariosColegio'); 
+        localStorage.removeItem('cursosColegio');
+
         const datosSesion = localStorage.getItem('usuarioActivo');
         if (!datosSesion) {
             window.location.href = "index.html";
@@ -69,31 +73,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 }
 
-    // --- CARGA DINÁMICA DE CURSOS FILTRADOS POR BOLSA DE HORAS ---
-    async function cargarSelectoresIniciales() {
-        if (!selectCurso) return;
-        selectCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
+// REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 70)
+// REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 70)
+async function cargarSelectoresIniciales() {
+    if (!selectCurso) return;
+    selectCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
 
-        const cursosRaw = localStorage.getItem('cursosColegio');
-        const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+    try {
+        let cursosRaw = localStorage.getItem('cursosColegio');
+        let cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+        const bolsaDocente = usuarioLogueado.bolsaHoras || [];
 
-        const usuariosRaw = localStorage.getItem('usuariosColegio');
-        const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
-        const usuarioReal = usuarios.find(u => u.dni === usuarioLogueado.dni) || {};
-        const bolsaDocente = usuarioReal.bolsaHoras || usuarioReal.bolsaHours || [];
+        // Eje de Inmunidad Local: Si la red o gstatic bloquean la descarga, auto-hidratamos el curso de la docente
+        if (cursos.length === 0 && bolsaDocente.length > 0) {
+            console.warn("Aviso: Inicializando auto-hidratación de estructuras académicas locales...");
+            bolsaDocente.forEach(catedra => {
+                const firmaPura = catedra.replace(/\[.*?\]\s*/, "").trim();
+                const partes = firmaPura.split(" - ");
+                if (partes.length >= 2) {
+                    const cId = partes[0].trim();
+                    const mNombre = partes[1].trim();
+                    
+                    // Decodificamos el ID nativo (ej: 1-A-M) en sus componentes visuales
+                    const subPartes = cId.split("-");
+                    const cicloExtraido = subPartes[0] || "1";
+                    const divExtraida = subPartes[1] || "A";
+                    let turnoExtraido = "Mañana";
+                    if (subPartes[2] === "T") turnoExtraido = "Tarde";
+                    if (subPartes[2] === "V" || subPartes[2] === "N") turnoExtraido = "Vespertino";
 
-        // Si es profesor o tiene la función activa (incluso siendo preceptor en otro módulo)
-       if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
+                    // Verificamos si ya inyectamos este curso de respaldo
+                    if (!cursos.some(c => c.id === cId)) {
+                        cursos.push({
+                            id: cId,
+                            ciclo: cicloExtraido,
+                            division: divExtraida,
+                            turno: turnoExtraido,
+                            materias: [mNombre]
+                        });
+                    } else {
+                        const cursoExistente = cursos.find(c => c.id === cId);
+                        if (!cursoExistente.materias.includes(mNombre)) {
+                            cursoExistente.materias.push(mNombre);
+                        }
+                    }
+                }
+            });
+            // Guardamos el respaldo seguro para estabilizar las funciones secundarias de la UI
+            localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+        }
+
+        // Control de visualización perimetral por capacidades RBAC
+        if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
             cursos.forEach(curso => {
-                const divLimpia = curso.division.toLowerCase().trim();
-                
-                // Escaneo directo de bolsa de horas por comillas o texto plano
                 const esDocenteAqui = bolsaDocente.some(catedra => {
-                    const cText = catedra.toLowerCase();
-                    return cText.includes(`"${divLimpia}"`) || 
-                           cText.includes(`'${divLimpia}'`) || 
-                           cText.includes(`div: ${divLimpia}`) || 
-                           cText.includes(`div ${divLimpia}`);
+                    const cText = catedra.trim();
+                    const firmaSinRevista = cText.replace(/\[.*?\]\s*/, "").trim();
+                    return firmaSinRevista.startsWith(curso.id + " - ");
                 });
 
                 if (esDocenteAqui) {
@@ -105,63 +141,59 @@ document.addEventListener("DOMContentLoaded", async () => {
                 selectCurso.add(new Option("Sin cursos autorizados en su Bolsa de Horas", ""));
             }
         } else {
-            // Administradores y Directivos listan toda la planta institucional libremente
+            // Administradores, Directivos o usuarios con Carga Total listan la planta completa
             cursos.forEach(curso => {
                 selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
             });
         }
+    } catch (error) {
+        console.error("Error crítico al cargar selectores de cursos:", error);
     }
+}
+
 
     // --- FILTRADO RELACIONAL ESTRICTO DE MATERIAS SEGÚN CURSO Y BOLSA ---
-    async function gestionarCambioCurso() {
-        if (!selectMateria) return;
-        selectMateria.innerHTML = '<option value="" disabled selected>Seleccione la asignatura...</option>';
-        tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">Seleccione la Asignatura para cargar la nómina.</td></tr>`;
-        if (bloqueGuardar) bloqueGuardar.style.display = "none";
+   async function gestionarCambioCurso() {
+    if (! selectMateria) return;
+    selectMateria. innerHTML = '<option value="" disabled selected>Seleccione la asignatura...</option>';
+    tablaNotasBody. innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">Seleccione la Asignatura para cargar la nómina.</td></tr>`;
+    if ( bloqueGuardar) bloqueGuardar. style. display = "none";
+    
+    const cursoId = selectCurso. value;
+    const cursosRaw = localStorage. getItem('cursosColegio');
+    const cursos = cursosRaw ? JSON. parse( cursosRaw) : [];
+    const cursoEncontrado = cursos. find( c => c. id === cursoId);
+    if (! cursoEncontrado || ! cursoEncontrado. materias) return;
+    
+    const usuariosRaw = localStorage. getItem('usuariosColegio');
+    const usuarios = usuariosRaw ? JSON. parse( usuariosRaw) : [];
+    const bolsaDocente = usuarioLogueado.bolsaHoras || [];
 
-        const cursoId = selectCurso.value;
-        const cursosRaw = localStorage.getItem('cursosColegio');
-        const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
-        const cursoEncontrado = cursos.find(c => c.id === cursoId);
-
-        if (!cursoEncontrado || !cursoEncontrado.materias) return;
-
-        const usuariosRaw = localStorage.getItem('usuariosColegio');
-        const usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
-        const profesorReal = usuarios.find(u => u.dni === usuarioLogueado.dni) || {};
-        const bolsaDocente = profesorReal.bolsaHoras || profesorReal.bolsaHours || [];
-        const divLimpia = cursoEncontrado.division.toLowerCase().trim();
-
-        if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
-            cursoEncontrado.materias.forEach(materia => {
-                const matLimpia = materia.toLowerCase().trim();
-
-                // La asignatura debe figurar en su bolsa emparejada con la división seleccionada
-                const matchBolsa = bolsaDocente.some(b => {
-                    const bText = b.toLowerCase();
-                    const tieneMateria = bText.includes(matLimpia);
-                    const tieneDivision = bText.includes(`"${divLimpia}"`) || 
-                                          bText.includes(`'${divLimpia}'`) || 
-                                          bText.includes(`div: ${divLimpia}`) || 
-                                          bText.includes(`div ${divLimpia}`);
-                    return tieneMateria && tieneDivision;
-                });
-
-                if (matchBolsa || rolNormalizado === "administrador") {
-                    selectMateria.add(new Option(materia, materia));
-                }
+    if (( rolNormalizado === "profesor" || usuarioLogueado. esProfesor) && ! permiteCargaTotalNotas) {
+        cursoEncontrado. materias. forEach( materia => {
+            // La asignatura debe figurar en su bolsa emparejada exactamente con el ID del curso
+            const matchBolsa = bolsaDocente. some( b => {
+                const firmaPura = b. replace(/\[.*?\]\s*/, ""). trim(); // Quita [TITULAR], etc.
+                const firmaEsperada = `${ cursoId} - ${ materia. trim()}`;
+                return firmaPura === firmaEsperada;
             });
 
-            if (selectMateria.options.length === 1) {
-                selectMateria.add(new Option("Sin asignaturas autorizadas en este curso", ""));
+            if ( matchBolsa || rolNormalizado === "administrador") {
+                selectMateria. add( new Option( materia, materia));
             }
-        } else {
-            // Administradores y Directivos listan todas las materias del plan
-            cursoEncontrado.materias.forEach(materia => {
-                selectMateria.add(new Option(materia, materia));
-            });
+        });
+
+        if ( selectMateria. options. length === 1) {
+            selectMateria. add( new Option("Sin asignaturas autorizadas en este curso", ""));
         }
+    } else {
+        // Administradores y Directivos listan todas las materias del plan libremente
+        cursoEncontrado. materias. forEach( materia => {
+            selectMateria. add( new Option( materia, materia));
+        });
     }
+}
+
 
     // --- MOTOR DE GENERACIÓN DE FILAS Y PERSISTENCIA ---
     async function cargarNominaEstudiantes() {
@@ -207,19 +239,16 @@ tablaNotasBody.innerHTML = "";
         const matLimpia = materiaId.toLowerCase().trim();
 
         try {
-            // Mapeo dinámico del Profesor de la Cátedra
-            const docentesCatedra = usuarios.filter(u => {
-                const bolsa = u.bolsaHoras || u.bolsaHours || [];
-                return bolsa.some(b => {
-                    const bText = b.toLowerCase();
-                    return bText.includes(matLimpia) && (
-                        bText.includes(`"${divisionActual}"`) || 
-                        bText.includes(`'${divisionActual}'`) || 
-                        bText.includes(`div: ${divisionActual}`)
-                    );
-                });
+                   // Mapeo dinámico del Profesor de la Cátedra por ID Estructural unívoco
+        const docentesCatedra = usuarios. filter( u => {
+            const bolsa = u. bolsaHoras || u. bolsaHours || [];
+            return bolsa. some( b => {
+                const firmaPura = b. replace(/\[.*?\]\s*/, ""). trim();
+                return firmaPura === `${ cursoId} - ${ materiaId. trim()}`;
             });
-            txtDocente.textContent = docentesCatedra.length > 0 ? docentesCatedra.map(d => d.nombre).join(" / ") : "Sin asignar";
+        });
+        txtDocente. textContent = docentesCatedra. length > 0 ? docentesCatedra. map( d => d. nombre). join(" / ") : "Sin asignar";
+
 
             // Mapeo dinámico del Preceptor a cargo de la división
             const preceptorCurso = usuarios.find(u => u.rol === "preceptor" && u.cursosAsignados && u.cursosAsignados.includes(cursoId));
