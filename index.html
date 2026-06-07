@@ -119,6 +119,7 @@ if (! dniIngresado || ! claveIngresada) {
 mostrarAlertaUI( txtMensaje, "Por favor, complete todos los campos requeridos.", "#dc2626");
 return;
 }
+mostrarAlertaUI(txtMensaje, "Revisando acceso...", "#1a73e8");
 
 try {
 // 1. Buscamos el documento del usuario en Firestore usando el DNI como ID

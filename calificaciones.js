@@ -299,10 +299,13 @@ tablaNotasBody.innerHTML = "";
                 where("materia", "==", materiaId)
             );
             const respuestaNotas = await getDocs(consultaNotas);
-            respuestaNotas.forEach(documento => {
+                respuestaNotas.forEach(documento => {
                 const datosNota = documento.data();
-                mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
+                if (datosNota && datosNota.alumnoDni) {
+                    mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
+                }
             });
+
         } catch (errorDb) {
             console.warn("No se pudo precargar el estado de notas desde Firestore:", errorDb);
         }
