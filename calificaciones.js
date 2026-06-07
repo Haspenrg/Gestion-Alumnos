@@ -25,6 +25,8 @@
     let permiteCargaTotalNotas = false;
     const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
     let db = null;
+    let mapaNotasExistentes = {};
+
 
 
    // ====== PARCHE: CORRECCIÓN DE ÁMBITO Y DUPLICACIÓN EN DOMCONTENTLOADED ======
@@ -270,10 +272,34 @@ tablaNotasBody.innerHTML = "";
 
         alumnosCurso.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
+                // --- PRECARGA INTELIGENTE DE NOTAS DESDE FIRESTORE ---
+        mapaNotasExistentes = {};
+        try {
+            const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
+            const consultaNotas = query(
+                collection(db, "alumnos_calificaciones"), 
+                where("cursoId", "==", cursoId), 
+                where("materia", "==", materiaId)
+            );
+            const respuestaNotas = await getDocs(consultaNotas);
+            respuestaNotas.forEach(documento => {
+                const datosNota = documento.data();
+                mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
+            });
+        } catch (errorDb) {
+            console.warn("No se pudo precargar el estado de notas desde Firestore:", errorDb);
+        }
+
         alumnosCurso.forEach((alumno, index) => {
             const tr = document.createElement('tr');
-            const persistenciaNota = registroGlobalNotas.find(n => n.alumnoDni === alumno.dni && n.cursoId === cursoId && n.materia === materiaId) || {};
-            const d = persistenciaNota.notas || { trim1: {}, trim2: {} };
+            const persistenciaNota = mapaNotasExistentes[alumno.dni];
+            const d = persistenciaNota ? (persistenciaNota.notas || { trim1: {}, trim2: {} }) : { trim1: {}, trim2: {} };
+
+            // Captura segura de instancias de examen para el renderizador
+            const notaDicExistente = persistenciaNota ? (persistenciaNota.diciembre ?? "") : "";
+            const notaFebExistente = persistenciaNota ? (persistenciaNota.febrero ?? "") : "";
+
+
 
             let badgePPI = "";
         if (alumno.tienePPI === true || alumno.trayectoriaPPI === true || alumno.nombre.toUpperCase().includes("PPI")) {
@@ -474,44 +500,61 @@ tablaNotasBody.innerHTML = "";
         }
     }
 
-    // --- PERSISTENCIA ASÍNCRONA MUTABLE JSON ---
-    async function procesarGuardarPlanilla(e) {
-        e.preventDefault();
-        if (esModoLectura) return;
+   // --- PERSISTENCIA ASÍNCRONA MUTABLE EN CLOUD FIRESTORE CON CONSOLIDACIÓN INTELIGENTE ---
+async function procesarGuardarPlanilla(e) {
+    e.preventDefault();
+    if (esModoLectura) return;
 
-        const cursoId = selectCurso.value;
-        const materiaId = selectMateria.value;
-        if (!cursoId || !materiaId) return;
+    const cursoId = selectCurso.value;
+    const materiaId = selectMateria.value;
+    if (!cursoId || !materiaId) return;
 
+    // 1. Bloqueo preventivo del botón de envío para evitar ráfagas duplicadas
+    const botonSubmit = formPlanilla.querySelector('button[type="submit"]');
+    if (botonSubmit) {
+        botonSubmit.disabled = true;
+        botonSubmit.textContent = "💾 Sincronizando Red...";
+    }
+
+    try {
+        // 🎯 SOLUCIÓN A LOS ERRORES: Importamos Firestore y declaramos el array de promesas al inicio de la función
+        const { doc, setDoc } = await import(b + 'firebase-firestore.js');
         const filas = tablaNotasBody.querySelectorAll('tr');
-        const calendarRaw = localStorage.getItem('calificacionesColegio');
-        let registroGlobalNotas = calendarRaw ? JSON.parse(calendarRaw) : [];
-
-        registroGlobalNotas = registroGlobalNotas.filter(n => !(n.cursoId === cursoId && n.materia === materiaId));
+        const operacionesPersistencia = [];
 
         filas.forEach(fila => {
             const inputBase = fila.querySelector('.c1-n1');
-            if (!inputBase) return;
+            if (!inputBase) return; // Omite filas informativas de la grilla
 
             const dniAlumno = inputBase.getAttribute('data-dni');
+            
+            // Extracción limpia de entradas numéricas
             const c1n1 = parseInt(fila.querySelector('.c1-n1').value, 10);
             const c1n2 = parseInt(fila.querySelector('.c1-n2').value, 10);
             const c1ef = parseInt(fila.querySelector('.c1-ef').value, 10);
-
             const c2n1 = parseInt(fila.querySelector('.c2-n1').value, 10);
             const c2n2 = parseInt(fila.querySelector('.c2-n2').value, 10);
             const c2ef = parseInt(fila.querySelector('.c2-ef').value, 10);
-
             const dic = parseInt(fila.querySelector('.inst-dic').value, 10);
             const feb = parseInt(fila.querySelector('.inst-feb').value, 10);
-
+            
+            // 📐 CAPTURA EXTRACTA DE LAS 4 NOTAS CALCULADAS POR EL DOM
             const celdas = fila.querySelectorAll('td');
-            let notaDefinitiva = null;
+            let notaC1 = null, notaC2 = null, notaAnual = null, notaDefinitiva = null;
+            
             if (celdas.length >= 14) {
-                const textoDefinitiva = celdas[13].textContent;
-                notaDefinitiva = textoDefinitiva === "-" ? null : parseInt(textoDefinitiva, 10);
+                const txtC1 = celdas[5].textContent.trim();
+                const txtC2 = celdas[9].textContent.trim();
+                const txtAnual = celdas[10].textContent.trim();
+                const txtDef = celdas[13].textContent.trim();
+
+                notaC1 = (txtC1 === "-" || txtC1 === "") ? null : parseInt(txtC1, 10);
+                notaC2 = (txtC2 === "-" || txtC2 === "") ? null : parseInt(txtC2, 10);
+                notaAnual = (txtAnual === "-" || txtAnual === "") ? null : parseInt(txtAnual, 10);
+                notaDefinitiva = (txtDef === "-" || txtDef === "") ? null : parseInt(txtDef, 10);
             }
 
+            // Construcción de la carga útil académica actual
             const estructuraCalificacionAlumno = {
                 alumnoDni: dniAlumno,
                 cursoId: cursoId,
@@ -522,17 +565,96 @@ tablaNotasBody.innerHTML = "";
                 },
                 diciembre: isNaN(dic) ? null : dic,
                 febrero: isNaN(feb) ? null : feb,
+                notaCuatrimestre1: notaC1,
+                notaCuatrimestre2: notaC2,
+                notaAnual: notaAnual,
                 notaFinal: notaDefinitiva,
-                estadoMateria: (notaDefinitiva !== null && notaDefinitiva >= 6) ? "Aprobada" : "Previa"
+                estadoMateria: (notaDefinitiva !== null && notaDefinitiva >= 6) ? "Aprobada" : "Previa",
+                ultimaModificacion: new Date().toISOString()
             };
 
-            registroGlobalNotas.push(estructuraCalificacionAlumno);
+            // 🔍 DETECTOR INTELIGENTE DE CAMBIOS (Contrastado contra la caché descargada)
+            const estadoPrevio = mapaNotasExistentes[dniAlumno];
+            let tieneModificacionesReales = false;
+
+            if (!estadoPrevio) {
+                tieneModificacionesReales = true;
+            } else {
+                const notasNuevasSt = JSON.stringify({ n: estructuraCalificacionAlumno.notas, d: estructuraCalificacionAlumno.diciembre, f: estructuraCalificacionAlumno.febrero });
+                const notasPreviasSt = JSON.stringify({ n: estadoPrevio.notas, d: estadoPrevio.diciembre, f: estadoPrevio.febrero });
+                if (notasNuevasSt !== notasPreviasSt) {
+                    tieneModificacionesReales = true;
+                }
+            }
+
+            // ID del documento Idempotente para evitar filas basura
+            const docIdUnico = `${dniAlumno}_${materiaId.trim().replace(/\s+/g, '_')}_${cursoId}`;
+            const docRef = doc(db, "alumnos_calificaciones", docIdUnico);
+
+            // Guardamos en Firestore y encadenamos la lógica del historial
+            const promesaEscritura = setDoc(docRef, estructuraCalificacionAlumno, { merge: true })
+                .then(async () => {
+                    // 🚀 HISTORIAL INTELIGENTE: Solo escribe si el alumno sufrió alteraciones reales en sus notas
+                    if (tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
+                        const esAltaNueva = !estadoPrevio;
+                        const subcatAuditoria = esAltaNueva ? "ALTA_NOTAS" : "MODIFICACION_CALIFICACIONES";
+                        const descAuditoria = esAltaNueva 
+                            ? `Carga inicial de calificaciones en la asignatura ${materiaId}.`
+                            : `Modificación de registros académicos en la asignatura ${materiaId}.`;
+
+                        const snapshotForense = {
+                            materia: materiaId,
+                            cursoId: cursoId,
+                            notas_guardadas: estructuraCalificacionAlumno.notas,
+                            diciembre: estructuraCalificacionAlumno.diciembre,
+                            febrero: estructuraCalificacionAlumno.febrero,
+                            notaCuatrimestre1: estructuraCalificacionAlumno.notaCuatrimestre1,
+                            notaCuatrimestre2: estructuraCalificacionAlumno.notaCuatrimestre2,
+                            notaAnual: estructuraCalificacionAlumno.notaAnual,
+                            notaFinal: estructuraCalificacionAlumno.notaFinal,
+                            estadoMateria: estructuraCalificacionAlumno.estadoMateria
+                        };
+
+                        await window.registrarEventoLegajo(
+                            dniAlumno,
+                            "CALIFICACIONES",
+                            subcatAuditoria,
+                            descAuditoria,
+                            snapshotForense
+                        );
+                    }
+                });
+
+            operacionesPersistencia.push(promesaEscritura);
         });
 
-        localStorage.setItem('calificacionesColegio', JSON.stringify(registroGlobalNotas));
-        alert("Planilla de calificaciones guardada y sincronizada con éxito en el sistema central.");
+        // Esperamos que termine toda la ráfaga paralela de la red de forma segura
+        await Promise.all(operacionesPersistencia);
+        alert("Sincronización con Firestore y auditoría forense finalizadas con éxito.");
         await cargarNominaEstudiantes();
+
+    } catch (error) {
+        console.error("Error crítico durante la sincronización inteligente:", error);
+        alert("Ocurrió un error al intentar sincronizar con Firestore. Revise la consola.");
+    } finally {
+        if (botonSubmit) {
+            botonSubmit.disabled = false;
+            botonSubmit.textContent = "Guardar Planilla";
+        }
     }
+}
+
+
+        // Fuera del bucle forEach, esperamos que finalice toda la ráfaga asíncrona en la red
+        const promesasAEsperar = (typeof operacionesPersistencia !== "undefined") ? operacionesPersistencia : window.operacionesPersistencia;
+        await Promise.all(promesasAEsperar);
+        
+        // Limpieza de referencias globales temporales
+        if (window.operacionesPersistencia) delete window.operacionesPersistencia;
+
+        alert("Sincronización con Cloud Firestore y auditoría forense finalizadas con éxito.");
+        await cargarNominaEstudiantes();
+
 
 // ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
 const IDs_PERIODOS_REALES = [
