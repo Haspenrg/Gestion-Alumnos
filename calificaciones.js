@@ -350,9 +350,27 @@ tablaNotasBody.innerHTML = "";
 
     const inputsFila = tr.querySelectorAll('.input-nota');
 
-    // Cargar la configuración de períodos real del colegio
-    const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
-    const configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+            // --- DESCARGA CONSOLIDADA DE PERÍODOS REALES DESDE FIRESTORE ---
+        let configPeriodos = {};
+        try {
+          if (window.cachePeriodosEscuela) {
+            configPeriodos = window.cachePeriodosEscuela;
+          } else {
+            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
+            const docSnap = await getDoc(doc(db, "configuraciones", "periodos_academicos"));
+            if (docSnap.exists()) {
+              configPeriodos = docSnap.data();
+              window.cachePeriodosEscuela = configPeriodos;
+            } else {
+              const pRaw = localStorage.getItem('estadoPeriodosColegio');
+              configPeriodos = pRaw ? JSON.parse(pRaw) : {};
+            }
+          }
+        } catch (errPeriodos) {
+          console.warn("Fallo de red en consulta de períodos, activando contingencia local:", errPeriodos);
+          const pRaw = localStorage.getItem('estadoPeriodosColegio');
+          configPeriodos = pRaw ? JSON.parse(pRaw) : {};
+        }
 
     inputsFila.forEach(input => {
         // 1. Si es modo lectura global (Directivo), se bloquea incondicionalmente
@@ -655,37 +673,71 @@ const IDs_PERIODOS_REALES = [
     'p_dic', 'p_feb'
 ];
 
-function procesarGuardarConfiguracionPeriodos() {
-    const configuracionPeriodos = {};
-    
-    IDs_PERIODOS_REALES.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            configuracionPeriodos[id] = elemento.checked;
-        }
-    });
+// REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 650)
+async function procesarGuardarConfiguracionPeriodos() {
+  const configuracionPeriodos = {};
+  IDs_PERIODOS_REALES.forEach(id => {
+    const elemento = document.getElementById(id);
+    if (elemento) configuracionPeriodos[id] = elemento.checked;
+  });
 
-    localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
-    alert('Configuración de períodos guardada correctamente. Las habilitaciones han sido de aplicación coercitiva.');
+  const btnGuardar = document.getElementById('btnGuardarPeriodosConfig');
+  if (btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = "💾 Guardando en Red...";
+  }
+
+  try {
+    const { doc, setDoc } = await import(b + 'firebase-firestore.js');
+    const docRef = doc(db, "configuraciones", "periodos_academicos");
     
+    // Impactamos la base de datos centralizada del Colegio HASPEN
+    await setDoc(docRef, { ...configuracionPeriodos, ultimaActualizacion: new Date().toISOString() }, { merge: true });
+    
+    // Respaldamos localmente como cache de contingencia pasiva
+    localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
+    window.cachePeriodosEscuela = configuracionPeriodos;
+
+    alert('Configuración de períodos sincronizada globalmente en Cloud Firestore.');
     const modal = document.getElementById('modalGestionPeriodos');
     if (modal) modal.style.display = 'none';
 
-    // Corrección del selector relacional estructural para refrescar la grilla en el acto
     if (typeof cargarNominaEstudiantes === 'function' && document.getElementById('selectMateriaNotas')?.value) {
-        cargarNominaEstudiantes();
+      await cargarNominaEstudiantes();
     }
+  } catch (error) {
+    console.error("Error crítico de persistencia en red de períodos:", error);
+    alert("Error al guardar en la nube. Se retuvo una copia local de emergencia.");
+    localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
+  } finally {
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = "Guardar Habilitaciones";
+    }
+  }
 }
-
 // Inyección forense para restaurar visualmente los checkboxes guardados al presionar el botón de apertura
 if (btnAbrirModalPeriodos) {
-    // Eliminamos el listener simple anterior y ponemos este estructurado
     btnAbrirModalPeriodos.replaceWith(btnAbrirModalPeriodos.cloneNode(true));
     const btnRefrescado = document.getElementById('btnAbrirModalPeriodos');
     
-    btnRefrescado.addEventListener('click', () => {
-        const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
-        const configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+    btnRefrescado.addEventListener('click', async () => {
+        let configPeriodos = {};
+        try {
+            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
+            const docSnap = await getDoc(doc(db, "configuraciones", "periodos_academicos"));
+            if (docSnap.exists()) {
+                configPeriodos = docSnap.data();
+                window.cachePeriodosEscuela = configPeriodos;
+            } else {
+                const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
+                configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+            }
+        } catch (e) {
+            console.warn("Error consultando períodos para modal, usando local:", e);
+            const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
+            configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+        }
         
         IDs_PERIODOS_REALES.forEach(id => {
             const elemento = document.getElementById(id);
@@ -703,6 +755,7 @@ if (btnCerrarModalPeriodos) {
         if (modalPeriodos) modalPeriodos.style.display = 'none';
     });
 }
+
 if (btnGuardarPeriodosConfig) {
     btnGuardarPeriodosConfig.replaceWith(btnGuardarPeriodosConfig.cloneNode(true));
     document.getElementById('btnGuardarPeriodosConfig').addEventListener('click', procesarGuardarConfiguracionPeriodos);
