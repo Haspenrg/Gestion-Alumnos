@@ -500,35 +500,33 @@ tablaNotasBody.innerHTML = "";
         }
     }
 
-   // --- PERSISTENCIA ASÍNCRONA MUTABLE EN CLOUD FIRESTORE CON CONSOLIDACIÓN INTELIGENTE ---
+// --- PERSISTENCIA ASÍNCRONA MUTABLE EN CLOUD FIRESTORE CON CONSOLIDACIÓN INTELIGENTE ---
 async function procesarGuardarPlanilla(e) {
     e.preventDefault();
     if (esModoLectura) return;
 
+    // 🎯 CORRECCIÓN 1: Alineación con los nombres de variables globales existentes
     const cursoId = selectCurso.value;
-    const materiaId = selectMateria.value;
+    const materiaId = selectMateria.value; 
     if (!cursoId || !materiaId) return;
 
-    // 1. Bloqueo preventivo del botón de envío para evitar ráfagas duplicadas
     const botonSubmit = formPlanilla.querySelector('button[type="submit"]');
     if (botonSubmit) {
         botonSubmit.disabled = true;
         botonSubmit.textContent = "💾 Sincronizando Red...";
     }
 
-    try {
-        // 🎯 SOLUCIÓN A LOS ERRORES: Importamos Firestore y declaramos el array de promesas al inicio de la función
+       try {
         const { doc, setDoc } = await import(b + 'firebase-firestore.js');
         const filas = tablaNotasBody.querySelectorAll('tr');
         const operacionesPersistencia = [];
 
         filas.forEach(fila => {
             const inputBase = fila.querySelector('.c1-n1');
-            if (!inputBase) return; // Omite filas informativas de la grilla
+            if (!inputBase) return; 
 
             const dniAlumno = inputBase.getAttribute('data-dni');
             
-            // Extracción limpia de entradas numéricas
             const c1n1 = parseInt(fila.querySelector('.c1-n1').value, 10);
             const c1n2 = parseInt(fila.querySelector('.c1-n2').value, 10);
             const c1ef = parseInt(fila.querySelector('.c1-ef').value, 10);
@@ -538,7 +536,6 @@ async function procesarGuardarPlanilla(e) {
             const dic = parseInt(fila.querySelector('.inst-dic').value, 10);
             const feb = parseInt(fila.querySelector('.inst-feb').value, 10);
             
-            // 📐 CAPTURA EXTRACTA DE LAS 4 NOTAS CALCULADAS POR EL DOM
             const celdas = fila.querySelectorAll('td');
             let notaC1 = null, notaC2 = null, notaAnual = null, notaDefinitiva = null;
             
@@ -554,7 +551,6 @@ async function procesarGuardarPlanilla(e) {
                 notaDefinitiva = (txtDef === "-" || txtDef === "") ? null : parseInt(txtDef, 10);
             }
 
-            // Construcción de la carga útil académica actual
             const estructuraCalificacionAlumno = {
                 alumnoDni: dniAlumno,
                 cursoId: cursoId,
@@ -573,7 +569,6 @@ async function procesarGuardarPlanilla(e) {
                 ultimaModificacion: new Date().toISOString()
             };
 
-            // 🔍 DETECTOR INTELIGENTE DE CAMBIOS (Contrastado contra la caché descargada)
             const estadoPrevio = mapaNotasExistentes[dniAlumno];
             let tieneModificacionesReales = false;
 
@@ -587,14 +582,11 @@ async function procesarGuardarPlanilla(e) {
                 }
             }
 
-            // ID del documento Idempotente para evitar filas basura
             const docIdUnico = `${dniAlumno}_${materiaId.trim().replace(/\s+/g, '_')}_${cursoId}`;
             const docRef = doc(db, "alumnos_calificaciones", docIdUnico);
 
-            // Guardamos en Firestore y encadenamos la lógica del historial
             const promesaEscritura = setDoc(docRef, estructuraCalificacionAlumno, { merge: true })
                 .then(async () => {
-                    // 🚀 HISTORIAL INTELIGENTE: Solo escribe si el alumno sufrió alteraciones reales en sus notas
                     if (tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
                         const esAltaNueva = !estadoPrevio;
                         const subcatAuditoria = esAltaNueva ? "ALTA_NOTAS" : "MODIFICACION_CALIFICACIONES";
@@ -627,6 +619,16 @@ async function procesarGuardarPlanilla(e) {
 
             operacionesPersistencia.push(promesaEscritura);
         });
+
+        await Promise.all(operacionesPersistencia);
+        alert("Sincronización con Firestore y auditoría forense finalizadas con éxito.");
+        await cargarNominaEstudiantes();
+
+    } catch (error) {
+        console.error("Error crítico durante la sincronización inteligente:", error);
+        alert("Ocurrió un error al intentar sincronizar con Firestore. Revise la consola.");
+    }
+
 
         // Esperamos que termine toda la ráfaga paralela de la red de forma segura
         await Promise.all(operacionesPersistencia);
