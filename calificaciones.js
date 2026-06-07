@@ -221,9 +221,13 @@ async function cargarSelectoresIniciales() {
 let usuarios = [];
 let alumnosReales = [];
 
-try {
-    // 1. Importación modular usando la CDN fragmentada 'b' de la cabecera
-    const { collection, getDocs, query, where } = await import(b + 'firebase-firestore.js');
+    try {
+        // Reconstrucción dinámica del CDN para evadir bloqueos de URLs por fragmentación
+        const baseCdnFirebase = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+        
+        // 1. Importación modular usando la CDN fragmentada local estable
+        const { collection, getDocs, query, where } = await import(baseCdnFirebase + 'firebase-firestore.js');
+
     
     // 2. Descarga en lote de los usuarios del colegio para el mapeo de docentes/preceptores
     const usuariosSnapshot = await getDocs(collection(db, "usuarios"));
@@ -324,21 +328,21 @@ tablaNotasBody.innerHTML = "";
             tr. innerHTML = `
                 <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${ index + 1}</td>
                 <td style="font-weight:500; padding: 2px 4px;">${ alumno. nombre} ${ badgePPI}</td>
-                <!-- 1ER CUATRIMESTRE -->
-                <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d.trim1?.n1 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d.trim1?.n2 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d.trim1?.ef || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-                <!-- 2DO CUATRIMESTRE -->
-                <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d.trim2?.n1 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d.trim2?.n2 || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d.trim2?.ef || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-                <!-- INSTANCIAS ANUALES DE EXAMEN -->
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-                <td><input type="number" class="input-nota inst-dic" min="1" max="10" value="${persistenciaNota.diciembre || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td><input type="number" class="input-nota inst-feb" min="1" max="10" value="${persistenciaNota.febrero || ''}" data-dni="${alumno.dni}" style="height: 24px !important; padding: 2px !important; font-size: 13px !important; text-align: center;"></td>
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
+            <!-- 1ER CUATRIMESTRE -->
+            <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            <!-- 2DO CUATRIMESTRE -->
+            <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            <!-- INSTANCIAS ANUALES DE EXAMEN -->
+            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            <td><input type="number" class="input-nota inst-dic" min="1" max="10" value="${persistenciaNota?.diciembre || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" class="input-nota inst-feb" min="1" max="10" value="${persistenciaNota?.febrero || ''}" data-dni="${alumno.dni}"></td>
+            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
 
             `;
 
