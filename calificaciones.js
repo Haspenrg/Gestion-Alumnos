@@ -629,34 +629,7 @@ async function procesarGuardarPlanilla(e) {
         alert("Ocurrió un error al intentar sincronizar con Firestore. Revise la consola.");
     }
 
-
-        // Esperamos que termine toda la ráfaga paralela de la red de forma segura
-        await Promise.all(operacionesPersistencia);
-        alert("Sincronización con Firestore y auditoría forense finalizadas con éxito.");
-        await cargarNominaEstudiantes();
-
-    } catch (error) {
-        console.error("Error crítico durante la sincronización inteligente:", error);
-        alert("Ocurrió un error al intentar sincronizar con Firestore. Revise la consola.");
-    } finally {
-        if (botonSubmit) {
-            botonSubmit.disabled = false;
-            botonSubmit.textContent = "Guardar Planilla";
-        }
-    }
 }
-
-
-        // Fuera del bucle forEach, esperamos que finalice toda la ráfaga asíncrona en la red
-        const promesasAEsperar = (typeof operacionesPersistencia !== "undefined") ? operacionesPersistencia : window.operacionesPersistencia;
-        await Promise.all(promesasAEsperar);
-        
-        // Limpieza de referencias globales temporales
-        if (window.operacionesPersistencia) delete window.operacionesPersistencia;
-
-        alert("Sincronización con Cloud Firestore y auditoría forense finalizadas con éxito.");
-        await cargarNominaEstudiantes();
-
 
 // ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
 const IDs_PERIODOS_REALES = [
