@@ -718,8 +718,16 @@ async function procesarGuardarConfiguracionPeriodos() {
 }
 // Inyección forense para restaurar visualmente los checkboxes guardados al presionar el botón de apertura
 if (btnAbrirModalPeriodos) {
+    // Almacenamos si verificarAutenticacion lo dejó visible antes del clonado
+    const displayEstablecido = btnAbrirModalPeriodos.style.display;
+    
     btnAbrirModalPeriodos.replaceWith(btnAbrirModalPeriodos.cloneNode(true));
     const btnRefrescado = document.getElementById('btnAbrirModalPeriodos');
+    
+    // Si el usuario tenía permiso, forzamos que el clon mantenga la visibilidad activa
+    if (btnRefrescado && displayEstestablecido !== 'none') {
+        btnRefrescado.style.display = displayEstablecido || 'inline-flex';
+    }
     
     btnRefrescado.addEventListener('click', async () => {
         let configPeriodos = {};
@@ -741,7 +749,7 @@ if (btnAbrirModalPeriodos) {
         
         IDs_PERIODOS_REALES.forEach(id => {
             const elemento = document.getElementById(id);
-            if (elemento) {
+            if (element) {
                 elemento.checked = configPeriodos[id] === true;
             }
         });
@@ -760,6 +768,7 @@ if (btnGuardarPeriodosConfig) {
     btnGuardarPeriodosConfig.replaceWith(btnGuardarPeriodosConfig.cloneNode(true));
     document.getElementById('btnGuardarPeriodosConfig').addEventListener('click', procesarGuardarConfiguracionPeriodos);
 }
+
 
 })();
 
