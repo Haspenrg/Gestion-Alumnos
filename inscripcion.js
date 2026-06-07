@@ -1245,12 +1245,34 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
         let calificacionesMapeadas = {};
         try {
             const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
-            snapCalificaciones.forEach(cDoc => {
-                const cData = cDoc.data();
-                if (cData.alumnoDni === dni) {
-                    calificacionesMapeadas[cData.materia] = cData.cuatrimestres || {};
+                    snapCalificaciones.forEach(cDoc => {
+            const cData = cDoc.data();
+            // Validamos de forma flexible si coincide el DNI de la fila
+            const dniDoc = cData.alumnoDni || cData.alumnoDNI || cData.dni || "";
+            if (String(dniDoc).trim() === String(dni).trim()) {
+                const materiaKey = (cData.materia || "").toLowerCase().trim();
+                
+                // --- ADAPTADOR UNIVERSAL DE ESTRUCTURAS ---
+                // Si la nota viene de la planilla con trim1 y trim2, las normalizamos al formato del informe
+                if (cData.notes || cData.notas || cData.trim1 || cData.trim2) {
+                    const t1 = cData.trim1 || {};
+                    const t2 = cData.trim2 || {};
+                    
+                    calificacionesMapeadas[materiaKey] = {
+                        c1_nota: t1.n1 || t1.n2 || "-",
+                        c2_nota: t2.n1 || t2.n2 || "-",
+                        nota_final: t1.ef || t2.ef || "-",
+                        diciembre: cData.diciembre || "-",
+                        febrero: cData.febrero || "-",
+                        observaciones: cData.observaciones || ""
+                    };
+                } else {
+                    // Fallback: Si ya venía en el formato plano cuatrimestres, lo conservamos en minúsculas
+                    calificacionesMapeadas[materiaKey] = cData.cuatrimestres || cData || {};
                 }
-            });
+            }
+        });
+
         } catch (err) {
             console.warn("No se pudo sincronizar la matriz de calificaciones.");
         }
