@@ -61,12 +61,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
         usuarioLogueado = JSON.parse(datosSesion);
-        rolNormalizado = usuarioLogueado.rol.toLowerCase().trim();
-        permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
-         if (rolNormalizado === "directivo") {
-        esModoLectura = true;
-        if (bannerLectura) bannerLectura.style.display = "block";
-    }
+rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
+permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
+
+// 1. Extraemos las capacidades y definimos el Modo Monitor si el permiso NO es "escritura"
+const capacidadesRol = usuarioLogueado.permisosDelRol || {};
+const nivelPermisoNotas = capacidadesRol.libroCalificaciones ? capacidadesRol.libroCalificaciones.toLowerCase().trim() : "ninguno";
+
+// 2. Evaluación de doble función: Si tiene permiso de escritura OR posee función docente, edita
+if (nivelPermisoNotas === "escritura" || usuarioLogueado.esProfesor === true) {
+    esModoLectura = false;
+} else {
+    esModoLectura = true;
+}
+
+// 3. Activación del banner estético de advertencia si quedó en Solo Lectura
+if (esModoLectura && bannerLectura) {
+    bannerLectura.style.display = "block";
+}
+
 
     // Habilitación universal del botón de períodos por atributo de usuario
     if (usuarioLogueado && usuarioLogueado.permisoGestionPeriodos === true) {

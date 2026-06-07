@@ -213,14 +213,25 @@ function gestionarPanelesFormulario() {
     const altaAnio2 = document.getElementById('altaAnio2');
     const checkProfesor = document.getElementById('checkEsProfesor');
 
-    if (rolId === "profesor") {
+        // 1. Forzar el checkbox si el rol base seleccionado es puramente docente
+    const esRolDocentePuro = (rolId.toLowerCase().trim() === "profesor");
+    if (esRolDocentePuro) {
         if (bloqueCheck) bloqueCheck.style.display = "none";
         checkProfesor.checked = true;
     } else {
         if (bloqueCheck) bloqueCheck.style.display = "flex";
     }
 
-    if (rolId === "preceptor") {
+    // 2. Extraer los permisos del rol seleccionado desde la lista global de roles mapeados en tu sistema
+    // Nota: Usamos "roles" que es el array global donde almacenas la colección de Firebase en este módulo
+    const objetoRolSeleccionado = (typeof roles !== 'undefined') ? roles.find(r => r.id.toLowerCase().trim() === rolId.toLowerCase().trim()) : null;
+    const permisosDelRolSeleccionado = objetoRolSeleccionado?.permisos || {};
+
+    // 3. Gobernación dinámica del panel de asignación de cursos (Gama Preceptorías comunes y superiores)
+    // Se activa si el rol tiene asignada una función de "lectura" en el Legajo Digital
+    const requiereAsignarCursos = (permisosDelRolSeleccionado.legajoDigital === "lectura");
+
+    if (requiereAsignarCursos === true) {
         if (panelPreceptor) panelPreceptor.style.display = "block";
         if (altaAnio1) altaAnio1.setAttribute('required', 'true');
         if (altaAnio2) altaAnio2.setAttribute('required', 'true');
@@ -229,13 +240,15 @@ function gestionarPanelesFormulario() {
         if (altaAnio1) altaAnio1.removeAttribute('required');
         if (altaAnio2) altaAnio2.removeAttribute('required');
     }
-
-    if (rolId === "profesor" || checkProfesor.checked) {
+}
+    // 4. Gobernación dinámica del panel de bolsa de horas para docentes activos
+    const esDocenteActivo = (checkProfesor.checked === true || esRolDocentePuro);
+    if (esDocenteActivo === true) {
         if (panelProfesor) panelProfesor.style.display = "block";
     } else {
         if (panelProfesor) panelProfesor.style.display = "none";
     }
-}
+
 
 // --- LECTURA DE USUARIOS DESDE FIRESTORE ---
 async function obtenerUsuariosDesdeFirestore() {

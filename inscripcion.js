@@ -54,28 +54,18 @@ async function inicializarModuloInscripciones() {
     usuarioLogueado = JSON.parse(datosSesionRaw);
     rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
 
-        // Variables globales de control por capacidad
-    window.permisoMatricula = "ninguno";
-    window.esSoloLectura = true;
+    // Escudo de capacidades dinámicas extraído directamente de la sesión activa
+const capacidadesSesion = usuarioLogueado.permisosDelRol || {};
+window.permisoMatricula = capacidadesSesion.legajoDigital ? capacidadesSesion.legajoDigital.toLowerCase().trim() : "ninguno";
 
-    try {
-        // Consultamos la matriz de permisos real en la colección "roles" de Firestore
-        const docRefRol = doc(db, "roles", rolNormalizado);
-        const snapRol = await getDoc(docRefRol);
-        
-        if (snapRol.exists()) {
-            const datosRol = snapRol.data();
-            window.permisoMatricula = datosRol.permisos?.legajoDigital ? datosRol.permisos.legajoDigital.toLowerCase().trim() : "ninguno";
-        } else if (rolNormalizado.includes("admin")) {
-            window.permisoMatricula = "escritura";
-        }
+// Salvaguarda de infraestructura para cuentas de administración nativa
+if (rolNormalizado.includes("admin") || rolNormalizado.includes("administrador")) {
+    window.permisoMatricula = "escritura";
+}
 
-        // Definimos la capacidad basada en el nivel del módulo
-        window.esSoloLectura = (window.permisoMatricula !== "escritura");
-    } catch (errSecurity) {
-        console.warn("Fallo de sincronización RBAC. Aplicando Solo Lectura preventivo.");
-        window.esSoloLectura = true;
-    }
+// Gobernación atómica del modo de operación de la pantalla
+window.esSoloLectura = (window.permisoMatricula !== "escritura");
+
 
         if ( window. esSoloLectura === true) {
         const formulario = document. getElementById('contenedorFormularioAlta');

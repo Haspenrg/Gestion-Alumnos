@@ -143,16 +143,28 @@ const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveIng
 const user = credenciales.user;
 
       // ====== PARCHE ARQUITECTÓNICO: HIDRATACIÓN DE MATRIZ DE PERMISOS RBAC DINÁMICA ======
-        let matrizPermisosRol = {};
-        try {
-            const idRolUsuario = datosDb.rol ? datosDb.rol.toLowerCase().trim() : "preceptor";
-            const rolSnapshot = await getDoc(doc(db, "roles", idRolUsuario));
-            if (rolSnapshot.exists()) {
-                matrizPermisosRol = rolSnapshot.data().permisos || {};
-            }
-        } catch (errorRol) { 
-            console.error("Error al mapear permisos del rol:", errorRol); 
-        }
+       let matrizPermisosRol = {
+    configuracionUsuarios: "ninguno",
+    planesEstudio: "ninguno",
+    legajoDigital: "ninguno",
+    libroCalificaciones: "ninguno",
+    controlPrevias: "ninguno",
+    reportesEstadisticas: "ninguno",
+    inclusionPpi: "ninguno"
+};
+try {
+    // Si el usuario no tiene rol en Firestore, cae en un string vacío no existente para denegar acceso
+    const idRolUsuario = datosDb.rol ? datosDb.rol.toLowerCase().trim() : "sin-rol-asignado";
+    const rolSnapshot = await getDoc(doc(db, "roles", idRolUsuario));
+    if (rolSnapshot.exists()) {
+        matrizPermisosRol = rolSnapshot.data().permisos || matrizPermisosRol;
+    } else {
+        console.warn(`Alerta de seguridad: El rol [${idRolUsuario}] no está parametrizado en Cloud Firestore.`);
+    }
+} catch (errorRol) {
+    console.error("Error crítico en la sincronización del escudo de seguridad RBAC:", errorRol);
+}
+
 
         let perfilUsuario = {
             nombre: datosDb.nombre || user.displayName || "Personal Haspen",
