@@ -51,150 +51,146 @@
 
         // 2. Consultar y construir la línea de tiempo forense
         const eventosRef = collection(db, "historial_eventos");
-        const consultaEstructurada = query(
-            eventosRef, 
-            where("dni_alumno", "==", dniEstudiante),
-            orderBy("fecha_hora", "desc")
-        );
+      const consultaEstructurada = query(
+        eventosRef,
+        where("dni_alumno", "==", dniEstudiante),
+        orderBy("fecha_hora", "desc")
+    );
 
-        const querySnapshot = await getDocs(consultaEstructurada);
-        
-        // Ocultar y mostrar paneles usando estilos nativos directos seguros
-        statusCarga.style.display = 'none';
-        tarjetaAlumno.style.display = 'block';
-        contenedorTimeline.style.display = 'block';
+    // ====== PARCHE DEFINITIVO V14: CONSOLIDACIÓN DE QUERY Y RENDERIZADO HORIZONTAL ======
+    const querySnapshot = await getDocs(consultaEstructurada);
 
-        listaEventos.innerHTML = "";
-
-        if (querySnapshot.empty) {
     // Ocultar y mostrar paneles usando estilos nativos directos seguros
-        statusCarga.style.display = 'none';
-        tarjetaAlumno.style.display = 'block';
-        contenedorTimeline.style.display = 'block';
-        document.getElementById('panelFiltrosTrayectoria').style.display = 'block';
+    statusCarga.style.display = 'none';
+    tarjetaAlumno.style.display = 'block';
+    contenedorTimeline.style.display = 'block';
+    document.getElementById('panelFiltrosTrayectoria').style.display = 'block';
 
-    
-    // Inyectamos el mensaje directamente en el contenedor preexistente de tu HTML
-    const listaEventos = document.getElementById("listaEventosTimeline");
-    if (listaEventos) {
-        listaEventos.innerHTML = `<p style="color: #94a3b8; font-size: 0.875rem; padding: 10px 0;">No se registran firmas o movimientos forenses para este legajo digital bajo el nuevo módulo de trazabilidad.</p>`;
-    }
-    return;
+    listaEventos.innerHTML = "";
 
+    // 1. Recolección de eventos utilizando tu variable nativa del repositorio
+    const todosLosEventosBici = [];
+    querySnapshot.forEach(docSnap => {
+        todosLosEventosBici.push({ id: docSnap.id, ...docSnap.data() });
+    });
+
+    // 2. Función unificada de renderizado horizontal ultra-compacto
+    function dibujarEventosEnPantalla(listaFiltrada) {
+        listaEventos.innerHTML = "";
+        
+        if (listaFiltrada.length === 0) {
+            listaEventos.innerHTML = `
+            <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 0.85rem; font-family: sans-serif;">
+                No se registran firmas o movimientos para el filtro seleccionado en este ciclo lectivo.
+            </div>`;
+            return;
         }
-        // Renderizado dinámico de la Línea de Tiempo (Timeline)
-        // ====== PARCHE V8: FORMATO ULTRA-COMPACTO DE RENGLÓN ÚNICO Colegio HASPEN ======
-        function dibujarEventosEnPantalla(listaFiltrada) {
-            listaEventos.innerHTML = ""; // Limpiamos el contenedor
+
+        let contenedorHTML = `<div style="display: flex; flex-direction: column; gap: 5px; padding: 6px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">`;
+
+        listaFiltrada.forEach(ev => {
+            const dExtra = ev.datos_duros || {};
             
-            if (listaFiltrada.length === 0) {
-                listaEventos.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">No se encontraron movimientos registrados para los filtros seleccionados.</p>`;
-                return;
+            // Formateador robusto de marcas de tiempo (DD/MM/AAAA HH:MM)
+            let fechaFormateada = "---";
+            if (ev.fecha_hora) {
+                const d = new Date(ev.fecha_hora);
+                if (!isNaN(d.getTime())) {
+                    fechaFormateada = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }
             }
 
-            // Contenedor principal de la lista tipo consola/log
-            let contenedorHTML = `<div style="display: flex; flex-direction: column; gap: 5px; padding: 6px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">`;
+            const cursoStr = dExtra.curso || dExtra.cursoId || "1° Año";
+            const materiaStr = dExtra.materia || ev.descripcion || "Asignatura";
+            const operadorStr = ev.operador_nombre || "Sistema";
+            
+            let accionBadge = "";
+            let valorNotaStr = "";
+            
+            if (ev.subcategoria === "Modificación de Nota" || ev.subcategoria === "MODIFICACION_LEGAJO" || dExtra.notaAnterior !== undefined) {
+                accionBadge = `<span style="color: #ea580c; font-weight: bold; font-size: 11px;">[MODIFICACIÓN]</span>`;
+                valorNotaStr = `<span style="color: #64748b;">${dExtra.campoNota || "Nota"}:</span> <span style="text-decoration: line-through; color: #94a3b8;">${dExtra.notaAnterior || "-"}</span> ➔ <span style="font-weight: bold; color: #0f172a; font-size: 12px;">${dExtra.notaNueva || "-"}</span>`;
+            } else {
+                accionBadge = `<span style="color: #2563eb; font-weight: bold; font-size: 11px;">[INGRESO]</span>`;
+                valorNotaStr = `<span style="color: #64748b;">${dExtra.campoNota || "Nota"}:</span> <span style="font-weight: bold; color: #0f172a; font-size: 12px;">${dExtra.notaNueva || dExtra.nota || "-"}</span>`;
+            }
 
-            listaFiltrada.forEach(ev => {
-                const dExtra = ev.datos_duros || {}; // Acceso seguro a los datos complementarios de la nota
-                
-                // Formateador exacto de fecha a formato escolar legible (DD/MM/AAAA HH:MM)
-                let fechaFormateada = "---";
-                if (ev.fecha_hora) {
-                    const d = new Date(ev.fecha_hora);
-                    if (!isNaN(d.getTime())) {
-                        fechaFormateada = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                    }
-                }
+            contenedorHTML += `
+            <div class="hover:bg-slate-50" style="display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px dashed #e2e8f0; font-family: monospace; font-size: 11px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; box-sizing: border-box;">
+                <span style="color: #94a3b8; flex-shrink: 0;">🕒 ${fechaFormateada}</span>
+                <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
+                <span style="color: #475569; font-weight: 600; flex-shrink: 0;">${cursoStr}</span>
+                <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
+                <span style="color: #1e293b; font-weight: 600; text-transform: uppercase; flex-shrink: 0;">${materiaStr}</span>
+                <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
+                <span style="color: #64748b; flex-shrink: 0;">Prof: ${operadorStr}</span>
+                <span style="color: #cbd5e1; flex-shrink: 0;">➔</span>
+                <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px;">
+                    ${accionBadge}
+                    ${valorNotaStr}
+                </div>
+            </div>`;
+        });
 
-                // Extracción correlativa de variables según el diseño acordado
-                const cursoStr = dExtra.curso || dExtra.cursoId || "1° Año";
-                const materiaStr = dExtra.materia || ev.descripcion || "Asignatura";
-                const operadorStr = ev.operador_nombre || "Sistema";
-                
-                // Control lógico automatizado: Ingreso vs Modificación
-                let accionBadge = "";
-                let valorNotaStr = "";
-                
-                if (ev.subcategoria === "Modificación de Nota" || ev.subcategoria === "MODIFICACION_LEGAJO" || dExtra.notaAnterior !== undefined) {
-                    accionBadge = `<span style="color: #ea580c; font-weight: bold; font-size: 11px;">[MODIFICACIÓN]</span>`;
-                    valorNotaStr = `<span style="color: #64748b;">${dExtra.campoNota || "Nota"}:</span> <span style="text-decoration: line-through; color: #94a3b8;">${dExtra.notaAnterior || "-"}</span> ➔ <span style="font-weight: bold; color: #0f172a; font-size: 12px;">${dExtra.notaNueva || "-"}</span>`;
-                } else {
-                    accionBadge = `<span style="color: #2563eb; font-weight: bold; font-size: 11px;">[INGRESO]</span>`;
-                    valorNotaStr = `<span style="color: #64748b;">${dExtra.campoNota || "Nota"}:</span> <span style="font-weight: bold; color: #0f172a; font-size: 12px;">${dExtra.notaNueva || dExtra.nota || "-"}</span>`;
-                }
+        contenedorHTML += `</div>`;
+        listaEventos.innerHTML = contenedorHTML;
+    }
 
-                // Construcción de la línea horizontal única monoespaciada
-                contenedorHTML += `
-                <div class="hover:bg-slate-50" style="display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px dashed #e2e8f0; font-family: monospace; font-size: 11px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; box-sizing: border-box;">
-                    <span style="color: #94a3b8; flex-shrink: 0;">🕒 ${fechaFormateada}</span>
-                    <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
-                    <span style="color: #475569; font-weight: 600; flex-shrink: 0;">${cursoStr}</span>
-                    <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
-                    <span style="color: #1e293b; font-weight: 600; text-transform: uppercase; flex-shrink: 0;">${materiaStr}</span>
-                    <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
-                    <span style="color: #64748b; flex-shrink: 0;">Prof: ${operadorStr}</span>
-                    <span style="color: #cbd5e1; flex-shrink: 0;">➔</span>
-                    <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px;">
-                        ${accionBadge}
-                        ${valorNotaStr}
-                    </div>
-                </div>`;
+    // 3. Renderizado automático inicial en pantalla
+    dibujarEventosEnPantalla(todosLosEventosBici);
+
+    // 4. Asignación de EventListeners reactivos en la botonera lateral
+    const botonesFiltro = document.querySelectorAll('.btn-cat');
+    botonesFiltro.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const botonActivo = e.target.closest('.btn-cat');
+            if (!botonActivo) return;
+
+            // Conmutación estética del Azul Institucional
+            botonesFiltro.forEach(b => {
+                b.style.background = "#f8fafc";
+                b.style.color = "#475569";
+                b.classList.remove('active');
             });
+            botonActivo.style.background = "#1b4d82";
+            botonActivo.style.color = "#ffffff";
+            botonActivo.classList.add('active');
 
-            contenedorHTML += `</div>`;
-            listaEventos.innerHTML = contenedorHTML;
-        }
-        // ==============================================================================
+            const categoriaSeleccionada = botonActivo.getAttribute('data-cat') || "TODOS";
 
-
-        // Dibujamos todos los eventos la primera vez
-        dibujarEventosEnPantalla(todosLosEventosBici);
-
-        // Exponemos la función para los botones de historial.html
-        window.filtrarHistorial = function(anio, categoria) {
-            let resultado = todosLosEventosBici;
-
-            // Filtro 1: Año de Cursada (ej: filtra por el número de año escrito en la descripción o ciclo)
-            if (anio !== "Todos") {
-                const numeroAnio = anio.charAt(0); // Extrae el "1", "2", etc.
-                resultado = resultado.filter(ev => 
-                    (ev.ciclo_lectivo && ev.ciclo_lectivo.toString().includes(anio)) || 
-                    (ev.descripcion && (ev.descripcion.includes(anio) || ev.descripcion.includes(`${numeroAnio}°`)))
+            // Filtro adaptativo cruzado con soporte para el historial viejo (CALIFICACIONES)
+            if (categoriaSeleccionada === "TODOS") {
+                dibujarEventosEnPantalla(todosLosEventosBici);
+            } else if (categoriaSeleccionada === "NOTAS_INFORMES") {
+                const filtrados = todosLosEventosBici.filter(ev => 
+                    ev.categoria === "CALIFICACIONES" || ev.categoria === "NOTAS_INFORMES"
                 );
+                dibujarEventosEnPantalla(filtrados);
+            } else {
+                const filtrados = todosLosEventosBici.filter(ev => ev.categoria === categoriaSeleccionada);
+                dibujarEventosEnPantalla(filtrados);
             }
+        });
+    });
 
-            // Filtro 2: Tipo de Registro
-            if (categoria !== "TODOS") {
+    // 5. Soporte puente de interconexión para selectores externos de año
+    window.filtrarHistorial = function(anio, categoria) {
+        let resultado = todosLosEventosBici;
+        if (anio !== "Todos") {
+            resultado = resultado.filter(ev => ev.ciclo_lectivo && ev.ciclo_lectivo.toString().includes(anio));
+        }
+        if (categoria && categoria !== "TODOS") {
+            if (categoria === "NOTAS_INFORMES") {
+                resultado = resultado.filter(ev => ev.categoria === "CALIFICACIONES" || ev.categoria === "NOTAS_INFORMES");
+            } else {
                 resultado = resultado.filter(ev => ev.categoria === categoria);
             }
+        }
+        dibujarEventosEnPantalla(resultado);
+    };
 
-            // Actualizamos la pantalla con los datos filtrados
-            dibujarEventosEnPantalla(resultado);
-        };
-
-
-    } catch (error) {
+} catch (error) {
     console.error("Fallo forense en la renderización del historial:", error);
-    
-    // Verificación específica de falta de índice compuesto requerido por Firebase
-    if (error.message && error.message.includes("index")) {
-        statusCarga.innerHTML = `
-            <div style="padding: 20px; border: 1px solid #f43f5e; background-color: #881337; border-radius: 8px; text-align: left;">
-                <p class="text-sm text-rose-400 font-bold">⚠ Falta el Índice Compuesto en Firestore</p>
-                <p class="text-xs text-slate-200" style="margin-top: 8px;">Para que esta consulta funcione, Google requiere un índice ordenado. Por favor:</p>
-                <ol class="text-xs text-slate-300" style="margin-top: 6px; padding-left: 20px; line-height: 1.5;">
-                    <li>Presioná la tecla <b>F12</b> en tu teclado para abrir las Herramientas de Desarrollador.</li>
-                    <li>Hacé clic en la pestaña <b>Consola (Console)</b>.</li>
-                    <li>Buscá el enlace azul de Firebase que empieza con <i>https://google.com...</i> y hacé clic.</li>
-                    <li>Presioná el botón <b>"Crear índice"</b> en la web de Google y esperá 3 minutos.</li>
-                </ol>
-            </div>
-        `;
-    } else {
-        statusCarga.innerHTML = `<p class="text-sm text-rose-400 font-medium">⚠ Error crítico de conexión al procesar la línea de tiempo escolar. Detalles: ${error.message || error}</p>`;
-    }
+    statusCarga.innerHTML = `<p class="text-sm text-rose-400 font-medium">⚠️ Error crítico de conexión al procesar la línea de tiempo escolar.</p>`;
 }
-
-
 })();
