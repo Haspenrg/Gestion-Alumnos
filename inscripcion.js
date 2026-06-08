@@ -1242,39 +1242,47 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
             }
         }
 
+              // ====== PARCHE V2: SANEAMIENTO DE VALORES NULOS Y NOTAS CUATRIMESTRALES ======
         let calificacionesMapeadas = {};
         try {
-            const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
-             snapCalificaciones.forEach(cDoc => {
-            const cData = cDoc.data();
-            // Soporte flexible para el DNI del documento
-            const dniDoc = cData.alumnoDni || cData.alumnoDNI || cData.dni || "";
+            const { query, where, collection, getDocs } = await import(b + 'firebase-firestore.js');
+            const consultaNotas = query(
+                collection(db, "alumnos_calificaciones"),
+                where("alumnoDni", "==", String(dni).trim())
+            );
+            const snapCalificaciones = await getDocs(consultaNotas);
             
-            if (String(dniDoc).trim() === String(dni).trim()) {
-                // Preservamos las mayúsculas/minúsculas originales del nombre de la materia
-                const claveMateriaOriginal = (cData.materia || "").trim();
-                
-                // Mapeo adaptativo desde el formato de la planilla (trim1 y trim2)
-                if (cData.trim1 || cData.trim2) {
-                    const t1 = cData.trim1 || {};
-                    const t2 = cData.trim2 || {};
+            snapCalificaciones.forEach(cDoc => {
+                const cData = cDoc.data();
+                if (cData && cData.materia) {
+                    const claveMateriaOriginal = cData.materia.trim();
+                    const n = cData.notes || cData.notas || {};
+                    const t1 = n.trim1 || {};
+                    const t2 = n.trim2 || {};
                     
+                                        // ====== PARCHE V4: ALINEACIÓN ATÓMICA CON CONSTRUIREMEDIAHOJA ======
                     calificacionesMapeadas[claveMateriaOriginal] = {
-                        c1_nota: t1.ef || "0",
-                        c2_nota: t2.ef || "0",
-                        nota_final: cData.nota_final || t2.ef || "0",
-                        diciembre: cData.diciembre || "0",
-                        febrero: cData.febrero || "0",
+                        // Mapeo exacto de las claves que consume tu HTML final
+                        c1_inf1: t1.n1 !== null && t1.n1 !== undefined && t1.n1 !== "" ? String(t1.n1) : "-",
+                        c1_inf2: t1.n2 !== null && t1.n2 !== undefined && t1.n2 !== "" ? String(t1.n2) : "-",
+                        c1_forta: t1.ef !== null && t1.ef !== undefined && t1.ef !== "" ? String(t1.ef) : "-",
+                        c1_nota: cData.notaCuatrimestre1 !== null && cData.notaCuatrimestre1 !== undefined && cData.notaCuatrimestre1 !== "" ? String(cData.notaCuatrimestre1) : "-",
+                        
+                        c2_inf1: t2.n1 !== null && t2.n1 !== undefined && t2.n1 !== "" ? String(t2.n1) : "-",
+                        c2_inf2: t2.n2 !== null && t2.n2 !== undefined && t2.n2 !== "" ? String(t2.n2) : "-",
+                        c2_forta: t2.ef !== null && t2.ef !== undefined && t2.ef !== "" ? String(t2.ef) : "-",
+                        c2_nota: cData.notaCuatrimestre2 !== null && cData.notaCuatrimestre2 !== undefined && cData.notaCuatrimestre2 !== "" ? String(cData.notaCuatrimestre2) : "-",
+                        
+                        nota_final: cData.notaFinal !== null && cData.notaFinal !== undefined && cData.notaFinal !== "" ? String(cData.notaFinal) : "-",
+                        diciembre: cData.diciembre !== null && cData.diciembre !== undefined && cData.diciembre !== "" ? String(cData.diciembre) : "-",
+                        febrero: cData.febrero !== null && cData.febrero !== undefined && cData.febrero !== "" ? String(cData.febrero) : "-",
                         observaciones: cData.observaciones || ""
                     };
-                } else {
-                    // Fallback directo por si existen registros con la estructura histórica
-                    calificacionesMapeadas[claveMateriaOriginal] = cData.cuatrimestres || cData || {};
+                    // ===================================================================
+
                 }
-            }
-        });
-
-
+            });
+        // =========================================================================
 
 
         } catch (err) {
@@ -1309,31 +1317,38 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     } else {
         materias.forEach(materia => {
             const c = calificaciones[materia] || {};
-            const inf1_1 = c.c1_inf1 || "0";
-            const inf1_2 = c.c1_inf2 || "0";
-            const forta1 = c.c1_forta || "0";
-            const notaC1 = c.c1_nota || "0";
-            const inf2_1 = c.c2_inf1 || "0";
-            const inf2_2 = c.c2_inf2 || "0";
-            const forta2 = c.c2_forta || "0";
-            const notaC2 = c.c2_nota || "0";
-            const finalNota = c.nota_final || "0";
+            
+            // ====== PARCHE V4.1: REEMPLAZO COERCITIVO DE CEROS POR GUIONES DE PROCESO ======
+            const inf1_1   = c.c1_inf1   && c.c1_inf1   !== "0" ? c.c1_inf1   : "-";
+            const inf1_2   = c.c1_inf2   && c.c1_inf2   !== "0" ? c.c1_inf2   : "-";
+            const forta1   = c.c1_forta  && c.c1_forta  !== "0" ? c.c1_forta  : "-";
+            const notaC1   = c.c1_nota   && c.c1_nota   !== "0" ? c.c1_nota   : "-";
+            const inf2_1   = c.c2_inf1   && c.c2_inf1   !== "0" ? c.c2_inf1   : "-";
+            const inf2_2   = c.c2_inf2   && c.c2_inf2   !== "0" ? c.c2_inf2   : "-";
+            const forta2   = c.c2_forta  && c.c2_forta  !== "0" ? c.c2_forta  : "-";
+            const notaC2   = c.c2_nota   && c.c2_nota   !== "0" ? c.c2_nota   : "-";
+            const finalNota = c.nota_final && c.nota_final !== "0" ? c.nota_final : "-";
+            // ==============================================================================
 
+                       // ====== PARCHE V5: OPTIMIZACIÓN DE LEGIBILIDAD Y ESCALA TIPOGRÁFICA ======
             filasHTML += `
             <tr>
-                <td style="text-align:left; font-weight:bold; font-size:9px; padding:3px;">${materia}</td>
-                <td>${inf1_1}</td>
-                <td>${inf1_2}</td>
-                <td>${forta1}</td>
-                <td style="background:#f1f5f9; font-weight:bold;">${notaC1}</td>
-                <td>${inf2_1}</td>
-                <td>${inf2_2}</td>
-                <td>${forta2}</td>
-                <td style="background:#f1f5f9; font-weight:bold;">${notaC2}</td>
-                <td style="background:#e2e8f0; font-weight:bold; font-size:11px;">${finalNota}</td>
+                <td style="text-align:left; font-weight:bold; font-size:9.5px; padding:4px 3px;">${materia}</td>
+                <td style="font-size:11px; font-weight:500;">${inf1_1}</td>
+                <td style="font-size:11px; font-weight:500;">${inf1_2}</td>
+                <td style="font-size:11px; font-weight:500;">${forta1}</td>
+                <td style="background:#f1f5f9; font-weight:bold; font-size:12px; color:#1e293b;">${notaC1}</td>
+                <td style="font-size:11px; font-weight:500;">${inf2_1}</td>
+                <td style="font-size:11px; font-weight:500;">${inf2_2}</td>
+                <td style="font-size:11px; font-weight:500;">${forta2}</td>
+                <td style="background:#f1f5f9; font-weight:bold; font-size:12px; color:#1e293b;">${notaC2}</td>
+                <td style="background:#e2e8f0; font-weight:bold; font-size:12px; color:#0f172a;">${finalNota}</td>
             </tr>
             `;
+            // =========================================================================
+
         });
+
     // =========================================================================
 // UBICACIÓN: Final de la función construirMediaHojaInformePedagogico
 // REEMPLAZO DEFINITIVO: Recuperación del diseño institucional del Colegio HASPEN

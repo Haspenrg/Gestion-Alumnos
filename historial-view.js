@@ -83,13 +83,7 @@
 
         }
         // Renderizado dinámico de la Línea de Tiempo (Timeline)
-              // Guardamos todos los eventos en memoria para poder filtrarlos con los botones
-        const todosLosEventosBici = [];
-        querySnapshot.forEach(docSnap => {
-            todosLosEventosBici.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        // Función para renderizar la línea de tiempo con tus estilos originales
+        // ====== PARCHE V8: FORMATO ULTRA-COMPACTO DE RENGLÓN ÚNICO Colegio HASPEN ======
         function dibujarEventosEnPantalla(listaFiltrada) {
             listaEventos.innerHTML = ""; // Limpiamos el contenedor
             
@@ -98,39 +92,61 @@
                 return;
             }
 
+            // Contenedor principal de la lista tipo consola/log
+            let contenedorHTML = `<div style="display: flex; flex-direction: column; gap: 5px; padding: 6px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">`;
+
             listaFiltrada.forEach(ev => {
-                // Configuración cromática de badges original tuya
-                let badgeEstilo = "bg-blue-950 text-blue-400 border-blue-900";
-                if (ev.subcategoria === "BAJA_PURGADO") badgeEstilo = "bg-rose-950 text-rose-400 border-rose-900";
-                if (ev.subcategoria === "MODIFICACION_LEGAJO") badgeEstilo = "bg-amber-950 text-amber-400 border-amber-900";
-                if (ev.subcategoria === "ALTA_LOTE") badgeEstilo = "bg-emerald-950 text-emerald-400 border-emerald-900";
+                const dExtra = ev.datos_duros || {}; // Acceso seguro a los datos complementarios de la nota
+                
+                // Formateador exacto de fecha a formato escolar legible (DD/MM/AAAA HH:MM)
+                let fechaFormateada = "---";
+                if (ev.fecha_hora) {
+                    const d = new Date(ev.fecha_hora);
+                    if (!isNaN(d.getTime())) {
+                        fechaFormateada = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                    }
+                }
 
-                // Formateador de fecha exacto tuyo
-                const fObj = new Date(ev.fecha_hora);
-                const fechaFormateada = !isNaN(fObj.getTime())
-                    ? `${fObj.getDate().toString().padStart(2,'0')}/${(fObj.getMonth()+1).toString().padStart(2,'0')}/${fObj.getFullYear()}`
-                    : "Fecha no especificada";
+                // Extracción correlativa de variables según el diseño acordado
+                const cursoStr = dExtra.curso || dExtra.cursoId || "1° Año";
+                const materiaStr = dExtra.materia || ev.descripcion || "Asignatura";
+                const operadorStr = ev.operador_nombre || "Sistema";
+                
+                // Control lógico automatizado: Ingreso vs Modificación
+                let accionBadge = "";
+                let valorNotaStr = "";
+                
+                if (ev.subcategoria === "Modificación de Nota" || ev.subcategoria === "MODIFICACION_LEGAJO" || dExtra.notaAnterior !== undefined) {
+                    accionBadge = `<span style="color: #ea580c; font-weight: bold; font-size: 11px;">[MODIFICACIÓN]</span>`;
+                    valorNotaStr = `<span style="color: #64748b;">${dExtra.campoNota || "Nota"}:</span> <span style="text-decoration: line-through; color: #94a3b8;">${dExtra.notaAnterior || "-"}</span> ➔ <span style="font-weight: bold; color: #0f172a; font-size: 12px;">${dExtra.notaNueva || "-"}</span>`;
+                } else {
+                    accionBadge = `<span style="color: #2563eb; font-weight: bold; font-size: 11px;">[INGRESO]</span>`;
+                    valorNotaStr = `<span style="color: #64748b;">${dExtra.campoNota || "Nota"}:</span> <span style="font-weight: bold; color: #0f172a; font-size: 12px;">${dExtra.notaNueva || dExtra.nota || "-"}</span>`;
+                }
 
-                const itemHtml = `
-                    <div class="relative pl-2">
-                        <div class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-slate-600 ring-4 ring-slate-800"></div>
-                        <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-lg shadow-sm hover:border-slate-600 transition-all">
-                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-                                <span class="px-2 py-0.5 border ${badgeEstilo} text-[10px] font-bold tracking-wide rounded-md uppercase">
-                                    ${ev.subcategoria ? ev.subcategoria.replace('_', ' ') : ev.categoria}
-                                </span>
-                                <span class="text-slate-500 text-[10px] font-medium">${fechaFormateada}</span>
-                            </div>
-                            <p class="text-slate-200 text-xs leading-relaxed">${ev.descripcion || "Sin detalles de acción."}</p>
-                            <div class="mt-3 pt-2 border-t border-slate-700/40 flex flex-wrap justify-between items-center text-[10px] text-slate-400">
-                                <span><strong>Módulo Base:</strong> ${ev.categoria}</span>
-                                <span><strong>Firmado por:</strong> <span class="text-slate-300 font-semibold">${ev.operador_nombre || "Operador"}</span></span>
-                            </div>
-                        </div>
-                    </div>`;
-                listaEventos.insertAdjacentHTML('beforeend', itemHtml);
+                // Construcción de la línea horizontal única monoespaciada
+                contenedorHTML += `
+                <div class="hover:bg-slate-50" style="display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px dashed #e2e8f0; font-family: monospace; font-size: 11px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; box-sizing: border-box;">
+                    <span style="color: #94a3b8; flex-shrink: 0;">🕒 ${fechaFormateada}</span>
+                    <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
+                    <span style="color: #475569; font-weight: 600; flex-shrink: 0;">${cursoStr}</span>
+                    <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
+                    <span style="color: #1e293b; font-weight: 600; text-transform: uppercase; flex-shrink: 0;">${materiaStr}</span>
+                    <span style="color: #cbd5e1; flex-shrink: 0;">|</span>
+                    <span style="color: #64748b; flex-shrink: 0;">Prof: ${operadorStr}</span>
+                    <span style="color: #cbd5e1; flex-shrink: 0;">➔</span>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px;">
+                        ${accionBadge}
+                        ${valorNotaStr}
+                    </div>
+                </div>`;
             });
+
+            contenedorHTML += `</div>`;
+            listaEventos.innerHTML = contenedorHTML;
         }
+        // ==============================================================================
+
 
         // Dibujamos todos los eventos la primera vez
         dibujarEventosEnPantalla(todosLosEventosBici);
