@@ -125,16 +125,17 @@
                 <form id="form-curso" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
                     <input type="hidden" id="idOriginalEdicion" value="">
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
-                        <label for="select-ciclo" style="font-weight: bold; margin-bottom: 5px;">Año / Ciclo:</label>
+                       <label for="select-ciclo" style="font-weight: bold; margin-bottom: 5px;">Año de Cursada:</label>
                         <select id="select-ciclo" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
                             <option value="">Seleccione una opción...</option>
-                            <option value="1° Año - Ciclo Básico">1° Año - Ciclo Básico</option>
-                            <option value="2° Año - Ciclo Básico">2° Año - Ciclo Básico</option>
-                            <option value="3° Año - Ciclo Básico">3° Año - Ciclo Básico</option>
-                            <option value="4° Año - Ciclo Orientado">4° Año - Ciclo Orientado</option>
-                            <option value="5° Año - Ciclo Orientado">5° Año - Ciclo Orientado</option>
-                            <option value="6° Año - Ciclo Orientado">6° Año - Ciclo Orientado</option>
+                            <option value="1° Año">1° Año</option>
+                            <option value="2° Año">2° Año</option>
+                            <option value="3° Año">3° Año</option>
+                            <option value="4° Año">4° Año</option>
+                            <option value="5° Año">5° Año</option>
+                            <option value="6° Año">6° Año</option>
                         </select>
+
                     </div>
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
                         <label for="select-division" style="font-weight: bold; margin-bottom: 5px;">División:</label>
@@ -169,18 +170,29 @@
                 
                 <!-- BARRA DE FILTROS TOTALMENTE EN LÍNEA HORIZONTAL -->
                 <div class="contenedor-filtros-horizontal">
-                    <div class="filtro-item-bloque">
-                        <label for="filtro-anio" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Año / Ciclo:</label>
-                        <select id="filtro-anio" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="">-- Todos los Años --</option>
-                            <option value="1">1° Año</option>
-                            <option value="2">2° Año</option>
-                            <option value="3">3° Año</option>
-                            <option value="4">4° Año</option>
-                            <option value="5">5° Año</option>
-                            <option value="6">6° Año</option>
-                        </select>
-                    </div>
+                <div class="filtro-item-bloque">
+                    <label for="filtro-anio" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Año:</label>
+                    <select id="filtro-anio" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="">-- Todos los Años --</option>
+                        <option value="1° Año">1° Año</option>
+                        <option value="2° Año">2° Año</option>
+                        <option value="3° Año">3° Año</option>
+                        <option value="4° Año">4° Año</option>
+                        <option value="5° Año">5° Año</option>
+                        <option value="6° Año">6° Año</option>
+                    </select>
+                </div>
+                <div class="filtro-item-bloque" style="max-width: 260px !important;">
+                    <label for="filtro-orientacion" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Orientación:</label>
+                    <select id="filtro-orientacion" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="">-- Todas las Orientaciones --</option>
+                        <option value="Común (1° a 3° Año)">Común (1° a 3° Año)</option>
+                        <option value="Economía y Administración">Economía y Administración</option>
+                        <option value="Ciencias Sociales">Ciencias Sociales</option>
+                        <option value="Agro y Ambiente">Agro y Ambiente</option>
+                    </select>
+                </div>
+
                     <div class="filtro-item-bloque" style="max-width: 260px !important;">
                         <label for="filtro-orientacion" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Orientación:</label>
                         <select id="filtro-orientacion" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
@@ -262,11 +274,10 @@
                         btnToggle.style.display = "block";
                         btnToggle.addEventListener('click', alternarVisibilidadPanelSemillas);
                     }
-                    const btnAddDivision = document.getElementById('btn-add-division');
-                    if (btnAddDivision) btnAddDivision.addEventListener('click', agregarNuevaDivisionCaliente);
+                                
                     const btnAddOrientacion = document.getElementById('btn-add-orientacion');
-                    if (btnAddOrientacion) btnAddOrientacion.addEventListener('click', agregarNuevaOrientacionCaliente);
-                }
+                if (btnAddOrientacion) btnAddOrientacion.addEventListener('click', agregarNuevaOrientacionCaliente);
+            } // <-- Asegurate de dejar esta llave de cierre de la función inicializarEstructura()
 
                 // Control Dinámico de Layout Responsivo
                 const gridPrincipal = document.querySelector('.grid-formulario');
@@ -399,23 +410,31 @@
                 const selectCiclo = document.getElementById('select-ciclo');
                 const selectOri = document.getElementById('select-orientacion');
                 if (!selectCiclo || !selectOri) return;
-                const ciclo = selectCiclo.value;
+
+                const ciclo = selectCiclo.value; // Ej: "1° Año" o "4° Año"
                 const valorGuardadoEdicion = window.orientacionEditarCarga || "";
+
                 selectOri.innerHTML = '<option value="">Seleccione orientación...</option>';
+
                 if (!ciclo) {
                     cargarMateriasSugeridas();
                     return;
                 }
-                if (ciclo.includes("Ciclo Básico")) {
-                    selectOri.add(new Option("Ciclo Básico", "Ciclo Básico"));
-                    selectOri.value = "Ciclo Básico";
+
+                // Evaluamos si el año corresponde al primer bloque común o al segundo orientado
+                const esAnioBajo = ciclo.includes("1°") || ciclo.includes("2°") || ciclo.includes("3°");
+
+                if (esAnioBajo) {
+                    selectOri.add(new Option("Común (1° a 3° Año)", "Común (1° a 3° Año)"));
+                    selectOri.value = "Común (1° a 3° Año)";
                 } else {
+                    // Para 4°, 5° y 6° año se listan las especialidades reales de la institución
                     Object.keys(configOrientaciones).forEach(ori => {
-                        if (ori !== "comun" && ori !== "basico" && ori !== "Ciclo Básico") {
+                        if (ori !== "comun" && ori !== "basico" && ori !== "Ciclo Básico" && ori !== "Común (1° a 3° Año)") {
                             selectOri.add(new Option(ori, ori));
                         }
                     });
-                    if (valorGuardadoEdicion && valorGuardadoEdicion !== "Ciclo Básico") {
+                    if (valorGuardadoEdicion && valorGuardadoEdicion !== "Ciclo Básico" && valorGuardadoEdicion !== "Común (1° a 3° Año)") {
                         selectOri.value = valorGuardadoEdicion;
                     }
                 }
@@ -427,28 +446,39 @@
                 const selectOrientacion = document.getElementById('select-orientacion');
                 const contenedor = document.getElementById('contenedor-materias-checkbox');
                 if (!selectCiclo || !selectOrientacion || !contenedor) return;
+
                 const ciclo = selectCiclo.value;
                 const orientacion = selectOrientacion.value;
+
                 if (!ciclo || !orientacion) {
                     contenedor.innerHTML = '<p style="font-size: 13px; color: #666; margin: 0;">Seleccione Año y Orientación para desplegar el mapa estricto de asignaturas.</p>';
                     return;
                 }
+
                 contenedor.innerHTML = "";
                 let listaMaterias = [...configOrientaciones.comun];
-                if (ciclo.includes("Ciclo Básico")) {
+
+                const esAnioBajo = ciclo.includes("1°") || ciclo.includes("2°") || ciclo.includes("3°");
+
+                if (esAnioBajo) {
+                    // Combina el tronco común escolar más las materias específicas de los primeros años
                     listaMaterias = listaMaterias.concat(configOrientaciones.basico);
-                } else if (ciclo.includes("Ciclo Orientado")) {
+                } else {
+                    // Trae las materias de la especialidad correspondiente elegida en el select
                     if (configOrientaciones[orientacion]) {
                         listaMaterias = listaMaterias.concat(configOrientaciones[orientacion]);
                     }
                 }
+
                 const materiasPreviamenteSeleccionadas = window.materiasEditarCarga || [];
+
                 listaMaterias.forEach((materia, i) => {
                     const item = document.createElement('div');
                     item.style.margin = "4px 0";
                     item.style.display = "grid";
                     item.style.gridTemplateColumns = "24px 1fr";
                     item.style.alignItems = "center";
+                    
                     const checkedAttr = materiasPreviamenteSeleccionadas.includes(materia) ? "checked" : "";
                     item.innerHTML = `
                         <input type="checkbox" name="materias-curso" value="${materia}" id="mat-${i}" ${checkedAttr} style="margin: 0; cursor: pointer;">
@@ -459,6 +489,8 @@
                     contenedor.appendChild(item);
                 });
             }
+
+            
 
             async function procesarGuardarCurso(e) {
                 e.preventDefault();
@@ -478,9 +510,10 @@
                     return;
                 }
                 const materiasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
-                const numeroAnio = ciclo.charAt(0);
+                const numeroAnio = ciclo.charAt(0); 
                 const letraTurno = turno.substring(0, 1).toUpperCase();
                 const cursoId = `${numeroAnio}-${division}-${letraTurno}`;
+
                 try {
                     if (!idEdicion) {
                         const docCursoRef = doc(db, "cursos", cursoId);
@@ -586,12 +619,16 @@
                 const valTurno = document.getElementById('filtro-turno').value ? document.getElementById('filtro-turno').value.trim() : "";
 
                 const registrosFiltrados = cacheCursos.filter(curso => {
-                    const cumpleAnio = !valAnio || (curso.ciclo && curso.ciclo.startsWith(valAnio));
-                    const cumpleOri = !valOri || (curso.orientacion === valOri);
-                    const turnoCursoLimpio = curso.turno ? curso.turno.toString().trim() : "";
-                    const cumpleTurno = !valTurno || (turnoCursoLimpio === valTurno);
-                    return cumpleAnio && cumpleOri && cumpleTurno;
-                });
+                // Compara de forma exacta el año limpio ("1° Año", "2° Año", etc.)
+                const cumpleAnio = !valAnio || (curso.ciclo === valAnio);
+                const cumpleOri = !valOri || (curso.orientacion === valOri);
+                
+                const turnoCursoLimpio = curso.turno ? curso.turno.toString().trim() : "";
+                const cumpleTurno = !valTurno || (turnoCursoLimpio === valTurno);
+                
+                return cumpleAnio && cumpleOri && cumpleTurno;
+            });
+
 
                 if (registrosFiltrados.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">No se encontraron estructuras con los filtros aplicados.</td></tr>`;
@@ -640,6 +677,8 @@
                 await inicializarEstructura();
             }
         })();
+
+
     </script>
 </body>
 </html>
