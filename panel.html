@@ -171,7 +171,7 @@ async function verificarYConfigurarPanel() {
         configurarEnlaceModulo("mod-inscripcion", "inscripcion.html");
         configurarEnlaceModulo("mod-cursos-materias", "cursos-materias.html");
         configurarEnlaceModulo("mod-calificaciones", "calificaciones.html");
-        configurarEnlaceModulo("mod-previas", "alert('Próximamente: Control de Previas')");
+        configurarEnlaceModulo("mod-previas", "previas.html");
         configurarEnlaceModulo("mod-estadisticas", "estadisticas.html");
         configurarEnlaceModulo("mod-roles", "roles.html");
         return;
@@ -199,7 +199,7 @@ if (!permisos) {
 // EVALUACIÓN GENERAL DE ACCESOS DINÁMICOS BASADO PURAMENTE EN CAPACIDADES
 evaluarPermisoModulo("mod-usuarios", permisos.configuracionUsuarios, "usuarios.html", "Gestión de Usuarios");
 evaluarPermisoModulo("mod-cursos-materias", permisos.planesEstudio, "cursos-materias.html", "Crear Cursos y Materias");
-evaluarPermisoModulo("mod-previas", permisos.controlPrevias, "alert('Próximamente: Control de Previas')", "Control de Previas");
+evaluarPermisoModulo("mod-previas", permisos.controlPrevias, "previas.html", "Control de Previas");
 evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, "estadisticas.html", "Estadísticas");
 evaluarPermisoModulo("mod-inscripcion", permisos.legajoDigital, "inscripcion.html", "Gestión de Alumnos");
 

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Parche para el Icono de la Pestaña (Favicon) -->
+    <link rel="icon" type="image/png" href="logo1.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Previas - Colegio HASPEN</title>
+    
+    <!-- Archivo de Estilos Base del Proyecto -->
+    <link rel="stylesheet" href="estilos.css">
+
+    <style>
+        /* Desactivar el centrado vertical forzado de estilos.css exclusivo para este módulo masivo */
+        body {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+            background: #f1f5f9 !important;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        /* Contenedor unificado de pantalla completa estilo historial.html */
+        .seccion-planilla {
+            background-color: #ffffff;
+            border: 2px solid #1b4d82;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            text-align: left;
+        }
+        /* Tabla de Previas optimizada para alta densidad de datos */
+        .tabla-previas {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+                .tabla-previas th {
+            background-color: #1b4d82;
+            color: #ffffff;
+            padding: 6px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid #13365b;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .tabla-previas td {
+            padding: 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #cbd5e1;
+            color: #334155;
+        }
+        /* Entradas de texto embebidas en las celdas sin romper el alto de fila */
+        .input-celda {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 12px;
+            border: 1px solid #b4cbe3;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        /* Estados visuales compactos */
+        .badge-pendiente {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid #fca5a5;
+            display: inline-block;
+        }
+        .badge-aprobada {
+            background-color: #d1fae5;
+            color: #059669;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid #6ee7b7;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🏛️ 1. FRANJA SUPERIOR: CABECERA INSTITUCIONAL ANCHA -->
+    <header style="background-color: #1b4d82; border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
+
+                Colegio Provincial HASPEN
+            </h1>
+            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #93c5fd; font-weight: 500;">
+                Sistema Integrado de Control de Materias Pendientes y Previas
+            </p>
+        </div>
+        <div>
+            <button onclick="window.location.href='panel.html'" style="background: #13365b; color: #ffffff; border: 1px solid #3b82f6; padding: 10px 20px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em;">
+                Volver al Panel
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR DE TRABAJO PRINCIPAL (ANCHO LIBRE) -->
+    <main style="padding: 24px; box-sizing: border-box; width: 100%;">
+
+        <!-- 🔍 2. FRANJA CENTRAL: BARRA DE BÚSQUEDA Y CONTROL -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; width: 100%; box-sizing: border-box; background-color: #ffffff; border: 2px solid #1b4d82; border-radius: 12px; min-height: 54px; padding: 10px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left;">
+
+            <!-- Cuadro de Búsqueda y Acciones Intermedio y Chato -->
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 590px;">
+                <input type="text" id="inputBuscarAlumno" placeholder="Buscar por DNI o Apellido..." 
+                    style="margin: 0; flex-grow: 1; height: 34px !important; padding: 4px 12px !important; font-size: 13px !important; box-sizing: border-box;">
+                <button id="btnBuscarPrevia" class="btn-principal" 
+                    style="width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    Buscar
+                </button>
+                <button id="btnAbrirAltaManual" class="btn-principal" 
+                    style="background-color: #059669; border-color: #047857; width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; display: block; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    Carga Manual
+                </button>
+            </div>
+            <!-- Ficha del Alumno Seleccionado Dinámica (Estirada al borde derecho simétrico) -->
+            <div id="fichaAlumnoActivo" style="background-color: #f8fafc; border: 1px solid #cbd5e1; height: 34px; padding: 0 16px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-grow: 1; box-sizing: border-box; font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: bold; color: #1b4d82; text-transform: uppercase; font-size: 11px; white-space: nowrap;">Alumno Seleccionado:</span>
+                    <span id="txtNombreAlumno" style="font-weight: bold; color: #334155; white-space: nowrap;">Ningún alumno seleccionado</span>
+                </div>
+                <span id="txtDniAlumno" style="color: #64748b; font-weight: normal; white-space: nowrap;"></span>
+            </div>
+
+
+            <!-- Contenedor para Carga Manual (Se activa por rol de Escritura) -->
+            <div id="wrapperAccionesEscritura" style="display: none;">
+                <button id="btnAbrirAltaManual" class="btn-principal" style="background-color: #059669; box-shadow: none; width: auto; padding: 12px 20px;">
+                    + Nueva Previa (2021-2023)
+                </button>
+            </div>
+        </div>
+
+        <!-- 📊 3. FRANJA INFERIOR: GRAN PLANILLA CENTRAL DE PREVIAS -->
+        <div class="seccion-planilla">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding: 6px 16px; background-color: #f8fafc;">
+            <h3 style="margin: 0; color: #1b4d82; font-weight: 700; text-transform: uppercase; font-size: 15px;">
+                📋 Planilla Central de Seguimiento Académico
+            </h3>
+            <span id="contadorRegistros" style="font-size: 12px; background-color: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: bold;">0 registros</span>
+        </div>
+
+
+            <!-- Contenedor con Scroll Vertical Protegido para la Grilla -->
+            <div style="max-height: 500px; overflow-y: auto; width: 100%; border: 1px solid #e2e8f0; margin-top: 15px; border-radius: 6px;">
+                <table class="tabla-previas">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; width: 100px;">DNI</th>
+                            <th style="text-align: left;">Alumno</th>
+                            <th>Materia</th>
+                            <th style="width: 70px;">Curso</th>
+                            <th style="width: 90px;">Año Orig.</th>
+                            <th style="width: 80px;">Nota Fin.</th>
+                            <th style="width: 140px;">Libro / Folio</th>
+                            <th style="width: 100px;">Nota Exam.</th>
+                            <th style="width: 140px;">Fecha Exam.</th>
+                            <th style="width: 120px;">Estado</th>
+                            <th style="width: 80px;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyPreviasPlanilla" style="text-align: center;">
+                        <!-- Fila de Estado Inicial Fija -->
+                        <tr id="filaEstadoInicial">
+                            <td colspan="11" style="padding: 40px; color: #64748b; font-weight: 500; background-color: #f8fafc;">
+                                Ingrese un DNI o criterio de búsqueda para desplegar las materias pendientes.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pie de Página Institucional -->
+    <footer style="background-color: #ffffff; border-top: 1px solid #cbd5e1; padding: 12px; text-align: center; color: #64748b; font-size: 12px; font-weight: 500; margin-top: auto; width: 100%;">
+        &copy; 2026 Colegio HASPEN - Módulo Unificado de Control de Previas.
+    </footer>
+
+
+    <!-- Lógica del Módulo -->
+    <script type="module" src="previas.js"></script>
+<!-- 🪟 MODAL DE INGRESO MANUAL DE ALUMNOS (Oculto por defecto con display: none) -->
+<div id="modalAltaManual" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 100; justify-content: center; align-items: center;">
+    <div style="background-color: #ffffff; border: 2px solid #1b4d82; border-radius: 12px; width: 100%; max-width: 600px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; position: relative;">
+        
+        <!-- Encabezado del Modal -->
+        <div style="background-color: #1b4d82; color: #ffffff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; text-transform: uppercase;">Ingreso Manual de Alumnos</h3>
+            <button id="btnCerrarModal" style="background: transparent; border: none; color: #ffffff; font-size: 20px; cursor: pointer; font-weight: bold;">&times;</button>
+        </div>
+
+        <!-- Cuerpo del Formulario -->
+        <form id="formAltaManual" style="padding: 20px; display: flex; flex-direction: column; gap: 15px; text-align: left;">
+            
+            <!-- Fila 1: DNI y Selección de Materia Dinámica -->
+            <div style="display: flex; gap: 15px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 5px;">DNI del Alumno</label>
+                    <input type="text" id="modalDni" placeholder="DNI..." required style="margin: 0; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b4cbe3; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 5px;">Seleccionar Materia</label>
+                    <select id="modalMateria" required style="margin: 0; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b4cbe3; box-sizing: border-box;">
+                        <option value="">Cargando asignaturas institucionales...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Fila 2: Nombre Completo -->
+            <div>
+                <label style="font-size: 11px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 5px;">Nombre Completo</label>
+                <input type="text" id="modalNombre" placeholder="Nombre completo del alumno..." required style="margin: 0; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b4cbe3; box-sizing: border-box;">
+            </div>
+
+            <!-- Fila 3: Curso Dinámico, Año Previa Histórico y Nota Regular -->
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 5px;">Curso Origen</label>
+                    <select id="modalCurso" required style="margin: 0; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b4cbe3; box-sizing: border-box;">
+                        <option value="">Cargando estructuras...</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 5px;">Año Previa</label>
+                    <select id="modalAnio" required style="margin: 0; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b4cbe3; box-sizing: border-box;">
+                        <option value="2021">2021</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+                <div style="width: 120px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 5px;">Nota Regular</label>
+                    <input type="number" id="modalNotaFinal" min="1" max="5" value="1" required style="margin: 0; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #b4cbe3; box-sizing: border-box; text-align: center;">
+                </div>
+            </div>
+
+            <!-- Botón de Envío -->
+            <button type="submit" class="btn-principal" style="background-color: #1b4d82; color: #ffffff; width: 100%; padding: 14px; font-weight: bold; font-size: 14px; border-radius: 6px; margin-top: 10px; box-shadow: none; border: none; cursor: pointer; text-transform: uppercase;">
+                GUARDAR EN REGISTRO
+            </button>
+        </form>
+    </div>
+</div>
+    </div>
+    <script type="module" src="previas.js"></script>
+
+</body>
+</html>
