@@ -206,7 +206,7 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
                     <td style="padding: 4px 6px; font-size: 12px;">${badgeEstado}</td>
                     <td style="padding: 4px 6px; white-space: nowrap;">
                         <div class="contenedor-acciones-celda" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-                            <button class="btn-principal btn-accion-editar" data-dni="${dniBusqueda}" data-id-doc="${idDocumento}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer;">Editar</button>
+                            <button class="btn-principal btn-accion-editar" data-dni="${ dniBusqueda}" data-id-doc="${ idDocumento}" data-materia="${ idDocumento}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer;">Editar</button>
                             <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer; border: none; border-radius: 4px;">X</button>
                         </div>
                     </td>
@@ -228,152 +228,57 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
         console.error("Error operativo al renderizar planilla:", error);
     }
 }
+// 🔄 FUNCIÓN PUENTE: MIGRACIÓN TRANSPARENTE AL PLAN ESTRUCTURAL EFICIENTE
+async function migrarEstructuraViejaANueva() {
+    try {
+        const db = window.firebaseDB; 
+        if (!db) return;
 
-// 📝 LÓGICA DE EDICIÓN EN LÍNEA, GUARDADO Y CANCELACIÓN (SOLUCIÓN DEFINITIVA)
-document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async (e) => {
-    if (e.target.classList.contains('btn-accion-editar')) {
-        const boton = e.target;
-        const fila = boton.closest('tr');
-        const dni = boton.getAttribute('data-dni');
-        const idDoc = boton.getAttribute('data-id-doc');
+        // 1. Obtener los alumnos que aún no fueron migrados
+        const q = window.firebaseQuery(
+            window.firebaseCollection(db, "alumnos"),
+            window.firebaseWhere("migradoAPreviasRaiz", "!=", true)
+        );
+        const querySnapshot = await window.firebaseGetDocs(q);
         
-        const inputLibro = fila.querySelector('.txt-libro-folio');
-        const inputNota = fila.querySelector('.txt-nota-examen');
-        const inputFecha = fila.querySelector('.txt-fecha-examen');
-        const botonCancelar = fila.querySelector('.btn-cancelar-edicion');
+        if (querySnapshot.empty) return;
 
-        if (boton.textContent === "Editar") {
-            fila.setAttribute('data-old-libro', inputLibro ? inputLibro.value : "");
-            fila.setAttribute('data-old-nota', inputNota ? inputNota.value : "");
-            fila.setAttribute('data-old-fecha', inputFecha ? inputFecha.value : "");
-
-            if (inputLibro) inputLibro.disabled = false;
-            if (inputNota) inputNota.disabled = false;
-            if (inputFecha) inputFecha.disabled = false;
+        for (const docAlumno of querySnapshot.docs) {
+            const dniAlumno = docAlumno.id;
+            const datosAlumno = docAlumno.data();
             
-            fila.style.backgroundColor = "#fffde7"; 
-            boton.textContent = "Guardar";
-            boton.style.backgroundColor = "#2e7d32"; 
-            boton.style.color = "#ffffff";
-            if (botonCancelar) botonCancelar.style.display = "inline-block";
-        } 
-        else {
-            const libroVal = inputLibro ? inputLibro.value.trim() : "";
-            const notaVal = inputNota ? inputNota.value.trim() : "";
-            const fechaVal = inputFecha ? inputFecha.value : "";
-
-            if (notaVal !== "" && notaVal !== "-") {
-                const notaNum = parseFloat(notaVal);
-                if (isNaN(notaNum) || notaNum < 1 || notaNum > 10) {
-                    alert("Por favor, ingrese una nota válida entre 1 y 10.");
-                    return;
+            // 2. Revisar si tiene la subcolección antigua de previas
+            const subColeccionRef = window.firebaseCollection(db, `alumnos/${dniAlumno}/materias_previas`);
+            const subSnap = await window.firebaseGetDocs(subColeccionRef);
+            
+            if (!subSnap.empty) {
+                // 3. Clonar cada previa encontrada a la nueva colección raíz
+                for (const docPrevia of subSnap.docs) {
+                    const datosPrevia = docPrevia.data();
+                    const idUnicoRaiz = `${dniAlumno}_${datosPrevia.materia}_${datosPrevia.anio || 'HISTORICO'}`;
+                    
+                    await window.firebaseSetDoc(window.firebaseDoc(db, "previas", idUnicoRaiz), {
+                        dni: dniAlumno,
+                        alumnoNombre: `${datosAlumno.apellido || ''} ${datosAlumno.nombre || ''}`.trim(),
+                        materia: datosPrevia.materia,
+                        anioOrigen: parseInt(datosPrevia.anio) || 2021,
+                        nota: datosPrevia.nota || "",
+                        estado: (datosPrevia.nota && parseInt(datosPrevia.nota) >= 6) ? "Aprobada" : "Pendiente",
+                        origen: "MANUAL_HISTORICO"
+                    }, { merge: true });
                 }
             }
-
-            boton.textContent = "⏳...";
-            boton.disabled = true;
-            if (botonCancelar) botonCancelar.style.display = "none";
-
-            try {
-                let nuevoEstado = "Pendiente";
-                if (notaVal !== "" && notaVal !== "-" && parseFloat(notaVal) >= 6) {
-                    nuevoEstado = "Aprobada";
-                }
-
-                await setDoc(doc(db, "alumnos", dni, "materias_previas", idDoc), {
-                    libroFolio: libroVal || "-",
-                    notaExamen: notaVal || "-",
-                    fechaExamen: fechaVal || "-",
-                    estado: nuevoEstado
-                }, { merge: true });
-
-                if (inputLibro) inputLibro.disabled = true;
-                if (inputNota) inputNota.disabled = true;
-                if (inputFecha) inputFecha.disabled = true;
-                
-                fila.style.backgroundColor = ""; 
-                boton.textContent = "Editar";
-                boton.style.backgroundColor = "#13365b"; 
-                boton.style.color = "#ffffff";
-                boton.disabled = false;
-
-                // Forzamos la actualización del badge en la interfaz de forma segura
-                const celdaBadge = fila.children[9];
-                if (celdaBadge) {
-                    celdaBadge.innerHTML = nuevoEstado === "Aprobada" 
-                        ? `<span class="badge-aprobada">Aprobada</span>` 
-                        : `<span class="badge-pendiente">Pendiente</span>`;
-                }
-
-            } catch (error) {
-                console.error("Error al guardar:", error);
-                alert("No se pudieron salvar los datos.");
-                boton.textContent = "Guardar";
-                boton.style.backgroundColor = "#2e7d32";
-                boton.disabled = false;
-                if (botonCancelar) botonCancelar.style.display = "inline-block";
-            }
+            
+            // 4. Marcar al alumno como migrado con éxito
+            await window.firebaseUpdateDoc(window.firebaseDoc(db, "alumnos", dniAlumno), {
+                migradoAPreviasRaiz: true
+            });
         }
-        return;
+        console.log("🚀 Migración de estructura de previas finalizada con éxito.");
+    } catch (error) {
+        console.error("❌ Error en la migración puente de previas:", error);
     }
-
-    if (e.target.classList.contains('btn-cancelar-edicion')) {
-        const botonCancelar = e.target;
-        const fila = botonCancelar.closest('tr');
-        const botonEditar = fila.querySelector('.btn-accion-editar');
-        const inputLibro = fila.querySelector('.txt-libro-folio');
-        const inputNota = fila.querySelector('.txt-nota-examen');
-        const inputFecha = fila.querySelector('.txt-fecha-examen');
-
-        if (inputLibro) inputLibro.value = fila.getAttribute('data-old-libro') || "";
-        if (inputNota) inputNota.value = fila.getAttribute('data-old-nota') || "";
-        if (inputFecha) inputFecha.value = fila.getAttribute('data-old-fecha') || "";
-
-        if (inputLibro) inputLibro.disabled = true;
-        if (inputNota) inputNota.disabled = true;
-        if (inputFecha) inputFecha.disabled = true;
-        
-        fila.style.backgroundColor = ""; 
-        if (botonEditar) {
-            botonEditar.textContent = "Editar";
-            botonEditar.style.backgroundColor = "#13365b";
-            botonEditar.style.color = "#ffffff";
-            botonEditar.disabled = false;
-        }
-        botonCancelar.style.display = "none";
-    }
-});
-
-
-    // 2. COMPORTAMIENTO DEL BOTÓN CANCELAR (BOTÓN "X")
-    if (e.target.classList.contains('btn-cancelar-edicion')) {
-        const botonCancelar = e.target;
-        const fila = botonCancelar.closest('tr');
-        const botonEditar = fila.querySelector('.btn-accion-editar');
-        
-        const inputLibro = fila.querySelector('.txt-libro-folio');
-        const inputNota = fila.querySelector('.txt-nota-examen');
-        const inputFecha = fila.querySelector('.txt-fecha-examen');
-
-        // Restauramos los valores desde el backup de la fila
-        if (inputLibro) inputLibro.value = fila.getAttribute('data-old-libro') || "";
-        if (inputNota) inputNota.value = fila.getAttribute('data-old-nota') || "";
-        if (inputFecha) inputFecha.value = fila.getAttribute('data-old-fecha') || "";
-
-        if (inputLibro) inputLibro.disabled = true;
-        if (inputNota) inputNota.disabled = true;
-        if (inputFecha) inputFecha.disabled = true;
-        
-        fila.style.backgroundColor = ""; 
-        if (botonEditar) {
-            botonEditar.textContent = "Editar";
-            botonEditar.style.backgroundColor = "#13365b";
-            botonEditar.style.color = "#ffffff";
-            botonEditar.disabled = false;
-        }
-        botonCancelar.style.display = "none";
-    }
-});
+}
 
 
 // ⚙️ 4. INICIALIZADOR DIRECTO EN CALIENTE
@@ -652,46 +557,128 @@ document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async 
     }
 });
 
-// 🔄 CARGA AUTOMÁTICA AL INICIAR EL MÓDULO (TRAE LOS ALUMNOS YA CARGADOS)
-async function cargarPlanillaGeneralAlArrancar() {
-    if (!db) {
-        setTimeout(cargarPlanillaGeneralAlArrancar, 1000);
-        return;
+// 🔄 FUNCIÓN PUENTE: MIGRACIÓN TRANSPARENTE AL PLAN ESTRUCTURAL EFICIENTE
+async function migrarEstructuraViejaANueva() {
+    try {
+        const { collection, getDocs, doc, setDoc, updateDoc, query, where } = await import(b + 'firebase-firestore.js');
+        if (!db) return;
+
+        const q = query(collection(db, "alumnos"), where("migradoAPreviasRaiz", "!=", true));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return;
+
+        for (const docAlumno of querySnapshot.docs) {
+            const dniAlumno = docAlumno.id;
+            const datosAlumno = docAlumno.data();
+            
+            const subColeccionRef = collection(db, `alumnos/${dniAlumno}/materias_previas`);
+            const subSnap = await getDocs(subColeccionRef);
+            
+            if (!subSnap.empty) {
+                for (const docPrevia of subSnap.docs) {
+                    const datosPrevia = docPrevia.data();
+                    const idUnicoRaiz = `${dniAlumno}_${datosPrevia.materia}_${datosPrevia.anio || 'HISTORICO'}`;
+                    
+                    await setDoc(doc(db, "previas", idUnicoRaiz), {
+                        dni: dniAlumno,
+                        alumnoNombre: `${datosAlumno.apellido || ''} ${datosAlumno.nombre || ''}`.trim(),
+                        materia: datosPrevia.materia,
+                        anioOrigen: parseInt(datosPrevia.anio) || 2021,
+                        nota: datosPrevia.nota || "",
+                        estado: (datosPrevia.nota && parseInt(datosPrevia.nota) >= 6) ? "Aprobada" : "Pendiente",
+                        origen: "MANUAL_HISTORICO"
+                    }, { merge: true });
+                }
+            }
+            await updateDoc(doc(db, "alumnos", dniAlumno), { migradoAPreviasRaiz: true });
+        }
+        console.log("🚀 Migración de estructura de previas finalizada con éxito.");
+    } catch (error) {
+        console.error("❌ Error en la migración puente de previas:", error);
     }
+}
+
+// 🛡️ CARGA AUTOMÁTICA EFICIENTE (PLAN SPARK PROTEGIDO)
+async function cargarPlanillaGeneralAlArrancar() {
     const tbody = document.getElementById('tbodyPreviasPlanilla');
     if (!tbody) return;
 
     try {
-        tbody.innerHTML = `<tr><td colspan="11" style="padding: 30px; color: #1b4d82; font-weight: bold;">📦 Cargando historial de previas registradas...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;color:#1b4d82;font-weight:bold;">Cargando historial de previas...</td></tr>`;
 
-        const { collection, getDocs } = await import(b + 'firebase-firestore.js');
-        const alumnosSnapshot = await getDocs(collection(db, "alumnos"));
+        if (typeof db === 'undefined' || !db) {
+            setTimeout(cargarPlanillaGeneralAlArrancar, 200);
+            return;
+        }
+
+        const { collection, getDocs, doc, setDoc, updateDoc, query, where } = await import(b + 'firebase-firestore.js');
+        
+        const qAlumnos = query(collection(db, "alumnos"), where("migradoAPreviasRaiz", "!=", true));
+        const snapAlumnos = await getDocs(qAlumnos);
+        
+        if (!snapAlumnos.empty) {
+            for (const docAlu of snapAlumnos.docs) {
+                const dniAlu = docAlu.id;
+                const dataAlu = docAlu.data();
+                const subRef = collection(db, `alumnos/${dniAlu}/materias_previas`);
+                const snapSub = await getDocs(subRef);
+                
+                if (!snapSub.empty) {
+                    for (const docPre of snapSub.docs) {
+                        const dataPre = docPre.data();
+                        const idRaiz = `${dniAlu}_${dataPre.materia}_${dataPre.anio || 'HISTORICO'}`;
+                        await setDoc(doc(db, "previas", idRaiz), {
+                            dni: dniAlu,
+                            alumnoNombre: `${dataAlu.apellido || ''} ${dataAlu.nombre || ''}`.trim(),
+                            materia: dataPre.materia,
+                            anioOrigen: parseInt(dataPre.anio) || 2021,
+                            nota: dataPre.nota || "",
+                            estado: (dataPre.nota && parseInt(dataPre.nota) >= 6) ? "Aprobada" : "Pendiente",
+                            origen: "MANUAL_HISTORICO"
+                        }, { merge: true });
+                    }
+                }
+                await updateDoc(doc(db, "alumnos", dniAlu), { migradoAPreviasRaiz: true });
+            }
+        }
+
+        const qPrevias = query(collection(db, "previas"), where("estado", "==", "Pendiente"));
+        const previasSnapshot = await getDocs(qPrevias);
+        
         tbody.innerHTML = "";
 
-        for (const alumnoDoc of alumnosSnapshot.docs) {
-            const dniAlumno = alumnoDoc.id;
-            await buscarYRenderizarPlanilla(dniAlumno);
+        if (previasSnapshot.empty) {
+            tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;color:#666;">No hay alumnos con materias previas pendientes.</td></tr>`;
+            return;
         }
 
-        if (tbody.querySelectorAll('tr:not([colspan])').length === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" style="padding: 30px; color: #666;">Ingrese un DNI o criterio de búsqueda para desplegar las materias pendientes.</td></tr>`;
-        }
-
+        previasSnapshot.forEach((docPrevia) => {
+            const data = docPrevia.data();
+            const idDoc = docPrevia.id;
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td style="padding:8px;border:1px solid #ddd;">${data.dni}</td>
+                <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${data.alumnoNombre}</td>
+                <td style="padding:8px;border:1px solid #ddd;">${data.materia}</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;">${data.anioOrigen}</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold;color:#dc2626;" id="nota-${idDoc}">${data.nota || '-'}</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;"><span style="background-color:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">${data.estado}</span></td>
+                <td style="padding:8px;border:1px solid #ddd;text-align:center;">
+                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni}" data-id-doc="${idDoc}" data-materia="${idDoc}" style="background-color:#13365b;color:#ffffff;padding:2px 6px;font-size:11px;height:22px;line-height:18px;margin:0;cursor:pointer;">Editar</button>
+                </td>
+            `;
+            tbody.appendChild(fila);
+        });
     } catch (error) {
-        console.error("Error en la carga inicial de planilla:", error);
-        tbody.innerHTML = `<tr><td colspan="11" style="padding: 30px; color: #dc2626;">No se pudo inicializar la lista de registros previos.</td></tr>`;
+        console.error("Error en planilla:", error);
+        tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;color:#dc2626;">No se pudo inicializar la lista.</td></tr>`;
     }
 }
 
-// Activar el escaneo automático del historial al abrir el módulo
 cargarPlanillaGeneralAlArrancar();
-
-// Monitor pasivo de autenticación
-onAuthStateChanged(auth, (user) => {
-    if (!user && !localStorage.getItem('usuarioActivo')) {
-        window.location.href = "index.html";
-    }
-});
-
 })();
 
