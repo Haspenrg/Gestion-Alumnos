@@ -191,21 +191,21 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
             : `<span class="badge-pendiente">Pendiente</span>`;
 
         // Modificamos el padding nativo directamente en la inyección para ganarle al CSS global
-        fila.innerHTML = `
+                fila.innerHTML = `
             <td style="padding: 2px 6px; text-align: left; font-weight: bold; font-size: 13px;">${data.dni || ''}</td>
             <td style="padding: 2px 6px; text-align: left; text-transform: uppercase; font-size: 13px;">${data.alumnoNombre || ''}</td>
             <td style="padding: 2px 6px; font-weight: bold; color: #1b4d82; text-align: left; font-size: 13px;">${data.materia || '-'}</td>
             <td style="padding: 2px 6px; font-weight: bold; font-size: 13px; text-align: center;">${data.curso || '-'}</td>
             <td style="padding: 2px 6px; font-size: 13px; text-align: center;">${data.anioOrigen || '-'}</td>
             <td style="padding: 2px 6px; font-size: 13px; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
-            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled style="text-align: center; height: 22px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 22px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled style="text-align: center; height: 22px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
             <td style="padding: 2px 6px; font-size: 12px; text-align: center;">${badgeEstado}</td>
             <td style="padding: 2px 6px; white-space: nowrap;">
                 <div class="contenedor-acciones-celda" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer;">Editar</button>
-                    <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer; border: none; border-radius: 4px;">X</button>
+                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 18px; line-height: 14px; margin: 0; cursor: pointer;">Editar</button>
+                    <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 18px; line-height: 14px; margin: 0; cursor: pointer; border: none; border-radius: 4px;">X</button>
                 </div>
             </td>
         `;
@@ -351,87 +351,124 @@ if (inputBuscarAlumno) {
     });
 }
 
-// 💾 5. PROCESAMIENTO DEL FORMULARIO DE ALTA MANUAL
-if (formAltaManual) {
-    formAltaManual.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const dniInput = document.getElementById('modalDni').value.trim();
-        const nombreInput = document.getElementById('modalNombre').value.trim().toUpperCase();
-        const materiaInput = selectMateriaModal.value;
-        const cursoIdInput = selectCursoModal.value;
-        const anioInput = parseInt(document.getElementById('modalAnio').value);
-        const notaInput = parseInt(document.getElementById('modalNotaFinal').value);
-        
-        if (!/^\d{7,8}$/.test(dniInput)) {
-            alert("Error: El DNI debe ser un número válido de 7 u 8 dígitos.");
-            return;
-        }
-        if (notaInput < 1 || notaInput > 5) {
-            alert("Error: La nota de previa debe estar entre 1 y 5.");
-            return;
-        }
+    // 💾 5. PROCESAMIENTO DEL FORMULARIO DE ALTA MANUAL - NUEVA ESTRUCTURA RAÍZ UNIFICADA
+    if (formAltaManual) {
+        formAltaManual.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const dniInput = document.getElementById('modalDni').value.trim();
+            const nombreInput = document.getElementById('modalNombre').value.trim().toUpperCase();
+            const materiaInput = selectMateriaModal.value;
+            const cursoIdInput = selectCursoModal.value;
+            const anioInput = parseInt(document.getElementById('modalAnio').value);
+            const notaInput = parseInt(document.getElementById('modalNotaFinal').value);
 
-        try {
-            const alumnoRef = doc(db, "alumnos", dniInput);
-            const alumnoSnap = await getDoc(alumnoRef);
-            
-            if (!alumnoSnap.exists()) {
-                await setDoc(alumnoRef, {
-                    dni: dniInput,
-                    nombreCompletoPrevias: nombreInput,
-                    soloPrevias: true,
-                    estadoMatricula: "Exclusivo_Previa",
-                    fechaAltaSistema: serverTimestamp()
-                });
+            // Obtener el texto visible del curso seleccionado para que se renderice bien en la tabla
+            const cursoTextoHTML = selectCursoModal.options[selectCursoModal.selectedIndex] ? selectCursoModal.options[selectCursoModal.selectedIndex].textContent : '-';
+
+            if (!/^\d{7,8}$/.test(dniInput)) {
+                alert("Error: El DNI debe ser un número válido de 7 u 8 dígitos.");
+                return;
             }
-
-            const idPreviaUnico = `${materiaInput.replace(/\s+/g, '_')}_${anioInput}`;
-            const previaRef = doc(db, "alumnos", dniInput, "materias_previas", idPreviaUnico);
-            
-            const previaSnap = await getDoc(previaRef);
-            if (previaSnap.exists()) {
-                alert(`La materia ${materiaInput} ya figura registrada para el año ${anioInput}.`);
+            if (notaInput < 1 || notaInput > 5) {
+                alert("Error: La nota de previa debe estar entre 1 y 5.");
                 return;
             }
 
-            await setDoc(previaRef, {
-                materia: materiaInput,
-                cursoOrigen: cursoIdInput,
-                anioOrigen: anioInput,
-                notaFinalCursada: notaInput,
-                libroFolio: "-",
-                notaExamen: "-",
-                fechaExamen: "-",
-                estado: "Pendiente",
-                origen: "MANUAL_HISTORICO",
-                fechaRegistro: serverTimestamp(),
-                ultimaModificacion: serverTimestamp()
-            });
+            try {
+                // Mantener el registro base del alumno en la colección 'alumnos' si no existiese
+                const alumnoRef = doc(db, "alumnos", dniInput);
+                const alumnoSnap = await getDoc(alumnoRef);
+                if (!alumnoSnap.exists()) {
+                    await setDoc(alumnoRef, {
+                        dni: dniInput,
+                        nombreCompletoPrevias: nombreInput,
+                        soloPrevias: true,
+                        estadoMatricula: "Exclusivo_Previa",
+                        fechaAltaSistema: serverTimestamp(),
+                        migradoAPreviasRaiz: true // Marcado directo para evitar futuras migraciones obsoletas
+                    });
+                }
 
-            if (typeof window.registrarEventoLegajo === "function") {
-                window.registrarEventoLegajo(dniInput, "CALIFICACIONES", "PREVIAS_ALTA", `Alta manual de materia previa: ${materiaInput} (Año: ${anioInput})`);
+                // Generar la clave única plana unificada: DNI_MATERIA_AÑO (Formato estándar verificado)
+                const matId = materiaInput.toUpperCase().trim().replace(/\s+/g, '_');
+                const idPreviaRaizUnico = `${dniInput}_${matId}_${anioInput}`;
+                
+                // Referenciar a la nueva colección raíz unificada 'previas'
+                const previaRef = doc(db, "previas", idPreviaRaizUnico);
+                const previaSnap = await getDoc(previaRef);
+                
+                if (previaSnap.exists()) {
+                    alert(`La materia ${materiaInput} ya figura registrada para el alumno en el año ${anioInput}.`);
+                    return;
+                }
+
+                // Guardado físico directo en la nueva estructura unificada
+                await setDoc(previaRef, {
+                    dni: dniInput,
+                    alumnoNombre: nombreInput,
+                    materia: materiaInput.toUpperCase().trim(),
+                    curso: cursoTextoHTML, // Se almacena formateado para alta densidad de datos
+                    cursoOrigen: cursoIdInput,
+                    anioOrigen: anioInput,
+                    notaFinalCursada: notaInput,
+                    libroFolio: "-",
+                    notaExamen: "-",
+                    fechaExamen: "-",
+                    estado: "Pendiente",
+                    origen: "ALTA_MANUAL_RAIZ",
+                    fechaRegistro: serverTimestamp(),
+                    ultimaModificacion: serverTimestamp()
+                });
+
+                if (typeof window.registrarEventoLegajo === "function") {
+                    window.registrarEventoLegajo(dniInput, "CALIFICACIONES", "PREVIAS_ALTA", `Alta manual de materia previa: ${materiaInput} (Año: ${anioInput})`);
+                }
+                
+                alert("Materia previa guardada con éxito en la nueva base de datos.");
+                if (modalAltaManual) modalAltaManual.style.display = 'none';
+
+                // Insertar dinámicamente la nueva fila arriba de la tabla actual sin recargar
+                const tbody = document.getElementById('tbodyPreviasPlanilla');
+                if (tbody) {
+                    // Si estaba el mensaje de estado inicial vacío, lo removemos
+                    if (tbody.innerHTML.includes("Ingrese un DNI") || tbody.innerHTML.includes("No hay registros")) {
+                        tbody.innerHTML = "";
+                    }
+
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;font-weight:bold;">${dniInput}</td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-transform:uppercase;font-weight:bold;">${nombreInput}</td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;color:#1b4d82;font-weight:bold;">${materiaInput.toUpperCase().trim()}</td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${cursoTextoHTML}</td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${anioInput}</td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;color:#dc2626;">${notaInput}</td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-libro-folio" value="" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-nota-examen" value="" disabled style="text-align: center; width: 40px; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="date" class="input-celda txt-fecha-examen" value="" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><span class="badge-pendiente">Pendiente</span></td>
+                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">
+                            <button class="btn-principal btn-accion-editar" data-dni="${dniInput}" data-id-doc="${idPreviaRaizUnico}" data-materia="${materiaInput.toUpperCase().trim()}" style="background-color:#13365b;color:#ffffff;padding:1px 6px;font-size:11px;height:18px;line-height:14px;cursor:pointer;">Editar</button>
+                        </td>
+                    `;
+                    tbody.insertBefore(fila, tbody.firstChild);
+
+                    // Actualizar dinámicamente el totalizador numérico visible de la grilla
+                    const contador = document.getElementById('contadorRegistros');
+                    if (contador) {
+                        const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
+                        contador.textContent = `${filasReales} registros`;
+                    }
+                }
+
+                formAltaManual.reset();
+            } catch (err) {
+                console.error("Fallo crítico en guardado de nueva estructura raíz:", err);
+                alert("Ocurrió un error al guardar en la base de datos centralizada.");
             }
+        });
+    }
 
-            alert("Materia previa guardada con éxito.");
-        if (modalAltaManual) modalAltaManual.style.display = 'none';
-
-        // Inyecta el DNI cargado en el buscador superior y dibuja la fila automáticamente
-        const inputBuscador = document.getElementById('inputBuscarAlumno');
-        if (inputBuscador) inputBuscador.value = dniInput;
-        
-        // Ejecuta el motor pasándole el DNI que se acaba de guardar
-        await buscarYRenderizarPlanilla(dniInput);
-
-        formAltaManual.reset();
-
-
-        } catch (err) {
-            console.error("Fallo en guardado manual:", err);
-            alert("Ocurrió un error al guardar en la base de datos.");
-        }
-    });
-}
 
 // 📝 LÓGICA DE EDICIÓN EN LÍNEA, GUARDADO Y CANCELACIÓN (VERSIÓN DEFINITIVA CORREGIDA)
 document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async (e) => {
@@ -660,27 +697,34 @@ async function cargarPlanillaGeneralAlArrancar() {
       return;
     }
     
-    snapshotNuevos.forEach((docPrevia) => {
-      const data = docPrevia.data();
-      const idDoc = docPrevia.id;
-      const fila = document.createElement('tr');
-      fila.innerHTML = `
-        <td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;">${data.dni}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-transform:uppercase;font-weight:bold;">${data.alumnoNombre}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;color:#1b4d82;font-weight:bold;">${data.materia}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">-</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.anioOrigen}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;color:#dc2626;">${data.notaFinalCursada}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.libroFolio}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.notaExamen}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.fechaExamen}</td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;"><span class="badge-pendiente">${data.estado}</span></td>
-        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">
-          <button class="btn-principal btn-accion-editar" data-dni="${data.dni}" data-id-doc="${idDoc}" data-materia="${data.materia}" style="background-color:#13365b;color:#ffffff;padding:2px 6px;font-size:11px;cursor:pointer;">Editar</button>
-        </td>
-      `;
-      tbody.appendChild(fila);
-    });
+                // Renderizado unificado y corregido para la estructura raíz global unificada
+            snapshotNuevos.forEach((docPrevia) => {
+                const data = docPrevia.data();
+                const idDoc = docPrevia.id;
+                const fila = document.createElement('tr');
+                
+                const badgeEstado = data.estado === "Aprobada"
+                    ? `<span class="badge-aprobada">Aprobada</span>`
+                    : `<span class="badge-pendiente">Pendiente</span>`;
+
+                fila.innerHTML = `
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;font-weight:bold;">${data.dni || ''}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-transform:uppercase;font-weight:bold;">${data.alumnoNombre || ''}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;color:#1b4d82;font-weight:bold;">${data.materia || '-'}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${data.curso || '-'}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${data.anioOrigen || '-'}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;color:#dc2626;">${data.notaFinalCursada || '-'}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${badgeEstado}</td>
+                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">
+                        <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDoc}" data-materia="${data.materia || ''}" style="background-color:#13365b;color:#ffffff;padding:1px 6px;font-size:11px;height:18px;line-height:14px;cursor:pointer;">Editar</button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+
     
     const contador = document.getElementById('contadorRegistros');
     if (contador) contador.textContent = `${snapshotNuevos.size} registros`;

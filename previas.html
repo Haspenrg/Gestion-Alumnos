@@ -9,7 +9,7 @@
     
     <!-- Archivo de Estilos Base del Proyecto -->
     <link rel="stylesheet" href="estilos.css">
-
+    
     <style>
         /* Desactivar el centrado vertical forzado de estilos.css exclusivo para este módulo masivo */
         body {
@@ -22,6 +22,7 @@
             padding: 0;
             min-height: 100vh;
         }
+
         /* Contenedor unificado de pantalla completa estilo historial.html */
         .seccion-planilla {
             background-color: #ffffff;
@@ -29,71 +30,89 @@
             border-radius: 12px;
             padding: 20px;
             margin-top: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4 px 12px rgba(0, 0, 0, 0.05);
             text-align: left;
         }
+
         /* Tabla de Previas optimizada para alta densidad de datos */
         .tabla-previas {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
         }
-                .tabla-previas th {
+
+        /* Reducción extrema de la cabecera azul de títulos */
+        .tabla-previas th {
             background-color: #1b4d82;
             color: #ffffff;
-            padding: 6px 8px;
-            font-size: 12px;
+            padding: 2px 4px !important;
+            font-size: 11px !important;
             font-weight: bold;
             text-transform: uppercase;
             border: 1px solid #13365b;
             position: sticky;
             top: 0;
             z-index: 10;
+            line-height: 1.2 !important;
         }
 
-                /* Achica el grosor vertical de las filas de la tabla */
-        .tabla-planilla td {
+        /* Reducción del grosor vertical de las filas de alumnos */
+        .tabla-previas td {
             padding: 2px 4px !important;
+            font-size: 12px !important;
             vertical-align: middle !important;
+            border: 1px solid #cbd5e1;
         }
 
         /* Comprime los inputs para que no estiren la fila hacia arriba */
-        .tabla-planilla .input-celda {
+        .tabla-previas .input-celda {
             padding: 1px 4px !important;
-            height: 20px !important;
+            height: 18px !important;
             font-size: 11px !important;
             box-sizing: border-box !important;
+            margin: 0 !important;
+            width: 100%;
+        }
+
+        /* Ajustar la botonera de acciones interna */
+        .tabla-previas .btn-accion-editar {
+            padding: 1px 6px !important;
+            height: 18px !important;
+            line-height: 14px !important;
+            font-size: 10px !important;
+            margin: 0 !important;
         }
 
         /* Estados visuales compactos */
         .badge-pendiente {
             background-color: #fee2e2;
             color: #dc2626;
-            padding: 4px 8px;
+            padding: 1px 4px !important;
             border-radius: 4px;
             font-weight: bold;
             border: 1px solid #fca5a5;
             display: inline-block;
+            font-size: 11px !important;
         }
+
         .badge-aprobada {
             background-color: #d1fae5;
             color: #059669;
-            padding: 4px 8px;
+            padding: 1px 4px !important;
             border-radius: 4px;
             font-weight: bold;
             border: 1px solid #6ee7b7;
             display: inline-block;
+            font-size: 11px !important;
         }
     </style>
 </head>
 <body>
 
-    <!-- 🏛️ 1. FRANJA SUPERIOR: CABECERA INSTITUCIONAL ANCHA -->
+    <!-- 🏛 1. FRANJA SUPERIOR: CABECERA INSTITUCIONAL ANCHA -->
     <header style="background-color: #1b4d82; border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
-
         <div>
             <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
-
                 Colegio Provincial HASPEN
             </h1>
             <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #93c5fd; font-weight: 500;">
@@ -112,21 +131,18 @@
 
         <!-- 🔍 2. FRANJA CENTRAL: BARRA DE BÚSQUEDA Y CONTROL -->
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; width: 100%; box-sizing: border-box; background-color: #ffffff; border: 2px solid #1b4d82; border-radius: 12px; min-height: 54px; padding: 10px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left;">
-
             <!-- Cuadro de Búsqueda y Acciones Intermedio y Chato -->
             <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 590px;">
-                <input type="text" id="inputBuscarAlumno" placeholder="Buscar por DNI o Apellido..." 
-                    style="margin: 0; flex-grow: 1; height: 34px !important; padding: 4px 12px !important; font-size: 13px !important; box-sizing: border-box;">
-                <button id="btnBuscarPrevia" class="btn-principal" 
-                    style="width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <input type="text" id="inputBuscarAlumno" placeholder="Buscar por DNI o Apellido..." style="margin: 0; flex-grow: 1; height: 34px !important; padding: 4px 12px !important; font-size: 13px !important; box-sizing: border-box;">
+                <button id="btnBuscarPrevia" class="btn-principal" style="width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                     Buscar
                 </button>
-                <button id="btnAbrirAltaManual" class="btn-principal" 
-                    style="background-color: #059669; border-color: #047857; width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; display: block; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <button id="btnAbrirAltaManual" class="btn-principal" style="background-color: #059669; border-color: #047857; width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; display: block; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                     Carga Manual
                 </button>
             </div>
-            <!-- Ficha del Alumno Seleccionado Dinámica (Estirada al borde derecho simétrico) -->
+
+            <!-- Ficha del Alumno Seleccionado Dinámica -->
             <div id="fichaAlumnoActivo" style="background-color: #f8fafc; border: 1px solid #cbd5e1; height: 34px; padding: 0 16px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-grow: 1; box-sizing: border-box; font-size: 13px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-weight: bold; color: #1b4d82; text-transform: uppercase; font-size: 11px; white-space: nowrap;">Alumno Seleccionado:</span>
@@ -135,8 +151,7 @@
                 <span id="txtDniAlumno" style="color: #64748b; font-weight: normal; white-space: nowrap;"></span>
             </div>
 
-
-            <!-- Contenedor para Carga Manual (Se activa por rol de Escritura) -->
+            <!-- Contenedor para Carga Manual -->
             <div id="wrapperAccionesEscritura" style="display: none;">
                 <button id="btnAbrirAltaManual" class="btn-principal" style="background-color: #059669; box-shadow: none; width: auto; padding: 12px 20px;">
                     + Nueva Previa (2021-2023)
@@ -147,31 +162,29 @@
         <!-- 📊 3. FRANJA INFERIOR: GRAN PLANILLA CENTRAL DE PREVIAS -->
         <div class="seccion-planilla">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding: 6px 16px; background-color: #f8fafc;">
-            <h3 style="margin: 0; color: #1b4d82; font-weight: 700; text-transform: uppercase; font-size: 15px;">
-                📋 Planilla Central de Seguimiento Académico
-            </h3>
-            <span id="contadorRegistros" style="font-size: 12px; background-color: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: bold;">0 registros</span>
-        </div>
-
+                <h3 style="margin: 0; color: #1b4d82; font-weight: 700; text-transform: uppercase; font-size: 15px;">
+                    📋 Planilla Central de Seguimiento Académico
+                </h3>
+                <span id="contadorRegistros" style="font-size: 12px; background-color: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: bold;">0 registros</span>
+            </div>
 
             <!-- Contenedor con Scroll Vertical Protegido para la Grilla -->
             <div style="max-height: 500px; overflow-y: auto; width: 100%; border: 1px solid #e2e8f0; margin-top: 15px; border-radius: 6px;">
                 <table class="tabla-previas">
                     <thead>
-                        <!-- REEMPLAZÁ EXCLUSIVAMENTE LO QUE ESTÁ ADENTRO DE <thead> POR ESTO: -->
-                <tr style="background-color: #13365b; color: #ffffff;">
-                    <th style="padding: 6px; font-size: 12px; width: 8%;">DNI</th>
-                    <th style="padding: 6px; font-size: 12px; width: 22%;">ALUMNO</th>
-                    <th style="padding: 6px; font-size: 12px; width: 18%;">MATERIA</th>
-                    <th style="padding: 6px; font-size: 12px; width: 6%; text-align: center;">CURSO</th>
-                    <th style="padding: 6px; font-size: 12px; width: 8%; text-align: center;">AÑO ORIG.</th>
-                    <th style="padding: 6px; font-size: 12px; width: 6%; text-align: center;">NOTA FIN.</th>
-                    <th style="padding: 6px; font-size: 12px; width: 10%; text-align: center;">LIBRO / FOLIO</th>
-                    <th style="padding: 6px; font-size: 12px; width: 6%; text-align: center;">NOTA EXAM.</th>
-                    <th style="padding: 6px; font-size: 12px; width: 12%; text-align: center;">FECHA EXAM.</th>
-                    <th style="padding: 6px; font-size: 12px; width: 8%; text-align: center;">ESTADO</th>
-                    <th style="padding: 6px; font-size: 12px; width: 10%; text-align: center;">ACCIÓN</th>
-                </tr>
+                        <tr style="background-color: #13365b; color: #ffffff;">
+                            <th style="width: 8%; text-align: center !important;">DNI</th>
+                            <th style="width: 22%; text-align: center !important;">ALUMNO</th>
+                            <th style="width: 18%; text-align: center !important;">MATERIA</th>
+                            <th style="width: 6%; text-align: center;">CURSO</th>
+                            <th style="width: 8%; text-align: center;">AÑO ORIG.</th>
+                            <th style="width: 6%; text-align: center;">NOTA FIN.</th>
+                            <th style="width: 10%; text-align: center;">LIBRO / FOLIO</th>
+                            <th style="width: 6%; text-align: center;">NOTA EXAM.</th>
+                            <th style="width: 12%; text-align: center;">FECHA EXAM.</th>
+                            <th style="width: 8%; text-align: center;">ESTADO</th>
+                            <th style="width: 10%; text-align: center;">ACCIÓN</th>
+                        </tr>
 
                     </thead>
                     <tbody id="tbodyPreviasPlanilla" style="text-align: center;">
