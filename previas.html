@@ -51,21 +51,20 @@
             z-index: 10;
         }
 
-        .tabla-previas td {
-            padding: 10px;
-            font-size: 13px;
-            border-bottom: 1px solid #cbd5e1;
-            color: #334155;
+                /* Achica el grosor vertical de las filas de la tabla */
+        .tabla-planilla td {
+            padding: 2px 4px !important;
+            vertical-align: middle !important;
         }
-        /* Entradas de texto embebidas en las celdas sin romper el alto de fila */
-        .input-celda {
-            width: 100%;
-            padding: 6px 8px;
-            font-size: 12px;
-            border: 1px solid #b4cbe3;
-            border-radius: 4px;
-            box-sizing: border-box;
+
+        /* Comprime los inputs para que no estiren la fila hacia arriba */
+        .tabla-planilla .input-celda {
+            padding: 1px 4px !important;
+            height: 20px !important;
+            font-size: 11px !important;
+            box-sizing: border-box !important;
         }
+
         /* Estados visuales compactos */
         .badge-pendiente {
             background-color: #fee2e2;
@@ -159,19 +158,21 @@
             <div style="max-height: 500px; overflow-y: auto; width: 100%; border: 1px solid #e2e8f0; margin-top: 15px; border-radius: 6px;">
                 <table class="tabla-previas">
                     <thead>
-                        <tr>
-                            <th style="text-align: left; width: 100px;">DNI</th>
-                            <th style="text-align: left;">Alumno</th>
-                            <th>Materia</th>
-                            <th style="width: 70px;">Curso</th>
-                            <th style="width: 90px;">Año Orig.</th>
-                            <th style="width: 80px;">Nota Fin.</th>
-                            <th style="width: 140px;">Libro / Folio</th>
-                            <th style="width: 100px;">Nota Exam.</th>
-                            <th style="width: 140px;">Fecha Exam.</th>
-                            <th style="width: 120px;">Estado</th>
-                            <th style="width: 80px;">Acción</th>
-                        </tr>
+                        <!-- REEMPLAZÁ EXCLUSIVAMENTE LO QUE ESTÁ ADENTRO DE <thead> POR ESTO: -->
+                <tr style="background-color: #13365b; color: #ffffff;">
+                    <th style="padding: 6px; font-size: 12px; width: 8%;">DNI</th>
+                    <th style="padding: 6px; font-size: 12px; width: 22%;">ALUMNO</th>
+                    <th style="padding: 6px; font-size: 12px; width: 18%;">MATERIA</th>
+                    <th style="padding: 6px; font-size: 12px; width: 6%; text-align: center;">CURSO</th>
+                    <th style="padding: 6px; font-size: 12px; width: 8%; text-align: center;">AÑO ORIG.</th>
+                    <th style="padding: 6px; font-size: 12px; width: 6%; text-align: center;">NOTA FIN.</th>
+                    <th style="padding: 6px; font-size: 12px; width: 10%; text-align: center;">LIBRO / FOLIO</th>
+                    <th style="padding: 6px; font-size: 12px; width: 6%; text-align: center;">NOTA EXAM.</th>
+                    <th style="padding: 6px; font-size: 12px; width: 12%; text-align: center;">FECHA EXAM.</th>
+                    <th style="padding: 6px; font-size: 12px; width: 8%; text-align: center;">ESTADO</th>
+                    <th style="padding: 6px; font-size: 12px; width: 10%; text-align: center;">ACCIÓN</th>
+                </tr>
+
                     </thead>
                     <tbody id="tbodyPreviasPlanilla" style="text-align: center;">
                         <!-- Fila de Estado Inicial Fija -->

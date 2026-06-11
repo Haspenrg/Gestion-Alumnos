@@ -179,45 +179,44 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
                 }
             }
 
-            previasSnapshot.docs.forEach(docSnap => {
-                const previa = docSnap.data();
-                const idDocumento = docSnap.id; // Sincroniza con la clave de la BD ("MATEMÁTICA_2021")
-                const idFilaExistente = `fila-${dniBusqueda}-${idDocumento}`.replace(/\s+/g, '-');
-                
-                if (document.getElementById(idFilaExistente)) return;
+            // Renderizado optimizado con texto plano para garantizar filas delgadas y compactas
+        // REEMPLAZO EXACTO EN PREVIAS.JS PARA RESOLVER EL ANCHO VERTICAL DE LAS FILAS
+    previasSnapshot.forEach((docPrevia) => {
+        const data = docPrevia.data();
+        const idDocumento = docPrevia.id;
+        const fila = document.createElement('tr');
+        
+        const badgeEstado = data.estado === "Aprobada"
+            ? `<span class="badge-aprobada">Aprobada</span>`
+            : `<span class="badge-pendiente">Pendiente</span>`;
 
-                const fila = document.createElement('tr');
-                fila.id = idFilaExistente;
+        // Modificamos el padding nativo directamente en la inyección para ganarle al CSS global
+        fila.innerHTML = `
+            <td style="padding: 2px 6px; text-align: left; font-weight: bold; font-size: 13px;">${data.dni || ''}</td>
+            <td style="padding: 2px 6px; text-align: left; text-transform: uppercase; font-size: 13px;">${data.alumnoNombre || ''}</td>
+            <td style="padding: 2px 6px; font-weight: bold; color: #1b4d82; text-align: left; font-size: 13px;">${data.materia || '-'}</td>
+            <td style="padding: 2px 6px; font-weight: bold; font-size: 13px; text-align: center;">${data.curso || '-'}</td>
+            <td style="padding: 2px 6px; font-size: 13px; text-align: center;">${data.anioOrigen || '-'}</td>
+            <td style="padding: 2px 6px; font-size: 13px; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
+            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled style="text-align: center; height: 22px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 22px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled style="text-align: center; height: 22px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px; font-size: 12px; text-align: center;">${badgeEstado}</td>
+            <td style="padding: 2px 6px; white-space: nowrap;">
+                <div class="contenedor-acciones-celda" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer;">Editar</button>
+                    <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer; border: none; border-radius: 4px;">X</button>
+                </div>
+            </td>
+        `;
 
-                const badgeEstado = previa.estado === "Aprobada"
-                    ? `<span class="badge-aprobada">Aprobada</span>`
-                    : `<span class="badge-pendiente">Pendiente</span>`;
+        if (!dniForzado) {
+            tbody.appendChild(fila);
+        } else {
+            tbody.insertBefore(fila, tbody.firstChild);
+        }
+    });
 
-                fila.innerHTML = `
-                    <td style="padding: 4px 6px; text-align: left; font-weight: bold; font-size: 13px;">${dniBusqueda}</td>
-                    <td style="padding: 4px 6px; text-align: left; text-transform: uppercase; font-size: 13px;">${nombreVisor}</td>
-                    <td style="padding: 4px 6px; font-weight: bold; color: #1b4d82; text-align: left; font-size: 13px;">${previa.materia || '-'}</td>
-                    <td style="padding: 4px 6px; font-weight: bold; font-size: 13px;">${previa.cursoOrigen || '-'}</td>
-                    <td style="padding: 4px 6px; font-size: 13px;">${previa.anioOrigen || '-'}</td>
-                    <td style="padding: 4px 6px; font-size: 13px;">${previa.notaFinalCursada || '-'}</td>
-                    <td style="padding: 4px 6px;"><input type="text" class="input-celda txt-libro-folio" value="${previa.libroFolio && previa.libroFolio !== '-' ? previa.libroFolio : ''}" disabled style="text-align: center; height: 22px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-                    <td style="padding: 4px 6px;"><input type="text" class="input-celda txt-nota-examen" value="${previa.notaExamen && previa.notaExamen !== '-' ? previa.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 22px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-                    <td style="padding: 4px 6px;"><input type="date" class="input-celda txt-fecha-examen" value="${previa.fechaExamen && previa.fechaExamen !== '-' ? previa.fechaExamen : ''}" disabled style="text-align: center; height: 22px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
-                    <td style="padding: 4px 6px; font-size: 12px;">${badgeEstado}</td>
-                    <td style="padding: 4px 6px; white-space: nowrap;">
-                        <div class="contenedor-acciones-celda" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-                            <button class="btn-principal btn-accion-editar" data-dni="${ dniBusqueda}" data-id-doc="${ idDocumento}" data-materia="${ idDocumento}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer;">Editar</button>
-                            <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 22px; line-height: 18px; margin: 0; cursor: pointer; border: none; border-radius: 4px;">X</button>
-                        </div>
-                    </td>
-                `;
-
-                if (!dniForzado) {
-                    tbody.appendChild(fila);
-                } else {
-                    tbody.insertBefore(fila, tbody.firstChild);
-                }
-            });
 
             if (contador) {
                 const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
@@ -598,87 +597,100 @@ async function migrarEstructuraViejaANueva() {
     }
 }
 
-// 🛡️ CARGA AUTOMÁTICA EFICIENTE (PLAN SPARK PROTEGIDO)
 async function cargarPlanillaGeneralAlArrancar() {
-    const tbody = document.getElementById('tbodyPreviasPlanilla');
-    if (!tbody) return;
-
-    try {
-        tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;color:#1b4d82;font-weight:bold;">Cargando historial de previas...</td></tr>`;
-
-        if (typeof db === 'undefined' || !db) {
-            setTimeout(cargarPlanillaGeneralAlArrancar, 200);
-            return;
-        }
-
-        const { collection, getDocs, doc, setDoc, updateDoc, query, where } = await import(b + 'firebase-firestore.js');
-        
-        const qAlumnos = query(collection(db, "alumnos"), where("migradoAPreviasRaiz", "!=", true));
-        const snapAlumnos = await getDocs(qAlumnos);
-        
-        if (!snapAlumnos.empty) {
-            for (const docAlu of snapAlumnos.docs) {
-                const dniAlu = docAlu.id;
-                const dataAlu = docAlu.data();
-                const subRef = collection(db, `alumnos/${dniAlu}/materias_previas`);
-                const snapSub = await getDocs(subRef);
-                
-                if (!snapSub.empty) {
-                    for (const docPre of snapSub.docs) {
-                        const dataPre = docPre.data();
-                        const idRaiz = `${dniAlu}_${dataPre.materia}_${dataPre.anio || 'HISTORICO'}`;
-                        await setDoc(doc(db, "previas", idRaiz), {
-                            dni: dniAlu,
-                            alumnoNombre: `${dataAlu.apellido || ''} ${dataAlu.nombre || ''}`.trim(),
-                            materia: dataPre.materia,
-                            anioOrigen: parseInt(dataPre.anio) || 2021,
-                            nota: dataPre.nota || "",
-                            estado: (dataPre.nota && parseInt(dataPre.nota) >= 6) ? "Aprobada" : "Pendiente",
-                            origen: "MANUAL_HISTORICO"
-                        }, { merge: true });
-                    }
-                }
-                await updateDoc(doc(db, "alumnos", dniAlu), { migradoAPreviasRaiz: true });
-            }
-        }
-
-        const qPrevias = query(collection(db, "previas"), where("estado", "==", "Pendiente"));
-        const previasSnapshot = await getDocs(qPrevias);
-        
-        tbody.innerHTML = "";
-
-        if (previasSnapshot.empty) {
-            tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;color:#666;">No hay alumnos con materias previas pendientes.</td></tr>`;
-            return;
-        }
-
-        previasSnapshot.forEach((docPrevia) => {
-            const data = docPrevia.data();
-            const idDoc = docPrevia.id;
-            const fila = document.createElement('tr');
-            fila.innerHTML = `
-                <td style="padding:8px;border:1px solid #ddd;">${data.dni}</td>
-                <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${data.alumnoNombre}</td>
-                <td style="padding:8px;border:1px solid #ddd;">${data.materia}</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;">${data.anioOrigen}</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold;color:#dc2626;" id="nota-${idDoc}">${data.nota || '-'}</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;">-</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;"><span style="background-color:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">${data.estado}</span></td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:center;">
-                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni}" data-id-doc="${idDoc}" data-materia="${idDoc}" style="background-color:#13365b;color:#ffffff;padding:2px 6px;font-size:11px;height:22px;line-height:18px;margin:0;cursor:pointer;">Editar</button>
-                </td>
-            `;
-            tbody.appendChild(fila);
-        });
-    } catch (error) {
-        console.error("Error en planilla:", error);
-        tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;color:#dc2626;">No se pudo inicializar la lista.</td></tr>`;
+  const tbody = document.getElementById('tbodyPreviasPlanilla');
+  if (!tbody) return;
+  
+  // Limpiamos el texto inicial estático inmediatamente para evitar falsos positivos
+  tbody.innerHTML = `<tr><td colspan="11" style="padding:20px;text-align:center;color:#1b4d82;font-weight:bold;">Conectando con la base de datos...</td></tr>`;
+  
+  try {
+    if (typeof db === 'undefined' || !db) {
+      setTimeout(cargarPlanillaGeneralAlArrancar, 250);
+      return;
     }
-}
+    const { collection, getDocs, doc, setDoc, updateDoc, query, where } = await import(b + 'firebase-firestore.js');
+    
+    // Lectura directa de alumnos para resolver el traspaso de registros históricos
+    const snapAlumnos = await getDocs(collection(db, "alumnos"));
+    
+    if (!snapAlumnos.empty) {
+      for (const docAlu of snapAlumnos.docs) {
+        const dniAlu = docAlu.id;
+        const dataAlu = docAlu.data();
+        
+        if (dataAlu.migradoAPreviasRaiz !== true) {
+          // Acceso exacto al plural según la captura forense: 'materias_previas'
+          const subRef = collection(db, `alumnos/${dniAlu}/materias_previas`);
+          const snapSub = await getDocs(subRef);
+          
+          if (!snapSub.empty) {
+            for (const docPre of snapSub.docs) {
+              const dataPre = docPre.data();
+              const matId = (dataPre.materia || docPre.id).toUpperCase().trim().replace(/\s+/g, '_');
+              const anioId = parseInt(dataPre.anioOrigen || dataPre.anio) || 2021;
+              const idUnico = `${dniAlu}_${matId}_${anioId}`;
+              
+              await setDoc(doc(db, "previas", idUnico), {
+                dni: dniAlu,
+                alumnoNombre: (dataAlu.nombreCompletoPrevias || dataAlu.nombre || "").toUpperCase().trim(),
+                materia: (dataPre.materia || docPre.id).toUpperCase().trim(),
+                anioOrigen: anioId,
+                notaFinalCursada: parseInt(dataPre.notaFinalCursada || dataPre.nota) || 1,
+                libroFolio: dataPre.libroFolio || "-",
+                notaExamen: dataPre.notaExamen || "-",
+                fechaExamen: dataPre.fechaExamen || "-",
+                estado: "Pendiente",
+                origen: "MIGRACION_MANGUERA"
+              }, { merge: true });
+            }
+          }
+          await updateDoc(doc(db, "alumnos", dniAlu), { migradoAPreviasRaiz: true });
+        }
+      }
+    }
 
+    // Consulta de visualización sobre la nueva estructura unificada
+    const qPrevias = query(collection(db, "previas"), where("estado", "==", "Pendiente"));
+    const snapshotNuevos = await getDocs(qPrevias);
+    
+    tbody.innerHTML = "";
+    if (snapshotNuevos.empty) {
+      tbody.innerHTML = `<tr><td colspan="11" style="padding:20px;text-align:center;color:#64748b;">No hay registros pendientes en la colección raíz 'previas'.</td></tr>`;
+      return;
+    }
+    
+    snapshotNuevos.forEach((docPrevia) => {
+      const data = docPrevia.data();
+      const idDoc = docPrevia.id;
+      const fila = document.createElement('tr');
+      fila.innerHTML = `
+        <td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;">${data.dni}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-transform:uppercase;font-weight:bold;">${data.alumnoNombre}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;color:#1b4d82;font-weight:bold;">${data.materia}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">-</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.anioOrigen}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;color:#dc2626;">${data.notaFinalCursada}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.libroFolio}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.notaExamen}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${data.fechaExamen}</td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;"><span class="badge-pendiente">${data.estado}</span></td>
+        <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">
+          <button class="btn-principal btn-accion-editar" data-dni="${data.dni}" data-id-doc="${idDoc}" data-materia="${data.materia}" style="background-color:#13365b;color:#ffffff;padding:2px 6px;font-size:11px;cursor:pointer;">Editar</button>
+        </td>
+      `;
+      tbody.appendChild(fila);
+    });
+    
+    const contador = document.getElementById('contadorRegistros');
+    if (contador) contador.textContent = `${snapshotNuevos.size} registros`;
+    
+  } catch (error) {
+    console.error("Falla crítica en carga general:", error);
+    tbody.innerHTML = `<tr><td colspan="11" style="padding:20px;text-align:center;color:#dc2626;">Error de comunicación con Firestore.</td></tr>`;
+  }
+}
 cargarPlanillaGeneralAlArrancar();
+
 })();
 
