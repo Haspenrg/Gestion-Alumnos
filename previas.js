@@ -158,7 +158,7 @@ function actualizarOrientacionModal() {
     }
 }
 
-// 🔍 FUNCIÓN MOTOR: BUSCA EN FIRESTORE Y ACUMULA REGISTROS EN LA PLANILLA CENTRAL
+// PARCHE CORRECTOR: Motor de búsqueda conectado a la colección raíz unificada (12 columnas)
 async function buscarYRenderizarPlanilla(dniForzado = null) {
     if (!db) return;
     const inputBuscador = document.getElementById('inputBuscarAlumno');
@@ -175,15 +175,18 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
 
     try {
         if (!dniForzado && tbody) {
-            tbody.innerHTML = `<tr><td colspan="11" style="padding: 30px; color: #1b4d82; font-weight: bold;">🔍 Buscando registros en Cloud Firestore...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="12" style="padding: 30px; color: #1b4d82; font-weight: bold;">🔍 Buscando registros en la base de datos...</td></tr>`;
         }
-        
-        const { collection, getDocs } = await import(b + 'firebase-firestore.js');
-        const alumnoSnap = await getDoc(doc(db, "alumnos", dniBusqueda));
 
-        if (!alumnoSnap.exists()) {
+        const { collection, getDocs, query, where } = await import(b + 'firebase-firestore.js');
+        
+        // Consultar la colección unificada de previas filtrando por el DNI del alumno
+        const qPrevias = query(collection(db, "previas"), where("dni", "==", dniBusqueda));
+        const previasSnapshot = await getDocs(qPrevias);
+
+        if (previasSnapshot.empty) {
             if (!dniForzado && tbody) {
-                tbody.innerHTML = `<tr><td colspan="11" style="padding: 40px; color: #dc2626; background-color: #fee2e2;">⚠️ No se encontró ningún alumno registrado con el DNI ${dniBusqueda}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" style="padding: 40px; color: #475569; background-color: #f8fafc;">El alumno no registra materias previas cargadas en el sistema.</td></tr>`;
                 if (txtNombre) txtNombre.textContent = "Ningún alumno seleccionado";
                 if (txtDni) txtDni.textContent = "";
                 if (contador) contador.textContent = "0 registros";
@@ -191,72 +194,57 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
             return;
         }
 
-        const datosAlumno = alumnoSnap.data();
-        const nombreVisor = datosAlumno.nombreCompletoPrevias || datosAlumno.nombre || "ALUMNO SIN NOMBRE";
+        // Obtener el nombre desde el primer registro de previa para hidratar la ficha superior
+        let nombreAlumnoDetectado = "ALUMNO SIN NOMBRE";
+        previasSnapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            if (d.alumnoNombre) nombreAlumnoDetectado = d.alumnoNombre;
+        });
 
         if (!dniForzado) {
-            if (txtNombre) txtNombre.textContent = nombreVisor;
+            if (txtNombre) txtNombre.textContent = nombreAlumnoDetectado.toUpperCase();
             if (txtDni) txtDni.textContent = `(DNI: ${dniBusqueda})`;
-        }
-
-        const previasSnapshot = await getDocs(collection(db, "alumnos", dniBusqueda, "materias_previas"));
-
-        if (previasSnapshot.empty) {
-            if (!dniForzado && tbody) {
-                tbody.innerHTML = `<tr><td colspan="11" style="padding: 40px; color: #475569; background-color: #f8fafc;">El alumno no registra materias previas cargadas.</td></tr>`;
-                if (contador) contador.textContent = "0 registros";
-            }
-            return;
+            if (tbody) tbody.innerHTML = "";
         }
 
         if (tbody) {
-            if (!dniForzado) {
-                tbody.innerHTML = "";
-            } else {
-                if (tbody.innerHTML.includes("Ingrese un DNI") || tbody.innerHTML.includes("No se encontró") || tbody.innerHTML.includes("Cargando historial")) {
-                    tbody.innerHTML = "";
+            previasSnapshot.forEach((docPrevia) => {
+                const data = docPrevia.data();
+                const idDocumento = docPrevia.id;
+                const fila = document.createElement('tr');
+                const badgeEstado = data.estado === "Aprobada"
+                    ? `<span class="badge-aprobada">Aprobada</span>`
+                    : `<span class="badge-pendiente">Pendiente</span>`;
+
+                fila.innerHTML = `
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; text-align: center;">${data.dni || ''}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-transform: uppercase; text-align: left;">${data.alumnoNombre || ''}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; color: #1b4d82; text-align: left;">${data.materia || ''}</td>
+                    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; font-weight: bold; color: #334155;">${data.cursoOrigen || '-'}</td>
+                    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; color: #1a73e8; font-weight: bold;">${(data.orientacion || 'CICLO BÁSICO').toUpperCase()}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center;">${data.anioOrigen || '-'}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
+                    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled></td>
+                    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="width: 100%; text-align: center;"></td>
+                    <td style="padding: 2px 4px !important;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled></td>
+                    <td style="padding: 2px 4px !important; text-align: center;">${badgeEstado}</td>
+                    <td style="padding: 2px 4px !important; white-space: nowrap; text-align: center;">
+                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                            <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}">Editar</button>
+                            <button class="btn-cancelar-edicion" style="display: none !important; background-color: #e2e8f0; color: #1e293b; padding: 0 6px !important; margin: 0 !important; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 10px; height: 100% !important; box-sizing: border-box; font-weight: bold; display: flex; align-items: center; justify-content: center;">X</button>
+
+                        </div>
+                    </td>`;
+                
+                if (!dniForzado) {
+                    tbody.appendChild(fila);
+                } else {
+                    if (tbody.innerHTML.includes("Conectando con la base") || tbody.innerHTML.includes("No hay registros")) {
+                        tbody.innerHTML = "";
+                    }
+                    tbody.insertBefore(fila, tbody.firstChild);
                 }
-            }
-
-            // Renderizado optimizado con texto plano para garantizar filas delgadas y compactas
-        // REEMPLAZO EXACTO EN PREVIAS.JS PARA RESOLVER EL ANCHO VERTICAL DE LAS FILAS
-    previasSnapshot.forEach((docPrevia) => {
-        const data = docPrevia.data();
-        const idDocumento = docPrevia.id;
-        const fila = document.createElement('tr');
-        
-        const badgeEstado = data.estado === "Aprobada"
-            ? `<span class="badge-aprobada">Aprobada</span>`
-            : `<span class="badge-pendiente">Pendiente</span>`;
-
-        // Modificamos el padding nativo directamente en la inyección para ganarle al CSS global
-                    fila.innerHTML = `
-            <td style="padding: 2px 6px; text-align: left; font-weight: bold; font-size: 13px;">${data.dni || ''}</td>
-            <td style="padding: 2px 6px; text-align: left; text-transform: uppercase; font-size: 13px;">${data.alumnoNombre || ''}</td>
-            <td style="padding: 2px 6px; text-align: left; font-weight: bold; color: #1b4d82; font-size: 13px;">${data.materia || ''}</td>
-            <td style="padding: 2px 6px; text-align: center; font-weight: bold; font-size: 13px;">${data.cursoOrigen || data.curso || '-'}</td>
-            <td style="padding: 2px 6px; text-align: center; font-size: 12px; color: #1a73e8; font-weight: bold;">${data.orientacion || 'Ciclo Básico'}</td>
-            <td style="padding: 2px 6px; text-align: center; font-size: 13px;">${data.anioOrigen || '-'}</td>
-            <td style="padding: 2px 6px; text-align: center; font-size: 13px; font-weight: bold; color: #dc2626;">${data.notaFinal || '-'}</td>
-            <td style="padding: 2px 6px; text-align: center;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio || ''}" style="width: 100%; text-align: center; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px; text-align: center;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen || ''}" style="width: 100%; text-align: center; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px; text-align: center;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen || ''}" style="width: 100%; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px; font-size: 12px; text-align: center;">${badgeEstado}</td>
-            <td style="padding: 2px 6px; white-space: nowrap;">
-                <div class="contenedor-acciones-celda" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" style="background:#1a73e8; color:#fff; border:none; padding: 4px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Editar</button>
-                    <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">X</button>
-                </div>
-            </td>`;
-
-
-        if (!dniForzado) {
-            tbody.appendChild(fila);
-        } else {
-            tbody.insertBefore(fila, tbody.firstChild);
-        }
-    });
-
+           });
 
             if (contador) {
                 const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
@@ -264,9 +252,11 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
             }
         }
     } catch (error) {
-        console.error("Error operativo al renderizar planilla:", error);
+        console.error("Error operativo al renderizar planilla en búsqueda:", error);
     }
 }
+
+
 // 🔄 FUNCIÓN PUENTE: MIGRACIÓN TRANSPARENTE AL PLAN ESTRUCTURAL EFICIENTE
 async function migrarEstructuraViejaANueva() {
     try {
@@ -748,33 +738,48 @@ async function cargarPlanillaGeneralAlArrancar() {
       return;
     }
     
-                // Renderizado unificado y corregido para la estructura raíz global unificada
-            snapshotNuevos.forEach((docPrevia) => {
-                const data = docPrevia.data();
-                const idDoc = docPrevia.id;
-                const fila = document.createElement('tr');
-                
-                const badgeEstado = data.estado === "Aprobada"
-                    ? `<span class="badge-aprobada">Aprobada</span>`
-                    : `<span class="badge-pendiente">Pendiente</span>`;
+       // PARCHE CORRECTOR: Botón Editar Azul + Letras Blancas y Borrar Condicional al arrancar
+snapshotNuevos.forEach((docPrevia) => {
+    const data = docPrevia.data();
+    const idDoc = docPrevia.id;
+    const fila = document.createElement('tr');
+    const badgeEstado = data.estado === "Aprobada"
+        ? `<span class="badge-aprobada">Aprobada</span>`
+        : `<span class="badge-pendiente">Pendiente</span>`;
 
-                fila.innerHTML = `
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;font-weight:bold;">${data.dni || ''}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-transform:uppercase;font-weight:bold;">${data.alumnoNombre || ''}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;color:#1b4d82;font-weight:bold;">${data.materia || '-'}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${data.curso || '-'}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${data.anioOrigen || '-'}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;color:#dc2626;">${data.notaFinalCursada || '-'}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${badgeEstado}</td>
-                    <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">
-                        <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDoc}" data-materia="${data.materia || ''}" style="background-color:#13365b;color:#ffffff;padding:1px 6px;font-size:11px;height:18px;line-height:14px;cursor:pointer;">Editar</button>
-                    </td>
-                `;
-                tbody.appendChild(fila);
-            });
+    // Regla de negocio: botón borrar activo únicamente para el bache histórico (<= 2023)
+    const anioNum = parseInt(data.anioOrigen);
+    const mostrarBorrar = (!isNaN(anioNum) && anioNum <= 2023);
+    const botonBorrarHTML = mostrarBorrar 
+        ? `<button class="btn-accion-borrar" data-id-doc="${idDoc}" data-materia="${data.materia || ''}" data-alumno="${data.alumnoNombre || ''}" style="background-color: #dc2626; color: #ffffff; padding: 2px 8px !important; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 22px; line-height: 18px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">Borrar</button>`
+        : '';
+
+// PARCHE CORRECTOR: Contenedor Flexbox rígido para forzar igualdad de altura al 100%
+fila.innerHTML = `
+    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; text-align: center;">${data.dni || ''}</td>
+    <td style="padding: 2px 4px !important; font-size: 12px !important; text-transform: uppercase; text-align: left;">${data.alumnoNombre || ''}</td>
+    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; color: #1b4d82; text-align: left;">${data.materia || '-'}</td>
+    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; font-weight: bold; color: #334155;">${data.cursoOrigen || '-'}</td>
+    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; color: #1a73e8; font-weight: bold;">${(data.orientacion || 'CICLO BÁSICO').toUpperCase()}</td>
+    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center;">${data.anioOrigen || '-'}</td>
+    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
+    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled></td>
+    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="width: 100%; text-align: center;"></td>
+    <td style="padding: 2px 4px !important;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled></td>
+    <td style="padding: 2px 4px !important; text-align: center;">${badgeEstado}</td>
+    <td style="padding: 2px 4px !important; white-space: nowrap; text-align: center; vertical-align: middle;">
+        <div style="display: flex !important; gap: 4px !important; justify-content: center !important; align-items: stretch !important; height: 19px !important; width: 100%;">
+            <button class="btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDoc}" data-materia="${data.materia || ''}" style="background-color: #13365b; color: #ffffff; padding: 0 8px !important; margin: 0 !important; border: none !important; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 100% !important; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Editar</button>
+            <button class="btn-cancelar-edicion" style="display: none; background-color: #e2e8f0; color: #1e293b; padding: 0 6px !important; margin: 0 !important; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 10px; height: 100% !important; box-sizing: border-box; font-weight: bold; display: flex; align-items: center; justify-content: center;">X</button>
+            ${mostrarBorrar ? `<button class="btn-accion-borrar" data-id-doc="${idDoc}" data-materia="${data.materia || ''}" data-alumno="${data.alumnoNombre || ''}" style="background-color: #dc2626; color: #ffffff; padding: 0 8px !important; margin: 0 !important; border: none !important; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 100% !important; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Borrar</button>` : ''}
+        </div>
+    </td>
+`;
+
+
+
+        tbody.appendChild(fila);
+    });
 
     
     const contador = document.getElementById('contadorRegistros');
