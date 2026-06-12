@@ -208,43 +208,49 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
         }
 
         if (tbody) {
-            previasSnapshot.forEach((docPrevia) => {
-                const data = docPrevia.data();
-                const idDocumento = docPrevia.id;
-                const fila = document.createElement('tr');
-                const badgeEstado = data.estado === "Aprobada"
-                    ? `<span class="badge-aprobada">Aprobada</span>`
-                    : `<span class="badge-pendiente">Pendiente</span>`;
+            // PARCHE CORRECTOR: Unificación de 12 columnas y acciones simétricas en el motor de búsqueda
+previasSnapshot.forEach((docPrevia) => {
+    const data = docPrevia.data();
+    const idDocumento = docPrevia.id;
+    const fila = document.createElement('tr');
+    const badgeEstado = data.estado === "Aprobada"
+        ? `<span class="badge-aprobada">Aprobada</span>`
+        : `<span class="badge-pendiente">Pendiente</span>`;
 
-                fila.innerHTML = `
-                    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; text-align: center;">${data.dni || ''}</td>
-                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-transform: uppercase; text-align: left;">${data.alumnoNombre || ''}</td>
-                    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; color: #1b4d82; text-align: left;">${data.materia || ''}</td>
-                    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; font-weight: bold; color: #334155;">${data.cursoOrigen || '-'}</td>
-                    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; color: #1a73e8; font-weight: bold;">${(data.orientacion || 'CICLO BÁSICO').toUpperCase()}</td>
-                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center;">${data.anioOrigen || '-'}</td>
-                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
-                    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled></td>
-                    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="width: 100%; text-align: center;"></td>
-                    <td style="padding: 2px 4px !important;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled></td>
-                    <td style="padding: 2px 4px !important; text-align: center;">${badgeEstado}</td>
-                    <td style="padding: 2px 4px !important; white-space: nowrap; text-align: center;">
-                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-                            <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}">Editar</button>
-                            <button class="btn-cancelar-edicion" style="display: none !important; background-color: #e2e8f0; color: #1e293b; padding: 0 6px !important; margin: 0 !important; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 10px; height: 100% !important; box-sizing: border-box; font-weight: bold; display: flex; align-items: center; justify-content: center;">X</button>
+    // Regla de negocio: botón borrar activo únicamente para el bache histórico (<= 2023)
+    const anioNum = parseInt(data.anioOrigen);
+    const mostrarBorrar = (!isNaN(anioNum) && anioNum <= 2023);
 
-                        </div>
-                    </td>`;
-                
-                if (!dniForzado) {
-                    tbody.appendChild(fila);
-                } else {
-                    if (tbody.innerHTML.includes("Conectando con la base") || tbody.innerHTML.includes("No hay registros")) {
-                        tbody.innerHTML = "";
-                    }
-                    tbody.insertBefore(fila, tbody.firstChild);
-                }
-           });
+    fila.innerHTML = `
+        <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; text-align: center;">${data.dni || ''}</td>
+        <td style="padding: 2px 4px !important; font-size: 12px !important; text-transform: uppercase; text-align: left;">${data.alumnoNombre || ''}</td>
+        <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; color: #1b4d82; text-align: left;">${data.materia || ''}</td>
+        <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; font-weight: bold; color: #334155;">${data.cursoOrigen || '-'}</td>
+        <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; color: #1a73e8; font-weight: bold;">${(data.orientacion || 'CICLO BÁSICO').toUpperCase()}</td>
+        <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center;">${data.anioOrigen || '-'}</td>
+        <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
+        <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled></td>
+        <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="width: 100%; text-align: center;"></td>
+        <td style="padding: 2px 4px !important;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled></td>
+        <td style="padding: 2px 4px !important; text-align: center;">${badgeEstado}</td>
+        <td style="padding: 2px 4px !important; white-space: nowrap; text-align: center; vertical-align: middle;">
+            <div style="display: flex !important; gap: 4px !important; justify-content: center !important; align-items: stretch !important; height: 19px !important; width: 100%;">
+                <button class="btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}" style="background-color: #13365b; color: #ffffff; padding: 0 8px !important; margin: 0 !important; border: none !important; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 100% !important; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Editar</button>
+                <button class="btn-cancelar-edicion" style="display: none !important; background-color: #e2e8f0; color: #1e293b; padding: 0 6px !important; margin: 0 !important; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 10px; height: 100% !important; box-sizing: border-box; font-weight: bold; display: flex; align-items: center; justify-content: center;">X</button>
+                ${mostrarBorrar ? `<button class="btn-accion-borrar" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}" data-alumno="${data.alumnoNombre || ''}" style="background-color: #dc2626; color: #ffffff; padding: 0 8px !important; margin: 0 !important; border: none !important; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 100% !important; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Borrar</button>` : ''}
+            </div>
+        </td>`;
+    
+    if (!dniForzado) {
+        tbody.appendChild(fila);
+    } else {
+        if (tbody.innerHTML.includes("Conectando con la base") || tbody.innerHTML.includes("No hay registros")) {
+            tbody.innerHTML = "";
+        }
+        tbody.insertBefore(fila, tbody.firstChild);
+    }
+});
+
 
             if (contador) {
                 const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
@@ -388,167 +394,200 @@ if (inputBuscarAlumno) {
         }
     });
 }
+// PARCHE AUTOMATIZADOR: Hidratación dinámica de Nombre por DNI en Alta Manual
+if (document.getElementById('modalDni') && document.getElementById('modalNombre')) {
+    ['input', 'change', 'paste'].forEach(evento => {
+        document.getElementById('modalDni').addEventListener(evento, async () => {
+            const dniVal = document.getElementById('modalDni').value.trim();
+            const modalNombreInput = document.getElementById('modalNombre');
 
-    // 💾 5. PROCESAMIENTO DEL FORMULARIO DE ALTA MANUAL - NUEVA ESTRUCTURA RAÍZ UNIFICADA
-    if (formAltaManual) {
-        formAltaManual.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const dniInput = document.getElementById('modalDni').value.trim();
-            const nombreInput = document.getElementById('modalNombre').value.trim().toUpperCase();
-            const materiaInput = selectMateriaModal.value;
-            const cursoIdInput = selectCursoModal.value;
-            const anioInput = parseInt(document.getElementById('modalAnio').value);
-            const notaInput = parseInt(document.getElementById('modalNotaFinal').value);
-            const orientacionInput = document.getElementById('modalOrientacion') ? document.getElementById('modalOrientacion').value : "Ciclo Básico";
+            if (/^\d{7,8}$/.test(dniVal)) {
+                try {
+                    const { doc, getDoc } = await import(b + 'firebase-firestore.js');
+                    const alumnoSnap = await getDoc(doc(db, "alumnos", dniVal));
 
-
-            // Obtener el texto visible del curso seleccionado para que se renderice bien en la tabla
-            const cursoTextoHTML = selectCursoModal.options[selectCursoModal.selectedIndex] ? selectCursoModal.options[selectCursoModal.selectedIndex].textContent : '-';
-
-            if (!/^\d{7,8}$/.test(dniInput)) {
-                alert("Error: El DNI debe ser un número válido de 7 u 8 dígitos.");
-                return;
-            }
-            if (notaInput < 1 || notaInput > 5) {
-                alert("Error: La nota de previa debe estar entre 1 y 5.");
-                return;
-            }
-
-            try {
-                // Mantener el registro base del alumno en la colección 'alumnos' si no existiese
-                const alumnoRef = doc(db, "alumnos", dniInput);
-                const alumnoSnap = await getDoc(alumnoRef);
-                if (!alumnoSnap.exists()) {
-                    await setDoc(alumnoRef, {
-                        dni: dniInput,
-                        nombreCompletoPrevias: nombreInput,
-                        soloPrevias: true,
-                        estadoMatricula: "Exclusivo_Previa",
-                        fechaAltaSistema: serverTimestamp(),
-                        migradoAPreviasRaiz: true // Marcado directo para evitar futuras migraciones obsoletas
-                    });
-                }
-
-                // Generar la clave única plana unificada: DNI_MATERIA_AÑO (Formato estándar verificado)
-                const matId = materiaInput.toUpperCase().trim().replace(/\s+/g, '_');
-                const idPreviaRaizUnico = `${dniInput}_${matId}_${anioInput}`;
-                
-                // Referenciar a la nueva colección raíz unificada 'previas'
-                const previaRef = doc(db, "previas", idPreviaRaizUnico);
-                const previaSnap = await getDoc(previaRef);
-                
-                if (previaSnap.exists()) {
-                    alert(`La materia ${materiaInput} ya figura registrada para el alumno en el año ${anioInput}.`);
-                    return;
-                }
-
-                // Guardado físico directo en la nueva estructura unificada
-                await setDoc(previaRef, {
-                    dni: dniInput,
-                    alumnoNombre: nombreInput,
-                    materia: materiaInput.toUpperCase().trim(),
-                    curso: cursoTextoHTML, // Se almacena formateado para alta densidad de datos
-                    cursoOrigen: cursoIdInput,
-                    orientacion: orientacionInput,
-                    anioOrigen: anioInput,
-                    notaFinalCursada: notaInput,
-                    libroFolio: "-",
-                    notaExamen: "-",
-                    fechaExamen: "-",
-                    estado: "Pendiente",
-                    origen: "ALTA_MANUAL_RAIZ",
-                    fechaRegistro: serverTimestamp(),
-                    ultimaModificacion: serverTimestamp()
-                });
-
-                if (typeof window.registrarEventoLegajo === "function") {
-                    window.registrarEventoLegajo(dniInput, "CALIFICACIONES", "PREVIAS_ALTA", `Alta manual de materia previa: ${materiaInput} (Año: ${anioInput})`);
-                }
-                
-                alert("Materia previa guardada con éxito en la nueva base de datos.");
-                if (modalAltaManual) modalAltaManual.style.display = 'none';
-
-                // Insertar dinámicamente la nueva fila arriba de la tabla actual sin recargar
-                const tbody = document.getElementById('tbodyPreviasPlanilla');
-                if (tbody) {
-                    // Si estaba el mensaje de estado inicial vacío, lo removemos
-                    if (tbody.innerHTML.includes("Ingrese un DNI") || tbody.innerHTML.includes("No hay registros")) {
-                        tbody.innerHTML = "";
+                    if (alumnoSnap.exists()) {
+                        const dataAlumno = alumnoSnap.data();
+                        const nombreDetectado = dataAlumno.nombreCompleto || dataAlumno.nombreCompletoPrevias || dataAlumno.nombre || "";
+                        
+                        if (nombreDetectado) {
+                            modalNombreInput.value = nombreDetectado.toUpperCase().trim();
+                            modalNombreInput.readOnly = true;
+                            modalNombreInput.style.backgroundColor = "#f1f5f9";
+                            return;
+                        }
                     }
-
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;font-weight:bold;">${dniInput}</td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-transform:uppercase;font-weight:bold;">${nombreInput}</td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;color:#1b4d82;font-weight:bold;">${materiaInput.toUpperCase().trim()}</td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${cursoTextoHTML}</td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">${anioInput}</td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;color:#dc2626;">${notaInput}</td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-libro-folio" value="" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="text" class="input-celda txt-nota-examen" value="" disabled style="text-align: center; width: 40px; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><input type="date" class="input-celda txt-fecha-examen" value="" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;"><span class="badge-pendiente">Pendiente</span></td>
-                        <td style="padding:2px 6px;border:1px solid #cbd5e1;text-align:center;">
-                            <button class="btn-principal btn-accion-editar" data-dni="${dniInput}" data-id-doc="${idPreviaRaizUnico}" data-materia="${materiaInput.toUpperCase().trim()}" style="background-color:#13365b;color:#ffffff;padding:1px 6px;font-size:11px;height:18px;line-height:14px;cursor:pointer;">Editar</button>
-                        </td>
-                    `;
-                    tbody.insertBefore(fila, tbody.firstChild);
-
-                    // Actualizar dinámicamente el totalizador numérico visible de la grilla
-                    const contador = document.getElementById('contadorRegistros');
-                    if (contador) {
-                        const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
-                        contador.textContent = `${filasReales} registros`;
-                    }
+                    modalNombreInput.readOnly = false;
+                    modalNombreInput.style.backgroundColor = "";
+                } catch (error) {
+                    console.error("Error al buscar DNI en el modal:", error);
                 }
-
-                formAltaManual.reset();
-            } catch (err) {
-                console.error("Fallo crítico en guardado de nueva estructura raíz:", err);
-                alert("Ocurrió un error al guardar en la base de datos centralizada.");
+            } else {
+                modalNombreInput.value = "";
+                modalNombreInput.readOnly = false;
+                modalNombreInput.style.backgroundColor = "";
             }
         });
-    }
+    });
+}
+
+ // PARCHE CORRECTOR: Formulario de Alta Manual Unificado (12 columnas simétricas en caliente)
+if (formAltaManual) {
+    formAltaManual.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const dniInput = document.getElementById('modalDni').value.trim();
+        const nombreInput = document.getElementById('modalNombre').value.trim().toUpperCase();
+        const materiaInput = selectMateriaModal.value;
+        const cursoIdInput = selectCursoModal.value; // Formato corto Ej: 1-A-M
+        const anioInput = parseInt(document.getElementById('modalAnio').value);
+        const notaInput = parseInt(document.getElementById('modalNotaFinal').value);
+        const orientacionInput = document.getElementById('modalOrientacion') ? document.getElementById('modalOrientacion').value.trim().toUpperCase() : "CICLO BÁSICO";
+
+        const cursoTextoHTML = selectCursoModal.options[selectCursoModal.selectedIndex] ? selectCursoModal.options[selectCursoModal.selectedIndex].textContent : '-';
+
+        if (!/^\d{7,8}$/.test(dniInput)) {
+            alert("Error: El DNI debe ser un número válido de 7 u 8 dígitos.");
+            return;
+        }
+        if (notaInput < 1 || notaInput > 5) {
+            alert("Error: La nota de previa debe estar entre 1 y 5.");
+            return;
+        }
+
+        try {
+            const alumnoRef = doc(db, "alumnos", dniInput);
+            const alumnoSnap = await getDoc(alumnoRef);
+            if (!alumnoSnap.exists()) {
+                await setDoc(alumnoRef, {
+                    dni: dniInput,
+                    nombreCompletoPrevias: nombreInput,
+                    soloPrevias: true,
+                    estadoMatricula: "Exclusivo_Previa",
+                    fechaAltaSistema: serverTimestamp(),
+                    migradoAPreviasRaiz: true
+                });
+            }
+
+            const matId = materiaInput.toUpperCase().trim().replace(/\s+/g, '_');
+            const idPreviaRaizUnico = `${dniInput}_${matId}_${anioInput}`;
+            
+            const previaRef = doc(db, "previas", idPreviaRaizUnico);
+            const previaSnap = await getDoc(previaRef);
+            
+            if (previaSnap.exists()) {
+                alert(`La materia ${materiaInput} ya figura registrada para el alumno en el año ${anioInput}.`);
+                return;
+            }
+
+            await setDoc(previaRef, {
+                dni: dniInput,
+                alumnoNombre: nombreInput,
+                materia: materiaInput.toUpperCase().trim(),
+                curso: cursoTextoHTML,
+                cursoOrigen: cursoIdInput,
+                orientacion: orientacionInput,
+                anioOrigen: anioInput,
+                notaFinalCursada: notaInput,
+                libroFolio: "-",
+                notaExamen: "-",
+                fechaExamen: "-",
+                estado: "Pendiente",
+                origen: "ALTA_MANUAL_RAIZ",
+                fechaRegistro: serverTimestamp(),
+                ultimaModificacion: serverTimestamp()
+            });
+
+            if (typeof window.registrarEventoLegajo === "function") {
+                window.registrarEventoLegajo(dniInput, "CALIFICACIONES", "PREVIAS_ALTA", `Alta manual de materia previa: ${materiaInput} (Año: ${anioInput})`);
+            }
+            
+            alert("Materia previa guardada con éxito en la nueva base de datos.");
+            if (modalAltaManual) modalAltaManual.style.display = 'none';
+
+            const tbody = document.getElementById('tbodyPreviasPlanilla');
+            if (tbody) {
+                if (tbody.innerHTML.includes("Ingrese un DNI") || tbody.innerHTML.includes("No hay registros")) {
+                    tbody.innerHTML = "";
+                }
+
+                // Regla condicional para el botón Borrar en la fila inyectada en caliente
+                const mostrarBorrar = (anioInput <= 2023);
+                const botonBorrarHTML = mostrarBorrar 
+                    ? `<button class="btn-accion-borrar" data-id-doc="${idPreviaRaizUnico}" data-materia="${materiaInput.toUpperCase().trim()}" data-alumno="${nombreInput}" style="background-color: #dc2626; color: #ffffff; padding: 0 8px !important; margin: 0 !important; border: none !important; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 100% !important; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Borrar</button>`
+                    : '';
+
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; text-align: center;">${dniInput}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-transform: uppercase; text-align: left;">${nombreInput}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; font-weight: bold; color: #1b4d82; text-align: left;">${materiaInput.toUpperCase().trim()}</td>
+                    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; font-weight: bold; color: #334155;">${cursoIdInput || '-'}</td>
+                    <td style="padding: 2px 4px !important; font-size: 11px !important; text-align: center; color: #1a73e8; font-weight: bold;">${orientacionInput.toUpperCase()}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center;">${anioInput}</td>
+                    <td style="padding: 2px 4px !important; font-size: 12px !important; text-align: center; font-weight: bold; color: #dc2626;">${notaInput}</td>
+                    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-libro-folio" value="" disabled></td>
+                    <td style="padding: 2px 4px !important;"><input type="text" class="input-celda txt-nota-examen" value="" disabled style="width: 100%; text-align: center;"></td>
+                    <td style="padding: 2px 4px !important;"><input type="date" class="input-celda txt-fecha-examen" value="" disabled></td>
+                    <td style="padding: 2px 4px !important; text-align: center;"><span class="badge-pendiente">Pendiente</span></td>
+                    <td style="padding: 2px 4px !important; white-space: nowrap; text-align: center; vertical-align: middle;">
+                        <div style="display: flex !important; gap: 4px !important; justify-content: center !important; align-items: stretch !important; height: 19px !important; width: 100%;">
+                            <button class="btn-accion-editar" data-dni="${dniInput}" data-id-doc="${idPreviaRaizUnico}" data-materia="${materiaInput.toUpperCase().trim()}" style="background-color: #13365b; color: #ffffff; padding: 0 8px !important; margin: 0 !important; border: none !important; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; height: 100% !important; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Editar</button>
+                            <button class="btn-cancelar-edicion" style="display: none !important; background-color: #e2e8f0; color: #1e293b; padding: 0 6px !important; margin: 0 !important; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 10px; height: 100% !important; box-sizing: border-box; font-weight: bold; display: flex; align-items: center; justify-content: center;">X</button>
+                            ${botonBorrarHTML}
+                        </div>
+                    </td>
+                `;
+                tbody.insertBefore(fila, tbody.firstChild);
+
+                const contador = document.getElementById('contadorRegistros');
+                if (contador) {
+                    const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
+                    contador.textContent = `${filasReales} registros en pantalla`;
+                }
+            }
+
+            formAltaManual.reset();
+        } catch (err) {
+            console.error("Fallo crítico en guardado de nueva estructura raíz:", err);
+            alert("Ocurrió un error al guardar en la base de datos centralizada.");
+        }
+    });
+}
 
 
-// 📝 LÓGICA DE EDICIÓN EN LÍNEA, GUARDADO Y CANCELACIÓN (VERSIÓN DEFINITIVA CORREGIDA)
+
+// PARCHE CORRECTOR: Oyente unificado para el tbody, libre de errores de sintaxis
 document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async (e) => {
-    // 1. COMPORTAMIENTO DEL BOTÓN EDITAR / GUARDAR
+    // 1. MANEJO DEL BOTÓN EDITAR / GUARDAR
     if (e.target.classList.contains('btn-accion-editar')) {
         const boton = e.target;
         const fila = boton.closest('tr');
-        const dni = boton.getAttribute('data-dni');
-        const materia = boton.getAttribute('data-materia');
-        
+        const idDoc = boton.getAttribute('data-id-doc');
         const inputLibro = fila.querySelector('.txt-libro-folio');
         const inputNota = fila.querySelector('.txt-nota-examen');
         const inputFecha = fila.querySelector('.txt-fecha-examen');
         const botonCancelar = fila.querySelector('.btn-cancelar-edicion');
 
-        // MODO EDICIÓN: Activamos campos y guardamos valores antiguos en memoria por si cancela
         if (boton.textContent === "Editar") {
-            fila.setAttribute('data-old-libro', inputLibro.value);
-            fila.setAttribute('data-old-nota', inputNota.value);
-            fila.setAttribute('data-old-fecha', inputFecha.value);
-
+            // Guardar backup en el DOM
+            fila.setAttribute('data-old-libro', inputLibro ? inputLibro.value : "");
+            fila.setAttribute('data-old-nota', inputNota ? inputNota.value : "");
+            fila.setAttribute('data-old-fecha', inputFecha ? inputFecha.value : "");
+            
             if (inputLibro) inputLibro.disabled = false;
             if (inputNota) inputNota.disabled = false;
             if (inputFecha) inputFecha.disabled = false;
             
-            fila.style.backgroundColor = "#fffde7"; 
+            fila.style.backgroundColor = "#fffde7";
             boton.textContent = "Guardar";
-            boton.style.backgroundColor = "#2e7d32"; 
-            boton.style.color = "#ffffff";
-            
-            if (botonCancelar) botonCancelar.style.display = "inline-block";
+            boton.style.backgroundColor = "#2e7d32";
+            if (botonCancelar) botonCancelar.style.setProperty('display', 'flex', 'important');
         } 
-        // MODO GUARDAR: Enviamos los cambios reales a Firestore
         else {
             const libroVal = inputLibro ? inputLibro.value.trim() : "";
             const notaVal = inputNota ? inputNota.value.trim() : "";
             const fechaVal = inputFecha ? inputFecha.value : "";
 
-            // Validación inteligente de nota únicamente al momento de guardar
             if (notaVal !== "" && notaVal !== "-") {
                 const notaNum = parseFloat(notaVal);
                 if (isNaN(notaNum) || notaNum < 1 || notaNum > 10) {
@@ -557,38 +596,38 @@ document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async 
                 }
             }
 
-            boton.textContent = "⏳...";
+            boton.textContent = "⏳";
             boton.disabled = true;
-            if (botonCancelar) botonCancelar.style.display = "none";
+            if (botonCancelar) botonCancelar.style.setProperty('display', 'none', 'important');
 
             try {
-                // Nota de aprobación escolar: 6 o más
                 let nuevoEstado = "Pendiente";
                 if (notaVal !== "" && notaVal !== "-" && parseFloat(notaVal) >= 6) {
                     nuevoEstado = "Aprobada";
                 }
 
-                await setDoc(doc(db, "alumnos", dni, "materias_previas", materia), {
-                    libroFolio: libroVal,
-                    notaExamen: notaVal,
-                    fechaExamen: fechaVal,
-                    estado: nuevoEstado
+                const { doc, setDoc } = await import(b + 'firebase-firestore.js');
+                
+                await setDoc(doc(db, "previas", idDoc), {
+                    libroFolio: libroVal || "-",
+                    notaExamen: notaVal || "-",
+                    fechaExamen: fechaVal || "-",
+                    estado: nuevoEstado,
+                    ultimaModificacion: new Date()
                 }, { merge: true });
 
                 if (inputLibro) inputLibro.disabled = true;
                 if (inputNota) inputNota.disabled = true;
                 if (inputFecha) inputFecha.disabled = true;
                 
-                fila.style.backgroundColor = ""; 
+                fila.style.backgroundColor = "";
                 boton.textContent = "Editar";
-                boton.style.backgroundColor = "#13365b"; 
-                boton.style.color = "#ffffff";
+                boton.style.backgroundColor = "#13365b";
                 boton.disabled = false;
 
-                // Actualizamos visualmente el badge de estado en la fila (celda índice 9)
-                if (fila.cells && fila.cells[9]) {
-                    fila.cells[9].innerHTML = nuevoEstado === "Aprobada" 
-                        ? `<span class="badge-aprobada">Aprobada</span>` 
+                if (fila.cells && fila.cells[10]) {
+                    fila.cells[10].innerHTML = nuevoEstado === "Aprobada"
+                        ? `<span class="badge-aprobada">Aprobada</span>`
                         : `<span class="badge-pendiente">Pendiente</span>`;
                 }
 
@@ -598,23 +637,21 @@ document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async 
                 boton.textContent = "Guardar";
                 boton.style.backgroundColor = "#2e7d32";
                 boton.disabled = false;
-                if (botonCancelar) botonCancelar.style.display = "inline-block";
+                if (botonCancelar) botonCancelar.style.setProperty('display', 'flex', 'important');
             }
         }
         return;
     }
 
-    // 2. COMPORTAMIENTO DEL BOTÓN CANCELAR (BOTÓN "X")
+    // 2. MANEJO DEL BOTÓN CANCELAR ("X")
     if (e.target.classList.contains('btn-cancelar-edicion')) {
         const botonCancelar = e.target;
         const fila = botonCancelar.closest('tr');
         const botonEditar = fila.querySelector('.btn-accion-editar');
-        
         const inputLibro = fila.querySelector('.txt-libro-folio');
         const inputNota = fila.querySelector('.txt-nota-examen');
         const inputFecha = fila.querySelector('.txt-fecha-examen');
 
-        // Restauramos los valores desde el backup de la fila
         if (inputLibro) inputLibro.value = fila.getAttribute('data-old-libro') || "";
         if (inputNota) inputNota.value = fila.getAttribute('data-old-nota') || "";
         if (inputFecha) inputFecha.value = fila.getAttribute('data-old-fecha') || "";
@@ -623,16 +660,67 @@ document.getElementById('tbodyPreviasPlanilla').addEventListener('click', async 
         if (inputNota) inputNota.disabled = true;
         if (inputFecha) inputFecha.disabled = true;
         
-        fila.style.backgroundColor = ""; 
+        fila.style.backgroundColor = "";
         if (botonEditar) {
             botonEditar.textContent = "Editar";
             botonEditar.style.backgroundColor = "#13365b";
-            botonEditar.style.color = "#ffffff";
             botonEditar.disabled = false;
         }
-        botonCancelar.style.display = "none";
+        botonCancelar.style.setProperty('display', 'none', 'important');
+        return;
     }
+        // 3. GESTIÓN DEL BOTÓN BORRAR (EXCLUSIVO CICLOS LECTIVOS 2021-2023)
+    if (e.target.classList.contains('btn-accion-borrar')) {
+        const botonBorrar = e.target;
+        const fila = botonBorrar.closest('tr');
+        const idDoc = botonBorrar.getAttribute('data-id-doc');
+        const materiaNombre = botonBorrar.getAttribute('data-materia') || "la materia";
+        const alumnoNombre = botonBorrar.getAttribute('data-alumno') || "el alumno";
+
+        // Confirmación de seguridad estricta para evitar accidentes administrativos
+        const seguro = confirm(`⚠️ ADVERTENCIA CRÍTICA:\n\n¿Está completamente seguro de eliminar de forma permanente la previa de ${materiaNombre.toUpperCase()} correspondiente al alumno ${alumnoNombre.toUpperCase()}?\n\nEsta acción eliminará físicamente el registro de la base de datos y NO se puede deshacer.`);
+        
+        if (!seguro) return;
+
+        botonBorrar.textContent = "⏳";
+        botonBorrar.disabled = true;
+
+        try {
+            // Importación dinámica de la función de eliminación física
+            const { doc, deleteDoc } = await import(b + 'firebase-firestore.js');
+            
+            // Eliminación atómica del documento en la colección raíz
+            await deleteDoc(doc(db, "previas", idDoc));
+
+            // Remoción inmediata de la fila del DOM con efecto visual limpio
+            fila.remove();
+
+            // Recalcular dinámicamente el contador de registros en pantalla
+            const contador = document.getElementById('contadorRegistros');
+            const tbody = document.getElementById('tbodyPreviasPlanilla');
+            if (tbody && contador) {
+                const filasReales = tbody.querySelectorAll('tr:not([colspan])').length;
+                if (filasReales === 0) {
+                    tbody.innerHTML = `<tr><td colspan="12" style="padding: 40px; color: #475569; background-color: #f8fafc;">No hay registros pendientes en la colección raíz 'previas'.</td></tr>`;
+                    contador.textContent = "0 registros en pantalla";
+                } else {
+                    contador.textContent = `${filasReales} registros en pantalla`;
+                }
+            }
+
+            alert("Registro eliminado con éxito de la base de datos central.");
+
+        } catch (error) {
+            console.error("Error forense al eliminar el documento de previa:", error);
+            alert("Error de red: No se pudo eliminar el registro. Intente nuevamente.");
+            botonBorrar.textContent = "Borrar";
+            botonBorrar.disabled = false;
+        }
+        return;
+    }
+
 });
+
 
 // 🔄 FUNCIÓN PUENTE: MIGRACIÓN TRANSPARENTE AL PLAN ESTRUCTURAL EFICIENTE
 async function migrarEstructuraViejaANueva() {
