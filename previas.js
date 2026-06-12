@@ -13,7 +13,9 @@ const auth = getAuth();
 // Variables globales de control de la pantalla
 let selectCursoModal;
 let selectMateriaModal;
+let selectOrientacionModal; // PARCHE: Control dinámico de orientación
 let formAltaManual;
+
 
 // 🛡️ 2. PROTECCIÓN COERCITIVA RBAC (Sincronizado fielmente con tu clave 'usuarioActivo')
 function verificarAutenticacionPrevias() {
@@ -119,6 +121,43 @@ function cargarMateriasPorCursoModal() {
         selectMateriaModal.innerHTML = '<option value="" disabled selected>El curso no posee materias asociadas</option>';
     }
 }
+// PARCHE PASO 3: DETECCIÓN Y ASIGNACIÓN DINÁMICA DE ORIENTACIÓN AL SELECCIONAR EL CURSO
+function actualizarOrientacionModal() {
+    if (!selectCursoModal || !selectOrientacionModal) return;
+    
+    const cursoIdSeleccionado = selectCursoModal.value;
+    selectOrientacionModal.innerHTML = '';
+
+    if (!cursoIdSeleccionado) {
+        selectOrientacionModal.appendChild(new Option("Seleccione primero un curso...", ""));
+        return;
+    }
+
+    const cursosRaw = localStorage.getItem('cursosColegio');
+    const courses = cursosRaw ? JSON.parse(cursosRaw) : [];
+    const cursoEncontrado = courses.find(c => c.id === cursoIdSeleccionado);
+
+    if (cursoEncontrado) {
+        const ciclo = cursoEncontrado.ciclo || '';
+        const esCicloBajo = ciclo.includes("1°") || ciclo.includes("2°") || ciclo.includes("3°");
+
+        if (esCicloBajo) {
+            selectOrientacionModal.appendChild(new Option("Ciclo Básico", "Ciclo Básico"));
+            selectOrientacionModal.value = "Ciclo Básico";
+            selectOrientacionModal.disabled = true;
+            selectOrientacionModal.style.backgroundColor = "#e2e8f0";
+        } else {
+            const orientacionReal = cursoEncontrado.orientacion || "Sin Especificar";
+            selectOrientacionModal.appendChild(new Option(orientacionReal.toUpperCase(), orientacionReal));
+            selectOrientacionModal.value = orientacionReal;
+            selectOrientacionModal.disabled = true;
+            selectOrientacionModal.style.backgroundColor = "#e2e8f0";
+        }
+    } else {
+        selectOrientacionModal.appendChild(new Option("Estructura no encontrada", ""));
+    }
+}
+
 // 🔍 FUNCIÓN MOTOR: BUSCA EN FIRESTORE Y ACUMULA REGISTROS EN LA PLANILLA CENTRAL
 async function buscarYRenderizarPlanilla(dniForzado = null) {
     if (!db) return;
@@ -191,24 +230,25 @@ async function buscarYRenderizarPlanilla(dniForzado = null) {
             : `<span class="badge-pendiente">Pendiente</span>`;
 
         // Modificamos el padding nativo directamente en la inyección para ganarle al CSS global
-                fila.innerHTML = `
+                    fila.innerHTML = `
             <td style="padding: 2px 6px; text-align: left; font-weight: bold; font-size: 13px;">${data.dni || ''}</td>
             <td style="padding: 2px 6px; text-align: left; text-transform: uppercase; font-size: 13px;">${data.alumnoNombre || ''}</td>
-            <td style="padding: 2px 6px; font-weight: bold; color: #1b4d82; text-align: left; font-size: 13px;">${data.materia || '-'}</td>
-            <td style="padding: 2px 6px; font-weight: bold; font-size: 13px; text-align: center;">${data.curso || '-'}</td>
-            <td style="padding: 2px 6px; font-size: 13px; text-align: center;">${data.anioOrigen || '-'}</td>
-            <td style="padding: 2px 6px; font-size: 13px; text-align: center; font-weight: bold; color: #dc2626;">${data.notaFinalCursada || '-'}</td>
-            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio && data.libroFolio !== '-' ? data.libroFolio : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen && data.notaExamen !== '-' ? data.notaExamen : ''}" disabled style="text-align: center; width: 40px; height: 18px; padding: 2px; font-size: 12px; margin: 0 auto; box-sizing: border-box;"></td>
-            <td style="padding: 2px 6px;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen && data.fechaExamen !== '-' ? data.fechaExamen : ''}" disabled style="text-align: center; height: 18px; padding: 2px; font-size: 11px; margin: 0 auto; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px; text-align: left; font-weight: bold; color: #1b4d82; font-size: 13px;">${data.materia || ''}</td>
+            <td style="padding: 2px 6px; text-align: center; font-weight: bold; font-size: 13px;">${data.cursoOrigen || data.curso || '-'}</td>
+            <td style="padding: 2px 6px; text-align: center; font-size: 12px; color: #1a73e8; font-weight: bold;">${data.orientacion || 'Ciclo Básico'}</td>
+            <td style="padding: 2px 6px; text-align: center; font-size: 13px;">${data.anioOrigen || '-'}</td>
+            <td style="padding: 2px 6px; text-align: center; font-size: 13px; font-weight: bold; color: #dc2626;">${data.notaFinal || '-'}</td>
+            <td style="padding: 2px 6px; text-align: center;"><input type="text" class="input-celda txt-libro-folio" value="${data.libroFolio || ''}" style="width: 100%; text-align: center; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px; text-align: center;"><input type="text" class="input-celda txt-nota-examen" value="${data.notaExamen || ''}" style="width: 100%; text-align: center; box-sizing: border-box;"></td>
+            <td style="padding: 2px 6px; text-align: center;"><input type="date" class="input-celda txt-fecha-examen" value="${data.fechaExamen || ''}" style="width: 100%; box-sizing: border-box;"></td>
             <td style="padding: 2px 6px; font-size: 12px; text-align: center;">${badgeEstado}</td>
             <td style="padding: 2px 6px; white-space: nowrap;">
                 <div class="contenedor-acciones-celda" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" data-materia="${data.materia || ''}" style="background-color: #13365b; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 18px; line-height: 14px; margin: 0; cursor: pointer;">Editar</button>
-                    <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 2px 6px; font-size: 11px; height: 18px; line-height: 14px; margin: 0; cursor: pointer; border: none; border-radius: 4px;">X</button>
+                    <button class="btn-principal btn-accion-editar" data-dni="${data.dni || ''}" data-id-doc="${idDocumento}" style="background:#1a73e8; color:#fff; border:none; padding: 4px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Editar</button>
+                    <button class="btn-cancelar-edicion" style="display: none; background-color: #d32f2f; color: #ffffff; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">X</button>
                 </div>
-            </td>
-        `;
+            </td>`;
+
 
         if (!dniForzado) {
             tbody.appendChild(fila);
@@ -290,6 +330,7 @@ const modalAltaManual = document.getElementById('modalAltaManual');
 
 selectCursoModal = document.getElementById('modalCurso');
 selectMateriaModal = document.getElementById('modalMateria');
+selectOrientacionModal = document.getElementById('modalOrientacion');
 formAltaManual = document.getElementById('formAltaManual');
 
 // Forzar visibilidad del botón si el rol cuenta con los permisos de escritura/admin
@@ -307,6 +348,13 @@ if (btnAbrirAltaManual) {
         
         // 2. Forzar la lectura inmediata de tu clave 'cursos' en localStorage
         cargarCursosEnModal();
+        if (selectCursoModal) {
+    selectCursoModal.addEventListener('change', () => {
+        cargarMateriasPorCursoModal();
+        actualizarOrientacionModal();
+    });
+}
+
         
         // 3. Auto-copiar DNI del buscador principal si contiene 7 u 8 dígitos
         const buscadorPrincipal = document.getElementById('inputBuscarAlumno');
@@ -361,6 +409,8 @@ if (inputBuscarAlumno) {
             const cursoIdInput = selectCursoModal.value;
             const anioInput = parseInt(document.getElementById('modalAnio').value);
             const notaInput = parseInt(document.getElementById('modalNotaFinal').value);
+            const orientacionInput = document.getElementById('modalOrientacion') ? document.getElementById('modalOrientacion').value : "Ciclo Básico";
+
 
             // Obtener el texto visible del curso seleccionado para que se renderice bien en la tabla
             const cursoTextoHTML = selectCursoModal.options[selectCursoModal.selectedIndex] ? selectCursoModal.options[selectCursoModal.selectedIndex].textContent : '-';
@@ -409,6 +459,7 @@ if (inputBuscarAlumno) {
                     materia: materiaInput.toUpperCase().trim(),
                     curso: cursoTextoHTML, // Se almacena formateado para alta densidad de datos
                     cursoOrigen: cursoIdInput,
+                    orientacion: orientacionInput,
                     anioOrigen: anioInput,
                     notaFinalCursada: notaInput,
                     libroFolio: "-",
