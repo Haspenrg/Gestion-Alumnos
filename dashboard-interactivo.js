@@ -327,16 +327,17 @@ function renderizarNominaPaginada() {
         if (alumno.materiasPrevias >= 3) estiloMaterias = 'color: #b91c1c; font-weight: bold; background-color: #fee2e2; padding: 2px 8px; border-radius: 9999px;';
         else if (alumno.materiasPrevias > 0) estiloMaterias = 'color: #d97706; font-weight: bold;';
 
-        cuerpoTabla.innerHTML += `
-        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px; height: 32px;">
-            <td style="padding: 6px 12px; font-family: monospace; color: #475569;">${alumno.dni}</td>
-            <td style="padding: 6px 12px; font-weight: 500; color: #1e293b;">${alumno.apellidoNombre}</td>
-            <td style="padding: 6px 12px; text-align: center; color: #475569;">${alumno.genero}</td>
-            <td style="padding: 6px 12px; text-align: center; color: #475569;">${alumno.edad} años</td>
-            <td style="padding: 6px 12px; text-align: center; font-weight: bold; color: #1b4d82;">${alumno.curso}</td>
-            <td style="padding: 6px 12px; text-align: center;">${etiquetaCondicion}</td>
-            <td style="padding: 6px 12px; text-align: center;"><span style="${estiloMaterias}">${alumno.materiasPrevias}</span></td>
+                cuerpoTabla.innerHTML += `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px; height: 38px;">
+            <td style="padding: 6px 12px; width: 15%; font-family: monospace; color: #475569;">${alumno.dni}</td>
+            <td style="padding: 6px 12px; width: 25%; font-weight: 500; color: #1e293b;">${alumno.apellidoNombre}</td>
+            <td style="padding: 6px 12px; width: 10%; text-align: center; color: #475569;">${alumno.genero}</td>
+            <td style="padding: 6px 12px; width: 10%; text-align: center; color: #475569;">${alumno.edad} años</td>
+            <td style="padding: 6px 12px; width: 10%; text-align: center; font-weight: bold; color: #1b4d82;">${alumno.curso}</td>
+            <td style="padding: 6px 12px; width: 15%; text-align: center;">${etiquetaCondicion}</td>
+            <td style="padding: 6px 12px; width: 15%; text-align: center;"><span style="${estiloMaterias}">${alumno.materiasPrevias}</span></td>
         </tr>`;
+
     });
 }
 
