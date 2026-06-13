@@ -171,34 +171,6 @@
         </div>
 
 
-                <!-- PASO 4: Bloque Visual (Contenedores de Gráficos Interactivos) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            
-            <!-- Panel Izquierdo: Gráfico de Torta (Distribución por Género) -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    📊 Distribución de Matrícula por Género
-                </h3>
-                <!-- Contenedor con altura controlada para evitar que el gráfico crezca infinitamente -->
-                <div class="relative w-full h-[260px] flex justify-center items-center">
-                    <!-- El ID "graficoGenero" es el enlace directo con el motor de Chart.js -->
-                    <canvas id="graficoGenero"></canvas>
-                </div>
-            </div>
-
-            <!-- Panel Derecho: Gráfico de Barras (Distribución por Edad) -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    📈 Población Activa por Rango de Edad
-                </h3>
-                <div class="relative w-full h-[260px]">
-                    <!-- El ID "graficoEdad" permitirá dibujar las barras horizontales/verticales -->
-                    <canvas id="graficoEdad"></canvas>
-                </div>
-            </div>
-
-        </div>
-
                 <!-- PASO 5: Grilla de Detalle (Nómina Resumen Resaltada) -->
         <div class="bg-white rounded-xl border border-[#1b4d82] shadow-xs overflow-hidden">
             <div class="bg-[#1b4d82] px-4 py-3 flex justify-between items-center">
@@ -210,9 +182,10 @@
                 </span>
             </div>
 
-            <!-- Contenedor responsivo con scroll horizontal controlado para evitar desbordes -->
-            <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <!-- Contenedor adaptativo sin scroll vertical por página -->
+                <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #ffffff;">
                 <table class="w-full text-left border-collapse tabla-usuarios">
+
                     <thead class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="p-3 bg-slate-100">DNI / Legajo</th>
