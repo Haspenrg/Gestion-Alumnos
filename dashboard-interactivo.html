@@ -174,12 +174,13 @@
                 <!-- PASO 5: Grilla de Detalle (Nómina Resumen Resaltada) -->
         <div class="bg-white rounded-xl border border-[#1b4d82] shadow-xs overflow-hidden">
             <div class="bg-[#1b4d82] px-4 py-3 flex justify-between items-center">
-                <h3 class="text-sm font-bold text-white uppercase tracking-wider !mb-0">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 14px; font-weight: bold; color: #334155; text-transform: uppercase; letter-spacing: 0.05em;">
                     📋 Alumnos en la Selección Actual
                 </h3>
-                <span id="txtContadorTabla" class="text-xs bg-white text-[#1b4d82] font-bold px-2 py-0.5 rounded-full">
-                    0 registros
-                </span>
+                <span id="txtContadorTabla" style="background-color: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: bold;">0 registros</span>
+            </div>
+
             </div>
 
             <!-- Contenedor adaptativo sin scroll vertical por página -->

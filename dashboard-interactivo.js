@@ -296,27 +296,38 @@ function procesarFiltrosCruzados() {
 /**
  * Renderiza la nómina de alumnos en segmentos controlados de exactamente 30 filas
  */
+/**
+ * Renderiza la nómina de alumnos de forma optimizada y segura a fallos del DOM
+ */
 function renderizarNominaPaginada() {
     const cuerpoTabla = document.getElementById('cuerpoTablaAlumnos');
     const lblPag = document.getElementById('lblPaginaActual');
     const lblTotal = document.getElementById('lblPaginaTotal');
+    const txtContadorTabla = document.getElementById('txtContadorTabla');
+    
     if (!cuerpoTabla) return;
 
-    cuerpoTabla.innerHTML = '';
     const totalRegistros = listaAlumnosFiltradosGlobal.length;
     const maxPaginas = Math.ceil(totalRegistros / filasPorPagina) || 1;
 
+    // Inyección ultra segura protegida contra elementos faltantes
     if (lblPag) lblPag.textContent = paginaActual;
     if (lblTotal) lblTotal.textContent = maxPaginas;
+    if (txtContadorTabla) txtContadorTabla.textContent = `${totalRegistros} registros`;
 
     if (totalRegistros === 0) {
-        cuerpoTabla.innerHTML = `<tr><td colspan="7" style="padding: 24px; text-align: center; color: #94a3b8; background-color: #f8fafc;">⚠ No se encontraron alumnos matriculados que cumplan con la combinación de filtros seleccionada.</td></tr>`;
+        cuerpoTabla.innerHTML = `<tr><td colspan="7" style="padding: 24px; text-align: center; color: #94a3b8; background-color: #f8fafc;">⚠ No se encontraron alumnos matriculados.</td></tr>`;
         return;
     }
+
+    // Ordenamiento nativo de mayor a menor por materias adeudadas
+    listaAlumnosFiltradosGlobal.sort((a, b) => b.materiasPrevias - a.materiasPrevias);
 
     const inicio = (paginaActual - 1) * filasPorPagina;
     const fin = inicio + filasPorPagina;
     const subLoteAlumnos = listaAlumnosFiltradosGlobal.slice(inicio, fin);
+
+    let htmlAcumulado = '';
 
     subLoteAlumnos.forEach(alumno => {
         let etiquetaCondicion = '<span style="color: #64748b;">Ordinaria</span>';
@@ -327,19 +338,21 @@ function renderizarNominaPaginada() {
         if (alumno.materiasPrevias >= 3) estiloMaterias = 'color: #b91c1c; font-weight: bold; background-color: #fee2e2; padding: 2px 8px; border-radius: 9999px;';
         else if (alumno.materiasPrevias > 0) estiloMaterias = 'color: #d97706; font-weight: bold;';
 
-                cuerpoTabla.innerHTML += `
-        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px; height: 38px;">
-            <td style="padding: 6px 12px; width: 15%; font-family: monospace; color: #475569;">${alumno.dni}</td>
-            <td style="padding: 6px 12px; width: 25%; font-weight: 500; color: #1e293b;">${alumno.apellidoNombre}</td>
-            <td style="padding: 6px 12px; width: 10%; text-align: center; color: #475569;">${alumno.genero}</td>
-            <td style="padding: 6px 12px; width: 10%; text-align: center; color: #475569;">${alumno.edad} años</td>
-            <td style="padding: 6px 12px; width: 10%; text-align: center; font-weight: bold; color: #1b4d82;">${alumno.curso}</td>
-            <td style="padding: 6px 12px; width: 15%; text-align: center;">${etiquetaCondicion}</td>
-            <td style="padding: 6px 12px; width: 15%; text-align: center;"><span style="${estiloMaterias}">${alumno.materiasPrevias}</span></td>
+        htmlAcumulado += `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px; height: 28px;">
+            <td style="padding: 4px 12px; width: 15%; font-family: monospace; color: #475569;">${alumno.dni}</td>
+            <td style="padding: 4px 12px; width: 25%; font-weight: 500; color: #1e293b;">${alumno.apellidoNombre}</td>
+            <td style="padding: 4px 12px; width: 10%; text-align: center; color: #475569;">${alumno.genero}</td>
+            <td style="padding: 4px 12px; width: 10%; text-align: center; color: #475569;">${alumno.edad} años</td>
+            <td style="padding: 4px 12px; width: 10%; text-align: center; font-weight: bold; color: #1b4d82;">${alumno.curso}</td>
+            <td style="padding: 4px 12px; width: 15%; text-align: center;">${etiquetaCondicion}</td>
+            <td style="padding: 4px 12px; width: 15%; text-align: center;"><span style="${estiloMaterias}">${alumno.materiasPrevias}</span></td>
         </tr>`;
-
     });
+
+    cuerpoTabla.innerHTML = htmlAcumulado;
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarMotorGraficos(inicializarTablero);
