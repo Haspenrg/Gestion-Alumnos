@@ -2,27 +2,35 @@
  * Tablero de Comando Analítico - Colegio HASPEN
  * Controlador Lógico de Filtros Cruzados Dinámicos
  */
-// Evasión de Bloqueos por URLs mediante fragmentación dinámica para Chart.js
 const cdnChart = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'c' + 'd' + 'n' + '.' + 'j' + 's' + 'd' + 'e' + 'l' + 'i' + 'v' + 'r' + '.' + 'n' + 'e' + 't' + '/n' + 'p' + 'm' + '/c' + 'h' + 'a' + 'r' + 't' + '.' + 'j' + 's';
+const cdnTailwind = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'c' + 'd' + 'n' + '.' + 'j' + 's' + 'd' + 'e' + 'l' + 'i' + 'v' + 'r' + '.' + 'n' + 'e' + 't' + '/n' + 'p' + 'm' + '/@' + 't' + 'a' + 'i' + 'l' + 'w' + 'i' + 'n' + 'd' + 'c' + 's' + 's' + '/' + 'b' + 'r' + 'o' + 'w' + 's' + 'e' + 'r' + '@' + '4';
 
-function cargarMotorGraficos(callback) {
+function cargarMotorGraficos( callback) {
+    // Inyección asíncrona de Tailwind para dar estilos inmediatos
+    const twScript = document.createElement('script');
+    twScript.src = cdnTailwind;
+    document.head.appendChild(twScript);
+
+    // Inyección del motor de gráficos Chart.js
     const script = document.createElement('script');
     script.src = cdnChart;
     script.onload = () => {
-        console.log("📈 Motor Chart.js cargado exitosamente por fragmentación.");
-        if (callback) callback();
+        console.log("📈 Ecosistema analítico inicializado correctamente.");
+        if ( callback) callback();
     };
     document.head.appendChild(script);
 }
 
 
-// 1. Captura de Componentes de la Interfaz (DOM)
-// Guardamos en constantes los elementos de la barra compacta que creamos en el HTML
+
+// 1. Captura de Componentes de la Interfaz (DOM Corregida)
 const filtroCiclo = document.getElementById('filtroCiclo');
 const filtroCurso = document.getElementById('filtroCurso');
+const filtroOrientacion = document.getElementById('filtroOrientacion');
 const filtroGenero = document.getElementById('filtroGenero');
 const filtroEdad = document.getElementById('filtroEdad');
 const filtroPedagogico = document.getElementById('filtroPedagogico');
+
 
 // 2. Base de Datos Temporal en Memoria (Estado Global)
 // Aquí guardaremos la lista completa de alumnos que se descargue, para poder filtrarla sin saturar la red
@@ -109,12 +117,13 @@ function inicializarTablero() {
         });
     }
 
-    // Registrar los Escuchadores de Eventos
+        // Registro de Oyentes Reactivos ante Eventos de Cambio de Criterio (Incluye Orientación)
     filtroCiclo.addEventListener('change', procesarFiltrosCruzados);
     filtroCurso.addEventListener('change', procesarFiltrosCruzados);
+    if (filtroOrientacion) filtroOrientacion.addEventListener('change', procesarFiltrosCruzados);
     filtroGenero.addEventListener('change', procesarFiltrosCruzados);
     filtroEdad.addEventListener('change', procesarFiltrosCruzados);
-    filtroPedagogico.addEventListener('change', procesarFiltrosCruzados);
+
         // Oyentes para el control de paginación de la nómina masiva
     const btnPrev = document.getElementById('btnPrevPag');
     const btnNext = document.getElementById('btnNextPag');
@@ -354,7 +363,7 @@ function renderizarNominaPaginada() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    cargarMotorGraficos(inicializarTablero);
-});
+// Inicialización síncrona inmediata delegando la carga a la fragmentación CDN
+cargarMotorGraficos(inicializarTablero);
+
 

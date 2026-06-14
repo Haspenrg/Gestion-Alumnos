@@ -8,11 +8,7 @@
     <!-- Enlace obligatorio a tus estilos generales del proyecto -->
     <link rel="stylesheet" href="estilos.css">
     
-    <!-- Motor de diseño responsivo Tailwind (Versión compatible) -->
-    <script src="https://jsdelivr.net"></script>
-    
-    <!-- Motor de Gráficos Interactivos Chart.js -->
-    <script src="https://jsdelivr.net"></script>
+   
 </head>
 <!-- Activamos la clase 'modo-lectura-activo' extraída de tu CSS para expandir la pantalla en PC -->
 <body class="modo-lectura-activo">
@@ -37,59 +33,63 @@
             </div>
         </div>
 
-                 <!-- PASO 2: Barra de Herramientas Analítica (Hilera Única en 6 Columnas - Sintaxis CSS Corregida) -->
-        <div style="background-color: #f8fafc; padding: 6px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 16px;">
-            <!-- Forzamos una grilla nativa de 6 columnas alineadas que nunca se van a apilar hacia abajo -->
-            <div style="display: grid; grid-template-columns: 0.8fr 1fr 1fr 1fr 1fr 1.2fr; gap: 8px; align-items: center;">
+                <!-- PASO 2: Barra Compacta de Filtros Cruzados (Optimizado y Compacto) -->
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs mb-6" style="width: 100% !important;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; width: 100%;">
                 
-                <!-- Columna 1: Etiqueta de Control -->
-                <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; text-align: center; border-right: 1px solid #cbd5e1; padding-right: 4px;">
-                    🔍 Filtrar:
-                </div>
-                
-                <!-- Columna 2: Ciclo Lectivo -->
-                <div>
-                    <select id="filtroCiclo" class="select-drive" style="width: 100%; height: 28px; padding: 2px 4px; font-size: 12px; font-weight: bold; color: #15803d; background-color: #f0fdf4; border-color: #bbf7d0; border-radius: 4px;">
-                        <!-- Carga dinámica por JS -->
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Ciclo Lectivo</label>
+                    <select id="filtroCiclo" style="width: 100% !important; height: 32px !important; padding: 2px 8px !important; font-size: 13px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #f8fafc !important; color: #334155 !important;">
+                        <option value="">📅 Todos los Ciclos</option>
+                        <option value="Ciclo 2026" selected>🗓️ Ciclo 2026</option>
+                        <option value="Ciclo 2025">🗓️ Ciclo 2025</option>
                     </select>
                 </div>
 
-                <!-- Columna 3: Curso / División -->
-                <div>
-                    <select id="filtroCurso" class="select-drive" style="width: 100%; height: 28px; padding: 2px 4px; font-size: 12px; border-radius: 4px;">
-                        <option value="todos" selected>🏫 Todos los Cursos</option>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Curso / Aula</label>
+                    <select id="filtroCurso" style="width: 100% !important; height: 32px !important; padding: 2px 8px !important; font-size: 13px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #f8fafc !important; color: #334155 !important;">
+                        <option value="">📚 Todos los Cursos</option>
+                        <option value="1° A">🏫 1° A</option>
+                        <option value="1° B">🏫 1° B</option>
+                        <option value="2° A">🏫 2° A</option>
+                        <option value="3° A">🏫 3° A</option>
+                        <option value="4° B">🏫 4° B</option>
+                        <option value="5° A">🏫 5° A</option>
                     </select>
                 </div>
 
-                <!-- Columna 4: Género -->
-                <div>
-                    <select id="filtroGenero" class="select-drive" style="width: 100%; height: 28px; padding: 2px 4px; font-size: 12px; border-radius: 4px;">
-                        <option value="todos" selected>👤 Todos los Géneros</option>
-                        <option value="Masculino">Masculino</option>
-                        <option value="Femenino">Femenino</option>
-                        <option value="X">X (No binario)</option>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Orientación Académica</label>
+                    <select id="filtroOrientacion" style="width: 100% !important; height: 32px !important; padding: 2px 8px !important; font-size: 13px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #f8fafc !important; color: #334155 !important;">
+                        <option value="">📐 Todas las Orientaciones</option>
+                        <option value="Ciclo Básico">📐 Ciclo Básico</option>
+                        <option value="Ciencias Sociales">📐 Ciencias Sociales</option>
+                        <option value="Economía y Administración">📐 Economía y Administración</option>
+                        <option value="Agro y Ambiente">📐 Agro y Ambiente</option>
                     </select>
                 </div>
 
-                <!-- Columna 5: Edad -->
-                <div>
-                    <select id="filtroEdad" class="select-drive" style="width: 100%; height: 28px; padding: 2px 4px; font-size: 12px; border-radius: 4px;">
-                        <option value="todos" selected>🎂 Todas las Edades</option>
-                        <option value="13">13 años</option>
-                        <option value="14">14 años</option>
-                        <option value="15">15 años</option>
-                        <option value="16">16 años</option>
-                        <option value="17">17 años</option>
-                        <option value="18">18+ años</option>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Género</label>
+                    <select id="filtroGenero" style="width: 100% !important; height: 32px !important; padding: 2px 8px !important; font-size: 13px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #f8fafc !important; color: #334155 !important;">
+                        <option value="">👤 Todos los Géneros</option>
+                        <option value="Masculino">🧔 Masculino</option>
+                        <option value="Femenino">👩 Femenino</option>
+                        <option value="X">✖️ X</option>
                     </select>
                 </div>
 
-                <!-- Columna 6: Condición Pedagógica -->
-                <div>
-                    <select id="filtroPedagogico" class="select-drive" style="width: 100%; height: 28px; padding: 2px 4px; font-size: 12px; border-radius: 4px;">
-                        <option value="todos" selected>📐 Toda la Matrícula</option>
-                        <option value="ppi">Solo Alumnos PPI</option>
-                        <option value="tf">Solo Trayectorias Flexibles</option>
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Edad</label>
+                    <select id="filtroEdad" style="width: 100% !important; height: 32px !important; padding: 2px 8px !important; font-size: 13px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background-color: #f8fafc !important; color: #334155 !important;">
+                        <option value="">🎂 Todas las Edades</option>
+                        <option value="13 años">🍰 13 años</option>
+                        <option value="14 años">🍰 14 años</option>
+                        <option value="15 años">🍰 15 años</option>
+                        <option value="16 años">🍰 16 años</option>
+                        <option value="17 años">🍰 17 años</option>
+                        <option value="18+ años">🍰 18+ años</option>
                     </select>
                 </div>
 
@@ -99,50 +99,51 @@
 
 
 
-               <!-- PASO 3: Rediseño de Tarjetas KPI (Estructura Horizontal Profesional Estilo Card) -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
-            
-            <!-- Tarjeta 1: Universo Total -->
-            <div style="background-color: #ffffff; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Matrícula Analizada</span>
-                    <span style="font-size: 16px;">👥</span>
-                </div>
-                <h2 id="kpiTotal" style="font-size: 28px; font-weight: 800; color: #1b4d82; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
-                <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">Alumnos en la selección</p>
-            </div>
 
-            <!-- Tarjeta 2: Trayectorias Regulares -->
-            <div style="background-color: #ffffff; padding: 16px; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 11px; font-weight: bold; color: #15803d; text-transform: uppercase;">Regulares</span>
-                    <span style="font-size: 10px; background-color: #f0fdf4; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: bold;">🟢 Al Día</span>
-                </div>
-                <h2 id="kpiBajoRiesgo" style="font-size: 28px; font-weight: 800; color: #15803d; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
-                <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">0 materias previas</p>
-            </div>
+<!-- PASO 3: Rediseño de Tarjetas KPI (Con Fondos Semafóricos Más Definidos Corregidos) -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
 
-            <!-- Tarjeta 3: Riesgo Académico Medio -->
-            <div style="background-color: #ffffff; padding: 16px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 11px; font-weight: bold; color: #b45309; text-transform: uppercase;">Riesgo Medio</span>
-                    <span style="font-size: 10px; background-color: #fffbeb; color: #d97706; padding: 2px 6px; border-radius: 4px; font-weight: bold;">🟡 Alerta</span>
-                </div>
-                <h2 id="kpiRiesgoMedio" style="font-size: 28px; font-weight: 800; color: #d97706; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
-                <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">Adeudan 1 o 2 materias</p>
-            </div>
-
-            <!-- Tarjeta 4: Riesgo Alto -->
-            <div style="background-color: #ffffff; padding: 16px; border: 1px solid #e2e8f0; border-left: 4px solid #dc2626; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 11px; font-weight: bold; color: #b91c1c; text-transform: uppercase;">Riesgo Alto</span>
-                    <span style="font-size: 10px; background-color: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold;">🔴 Crítico</span>
-                </div>
-                <h2 id="kpiRiesgoAlto" style="font-size: 28px; font-weight: 800; color: #b91c1c; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
-                <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">Adeudan 3 o más materias</p>
-            </div>
-
+    <!-- Tarjeta 1: Universo Total (Fondo Azul Ajustado) -->
+    <div style="background-color: rgba(27, 77, 130, 0.10); padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Matrícula Analizada</span>
+            <span style="font-size: 16px;">👥</span>
         </div>
+        <h2 id="kpiTotal" style="font-size: 28px; font-weight: 800; color: #1b4d82; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
+        <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">Alumnos en la selección</p>
+    </div>
+
+    <!-- Tarjeta 2: Trayectorias Regulares (Fondo Verde Ajustado) -->
+    <div style="background-color: rgba(22, 163, 74, 0.10); padding: 16px; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: bold; color: #15803d; text-transform: uppercase;">Regulares</span>
+            <span style="font-size: 10px; background-color: #f0fdf4; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: bold;">🟢 Al Día</span>
+        </div>
+        <h2 id="kpiBajoRiesgo" style="font-size: 28px; font-weight: 800; color: #15803d; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
+        <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">0 materias previas</p>
+    </div>
+
+    <!-- Tarjeta 3: Riesgo Académico Medio (Fondo Amarillo Ajustado) -->
+    <div style="background-color: rgba(245, 158, 11, 0.10); padding: 16px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: bold; color: #b45309; text-transform: uppercase;">Riesgo Medio</span>
+            <span style="font-size: 10px; background-color: #fffbeb; color: #d97706; padding: 2px 6px; border-radius: 4px; font-weight: bold;">🟡 Alerta</span>
+        </div>
+        <h2 id="kpiRiesgoMedio" style="font-size: 28px; font-weight: 800; color: #d97706; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
+        <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">Adeudan 1 o 2 materias</p>
+    </div>
+
+    <!-- Tarjeta 4: Riesgo Alto (Fondo Rojo Ajustado) -->
+    <div style="background-color: rgba(220, 38, 38, 0.10); padding: 16px; border: 1px solid #e2e8f0; border-left: 4px solid #dc2626; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left !important;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: bold; color: #b91c1c; text-transform: uppercase;">Riesgo Alto</span>
+            <span style="font-size: 10px; background-color: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold;">🔴 Crítico</span>
+        </div>
+        <h2 id="kpiRiesgoAlto" style="font-size: 28px; font-weight: 800; color: #b91c1c; margin: 0; line-height: 1.2; text-align: left !important;">0</h2>
+        <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-align: left !important;">Adeudan 3 o más materias</p>
+    </div>
+
+</div>
 
                 <!-- PASO 4: Rediseño de Gráficos (Aislamiento Físico de Canvas) -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; text-align: left !important;">
@@ -171,45 +172,49 @@
         </div>
 
 
-                <!-- PASO 5: Grilla de Detalle (Nómina Resumen Resaltada) -->
-        <div class="bg-white rounded-xl border border-[#1b4d82] shadow-xs overflow-hidden">
-            <div class="bg-[#1b4d82] px-4 py-3 flex justify-between items-center">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px;">
-                <h3 style="margin: 0; font-size: 14px; font-weight: bold; color: #334155; text-transform: uppercase; letter-spacing: 0.05em;">
-                    📋 Alumnos en la Selección Actual
-                </h3>
-                <span id="txtContadorTabla" style="background-color: #e2e8f0; color: #1e293b; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: bold;">0 registros</span>
-            </div>
+        <!-- PASO 5: Grilla de Detalle (Estructura Corregida con Encabezado Externo) -->
+<!-- 1. Encabezado fuera del rectángulo -->
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; background-color: #1b4d82; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
+    <h3 style="margin: 0; font-size: 14px; font-weight: bold; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em;">
+        📋 Alumnos en la Selección Actual
+    </h3>
+    <span id="txtContadorTabla" style="background-color: #ffffff; color: #1b4d82; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: bold;">0 registros</span>
+</div>
 
-            </div>
+<!-- 2. Caja del Rectángulo que baja y contiene la tabla -->
+<div class="bg-white rounded-b-xl border border-t-0 border-[#1b4d82] shadow-xs overflow-hidden">
+    <!-- Contenedor adaptativo -->
+    <div style="overflow-x: auto; background-color: #ffffff;">
+        <table class="w-full text-left border-collapse tabla-usuarios">
+            <thead class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                <tr>
+                    <th class="p-3 bg-slate-100">DNI / Legajo</th>
+                    <th class="p-3 bg-slate-100">Apellido y Nombre</th>
+                    <th class="p-3 bg-slate-100 text-center">Género</th>
+                    <th class="p-3 bg-slate-100 text-center">Edad</th>
+                    <th class="p-3 bg-slate-100 text-center">Curso</th>
+                    <th class="p-3 bg-slate-100 text-center">Condición</th>
+                    <th class="p-3 bg-slate-100 text-center">Materias Adeudadas</th>
+                </tr>
+            </thead>
+            <!-- El ID "cuerpoTablaAlumnos" es el punto de inyección por software -->
+            <tbody id="cuerpoTablaAlumnos" class="text-sm divide-y divide-slate-200 text-slate-600">
+                <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-400 bg-slate-50/50">
+                        🔍 Selecciona un filtro o carga los datos para inicializar la nómina analítica.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-            <!-- Contenedor adaptativo sin scroll vertical por página -->
-                <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #ffffff;">
-                <table class="w-full text-left border-collapse tabla-usuarios">
-
-                    <thead class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                            <th class="p-3 bg-slate-100">DNI / Legajo</th>
-                            <th class="p-3 bg-slate-100">Apellido y Nombre</th>
-                            <th class="p-3 bg-slate-100 text-center">Género</th>
-                            <th class="p-3 bg-slate-100 text-center">Edad</th>
-                            <th class="p-3 bg-slate-100 text-center">Curso</th>
-                            <th class="p-3 bg-slate-100 text-center">Condición</th>
-                            <th class="p-3 bg-slate-100 text-center">Materias Adeudadas</th>
-                        </tr>
-                    </thead>
-                    <!-- El ID "cuerpoTablaAlumnos" es el punto de inyección por software -->
-                    <tbody id="cuerpoTablaAlumnos" class="text-sm divide-y divide-slate-200 text-slate-600">
-                        <!-- Las filas se construirán dinámicamente desde el JS -->
-                        <tr>
-                            <td colspan="7" class="p-8 text-center text-slate-400 bg-slate-50/50">
-                                🔍 Selecciona un filtro o carga los datos para inicializar la nómina analítica.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <!-- Barra de Navegación de Matrícula Paginada -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background-color: #f8fafc; border-top: 1px solid #cbd5e1;">
+        <button type="button" id="btnPrevPag" style="background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 4px 12px; font-size: 12px; font-weight: 500; border-radius: 4px; cursor: pointer;">◀ Anterior</button>
+        <div style="font-size: 12px; color: #64748b; font-weight: 500;">Página <span id="lblPaginaActual">1</span> de <span id="lblPaginaTotal">1</span></div>
+        <button type="button" id="btnNextPag" style="background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 4px 12px; font-size: 12px; font-weight: 500; border-radius: 4px; cursor: pointer;">Siguiente ▶</button>
+    </div>
+</div>
 
 
 
