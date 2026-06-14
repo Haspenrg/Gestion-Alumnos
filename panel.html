@@ -76,43 +76,64 @@
         </div>
     </header>
 
+<!-- Contenedor Principal de Módulos Dividido en Dos Secciones -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
+    
+    <!-- Contenedor Izquierdo: Gestión Académica -->
+    <div style="border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
+        <h3 style="color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
+            Gestión Académica
+        </h3>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+            <!-- 2. Gestión de Alumnos -->
+            <div id="mod-inscripcion" class="modulo-card" style="margin: 0;">
+                <span class="icon">📝</span>
+                <h4>Gestión de Alumnos</h4>
+            </div>
+            <!-- 4. Calificaciones -->
+            <div id="mod-calificaciones" class="modulo-card" style="margin: 0;">
+                <span class="icon">📊</span>
+                <h4>Calificaciones</h4>
+            </div>
+            <!-- 5. Control de Previas -->
+            <div id="mod-previas" class="modulo-card" style="margin: 0;">
+                <span class="icon">⚠</span>
+                <h4>Control de Previas</h4>
+            </div>
+            <!-- 6. Estadísticas -->
+            <div id="mod-estadisticas" class="modulo-card" style="margin: 0;">
+                <span class="icon">📈</span>
+                <h4>Estadísticas</h4>
+            </div>
+        </div>
+    </div>
 
-    <div class="dashboard-grid">
-        <!-- 1. Gestión de Usuarios -->
-        <div id="mod-usuarios" class="modulo-card">
-            <span class="icon">👥</span>
-            <h4>Gestión de Usuarios</h4>
+    <!-- Contenedor Derecho: Configuraciones del Sistema -->
+    <div style="border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
+        <h3 style="color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
+            Configuraciones del sistema
+        </h3>
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+            <!-- 1. Gestión de Usuarios -->
+            <div id="mod-usuarios" class="modulo-card" style="margin: 0;">
+                <span class="icon">👥</span>
+                <h4>Gestión de Usuarios</h4>
+            </div>
+            <!-- 7. Creación de Roles -->
+            <div id="mod-roles" class="modulo-card" style="margin: 0;">
+                <span class="icon">🔐</span>
+                <h4>Creación de Roles</h4>
+            </div>
+            <!-- 3. Creación de Cursos y Materias -->
+            <div id="mod-cursos-materias" class="modulo-card" style="margin: 0; grid-column: span 2;">
+                <span class="icon">🏫</span>
+                <h4>Creación de Cursos y Materias</h4>
+            </div>
         </div>
-        <!-- 2. Gestión de Alumnos -->
-        <div id="mod-inscripcion" class="modulo-card">
-            <span class="icon">📝</span>
-            <h4>Gestión de Alumnos</h4>
-        </div>
-        <!-- 3. Crear Cursos y Materias -->
-        <div id="mod-cursos-materias" class="modulo-card">
-            <span class="icon">🏫</span>
-            <h4>Crear Cursos y Materias</h4>
-        </div>
-        <!-- 4. Calificaciones -->
-        <div id="mod-calificaciones" class="modulo-card">
-            <span class="icon">📊</span>
-            <h4>Calificaciones</h4>
-        </div>
-        <!-- 5. Control de Previas -->
-        <div id="mod-previas" class="modulo-card">
-            <span class="icon">⚠</span>
-            <h4>Control de Previas</h4>
-        </div>
-        <!-- 6. Estadísticas -->
-        <div id="mod-estadisticas" class="modulo-card">
-            <span class="icon">📈</span>
-            <h4>Estadísticas</h4>
-        </div>
-        <!-- 7. Creación de Roles (Exclusivo Administrador) -->
-        <div id="mod-roles" class="modulo-card">
-            <span class="icon">🔐</span>
-            <h4>Creación de Roles</h4>
-        </div>
+    </div>
+
+</div>
+
     </div>
     <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
     <button id="btn-cambiar-clave-perfil" style="background-color: #4b5563; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; flex: 1;">Cambiar Contraseña</button>

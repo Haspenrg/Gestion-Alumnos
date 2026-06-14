@@ -696,23 +696,27 @@ function renderizarFilasEnTabla(alumnos) {
                 nombreParaMostrar = palabrasNombre.slice(0, mitad).join(" ");
             }
         }
-        tr.innerHTML = `
+              tr.innerHTML = `
         <td style="padding: 10px 12px;"><strong>${nombreParaMostrar}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
         <td style="padding: 10px 12px;">${celdaCurso}</td>
         <td style="padding: 10px 12px;">${celdaAuditoria}</td>
         <td style="padding: 10px 12px;">${celdaInclusion}</td>
         <td style="padding: 10px 12px; text-align: left;">${accionesHTML}</td>
         `;
-
-
         tr.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.classList.contains('btn-accion-fila')) return;
+            
+            // Estas dos líneas quitan la selección anterior y pintan la fila actual
+            document.querySelectorAll('.fila-alumno').forEach(f => f.classList.remove('fila-seleccionada'));
+            tr.classList.add('fila-seleccionada');
+
             if (rolNormalizado !== "preceptor") {
                 cargarLegajoEnFormulario(alumno);
             }
         });
         tbodyAlumnos.appendChild(tr);
     });
+
 
             // =========================================================================
     // UBICACIÓN: Líneas 554 a 563 (Reemplazo exacto del bloque del informe)

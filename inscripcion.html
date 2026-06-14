@@ -84,9 +84,12 @@
             padding-bottom: 3px !important; /* Reduce el aire inferior del registro */
             vertical-align: middle;          /* Mantiene alineados los textos y los botones */
         }
-
         .fila-alumno:hover {
             background: #f1f5f9 !important;
+        }
+        .fila-seleccionada {
+        background-color: #e0f2fe !important; /* Azul claro institucional para destacar la selección */
+        border-left: 4px solid #1b4d82 !important; /* Borde izquierdo azul para mayor énfasis */
         }
         .banner-lectura {
             display: none;
@@ -480,7 +483,7 @@
                         <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div class="input-group">
                                 <label for="telefono1">Teléfono de Contacto 1</label>
-                                <input type="tel" id="telefono1" placeholder="Ej: 2964456789" required inputmode="tel">
+                                <input type="tel" id="telefono1" placeholder="Ej: 2964456789" inputmode="tel">
                             </div>
                             <div class="input-group">
                                 <label for="telefono2">Teléfono Alternativo 2</label>
