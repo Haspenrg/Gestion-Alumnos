@@ -87,7 +87,7 @@ async function simularCargaCSV(e) {
         const files = inputNativo ? inputNativo.files : null;
         if (!files || files.length === 0) return;
 
-        const archivoSeleccionado = files[0];
+        const archivoSeleccionado = files;
         const s = document.getElementById('selectCursoCarga');
         if (!s || !s.value) {
             alert("Por favor, seleccione la sección de destino en el importador.");
@@ -99,75 +99,90 @@ async function simularCargaCSV(e) {
         const cicloActivo = document.getElementById('filtroCicloLectivo')?.value || "2026";
         const rawSelect = s.options[s.selectedIndex].text.toLowerCase();
         const matchNum = rawSelect.match(/\d/);
-        const numCurso = matchNum ? matchNum[0] : "";
-        const matchLetra = rawSelect.match(/["'“']?([a-z])["'”']?\s*$/i) || rawSelect.match(/\s+([a-z])$/i);
-        
+        const numCurso = matchNum ? matchNum : "";
+        const matchLetra = rawSelect.match(/(?:"|')?([a-z])(?:"|')?\s*$/i) || rawSelect.match(/\s+([a-z])\s*$/i);
         let divCurso = "a";
         if (matchLetra) {
             divCurso = matchLetra[1].toLowerCase();
         }
+
         const claveCursoBuscado = numCurso + divCurso;
-
         const alumnosEnBaseLocal = window.cachedAlumnosGlobal || [];
-
         const reader = new FileReader();
-        
+
         reader.onload = async (evt) => {
             try {
-                const lineas = evt.target.result.split(/\r?\n/);
-                alumnosEnMemoria = [];
+                // Rompemos las líneas limpiando espacios vacíos terminales
+                const lineas = evt.target.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
                 
-                let cursoRastreadoEnCsv = ""; 
+                alumnosEnMemoria = [];
                 const claveFiltroLimpia = claveCursoBuscado.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-                for (let i = 0; i < lineas.length; i++) {
-                    const fila = lineas[i].trim();
+                // 🎯 LECTURA DIRECTA DE CELDA A1: Extraemos el curso sin requerir la palabra "CURSO:"
+                let cursoRastreadoEnCsv = "";
+                if (lineas.length > 0) {
+                    const celdasFilaUno = lineas[0].split(',');
+                    cursoRastreadoEnCsv = celdasFilaUno[0].replace(/"/g, '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                }
+
+                // Si la celda A1 no coincide con la sección del selector, frena y advierte
+                if (cursoRastreadoEnCsv !== claveFiltroLimpia) {
+                    alert(`⚠️ Conflicto de Sección:\nEl archivo indica el curso '${lineas[0].split(',')[0]}' pero en la pantalla seleccionó '${s.options[s.selectedIndex].text}'.`);
+                    return;
+                }
+
+                // El bucle for salta el curso (0) y las cabeceras (1) iniciando estrictamente en i = 2
+                for (let i = 2; i < lineas.length; i++) {
+                    const filaFisicaExcel = i + 1;
+                    const fila = lineas[i];
                     if (!fila) continue;
 
-                    if (fila.toUpperCase().includes("CURSO:")) {
-                        const camposCurso = fila.split(',');
-                        const celdaCurso = camposCurso.find(c => c.toUpperCase().includes("CURSO:"));
-                        if (celdaCurso) {
-                            cursoRastreadoEnCsv = celdaCurso.toUpperCase().replace("CURSO:", "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                        }
-                        continue;
-                    }
-
-                    if (cursoRastreadoEnCsv !== claveFiltroLimpia) {
-                        continue; 
-                    }
-
+                    // Separador avanzado original
                     const campos = fila.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    
                     if (fila.toUpperCase().includes("APELLIDO Y NOMBRE") || campos.length < 3) {
                         continue;
                     }
 
-                    const primerCelda = campos[0] ? campos[0].trim().toUpperCase() : "";
-                    if (primerCelda.includes("CURSO") || primerCelda.includes("PRECEPTOR") || primerCelda === "BAJA") {
+                    const primercelda = campos[0] ? campos[0].trim().toUpperCase() : "";
+                    if (primercelda.includes("CURSO") || primercelda.includes("PRECEPTOR") || primercelda === "BAJA") {
                         continue;
                     }
 
+                    if (typeof window.filasOmitidas === 'undefined') window.filasOmitidas = [];
                     
-                    if (typeof filasOmitidas === 'undefined') window.filasOmitidas = [];
                     const rawDni = campos[2] ? campos[2].replace(/"/g, '').trim() : "";
-                    const dniLimpio = rawDni.replace(/\D/g, '').trim();
+                    const dniLimpio = rawDni.replace(/\D/g, '');
 
-                    if (!dniLimpio || dniLimpio.length < 6) {
-                        const nombreFila = campos[1] ? campos[1].replace(/"/g, '').trim() : "Desconocido";
-                        if (nombreFila && !nombreFila.includes("APELLIDO")) {
-                            window.filasOmitidas.push(`Línea: ${nombreFila}`);
-                        }
-                        continue;
+                    // 🚨 LEY OBLIGATORIA: REGLA DE PARADA DE EMERGENCIA CRÍTICA
+                    const rawNombre = campos[1] ? campos[1].replace(/"/g, '').trim() : "";
+                    const nombreFilaLimpio = rawNombre.replace(/\./g, '').trim();
+
+                    if (!nombreFilaLimpio || nombreFilaLimpio.length < 3) {
+                        alert(`❌ Error Crítico de Carga:\nEn la Fila ${filaFisicaExcel} el campo 'Apellido y Nombre' está vacío.\n\nLa transacción fue cancelada.`);
+                        return;
                     }
 
-
-                    const apellidoYNombre = campos[1] ? campos[1].replace(/"/g, '').trim().toUpperCase() : "";
-                    if (!apellidoYNombre || apellidoYNombre.includes("RESGUARDO") || apellidoYNombre.includes("Nº ORDEN")) {
-                        continue;
+                    if (!dniLimpio) {
+                        alert(`❌ Error Crítico de Carga:\nEn la Fila ${filaFisicaExcel} el campo 'DNI. N°' está vacío.\n\nLa transacción fue cancelada.`);
+                        return;
                     }
 
-                    if (alumnosEnMemoria.some(al => al.dni === dniLimpio)) continue;
+                    if (dniLimpio.length < 7 || dniLimpio.length > 9) {
+                        alert(`❌ Error Crítico de Carga:\nEn la Fila ${filaFisicaExcel} el DNI '${rawDni}' es inválido (7 a 9 números).\n\nLa transacción fue cancelada.`);
+                        return;
+                    }
 
+                    // 📝 NORMALIZACIÓN DE GÉNERO PARA SELECTORES (Mapeo de la columna F-M en índice 13)
+                    const generoCrudo = campos[13] ? campos[13].replace(/"/g, '').trim().toUpperCase() : "";
+                    let generoNormalizado = "";
+                    if (generoCrudo === "M" || generoCrudo === "MASCULINO") {
+                        generoNormalizado = "MASCULINO";
+                    } else if (generoCrudo === "F" || generoCrudo === "FEMENINO") {
+                        generoNormalizado = "FEMENINO";
+                    }
+
+                    // Mapeo adaptado que preserva todas tus variables institucionales originales
                     const cuilExtraido = campos[3] ? campos[3].replace(/"/g, '').trim() : "";
                     const fechaNacExtraida = campos[4] ? campos[4].replace(/"/g, '').trim() : "";
                     const edadExtraida = campos[5] ? campos[5].replace(/"/g, '').trim() : "";
@@ -175,23 +190,21 @@ async function simularCargaCSV(e) {
                     const nacionalidadExtraida = campos[7] ? campos[7].replace(/"/g, '').trim() : "Argentina";
                     const domicilioExtraido = campos[8] ? campos[8].replace(/"/g, '').trim() : "";
                     const telefonoExtraido = campos[9] ? campos[9].replace(/"/g, '').trim() : "";
-                    
-                    const emailDetectado = campos.find(c => c && c.includes('@')) ? campos.find(c => c && c.includes('@')).replace(/"/g, '').trim() : "";
+                    const tutorNombreExtraido = campos[10] ? campos[10].replace(/"/g, '').trim() : "";
+                    const tutorDniExtraido = campos[11] ? campos[11].replace(/\D/g, '') : "";
+                    const tutorCuilExtraido = campos[12] ? campos[12].replace(/\D/g, '') : "";
+                    const emailDetectado = campos[14] ? campos[14].replace(/"/g, '').trim() : "";
 
-                    const yaExisteEnBaseColegio = alumnosEnBaseLocal.some(alBase => {
-                    const dniBase = alBase && alBase.dni ? String(alBase.dni).replace(/\D/g, '').trim() : '';
-                    return dniBase === dniLimpio;
-                    });
+                    const yaExisteEnBaseColegio = alumnosEnBaseLocal.some(al => al.dni === dniLimpio);
                     const estadoAuditoria = yaExisteEnBaseColegio ? "MODIFICADO" : "NUEVO";
-
 
                     alumnosEnMemoria.push({
                         dni: dniLimpio,
-                        nombre: apellidoYNombre,
+                        nombre: nombreFilaLimpio.toUpperCase(),
                         cuil: cuilExtraido,
-                        fechaNacimiento: fechaNacExtraida,
+                        fechanacimiento: fechaNacExtraida,
                         edad: edadExtraida,
-                        lugarNacimiento: lugarNacExtraido,
+                        lugarnacimiento: lugarNacExtraido,
                         nacionalidad: nacionalidadExtraida,
                         direccion: domicilioExtraido,
                         telefono1: telefonoExtraido,
@@ -200,51 +213,47 @@ async function simularCargaCSV(e) {
                         cursoClave: claveCursoBuscado,
                         cicloLectivo: cicloActivo,
                         auditoria: estadoAuditoria,
-                        estado: "Regular"
+                        estado: "Regular",
+                        tutorNombre: tutorNombreExtraido,
+                        tutorDni: tutorDniExtraido,
+                        tutorCuil: tutorCuilExtraido,
+                        genero: generoNormalizado
                     });
                 }
 
-                // ==========================================================================
-                // PARCHE: COLORES INSTITUCIONALES Y CONTEO DE MODIFICADOS EN MODAL
-                // Ubicación: Reemplazar desde 'const cuerpoTabla' hasta la apertura del modal
-                // ==========================================================================
+                // Renderizado reactivo en la tabla simulada manteniendo tus estilos originales
                 const cuerpoTabla = document.getElementById('tablaSimulacionBody');
                 if (cuerpoTabla) {
                     cuerpoTabla.innerHTML = alumnosEnMemoria.map(a => {
-                        // Punto 2: Cambio de colores (Verde para Nuevo, Amarillo/Oro para Modificado)
-                const badgeStyle = a.auditoria === "MODIFICADO"
-                    ? "background-color: #d97706; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;" // Amarillo/Ámbar oscuro para legibilidad
-                    : "background-color: #16a34a; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;"; // Verde regular
+                        const badgestyle = a.auditoria === "MODIFICADO"
+                            ? "background-color: #D97706; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;"
+                            : "background-color: #16A34A; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;";
 
                         return `
-                <tr style="border-bottom: 1px solid #cbd5e1; font-size: 13px;">
-                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-family: monospace; color: #333;">${a.dni}</td>
-                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; font-weight: 500; color: #1e293b;">${a.nombre}</td>
-                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.cuil}</td>
-                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center; color: #475569;">${a.telefono1 || a.emailTutor}</td>
-                    <td style="padding: 10px 8px; border: 1px solid #cbd5e1; text-align: center;">
-                        <span style="${badgeStyle}">${a.auditoria}</span>
-                    </td>
-                </tr>
+                            <tr style="border-bottom: 1px solid #cbd5e1; font-size: 13px;">
+                                <td style="padding: 10px 8px; font-family: monospace; color: #333;">${a.dni}</td>
+                                <td style="padding: 10px 8px; font-weight: 500; color: #1e293b;">${a.nombre}</td>
+                                <td style="padding: 10px 8px; text-align: center; color: #475569;">${a.cuil || '-'}</td>
+                                <td style="padding: 10px 8px; text-align: center; color: #475569;">${a.telefono1 || '-'}</td>
+                                <td style="padding: 10px 8px; text-align: center;">
+                                    <span style="${badgestyle}">${a.auditoria}</span>
+                                </td>
+                            </tr>
                         `;
                     }).join('');
                 }
 
                 if (window.filasOmitidas && window.filasOmitidas.length > 0) {
-                alert(`⚠️ Se omitieron ${window.filasOmitidas.length} filas corruptas o sin DNI válido.`);
-                window.filasOmitidas = [];
+                    alert(`⚠️ Se omitieron ${window.filasOmitidas.length} filas corruptas.`);
+                    window.filasOmitidas = [];
                 }
 
                 const resumenText = document.getElementById('resumenSimulacion');
                 if (resumenText) {
-                    // Punto 1: Cálculo e informe de Modificados y Nuevos en la cabecera
-                const totalModificados = alumnosEnMemoria.filter(al => al.auditoria === "MODIFICADO").length;
-                const totalNuevos = alumnosEnMemoria.length - totalModificados;
-
-                    resumenText.innerText = `Sección: ${s.options[s.selectedIndex].text.toUpperCase()} | Total: ${alumnosEnMemoria.length} (Nuevos: ${totalNuevos} | Modificados: ${totalModificados})`;
+                    const totalModificados = alumnosEnMemoria.filter(al => al.auditoria === "MODIFICADO").length;
+                    const totalNuevos = alumnosEnMemoria.length - totalModificados;
+                    resumenText.innerText = `Sección: ${s.options[s.selectedIndex].text.toUpperCase()} | Total: ${alumnosEnMemoria.length} (Nuevos: ${totalNuevos}, Modificados: ${totalModificados})`;
                 }
-                // ==========================================================================
-
 
                 const modal = document.getElementById('modalSimulacionCarga');
                 if (modal) {
@@ -258,17 +267,11 @@ async function simularCargaCSV(e) {
 
         reader.readAsText(archivoSeleccionado, 'UTF-8');
 
-    } catch (err) {
-        console.error("Error crítico controlado en simularCargaCSV:", err);
+    } catch (error) {
+        console.error("Error en simularCargaCSV:", error);
     }
 }
 
-
-document.addEventListener('change', function(e) {
-    if (e.target && e.target.id === 'csvCargaMasiva') {
-        simularCargaCSV(e);
-    }
-});
 
 
 

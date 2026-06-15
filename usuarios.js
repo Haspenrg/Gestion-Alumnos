@@ -202,7 +202,7 @@ async function cargarMateriasPorCursoSeleccionado() {
     }
 }
 
-// --- GESTIÓN INTERACTIVA DE PANELES POR ROL (RBAC DINÁMICO) ---
+// PARCHE DE AJUSTE DE SCOPE REUNIFICADO PARA GESTIONAR PANELES
 function gestionarPanelesFormulario() {
     const selectRolElement = document.getElementById('rolUsuario');
     const rolId = selectRolElement.value ? selectRolElement.value.toLowerCase().trim() : "";
@@ -213,8 +213,8 @@ function gestionarPanelesFormulario() {
     const altaAnio2 = document.getElementById('altaAnio2');
     const checkProfesor = document.getElementById('checkEsProfesor');
 
-        // 1. Forzar el checkbox si el rol base seleccionado es puramente docente
-    const esRolDocentePuro = (rolId.toLowerCase().trim() === "profesor");
+    // 1. Forzar el checkbox si el rol base seleccionado es puramente docente
+    const esRolDocentePuro = (rolId === "profesor");
     if (esRolDocentePuro) {
         if (bloqueCheck) bloqueCheck.style.display = "none";
         checkProfesor.checked = true;
@@ -222,15 +222,12 @@ function gestionarPanelesFormulario() {
         if (bloqueCheck) bloqueCheck.style.display = "flex";
     }
 
-    // 2. Extraer los permisos del rol seleccionado desde la lista global de roles mapeados en tu sistema
-    // Nota: Usamos "roles" que es el array global donde almacenas la colección de Firebase en este módulo
-    const objetoRolSeleccionado = (typeof roles !== 'undefined') ? roles.find(r => r.id.toLowerCase().trim() === rolId.toLowerCase().trim()) : null;
+    // 2. Extraer los permisos del rol seleccionado
+    const objetoRolSeleccionado = (typeof roles !== 'undefined') ? roles.find(r => r.id.toLowerCase().trim() === rolId) : null;
     const permisosDelRolSeleccionado = objetoRolSeleccionado?.permisos || {};
 
-    // 3. Gobernación dinámica del panel de asignación de cursos (Gama Preceptorías comunes y superiores)
-    // Se activa si el rol tiene asignada una función de "lectura" en el Legajo Digital
+    // 3. Gobernación dinámica del panel de asignación de cursos
     const requiereAsignarCursos = (permisosDelRolSeleccionado.legajoDigital === "lectura");
-
     if (requiereAsignarCursos === true) {
         if (panelPreceptor) panelPreceptor.style.display = "block";
         if (altaAnio1) altaAnio1.setAttribute('required', 'true');
@@ -240,14 +237,15 @@ function gestionarPanelesFormulario() {
         if (altaAnio1) altaAnio1.removeAttribute('required');
         if (altaAnio2) altaAnio2.removeAttribute('required');
     }
-}
-    // 4. Gobernación dinámica del panel de bolsa de horas para docentes activos
+
+    // 4. Gobernación dinámica del panel de bolsa de horas reunificada dentro del scope
     const esDocenteActivo = (checkProfesor.checked === true || esRolDocentePuro);
     if (esDocenteActivo === true) {
         if (panelProfesor) panelProfesor.style.display = "block";
     } else {
         if (panelProfesor) panelProfesor.style.display = "none";
     }
+}
 
 
 // --- LECTURA DE USUARIOS DESDE FIRESTORE ---
@@ -670,11 +668,13 @@ async function renderizarTablaUsuarios() {
         const tdAcciones = document.createElement('t' + 'd');
         tdAcciones.style.cssText = "padding:12px; text-align:center; display:flex; gap:8px; justify-content:center; align-items:flex-start;";
 
-        const btnEditar = document.createElement('b' + 'u' + 't' + 't' + 'o' + 'n');
+       // PARCHE DE ACCESO DE ÁMBITO GLOBAL PARA MÓDULO ASÍNCRONO
+        const btnEditar = document.createElement('button');
         btnEditar.type = "button";
         btnEditar.style.cssText = "background:#1a73e8; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;";
         btnEditar.textContent = "Editar";
-        btnEditar.onclick = function() { activarModoEdicion(user.dni); };
+        btnEditar.onclick = function() { window.activarModoEdicion(user.dni); };
+
 
         const btnBorrar = document.createElement('b' + 'u' + 't' + 't' + 'o' + 'n');
         btnBorrar.type = "button";
