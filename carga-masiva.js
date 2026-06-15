@@ -87,7 +87,7 @@ async function simularCargaCSV(e) {
         const files = inputNativo ? inputNativo.files : null;
         if (!files || files.length === 0) return;
 
-        const archivoSeleccionado = files;
+        const archivoSeleccionado = files[0];
         const s = document.getElementById('selectCursoCarga');
         if (!s || !s.value) {
             alert("Por favor, seleccione la sección de destino en el importador.");
@@ -199,26 +199,27 @@ async function simularCargaCSV(e) {
                     const estadoAuditoria = yaExisteEnBaseColegio ? "MODIFICADO" : "NUEVO";
 
                     alumnosEnMemoria.push({
-                        dni: dniLimpio,
-                        nombre: nombreFilaLimpio.toUpperCase(),
-                        cuil: cuilExtraido,
-                        fechanacimiento: fechaNacExtraida,
-                        edad: edadExtraida,
-                        lugarnacimiento: lugarNacExtraido,
-                        nacionalidad: nacionalidadExtraida,
-                        direccion: domicilioExtraido,
-                        telefono1: telefonoExtraido,
-                        emailTutor: emailDetectado,
-                        idCursoActual: cursoid,
-                        cursoClave: claveCursoBuscado,
-                        cicloLectivo: cicloActivo,
-                        auditoria: estadoAuditoria,
-                        estado: "Regular",
-                        tutorNombre: tutorNombreExtraido,
-                        tutorDni: tutorDniExtraido,
-                        tutorCuil: tutorCuilExtraido,
-                        genero: generoNormalizado
-                    });
+                    dni: dniLimpio,
+                    nombre: nombreFilaLimpio.toUpperCase(),
+                    cuil: cuilExtraido,
+                    fechaNacimiento: fechaNacExtraida,
+                    edad: edadExtraida,
+                    lugarnacimiento: lugarNacExtraido,
+                    nacionalidad: nacionalidadExtraida,
+                    direccion: domicilioExtraido,
+                    telefono1: telefonoExtraido,
+                    emailTutor: emailDetectado,
+                    idCursoActual: cursoid,
+                    cursoClave: claveCursoBuscado,
+                    cicloLectivo: cicloActivo,
+                    auditoria: estadoAuditoria,
+                    estado: "Regular",
+                    nombreTutor: tutorNombreExtraido,
+                    dniTutor: tutorDniExtraido,
+                    cuilTutor: tutorCuilExtraido,
+                    genero: generoNormalizado
+                });
+
                 }
 
                 // Renderizado reactivo en la tabla simulada manteniendo tus estilos originales
@@ -369,7 +370,7 @@ document.addEventListener('click', function(e) {
 });
 
 
-// ====== CONTROLÁ QUE EL FINAL ABSOLUTO DE TU ARCHIVO QUEDE ASÍ ======
+document.getElementById('csvCargaMasiva')?.addEventListener('change', simularCargaCSV);
 window.simularCargaCSV = simularCargaCSV;
 window.ejecutarEscrituraFirestore = ejecutarEscrituraFirestore;
 
