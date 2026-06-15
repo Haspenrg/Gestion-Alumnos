@@ -24,13 +24,13 @@ async function ejecutarEscrituraFirestore() {
         const registroPrevio = alumnosBaseLocal.find(al => String(al.dni).replace(/\D/g, '').trim() === a.dni);
         
         let subcatForense = "ALTA_LOTE";
-        let descripcionForense = `Alta digital por lote en la sección ${a.cursoClave.toUpperCase()}.`;
+        let descripcionForense = `Alta digital por lote en la sección ${(a.cursoId || "Desconocida").toUpperCase()}.`;
         let omitirHistorial = false;
 
         if (registroPrevio) {
-            const cursoViejo = registroPrevio.cursoClave ? registroPrevio.cursoClave.toUpperCase() : "Desconocido/Mesa Entrada";
-            const cursoNuevo = a.cursoClave ? a.cursoClave.toUpperCase() : "Desconocido";
-            
+            const cursoViejo = (registroPrevio.cursoId || registroPrevio.cursoClave || "Desconocido/Mesa Entrada").toUpperCase();
+            const cursoNuevo = (a.cursoId || "Desconocido").toUpperCase();
+          
             if (cursoViejo !== cursoNuevo) {
                 subcatForense = "MODIFICACION_LEGAJO";
                 descripcionForense = `Cambio de sección por lote: El alumno fue promovido/trasladado desde ${cursoViejo} hacia ${cursoNuevo}.`;
@@ -122,14 +122,22 @@ async function simularCargaCSV(e) {
                 let cursoRastreadoEnCsv = "";
                 if (lineas.length > 0) {
                     const celdasFilaUno = lineas[0].split(',');
-                    cursoRastreadoEnCsv = celdasFilaUno[0].replace(/"/g, '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const rawCsv = celdasFilaUno[0].toLowerCase();
+                    const numCsv = rawCsv.match(/\d/) ? rawCsv.match(/\d/)[0] : "";
+                    const letraCsv = rawCsv.match(/[a-z]\s*$/) ? rawCsv.match(/[a-z]\s*$/)[0].trim() : "";
+                    cursoRastreadoEnCsv = numCsv + letraCsv;
                 }
 
-                // Si la celda A1 no coincide con la sección del selector, frena y advierte
-                if (cursoRastreadoEnCsv !== claveFiltroLimpia) {
-                    alert(`⚠️ Conflicto de Sección:\nEl archivo indica el curso '${lineas[0].split(',')[0]}' pero en la pantalla seleccionó '${s.options[s.selectedIndex].text}'.`);
+                const rawSel = s.options[s.selectedIndex].text.toLowerCase();
+                const numSel = rawSel.match(/\d/) ? rawSel.match(/\d/)[0] : "";
+                const letraSel = rawSel.match(/[a-z](?:"|')?\s*$/) ? rawSel.match(/[a-z](?:"|')?\s*$/)[0].replace(/"|'/g, '').trim() : "";
+                const textoSelectorLimpio = numSel + letraSel;
+
+                if (cursoRastreadoEnCsv !== textoSelectorLimpio) {
+                    alert(`⚠ Conflicto de Sección:\nEl archivo indica el curso '${lineas[0].split(',')[0]}' pero en la pantalla seleccionó '${s.options[s.selectedIndex].text}'.`);
                     return;
                 }
+
 
                 // El bucle for salta el curso (0) y las cabeceras (1) iniciando estrictamente en i = 2
                 for (let i = 2; i < lineas.length; i++) {
@@ -175,12 +183,11 @@ async function simularCargaCSV(e) {
 
                     // 📝 NORMALIZACIÓN DE GÉNERO PARA SELECTORES (Mapeo de la columna F-M en índice 13)
                     const generoCrudo = campos[13] ? campos[13].replace(/"/g, '').trim().toUpperCase() : "";
-                    let generoNormalizado = "";
-                    if (generoCrudo === "M" || generoCrudo === "MASCULINO") {
-                        generoNormalizado = "MASCULINO";
-                    } else if (generoCrudo === "F" || generoCrudo === "FEMENINO") {
-                        generoNormalizado = "FEMENINO";
+                    let generoNormalizado = "Masculino";
+                    if (generoCrudo === "F" || generoCrudo === "FEMENINO") {
+                        generoNormalizado = "Femenino";
                     }
+
 
                     // Mapeo adaptado que preserva todas tus variables institucionales originales
                     const cuilExtraido = campos[3] ? campos[3].replace(/"/g, '').trim() : "";
@@ -209,16 +216,17 @@ async function simularCargaCSV(e) {
                     direccion: domicilioExtraido,
                     telefono1: telefonoExtraido,
                     emailTutor: emailDetectado,
-                    idCursoActual: cursoid,
-                    cursoClave: claveCursoBuscado,
+                    cursoId: cursoid, // 🌟 CORRECCIÓN CRÍTICA: Cambiado de idCursoActual/cursoClave a cursoId para sacarlos de Mesa Entrada
                     cicloLectivo: cicloActivo,
                     auditoria: estadoAuditoria,
                     estado: "Regular",
                     nombreTutor: tutorNombreExtraido,
                     dniTutor: tutorDniExtraido,
                     cuilTutor: tutorCuilExtraido,
-                    genero: generoNormalizado
+                    genero: generoNormalizado,
+                    generoTutor: ""
                 });
+
 
                 }
 
