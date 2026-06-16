@@ -659,7 +659,7 @@ function renderizarFilasEnTabla(alumnos) {
             <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
                 <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨</button>
                 <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📋</button>
-                <button type="button" class="btn-accion-fila" onclick="window.location.href='historial.html?dni=${alumno.dni}'" title="Historial del Legajo">📜</button>
+                <button type="button" class="btn-accion-fila" onclick="window.open('historial.html?dni=${ alumno. dni}', '_blank')" title="Historial del Legajo">📜</button>
                 <button type="button" class="btn-accion-fila btn-fila-borrar" data-dni="${alumno.dni}" title="Eliminar Alumno">🗑</button>
             </div>
             `;

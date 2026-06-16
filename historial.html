@@ -112,87 +112,100 @@
             </div>
         </div>
 
-        <!-- Bloque de Acciones del Preceptor -->
+              <!-- Bloque de Acciones del Preceptor Modificado -->
         <div>
-        <button onclick="window.location.href='panel.html'" style="background: #13365b; color: #ffffff; border: 1px solid #3b82f6; padding: 12px 24px; font-size: 0.85rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em;">
-            Volver al Panel
+        <button onclick="window.close();" style="background: #ef4444; color: #ffffff; border: 1px solid #dc2626; padding: 12px 24px; font-size: 0.85rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em;">
+            Cerrar
         </button>
         </div>
+
 
     </div>
 </header>
 
 
-    <!-- CONTENEDOR PRINCIPAL: Configurado en Pantalla Completa Ancha -->
+    <!-- ====== PARCHE DE COMPACTACIÓN Y ESTRUCTURA: Colegio HASPEN ====== -->
+<!-- CONTENEDOR PRINCIPAL: Configurado en Pantalla Completa Ancha sin envoltura en Escritorio -->
 <main class="flex-grow w-full max-w-none px-6 py-6">
+  
+  <div style="display: flex; flex-direction: row; gap: 24px; align-items: flex-start; width: 100%;">
     
-    <!-- REJILLA DISTRIBUIDA (Mínimo en celular, 2 columnas en Monitor Grande) -->
-    <div style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 24px; align-items: flex-start; width: 100%;">
+    <!-- ========================================== -->
+    <!-- COLUMNA IZQUIERDA (Ficha + Control Abajo)  -->
+    <!-- ========================================== -->
+    <div style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px;">
+      
+          <!-- Ficha del Estudiante Compacta -->
+      <section id="tarjetaAlumnoFicha" class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg" style="display: none;">
+        <div class="flex items-center justify-between" style="margin-bottom: 6px;">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/50">Legajo Digital</span>
+        </div>
+        <h2 id="nombreAlumnoHistorial" class="text-lg font-bold text-white tracking-tight" style="font-size: 1.35rem !important; margin: 2px 0 !important; line-height: 1.2;">Cargando datos...</h2>
         
-        <!-- ========================================== -->
-        <!-- COLUMNA IZQUIERDA (30%): CONTROL Y FICHA  -->
-        <!-- ========================================== -->
-        <div style="flex: 1; min-width: 320px; max-width: 380px; display: flex; flex-direction: column; gap: 24px;">
+        <div class="border-t border-slate-700/60" style="margin-top: 10px; padding-top: 10px;">
+          <p style="margin: 4px 0; font-size: 13px; font-weight: 800; color: #cbd5e1;">
+            <span id="dniAlumnoHistorial" style="color: #1b4d82 !important;">-</span>
+          </p>
+          <p style="margin: 4px 0; font-size: 13px; font-weight: 800; color: #cbd5e1;">
+            <span id="cursoAlumnoHistorial" style="color: #1b4d82 !important;">-</span>
+          </p>
+          <p style="margin: 4px 0; font-size: 13px; font-weight: 800; color: #cbd5e1;">
+            <span id="cicloAlumnoHistorial" style="color: #1b4d82 !important;">-</span>
+          </p>
+        </div>
+      </section>
+
+
+
+
+                  <!-- ====== PARCHE COMPACTACIÓN DE BOTONES: Colegio HASPEN ====== -->
+      <!-- PANEL DE FILTROS INTEGRADOS (6 AÑOS) -->
+      <section id="panelFiltrosTrayectoria" class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3" style="margin-top: 0; margin-bottom: 8px;">Control de Trayectoria</h4>
+        
+        <!-- Selector por Año Escolar -->
+        <div class="mb-3">
+          <span class="text-[11px] text-slate-500 block" style="margin-bottom: 4px;">Año de Cursada:</span>
+          <div class="contenedor-años" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <button class="btn-filtro active" style="padding: 4px 10px !important; font-size: 11px !important;">Todos</button>
+            <button class="btn-filtro" style="padding: 4px 10px !important; font-size: 11px !important;">1° Año</button>
+            <button class="btn-filtro" style="padding: 4px 10px !important; font-size: 11px !important;">2° Año</button>
+            <button class="btn-filtro" style="padding: 4px 10px !important; font-size: 11px !important;">3° Año</button>
+            <button class="btn-filtro" style="padding: 4px 10px !important; font-size: 11px !important;">4° Año</button>
+            <button class="btn-filtro" style="padding: 4px 10px !important; font-size: 11px !important;">5° Año</button>
+            <button class="btn-filtro" style="padding: 4px 10px !important; font-size: 11px !important;">6° Año</button>
+          </div>
+        </div>
+        
+        <!-- Selector por Tipo de Contenido -->
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #475569;">
+          <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 6px;">Tipo de Registro:</span>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
             
-            <!-- Ficha del Estudiante -->
-            <section id="tarjetaAlumnoFicha" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg" style="display: none;">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900/50">Legajo Digital</span>
-                </div>
-                <h2 id="nombreAlumnoHistorial" class="text-xl font-bold text-white mt-2">Cargando datos del estudiante...</h2>
-                
-                <div class="mt-4 pt-4 border-t border-slate-700/60 space-y-2 text-sm text-slate-400">
-                    <p><strong>DNI:</strong> <span id="dniAlumnoHistorial" class="text-slate-200">-</span></p>
-                    <p><strong>Curso:</strong> <span id="cursoAlumnoHistorial" class="text-slate-200">-</span></p>
-                    <p><strong>Ciclo Lectivo:</strong> <span id="cicloAlumnoHistorial" class="text-slate-200">-</span></p>
-                </div>
-            </section>
+            <button class="btn-cat active" data-cat=" TODOS" style="display: flex; align-items: center; gap: 8px; background: #1b4d82 !important; color: #ffffff !important; border: 1px solid #13365b; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
+              <svg style="width: 14px; height: 14px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+              Mostrar Todo
+            </button>
+            
+            <button class="btn-cat" data-cat=" NOTAS_INFORMES" style="display: flex; align-items: center; gap: 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
+              <svg style="width: 14px; height: 14px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              Notas e Informes
+            </button>
+            
+            <button class="btn-cat" data-cat=" BOLETINES" style="display: flex; align-items: center; gap: 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
+              <svg style="width: 14px; height: 14px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              Boletines
+            </button>
+            
+            <button class="btn-cat" data-cat=" ASISTENCIA" style="display: flex; align-items: center; gap: 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
+              <svg style="width: 14px; height: 14px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              Registro de Asistencias
+            </button>
+            
+          </div>
+        </div>
+      </section>
 
-            <!-- PANEL DE FILTROS INTEGRADOS (6 AÑOS) -->
-            <section id="panelFiltrosTrayectoria" class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Control de Trayectoria</h4>
-                
-                <!-- Selector por Año Escolar -->
-                <div class="space-y-2 mb-4">
-                    <span class="text-[11px] text-slate-500 block">Año de Cursada:</span>
-                    <div class="contenedor-años">
-                    <button class="btn-filtro active">Todos</button>
-                    <button class="btn-filtro">1° Año</button>
-                    <button class="btn-filtro">2° Año</button>
-                    <button class="btn-filtro">3° Año</button>
-                    <button class="btn-filtro">4° Año</button>
-                    <button class="btn-filtro">5° Año</button>
-                    <button class="btn-filtro">6° Año</button>
-                    </div>
-
-                </div>
-
-                <!-- Selector por Tipo de Contenido -->
-                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #475569;">
-                    <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 8px;">Tipo de Registro:</span>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <!-- ====== PARCHE VISUAL DEFINITIVO: BOTONERA RESTAURADA Colegio HASPEN ====== -->
-                        <button class="btn-cat active" data-cat="TODOS" style="display: flex; align-items: center; gap: 8px; background: #1b4d82 !important; color: #ffffff !important; border: 1px solid #13365b; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
-                            <svg style="width: 16px; height: 16px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                            Mostrar Todo
-                        </button>
-                        <button class="btn-cat" data-cat="NOTAS_INFORMES" style="display: flex; align-items: center; gap: 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
-                            <svg style="width: 16px; height: 16px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            Notas e Informes
-                        </button>
-                        <button class="btn-cat" data-cat="BOLETINES" style="display: flex; align-items: center; gap: 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
-                            <svg style="width: 16px; height: 16px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                            Boletines
-                        </button>
-                        <button class="btn-cat" data-cat="ASISTENCIA" style="display: flex; align-items: center; gap: 8px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 10px 16px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box;">
-                            <svg style="width: 16px; height: 16px; flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            Registro de Asistencias
-                        </button>
-                        
-                    </div>
-                </div>
-                
-            </section>
         </div>
 
         <!-- ========================================== -->
