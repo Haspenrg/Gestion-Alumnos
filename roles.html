@@ -10,15 +10,15 @@
     <link rel="stylesheet" href="estilos.css">
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            max-width: 100% !important;
-            width: 100vw;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
+        margin: 0;
+        padding: 0;
+        max-width: 100% !important;
+        width: 100vw;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
         }
         .panel-container {
             max-width: 98% !important;
@@ -149,11 +149,23 @@
 </head>
 <body>
     <div class="panel-container">
-        <header class="header-dashboard">
-            <h2>Configuración de Seguridad RBAC</h2>
-            <h3>Colegio HASPEN</h3>
-            <p>Administración de perfiles, matrices de accesos y permisos mutables del sistema</p>
-        </header>
+            <!-- 🏛️ FRANJA SUPERIOR: CABECERA INSTITUCIONAL ANCHA REPLICADA -->
+    <header style="background: linear-gradient(90deg, #1b4d82 0%, #1b4d82 45%, #f48120 55%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;">
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
+                Colegio Provincial HASPEN
+            </h1>
+            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #93c5fd; font-weight: 500;">
+                Configuración de Seguridad RBAC - Matrices de Accesos Mutables
+            </p>
+        </div>
+            <div>
+            <!-- 🛡️ Inyección del escudo oficial en reemplazo del botón superior -->
+            <img src="logo1.png" alt="Escudo Colegio HASPEN" style="height: 70px; width: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));">
+            </div>
+
+    </header>
+
 
         <div class="form-registro-usuario">
             <div id="bannerEdicion" class="indicador-edicion" style="display:none; background:#fef3c7; padding:10px; border-radius:6px; border:1px solid #fcd34d; margin-bottom:15px;">
