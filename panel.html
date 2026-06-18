@@ -53,12 +53,20 @@
 </head>
 <body>
 <div class="panel-container">
-     <header class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-b border-gray-200 pb-4 mb-6" style="display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
-        <!-- Columna Izquierda: Datos del Usuario (IDs Intactos) -->
-        <div class="header-textos">
-            <h1 id="saludo-usuario" style="font-size: 1.5rem; font-weight: bold; margin: 0;">Sistema HASPEN</h1>
-            <p id="rol-usuario" style="font-size: 0.85rem; color: #777; margin: 5px 0 0 0;">Panel de Administración Principal</p>
+    <header class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-b border-gray-200 pb-4 mb-6" style="display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
+    <!-- Columna Izquierda: Datos del Usuario y Acciones Rápidas -->
+    <div class="header-textos" style="display: flex; flex-direction: column; gap: 8px;">
+        <div>
+            <h1 id="saludo-usuario" style="font-size: 1.4rem; font-weight: bold; margin: 0; color: #1b4d82;">Sistema HASPEN</h1>
+            <p id="rol-usuario" style="font-size: 0.8rem; color: #666; margin: 3px 0 0 0; font-weight: 500;">Panel de Administración Principal</p>
         </div>
+        <!-- Contenedor Compacto de Botones de Gestión de Cuenta -->
+        <div style="display: flex; gap: 8px; width: 100%; max-width: 240px; margin-top: 4px;">
+            <button id="btn-cambiar-clave-perfil" style="background-color: transparent; color: #4b5563; border: 1px solid #9ca3af; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1;">Clave</button>
+            <button id="btn-cerrar-sesion" class="btn-salir" style="background-color: #941b1b; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1; margin: 0;">Salir</button>
+        </div>
+    </div>
+
 
             <!-- Columna Central: Título Institucional con Mayor Jerarquía Visual -->
         <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
@@ -79,67 +87,75 @@
 <!-- Contenedor Principal de Módulos Dividido en Dos Secciones -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
     
-    <!-- Contenedor Izquierdo: Gestión Académica -->
-    <div style="border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
-        <h3 style="color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
-            Gestión Académica
-        </h3>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-            <!-- 2. Gestión de Alumnos -->
-            <div id="mod-inscripcion" class="modulo-card" style="margin: 0;">
-                <span class="icon">📝</span>
-                <h4>Gestión de Alumnos</h4>
-            </div>
-            <!-- 4. Calificaciones -->
-            <div id="mod-calificaciones" class="modulo-card" style="margin: 0;">
-                <span class="icon">📊</span>
-                <h4>Calificaciones</h4>
-            </div>
-            <!-- 5. Control de Previas -->
-            <div id="mod-previas" class="modulo-card" style="margin: 0;">
-                <span class="icon">⚠</span>
-                <h4>Control de Previas</h4>
-            </div>
-            <!-- 6. Estadísticas -->
-            <div id="mod-estadisticas" class="modulo-card" style="margin: 0;">
-                <span class="icon">📈</span>
-                <h4>Estadísticas</h4>
-            </div>
+   <!-- REEMPLAZO PARA: Contenedor Izquierdo: Gestión Académica -->
+<div style=" border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
+    <h3 style=" color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
+        Gestión Académica
+    </h3>
+    <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+        <!-- 2. Gestión de Alumnos -->
+        <div id="mod-inscripcion" class=" modulo-card" style=" margin: 0;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
+            </span>
+            <h4>Gestión de Alumnos</h4>
+        </div>
+        <!-- 4. Calificaciones -->
+        <div id="mod-calificaciones" class=" modulo-card" style=" margin: 0;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+            </span>
+            <h4>Calificaciones</h4>
+        </div>
+        <!-- 5. Control de Previas -->
+        <div id="mod-previas" class=" modulo-card" style=" margin: 0;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" /></svg>
+            </span>
+            <h4>Control de Previas</h4>
+        </div>
+        <!-- 6. Estadísticas -->
+        <div id="mod-estadisticas" class=" modulo-card" style=" margin: 0;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v5.25c0 .621-.504 1.125-1.125 1.125h-2.25A1.125 1.125 0 0 1 3 18.375v-5.25ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125v-9.75ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v14.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+            </span>
+            <h4>Estadísticas</h4>
         </div>
     </div>
+</div>
 
-    <!-- Contenedor Derecho: Configuraciones del Sistema -->
-    <div style="border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
-        <h3 style="color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
-            Configuraciones del sistema
-        </h3>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-            <!-- 1. Gestión de Usuarios -->
-            <div id="mod-usuarios" class="modulo-card" style="margin: 0;">
-                <span class="icon">👥</span>
-                <h4>Gestión de Usuarios</h4>
-            </div>
-            <!-- 7. Creación de Roles -->
-            <div id="mod-roles" class="modulo-card" style="margin: 0;">
-                <span class="icon">🔐</span>
-                <h4>Creación de Roles</h4>
-            </div>
-            <!-- 3. Creación de Cursos y Materias -->
-            <div id="mod-cursos-materias" class="modulo-card" style="margin: 0; grid-column: span 2;">
-                <span class="icon">🏫</span>
-                <h4>Creación de Cursos y Materias</h4>
-            </div>
+
+ <!-- REEMPLAZO PARA: Contenedor Derecho: Configuraciones del Sistema -->
+<div style=" border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
+    <h3 style=" color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
+        Configuraciones del sistema
+    </h3>
+    <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+        <!-- 1. Gestión de Usuarios -->
+        <div id="mod-usuarios" class=" modulo-card" style=" margin: 0;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+            </span>
+            <h4>Gestión de Usuarios</h4>
+        </div>
+        <!-- 7. Creación de Roles -->
+        <div id="mod-roles" class=" modulo-card" style=" margin: 0;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+            </span>
+            <h4>Creación de Roles</h4>
+        </div>
+        <!-- 3. Creación de Cursos y Materias -->
+        <div id="mod-cursos-materias" class=" modulo-card" style=" margin: 0; grid-column: span 2;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" /></svg>
+            </span>
+            <h4>Creación de Cursos y Materias</h4>
         </div>
     </div>
-
 </div>
 
-    </div>
-    <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
-    <button id="btn-cambiar-clave-perfil" style="background-color: #4b5563; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; flex: 1;">Cambiar Contraseña</button>
-    <button id="btn-cerrar-sesion" class="btn-salir" style="flex: 1; margin: 0;">Cerrar Sesión</button>
-</div>
-</div>
+
 
 <!-- SCRIPT DE CONTROL DE ROLES ADAPTADO PARA PERSONAL HÍBRIDO Y FIREBASE -->
 <script>
