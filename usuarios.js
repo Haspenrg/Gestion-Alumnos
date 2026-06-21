@@ -40,7 +40,9 @@ const checkProfesor = document.getElementById('checkEsProfesor');
 const selectAnioProfesor = document.getElementById('anioProfesor');
 const btnAgregarCatedra = document.getElementById('btnAgregarCatedra');
 const filtroBusqueda = document.getElementById('filtroBusquedaRapida');
-const filtroSuper = document.getElementById('filtroSuperpoblacion');
+const filtroRolBase = document.getElementById('filtroRolBase');
+const filtroCursoDivision = document.getElementById('filtroCursoDivision');
+
 
 // Referencias del DOM vinculadas a los nuevos campos de contraseña
 const claveUsuario = document.getElementById('claveUsuario');
@@ -85,7 +87,9 @@ if (btnAgregarCatedra) btnAgregarCatedra.addEventListener('click', agregarCatedr
 if (formUsuario) formUsuario.addEventListener('submit', procesarGuardarUsuario);
 if (btnCancelarEdicion) btnCancelarEdicion.addEventListener('click', desactivarModoEdicion);
 if (filtroBusqueda) filtroBusqueda.addEventListener('input', renderizarTablaUsuarios);
-if (filtroSuper) filtroSuper.addEventListener('change', renderizarTablaUsuarios);
+if (filtroRolBase) filtroRolBase.addEventListener('change', renderizarTablaUsuarios);
+if (filtroCursoDivision) filtroCursoDivision.addEventListener('change', renderizarTablaUsuarios);
+
 // --- PROTECCIÓN COERCITIVA RBAC ---
 async function verificarAutenticacionAdmin() {
     const datosSesion = localStorage.getItem('usuarioActivo');
@@ -122,66 +126,86 @@ async function inicializarSemillaUsuarios() {
     }
 }
 
-// --- INYECCIÓN DINÁMICA DE ROLES DESDE CLOUD FIRESTORE ---
+// --- INYECCIÓN DINÁMICA DE ROLES DESDE CLOUD FIRESTORE (EXTENDIDA) ---
 async function cargarRolesEnSelector() {
     if (!rolUsuario) return;
     rolUsuario.innerHTML = '<option value="" disabled selected>Seleccione un rol...</option>';
+    
+    // Limpiamos y preparamos también el nuevo selector de la barra de filtros
+    if (filtroRolBase) {
+        filtroRolBase.innerHTML = '<option value="">Todos los cargos / roles</option>';
+    }
+
     try {
         const querySnapshot = await getDocs(collection(db, "roles"));
         if (querySnapshot.empty) {
             rolUsuario.add(new Option("Administrador (Por Defecto)", "administrador"));
+            if (filtroRolBase) filtroRolBase.add(new Option("Administrador (Por Defecto)", "administrador"));
             return;
         }
+
         querySnapshot.forEach((documento) => {
             const rol = documento.data();
-            rolUsuario.add(new Option(rol.nombre, rol.id.toLowerCase().trim()));
+            const nombreRol = rol.nombre;
+            const idRol = rol.id.toLowerCase().trim();
+
+            // Inyecta en el formulario de registro
+            rolUsuario.add(new Option(nombreRol, idRol));
+
+            // Inyecta en la barra de filtros unificada
+            if (filtroRolBase) {
+                filtroRolBase.add(new Option(nombreRol, idRol));
+            }
         });
     } catch (error) {
         console.error("Error al inyectar catálogo de roles dinámicos:", error);
         rolUsuario.add(new Option("Administrador (Por Defecto)", "administrador"));
+        if (filtroRolBase) filtroRolBase.add(new Option("Administrador (Por Defecto)", "administrador"));
     }
 }
 
+
 // --- INICIALIZACIÓN DE SELECTORES DE CURSOS ---
 
-// ====== PARCHE MODULAR: Consulta compatible con Firebase v9/v10 ======
 async function inicializarSelectoresCursos() {
-let cursos = [];
-try {
-    // Consulta directa y limpia a Firebase Firestore para traer la planta completa
-    const cursosRef = collection(db, 'cursos');
-    const querySnapshot = await getDocs(cursosRef);
-    cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    localStorage.setItem('cursosColegio', JSON.stringify(cursos));
-} catch (error) {
-    console.error("Error al traer cursos desde firestore:", error);
-    // Si falla Firebase, usa el respaldo local para que el sistema no se rompa
-    let cursosRaw = localStorage.getItem('cursosColegio');
-    if (cursosRaw) cursos = JSON.parse(cursosRaw);
-}
+    let cursos = [];
+    try {
+        const cursosRef = collection(db, 'cursos');
+        const querySnapshot = await getDocs(cursosRef);
+        cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+    } catch (error) {
+        console.error("Error:", error);
+        let cursosRaw = localStorage.getItem('cursosColegio');
+        if (cursosRaw) cursos = JSON.parse(cursosRaw);
+    }
 
+    const selects = {
+        prep1: document.getElementById('altaAnio1'),
+        prep2: document.getElementById('altaAnio2'),
+        prof: document.getElementById('anioProfesor'),
+        filtro: document.getElementById('filtroCursoDivision')
+    };
 
-    const selectPrep1 = document.getElementById('altaAnio1');
-    const selectPrep2 = document.getElementById('altaAnio2');
-    const selectProfCurso = document.getElementById('anioProfesor');
+    if (!selects.prep1 || !selects.prep2 || !selects.prof) return;
 
-    if (!selectPrep1 || !selectPrep2 || !selectProfCurso) return;
-
-    // Reiniciamos las opciones por defecto
-    selectPrep1.innerHTML = '<option value="" disabled selected>Seleccione curso...</option><option value="Ninguno">Ninguno / Sin asignar</option>';
-    selectPrep2.innerHTML = '<option value="" disabled selected>Seleccione curso...</option><option value="Ninguno">Ninguno / Sin asignar</option>';
-    selectProfCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
+    // Resetear selects
+    [selects.prep1, selects.prep2, selects.prof].forEach(s => 
+        s.innerHTML = '<option value="" disabled selected>Seleccione...</option>'
+    );
+    if (selects.filtro) selects.filtro.innerHTML = '<option value="">Todos</option>';
 
     if (cursos.length === 0) return;
 
-    // Iteramos e inyectamos los cursos en los tres desplegables
     cursos.forEach(curso => {
-        const textoOpcion = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
-        selectPrep1.add(new Option(textoOpcion, curso.id));
-        selectPrep2.add(new Option(textoOpcion, curso.id));
-        selectProfCurso.add(new Option(textoOpcion, curso.id));
+        const option = new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id);
+        selects.prep1.add(option.cloneNode(true));
+        selects.prep2.add(option.cloneNode(true));
+        selects.prof.add(option.cloneNode(true));
+        if (selects.filtro) selects.filtro.add(option.cloneNode(true));
     });
 }
+
 
 
 async function cargarMateriasPorCursoSeleccionado() {
@@ -482,8 +506,8 @@ async function renderizarTablaUsuarios() {
     if (!tbody) return;
     tbody.innerHTML = "";
     
-    const trCarga = document.createElement('t' + 'r');
-    const tdCarga = document.createElement('t' + 'd');
+    const trCarga = document.createElement('tr');
+    const tdCarga = document.createElement('td');
     tdCarga.colSpan = 6;
     tdCarga.style.cssText = "text-align:center; color:#1a73e8; font-weight:500; padding:25px;";
     tdCarga.textContent = "Sincronizando nómina escolar con Firebase Cloud...";
@@ -500,43 +524,25 @@ async function renderizarTablaUsuarios() {
     }
 
     const txtBusqueda = document.getElementById('filtroBusquedaRapida')?.value.toLowerCase().trim() || "";
-    const modoAuditoria = document.getElementById('filtroSuperpoblacion')?.value || "TODOS";
+    const filtroRol = document.getElementById('filtroRolBase')?.value || "";
+    const filtroCurso = document.getElementById('filtroCursoDivision')?.value || "";
     tbody.innerHTML = "";
 
-    const mapaPoblacionCatedras = {};
-    usuarios.forEach(u => {
-        const bolsa = u.bolsaHoras || [];
-        usuarios.forEach(user2 => {
-            if (u.dni === user2.dni) return;
-            const bolsa2 = user2.bolsaHoras || [];
-            bolsa.forEach(h1 => {
-                const mat1 = h1.replace(/\[.*?\]\s*/, "").trim();
-                bolsa2.forEach(h2 => {
-                    const mat2 = h2.replace(/\[.*?\]\s*/, "").trim();
-                    if (mat1 === mat2) { mapaPoblacionCatedras[mat1] = (mapaPoblacionCatedras[mat1] || 0) + 1; }
-                });
-            });
-        });
+    let usuariosFiltrados = usuarios.filter(user => {
+        const mBusqueda = !txtBusqueda || 
+            user.nombre?.toLowerCase().includes(txtBusqueda) || 
+            user.dni?.includes(txtBusqueda) || 
+            user.email?.toLowerCase().includes(txtBusqueda);
+
+        const mRol = !filtroRol || (user.rol?.toLowerCase().trim() === filtroRol);
+
+        const mCurso = !filtroCurso || 
+            (user.cursosAsignados && user.cursosAsignados.includes(filtroCurso)) || 
+            (user.bolsaHoras && user.bolsaHoras.some(h => h.includes(filtroCurso)));
+
+        return mBusqueda && mRol && mCurso;
     });
 
-    let usuariosFiltrados = usuarios.filter(user => {
-        if (txtBusqueda) {
-            const mNombre = user.nombre?.toLowerCase().includes(txtBusqueda);
-            const mDni = user.dni?.includes(txtBusqueda);
-            const mEmail = user.email?.toLowerCase().includes(txtBusqueda);
-            if (!mNombre && !mDni && !mEmail) return false;
-        }
-        if (modoAuditoria === "SUPERPOBLADO") {
-            const bolsa = user.bolsaHoras || [];
-            if (bolsa.length === 0) return false;
-            const tieneMateriaSuperpoblada = bolsa.some(h => {
-                const materiaPura = h.replace(/\[.*?\]\s*/, "").trim();
-                return mapaPoblacionCatedras[materiaPura] > 0;
-            });
-            if (!tieneMateriaSuperpoblada) return false;
-        }
-        return true;
-    });
 
     if (usuariosFiltrados.length === 0) {
         const trVacio = document.createElement('t' + 'r');
