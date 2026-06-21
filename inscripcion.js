@@ -147,67 +147,16 @@ if (selectCursoFiltro) {
             procesarFiltrosYNomina();
         });
     }
-
 // ==========================================
-// 💥 AUTOMATIZACIÓN DE CUIL (ALUMNO Y TUTOR)
+// 💥 CONTROL DE CUIL DE ALUMNO Y TUTOR (MANUAL)
 // ==========================================
-function calcularCuilLocalSincrono(dni, genero) {
-    const dniLimpio = dni.replace(/[^0-9]/g, '').trim();
-    if (dniLimpio.length < 7 || dniLimpio.length > 8) return "";
-    let prefijo = (genero === "Femenino") ? "27" : "20";
-    const dniPad = dniLimpio.padStart(8, '0');
-    const numeroBase = prefijo + dniPad;
-    const factores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    let suma = 0;
-    for (let i = 0; i < 10; i++) {
-        suma += parseInt(numeroBase.charAt(i), 10) * factores[i];
-    }
-    let resto = suma % 11;
-    let verificador = 0;
-    if (resto === 1) {
-        prefijo = "23";
-        const nuevaBase = prefijo + dniPad;
-        let nuevaSuma = 0;
-        for (let i = 0; i < 10; i++) {
-            nuevaSuma += parseInt(nuevaBase.charAt(i), 10) * factores[i];
-        }
-        let nuevoResto = nuevaSuma % 11;
-        verificador = nuevoResto === 0 ? 0 : 11 - nuevoResto;
-    } else if (resto !== 0) {
-        verificador = 11 - resto;
-    }
-    return prefijo + dniPad + verificador;
-}
-
-function dispararAutocompletadoCuil(inputDni, selectGenero, inputCuil) {
-    if (!inputDni || !inputCuil) return;
-    const dniVal = inputDni.value.replace(/[^0-9]/g, '').trim();
-    const generoVal = selectGenero ? selectGenero.value : "Masculino";
-    if (dniVal.length >= 7 && dniVal.length <= 8) {
-        const cuilCalculado = calcularCuilLocalSincrono(dniVal, generoVal);
-        if (cuilCalculado) {
-            inputCuil.value = cuilCalculado;
-        }
-    } else {
-        inputCuil.value = "";
-    }
-}
-
-    // Escuchadores reactivos vinculados correctamente
-    // ANCLA_REPARACION_REACTIVA: Selectores directos para evitar caídas del hilo principal
 const elDniAlu = document.getElementById('dniAlumno');
 const elGenAlu = document.getElementById('generoAlumno');
 const elCuiAlu = document.getElementById('cuilAlumno');
 
-if (elDniAlu) elDniAlu.addEventListener('input', () => dispararAutocompletadoCuil(elDniAlu, elGenAlu, elCuiAlu));
-if (elGenAlu) elGenAlu.addEventListener('change', () => dispararAutocompletadoCuil(elDniAlu, elGenAlu, elCuiAlu));
-         // Escuchadores reactivos vinculados para el CUIL del Tutor o Tutora
-        const elDniTut = document.getElementById('dniTutorAlumno');
-        const elGenTut = document.getElementById('generoTutor');
-        const elCuiTut = document.getElementById('cuilTutor');
-
-        if (elDniTut) elDniTut.addEventListener('input', () => dispararAutocompletadoCuil(elDniTut, elGenTut, elCuiTut));
-        if (elGenTut) elGenTut.addEventListener('change', () => dispararAutocompletadoCuil(elDniTut, elGenTut, elCuiTut));
+const elDniTut = document.getElementById('dniTutorAlumno');
+const elGenTut = document.getElementById('generoTutor');
+const elCuiTut = document.getElementById('cuilTutor');
 
 
 

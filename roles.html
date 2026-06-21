@@ -150,7 +150,7 @@
 <body>
     <div class="panel-container">
             <!-- 🏛️ FRANJA SUPERIOR: CABECERA INSTITUCIONAL ANCHA REPLICADA -->
-    <header style="background: linear-gradient(90deg, #1b4d82 0%, #1b4d82 45%, #f48120 55%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;">
+    <header style="background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;">
         <div>
             <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
                 Colegio Provincial HASPEN
@@ -167,106 +167,151 @@
     </header>
 
 
-        <div class="form-registro-usuario">
-            <div id="bannerEdicion" class="indicador-edicion" style="display:none; background:#fef3c7; padding:10px; border-radius:6px; border:1px solid #fcd34d; margin-bottom:15px;">
-                <strong>Modo Edición Activo:</strong> Modificando los permisos del rol seleccionado. Al finalizar, haga clic en "Guardar Rol" o presione "Cancelar".
-                <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
-            </div>
-            <h3 id="formTitulo" style="color: #333; margin-bottom: 15px;">Crear Nuevo Perfil / Rol</h3>
-            <form id="formRol">
-                <input type="hidden" id="editRolId" value="">
-                <div class="grid-formulario-roles">
-                    <div class="input-group">
-                        <label for="nombreRol" style="font-weight:bold; display:block; margin-bottom:5px;">Nombre del Rol</label>
-                        <input type="text" id="nombreRol" placeholder="Ej: Secretaría Técnica" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; height: 21px;">
-                    </div>
-                    <div class="input-group">
-                        <label for="pLegajo" style="font-weight:bold; display:block; margin-bottom:5px;">Acceso a Legajo Digital (Alumnos)</label>
-                        <select id="pLegajo" required class="select-permiso-matriz" style="height: 47px;">
-                            <option value="ninguno">Ninguno (Sin Acceso)</option>
-                            <option value="lectura">Lectura (Solo Vista Filtrada)</option>
-                            <option value="escritura">Escritura (Acceso Total)</option>
-                        </select>
-                    </div>
+        <!-- CONTENEDOR PRINCIPAL REORGANIZADO EN DOS COLUMNAS -->
+        <div class="modulo-roles-layout" style="display: flex; flex-direction: column; gap: 20px; width: 100%; box-sizing: border-box; margin-top: 25px;">
 
-                    <div class="contenedor-matriz-permisos">
-                        <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Niveles de Operación por Módulo</label>
-                        <div class="grid-opciones-permisos">
-                            <div class="bloque-permiso-select">
-                                <label for="pUsuarios" style="font-weight: 600; color: #334155; font-size: 13px;">Gestión de Usuarios</label>
-                                <select id="pUsuarios" class="select-permiso-matriz">
+            
+            <!-- 1. BANNER DE NOTIFICACIONES (OCUPA EL 100% SUPERIOR) -->
+            <div id="bannerEdicion" class="indicador-edicion" style="display:none; background:#fef3c7; padding:15px; border-radius:8px; border:1px solid #fcd34d; width: 100%; box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 14px; color: #92400e;"><strong>Modo Edición Activo:</strong> Modificando los permisos del rol seleccionado. Al finalizar, haga clic en "Guardar Rol" o presione "Cancelar".</span>
+                    <button type="button" id="btnCancelarEdicion" style="background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold; font-size: 14px;">[Cancelar]</button>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DE DIVISIONES (20% / 80%) -->
+            <div class="roles-columnas-wrapper" style="display: flex; gap: 25px; width: 100%; align-items: flex-start; box-sizing: border-box;">
+                
+                <!-- COLUMNA IZQUIERDA: FORMULARIO DE REGISTRO (30% DE ANCHO) -->
+                <div class="columna-formulario" style="flex: 0 0 20%; min-width: 280px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-sizing: border-box;">
+                    <h3 id="formTitulo" style="color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid #f48120; padding-bottom: 8px;">Crear Perfil / Rol</h3>
+                    
+                                        <form id="formRol" style="display: flex; flex-direction: column; gap: 8px;">
+                        <input type="hidden" id="editRolId" value="">
+                        
+                        <!-- Identificación Primaria (Compacta) -->
+                        <div class="input-group" style="display: flex; flex-direction: column; gap: 2px;">
+                            <label for="nombreRol" style="font-weight: bold; color: #334155; font-size: 12px;">Nombre del Rol</label>
+                            <input type="text" id="nombreRol" placeholder="Ej: Secretaría Técnica" required style="width: 100%; padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; height: 32px; box-sizing: border-box; font-family: inherit;">
+                        </div>
+
+                        <!-- Matriz Unificada de Niveles de Operación (Ultra Compacta) -->
+                        <div class="contenedor-matriz-permisos" style="display: flex; flex-direction: column; gap: 8px; margin-top: -10px;">
+
+                            <label style="font-weight: bold; color: #1b4d82; display: block; font-size: 13px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 2px;">Niveles de Operación</label>
+                            
+                            <!-- Módulo 1: Acceso a Legajo Digital -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pLegajo" style="font-weight: 600; color: #475569; font-size: 11px;">Acceso a Legajo Digital (Alumnos)</label>
+                                <select id="pLegajo" required class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
                                 </select>
                             </div>
-                            <div class="bloque-permiso-select">
-                                <label for="pPlanes" style="font-weight: 600; color: #334155; font-size: 13px;">Planes de Estudio</label>
-                                <select id="pPlanes" class="select-permiso-matriz">
+
+                            <!-- Módulo 2: Gestión de Usuarios -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pUsuarios" style="font-weight: 600; color: #475569; font-size: 11px;">Gestión de Usuarios</label>
+                                <select id="pUsuarios" class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
                                 </select>
                             </div>
-                            <div class="bloque-permiso-select">
-                                <label for="pCalificaciones" style="font-weight: 600; color: #334155; font-size: 13px;">Libro Calificaciones</label>
-                                <select id="pCalificaciones" class="select-permiso-matriz">
+
+                            <!-- Módulo 3: Planes de Estudio -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pPlanes" style="font-weight: 600; color: #475569; font-size: 11px;">Planes de Estudio</label>
+                                <select id="pPlanes" class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
                                 </select>
                             </div>
-                            <div class="bloque-permiso-select">
-                                <label for="pAsistencia" style="font-weight: 600; color: #334155; font-size: 13px;">Control de Previas</label>
-                                <select id="pAsistencia" class="select-permiso-matriz">
+
+                            <!-- Módulo 4: Libro de Calificaciones -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pCalificaciones" style="font-weight: 600; color: #475569; font-size: 11px;">Libro Calificaciones</label>
+                                <select id="pCalificaciones" class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
                                 </select>
                             </div>
-                            <div class="bloque-permiso-select">
-                                <label for="pReportes" style="font-weight: 600; color: #334155; font-size: 13px;">Estadísticas</label>
-                                <select id="pReportes" class="select-permiso-matriz">
+
+                            <!-- Módulo 5: Control de Previas -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pAsistencia" style="font-weight: 600; color: #475569; font-size: 11px;">Control de Previas</label>
+                                <select id="pAsistencia" class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
                                 </select>
                             </div>
-                            <div class="bloque-permiso-select">
-                                <label for="pPpi" style="font-weight: 600; color: #334155; font-size: 13px;">Inclusión / PPI</label>
-                                <select id="pPpi" class="select-permiso-matriz">
+
+                            <!-- Módulo 6: Estadísticas -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pReportes" style="font-weight: 600; color: #475569; font-size: 11px;">Estadísticas</label>
+                                <select id="pReportes" class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
+                                    <option value="ninguno">Ninguno</option>
+                                    <option value="lectura">Lectura</option>
+                                    <option value="escritura">Escritura</option>
+                                </select>
+                            </div>
+
+                            <!-- Módulo 7: Inclusión / PPI -->
+                            <div class="bloque-permiso-select" style="display: flex; flex-direction: column; gap: 2px;">
+                                <label for="pPpi" style="font-weight: 600; color: #475569; font-size: 11px;">Inclusión / PPI</label>
+                                <select id="pPpi" class="select-permiso-matriz" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; height: 30px; box-sizing: border-box; background-color: #f8fafc; font-family: inherit;">
                                     <option value="ninguno">Ninguno</option>
                                     <option value="lectura">Lectura</option>
                                     <option value="escritura">Escritura</option>
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Botón de Envío Compacto -->
+                        <button type="submit" id="btnGuardar" class="btn-principal" style="width: 100%; margin-top: 5px; height: 38px; font-weight: bold; font-family: inherit; font-size: 20px; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; padding: 0;">Guardar Rol</button>
+
+
+                    </form>
+
+                </div>
+
+
+                 <!-- COLUMNA DERECHA: LISTADO DE ROLES REGISTRADOS (70% DE ANCHO) -->
+                <div class="columna-tabla-roles" style="flex: 0 0 78%; width: 70%; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-sizing: border-box; overflow: hidden;">
+                    <h3 style="color: #333; margin-top: 0; margin-bottom: 5px; font-size: 18px;">Roles y Perfiles Registrados</h3>
+                    <p style="font-size: 12px; color: #64748b; margin-top: 0; margin-bottom: 20px;">💡 Los perfiles creados aquí se inyectarán dinámicamente en el selector de cargos del personal de la institución.</p>
+                    
+                    <!-- Contenedor con scroll de desbordamiento por seguridad responsiva -->
+                    <div style="width: 100%; overflow-x: auto;">
+                        <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 750px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #1a73e8; color: #1e293b; background: #f8fafc;">
+                                    <th style="width: 20%; padding: 12px 8px;">Nombre del Rol</th>
+                                    <th style="width: 15%; padding: 12px 8px;">ID de Control</th>
+                                    <th style="width: 50%; padding: 12px 8px;">Matriz de Accesos Habilitados</th>
+                                    <th style="text-align: center; width: 15%; min-width: 140px; padding: 12px 8px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaRolesBody"></tbody>
+                        </table>
                     </div>
                 </div>
-                <button type="submit" id="btnGuardar" class="btn-principal" style="max-width: 220px; margin-top: 10px; height: 44px; font-weight: bold;">Guardar Rol</button>
-            </form>
-        </div>
 
-        <div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; width: 100%; box-sizing: border-box;">
-            <h3 style="color: #333; margin-bottom: 5px;">Roles y Perfiles Registrados</h3>
-            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Los perfiles creados aquí se inyectarán dinámicamente en el selector de cargos del personal de la institución.</p>
-            <div style="width: 100%; overflow-x: auto;">
-                <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 850px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #1a73e8; color: #1e293b; background: #f8fafc;">
-                            <th style="width: 20%;">Nombre del Rol</th>
-                            <th style="width: 15%;">ID de Control</th>
-                            <th style="width: 50%;">Matriz de Accesos Habilitados</th>
-                            <th style="text-align: center; width: 15%; min-width: 140px;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaRolesBody"></tbody>
-                </table>
+            </div> <!-- CIERRE DEL WRAPPER DE COLUMNAS -->
+
+            <!-- BOTONERA GENERAL DE NAVEGACIÓN (AL PIE DEL LAYOUT GENERAL) -->
+            <div style="width: 100%; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 5px;">
+                <button class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px; color: white; border: none; cursor: pointer; display: block;">Volver al Panel</button>
             </div>
-        </div>
 
-        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px; color:white; border:none; cursor:pointer;">Volver al Panel</button>
-    </div>
+        </div> <!-- CIERRE DEL CONTENEDOR PRINCIPAL REORGANIZADO -->
+    </div> <!-- CIERRE DEL PANEL-CONTAINER GENERAL -->
+    
     <script type="module" src="roles.js"></script>
 </body>
 </html>
+
