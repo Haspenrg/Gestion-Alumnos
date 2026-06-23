@@ -8,33 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cursos y Materias - Colegio HASPEN</title>
     <link rel="stylesheet" href="estilos.css">
-    <style>
+        <style>
         body {
             background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%) !important;
-        }
-        .header-dashboard {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            text-align: left !important;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-        .header-textos {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-        }
-        .logo-panel-chico {
-            height: 65px !important;
-            width: auto !important;
-            object-fit: contain;
         }
         .indicador-edicion-curso {
             display: none;
@@ -84,32 +60,44 @@
             max-width: 220px !important;
         }
     </style>
+
 </head>
 <body>
     <div class="panel-container" style="max-width: 95%; width: 95%; margin: 0 auto; padding: 20px; box-sizing: border-box;">
-        <header class="header-dashboard">
-            <div class="header-textos">
-                <h1 style="font-size: 2rem; margin-bottom: 5px; color: #1b4d82;">Configuración de Cursos y Materias</h1>
-                <p style="font-size: 1rem; color: #5f6368; margin: 0;">Panel de control para la creacion o edicion de modalidades, cursos, divisiones y materias</p>
-                <button type="button" id="btn-toggle-semillas" class="btn-toggle-paneles">🛠 Nueva Orientacion / Division</button>
+                <!-- 🏛 FRANJA SUPERIOR: CABECERA INSTITUCIONAL ANCHA REPLICADA -->
+        <header style="background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box;">
+            <div>
+                <h1 style="margin: 0; font-size: 1.8rem; color: #ffffff; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
+                    Colegio Provincial HASPEN
+                </h1>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #93c5fd; font-weight: 500;">
+                    Configuración de Cursos y Materias - Estructuras Curriculares
+                </p>
             </div>
-            <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" class="logo-panel-chico">
+            <div>
+                <img src="logo1.png" alt="Escudo Colegio HASPEN" style="height: 70px; width: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.2));">
+            </div>
         </header>
-        <!-- PANEL DE EXPANSIÓN DE SEMILLAS EN CALIENTE -->
-        <div id="panel-expansion-institucional" style="background: #f8f9fa; border: 1px dashed #1a73e8; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; grid-template-columns: 1fr 1fr; gap: 20px; box-sizing: border-box;">
+
+        <!-- 🛠 BOTONERA OPERATIVA (Reubicada fuera de la cabecera) -->
+        <div style="width: 100%; text-align: left; margin: 20px 0 5px 0; box-sizing: border-box;">
+            <button type="button" id="btn-toggle-semillas" class="btn-toggle-paneles">🛠 Nueva Orientacion / Division</button>
+        </div>
+
+               <div id="panel-expansion-institucional" style="background: #f8f9fa; border: 1px dashed #1a73e8; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; grid-template-columns: 1fr 1fr; gap: 20px; box-sizing: border-box;">
             <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left;">
                 <h4 style="margin: 0; color: #1a73e8;">Añadir Nueva División Operativa</h4>
-                <div style="display: flex; gap: 10px; width: 100%; box-sizing: border-box;">
-                    <input type="text" id="input-nueva-division" placeholder="Ej: H" maxlength="2" style="padding: 8px; width: 50%; box-sizing: border-box;">
-                    <button type="button" id="btn-add-division" style="background: #1a73e8; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold;">+ Cargar División</button>
+                <div style="display: flex; gap: 10px; width: 100%; box-sizing: border-box; align-items: center;">
+                    <input type="text" id="input-nueva-division" placeholder="Ej: H" maxlength="2" style="padding: 4px 8px; width: 50%; box-sizing: border-box; height: 32px; font-size: 14px;">
+                    <button type="button" id="btn-add-division" style="background: #1a73e8; color: white; border: none; padding: 0 15px; cursor: pointer; border-radius: 4px; font-weight: bold; height: 32px; font-size: 13px; display: flex; align-items: center; justify-content: center; white-space: nowrap;">+ Cargar División</button>
                 </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left;">
                 <h4 style="margin: 0; color: #1a73e8;">Añadir Nueva Orientación / Especialidad</h4>
                 <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
-                    <input type="text" id="input-nueva-orientacion" placeholder="Ej: Informática" style="padding: 8px; box-sizing: border-box; width: 100%;">
-                    <textarea id="input-nuevas-materias" placeholder="Materias separadas por coma (Ej: Programación, Sistemas, Redes)" rows="2" style="padding: 8px; box-sizing: border-box; resize: none; width: 100%;"></textarea>
-                    <button type="button" id="btn-add-orientacion" style="background: #1a73e8; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%;">+ Cargar Especialidad</button>
+                    <input type="text" id="input-nueva-orientacion" placeholder="Ej: Informática" style="padding: 4px 8px; box-sizing: border-box; width: 100%; height: 32px; font-size: 14px;">
+                    <textarea id="input-nuevas-materias" placeholder="Materias separadas por coma (Ej: Programación, Sistemas, Redes)" rows="2" style="padding: 8px; box-sizing: border-box; resize: none; width: 100%; font-size: 14px;"></textarea>
+                    <button type="button" id="btn-add-orientacion" style="background: #1a73e8; color: white; border: none; padding: 0 12px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%; height: 32px; font-size: 13px; display: flex; align-items: center; justify-content: center;">+ Cargar Especialidad</button>
                 </div>
             </div>
         </div>
