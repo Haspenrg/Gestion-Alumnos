@@ -114,7 +114,7 @@
                     <input type="hidden" id="idOriginalEdicion" value="">
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
                        <label for="select-ciclo" style="font-weight: bold; margin-bottom: 5px;">Año de Cursada:</label>
-                        <select id="select-ciclo" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                        <select id="select-ciclo" required style=" width: 100%; padding: 6px 10px; box-sizing: border-box; font-size: 14px;">
                             <option value="">Seleccione una opción...</option>
                             <option value="1° Año">1° Año</option>
                             <option value="2° Año">2° Año</option>
@@ -127,12 +127,12 @@
                     </div>
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
                         <label for="select-division" style="font-weight: bold; margin-bottom: 5px;">División:</label>
-                        <select id="select-division" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                        <select id="select-division" required style=" width: 100%; padding: 6px 10px; box-sizing: border-box; font-size: 14px;">
                         </select>
                     </div>
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
                         <label for="select-turno" style="font-weight: bold; margin-bottom: 5px;">Turno:</label>
-                        <select id="select-turno" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                        <select id="select-turno" required style=" width: 100%; padding: 6px 10px; box-sizing: border-box; font-size: 14px;">
                             <option value="">Seleccione turno...</option>
                             <option value="Mañana">Mañana</option>
                             <option value="Tarde">Tarde</option>
@@ -140,7 +140,7 @@
                     </div>
                     <div id="grupo-orientacion" class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
                         <label for="select-orientacion" style="font-weight: bold; margin-bottom: 5px;">Orientación Académica (Filtro Estadístico):</label>
-                        <select id="select-orientacion" required style="width: 100%; padding: 10px; box-sizing: border-box; font-size: 14px;">
+                        <select id="select-orientacion" required style=" width: 100%; padding: 6px 10px; box-sizing: border-box; font-size: 14px;">
                         </select>
                     </div>
                     <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left;">
@@ -153,14 +153,15 @@
                 </form>
             </div>
             <!-- CONTENEDOR DE LA TABLA COMPLETA -->
-            <div class="tabla-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+            <div class="tabla-container" style="background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-height: 680px; overflow-y: auto; position: relative;">
                 <h3 style="margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; text-align: left;">Estructuras y Planes Registrados</h3>
                 
                 <!-- BARRA DE FILTROS TOTALMENTE EN LÍNEA HORIZONTAL -->
                 <div class="contenedor-filtros-horizontal">
                 <div class="filtro-item-bloque">
                     <label for="filtro-anio" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Año:</label>
-                    <select id="filtro-anio" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
+                    <select id="filtro-anio" style=" width: 100%; padding: 5px 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
+
                         <option value="">-- Todos los Años --</option>
                         <option value="1° Año">1° Año</option>
                         <option value="2° Año">2° Año</option>
@@ -170,20 +171,10 @@
                         <option value="6° Año">6° Año</option>
                     </select>
                 </div>
-                <div class="filtro-item-bloque" style="max-width: 260px !important;">
-                    <label for="filtro-orientacion" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Orientación:</label>
-                    <select id="filtro-orientacion" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="">-- Todas las Orientaciones --</option>
-                        <option value="Común (1° a 3° Año)">Común (1° a 3° Año)</option>
-                        <option value="Economía y Administración">Economía y Administración</option>
-                        <option value="Ciencias Sociales">Ciencias Sociales</option>
-                        <option value="Agro y Ambiente">Agro y Ambiente</option>
-                    </select>
-                </div>
-
+                
                     <div class="filtro-item-bloque" style="max-width: 260px !important;">
                         <label for="filtro-orientacion" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Orientación:</label>
-                        <select id="filtro-orientacion" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
+                        <select id="filtro-orientacion" style=" width: 100%; padding: 5px 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="">-- Todas las Orientaciones --</option>
                             <option value="Ciclo Básico">Ciclo Básico</option>
                             <option value="Economía y Administración">Economía y Administración</option>
@@ -193,7 +184,7 @@
                     </div>
                     <div class="filtro-item-bloque">
                         <label for="filtro-turno" style="font-weight: bold; font-size: 13px; color: #3c4043;">Filtrar por Turno:</label>
-                        <select id="filtro-turno" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
+                        <select id="filtro-turno" style=" width: 100%; padding: 5px 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="">-- Todos los Turnos --</option>
                             <option value="Mañana">Mañana</option>
                             <option value="Tarde">Tarde</option>
@@ -204,14 +195,15 @@
                 <!-- CONTENEDOR RESPONSIVO DE LA TABLA -->
                 <div class="table-responsive" style="width: 100%; max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 4px;">
                     <table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                <th style="padding: 12px; text-align: left; width: 25%;">Curso / Turno</th>
-                                <th style="padding: 12px; text-align: left; width: 25%;">Orientación Asignada</th>
-                                <th style="padding: 12px; text-align: left; width: 30%;">Materias Asignadas</th>
-                                <th style="padding: 12px; text-align: center; width: 20%;">Acciones</th>
-                            </tr>
-                        </thead>
+                    <thead>
+                        <tr style="border-bottom: 2px solid #dee2e6;">
+                            <th style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; padding: 6px 12px; text-align: left; width: 25%;">Curso / Turno</th>
+                            <th style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; padding: 6px 12px; text-align: left; width: 25%;">Orientación Asignada</th>
+                            <th style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; padding: 6px 12px; text-align: left; width: 30%;">Materias Asignadas</th>
+                            <th style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; padding: 6px 12px; text-align: center; width: 20%;">Acciones</th>
+                        </tr>
+                    </thead>
+
                         <tbody id="tabla-cursos-body">
                             <tr><td colspan="4" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando registros curriculares con Cloud Firestore...</td></tr>
                         </tbody>
@@ -277,8 +269,8 @@
                     } else {
                         const adaptarLayout = () => {
                             if (window.innerWidth >= 1024) {
-                                gridPrincipal.style.gridTemplateColumns = "1fr 2fr";
-                            } else {
+                            gridPrincipal.style.gridTemplateColumns = "0.75fr 2.25fr";
+                        } else {
                                 gridPrincipal.style.gridTemplateColumns = "1fr";
                             }
                         };
@@ -413,8 +405,8 @@
                 const esAnioBajo = ciclo.includes("1°") || ciclo.includes("2°") || ciclo.includes("3°");
 
                 if (esAnioBajo) {
-                    selectOri.add(new Option("Común (1° a 3° Año)", "Común (1° a 3° Año)"));
-                    selectOri.value = "Común (1° a 3° Año)";
+                    selectOri.add(new Option("Ciclo Básico", "Ciclo Básico"));
+                    selectOri.value = "Ciclo Básico";
                 } else {
                     // Para 4°, 5° y 6° año se listan las especialidades reales de la institución
                     Object.keys(configOrientaciones).forEach(ori => {
@@ -426,6 +418,7 @@
                         selectOri.value = valorGuardadoEdicion;
                     }
                 }
+
                 cargarMateriasSugeridas();
             }
 
@@ -636,11 +629,12 @@
                             </div>`;
                     }
                     tr.innerHTML = `
-                        <td style="padding: 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
-                        <td style="padding: 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
-                        <td style="padding: 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">${listaMateriasTexto}</td>
-                        <td style="padding: 12px; text-align: center;">${botonesAcciones}</td>`;
+                        <td style="padding: 5px 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
+                        <td style="padding: 5px 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
+                        <td style="padding: 5px 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">${listaMateriasTexto}</td>
+                        <td style="padding: 5px 12px; text-align: center;">${botonesAcciones}</td>`;
                     tbody.appendChild(tr);
+
                 });
 
                 tbody.querySelectorAll('.btn-accion-editar').forEach(b => b.addEventListener('click', e => cargarCursoEnFormulario(e.target.getAttribute('data-id'))));
