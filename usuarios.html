@@ -309,8 +309,13 @@ table a {
 
 
 
-<!-- Sección 1: Formulario Responsivo Multirrol -->
-<div class="form-registro-usuario">
+<!-- Botón para Alternar el Formulario de Registro -->
+<div style="width: 100%; display: flex; justify-content: flex-start; margin-bottom: 15px;"><button type="button" id="btn-toggle-formulario" style="background-color: #1b4d82; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><span id="icono-toggle-form">➕</span> Registrar Nuevo Usuario</button></div>
+
+
+<!-- Sección 1: Formulario Responsivo Multirrol (Oculto por defecto en el inicio) -->
+<div class="form-registro-usuario" id="contenedorFormularioUsuario" style="display: none; background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #1a73e8; margin-top: 10px; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+
 <div id="bannerEdicion" class="indicador-edicion">
 <strong>Modo Edición Activo:</strong> Modificando los datos del usuario. Al finalizar, haga clic en "Guardar Usuario" o presione "Cancelar".
 <button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
@@ -479,5 +484,51 @@ table a {
 <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
 </div>
 <script type="module" src="usuarios.js"></script>
+
+<!-- Script local para el control estético de despliegue del formulario -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const btnToggle = document.getElementById('btn-toggle-formulario');
+    const contenedorForm = document.getElementById('contenedorFormularioUsuario');
+    const iconoToggle = document.getElementById('icono-toggle-form');
+    const btnCancelar = document.getElementById('btnCancelarEdicion');
+
+    if (btnToggle && contenedorForm) {
+      btnToggle.addEventListener('click', function() {
+        if (contenedorForm.style.display === 'none') {
+          contenedorForm.style.display = 'block';
+          if (iconoToggle) iconoToggle.textContent = '➖';
+          contenedorForm.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          contenedorForm.style.display = 'none';
+          if (iconoToggle) iconoToggle.textContent = '➕';
+        }
+      });
+    }
+
+    // Forzar apertura automática si el usuario hace clic en "Editar" en la tabla
+    document.addEventListener('click', function(e) {
+      const filaEditar = e.target.closest('table button');
+      if (filaEditar && (filaEditar.textContent.includes('Editar') || filaEditar.classList.contains('btn-editar'))) {
+        setTimeout(() => {
+          if (contenedorForm && contenedorForm.style.display === 'none') {
+            contenedorForm.style.display = 'block';
+            if (iconoToggle) iconoToggle.textContent = '➖';
+            contenedorForm.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      }
+    });
+
+    // Asegurar el cierre si se cancela la edición
+    if (btnCancelar) {
+      btnCancelar.addEventListener('click', function() {
+        if (contenedorForm) contenedorForm.style.display = 'none';
+        if (iconoToggle) iconoToggle.textContent = '➕';
+      });
+    }
+  });
+</script>
 </body>
+
 </html>
