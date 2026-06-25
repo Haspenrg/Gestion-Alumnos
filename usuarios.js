@@ -628,8 +628,9 @@ async function renderizarTablaUsuarios() {
             const dLista = document.createElement('s' + 'p' + 'a' + 'n');
             dLista.style.cssText = "font-size:11px; display:block; margin-top:2px; line-height:1.4;";
             
-                    // REEMPLAZAR EN usuarios.js (Bucle de renderizado de horas cátedra en la tabla)
-        bolsaUser.forEach(h => {
+            // REEMPLAZAR EN usuarios.js (Bucle de renderizado de horas cátedra en la tabla con límite dinámico)
+        const totalCatedrasCompletas = [];
+        bolsaUser.forEach((h, index) => {
             let estiloColor = "color: #0d9488; font-weight:600; display:block;";
             if (h.includes("[SUPLENTE]")) estiloColor = "color: #b78103; font-weight:600; display:block;";
             if (h.includes("[SUPL_SUPL]")) estiloColor = "color: #dc2626; font-weight:600; display:block;";
@@ -638,15 +639,13 @@ async function renderizarTablaUsuarios() {
             const cursosRaw = localStorage.getItem('cursosColegio');
             const listaCursos = cursosRaw ? JSON.parse(cursosRaw) : [];
 
-            // Limpiamos la cabecera de la situación de revista [TITULAR], etc.
             const firmaPura = h.replace(/\[.*?\]\s*/, "").trim();
             const partesFirma = firmaPura.split(" - ");
 
             if (partesFirma.length >= 2) {
                 const cId = partesFirma[0].trim();
                 const mNombre = partesFirma[1].trim();
-                
-                // Buscamos la estructura real del curso por su ID inmutable
+
                 const cRef = listaCursos.find(cur => cur.id === cId);
                 if (cRef) {
                     const revistaTag = h.match(/\[(.*?)\]/)?.[0] || "[TITULAR]";
@@ -654,11 +653,29 @@ async function renderizarTablaUsuarios() {
                 }
             }
 
-            const sItem = document.createElement('span');
-            sItem.style.cssText = estiloColor;
-            sItem.textContent = textoMapeadoParaMostrar;
-            dLista.appendChild(sItem);
+            // Almacenamos el texto formateado para la lista completa del cartel flotante
+            totalCatedrasCompletas.push(textoMapeadoParaMostrar);
+
+            // Solo inyectamos visualmente en la tabla las primeras 2 materias
+            if (index < 2) {
+                const sItem = document.createElement('span');
+                sItem.style.cssText = estiloColor;
+                sItem.textContent = textoMapeadoParaMostrar;
+                dLista.appendChild(sItem);
+            }
         });
+
+        // Si el profesor excede las 2 materias, agregamos el indicador dinámico interactivo
+        if (bolsaUser.length > 2) {
+            const materiasRestantes = bolsaUser.length - 2;
+            const sMas = document.createElement('span');
+            sMas.style.cssText = "color: #1a73e8; font-weight:700; display:block; margin-top:4px; cursor:help; text-decoration:underline dashed;";
+            sMas.textContent = `➕ Ver ${materiasRestantes} materias más...`;
+            // El atributo title genera el tooltip nativo del navegador al posicionar el puntero
+            sMas.title = "NÓMINA COMPLETA DE ASIGNACIONES:\n" + totalCatedrasCompletas.join("\n");
+            dLista.appendChild(sMas);
+        }
+
 
             tdResp.appendChild(dDoc);
             tdResp.appendChild(dLista);
