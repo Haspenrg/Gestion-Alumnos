@@ -21,6 +21,8 @@ const secondaryApp = mApp.initializeApp(firebaseConfigSecondary, "SecondaryAuthA
 const secondaryAuth = mAuth.getAuth(secondaryApp);
 
 let catedrasTemporales = [];
+let paginaActual = 1;
+const usuariosPorPagina = 10;
 
 // Elementos de control de la interfaz
 const formUsuario = document.getElementById('formUsuario');
@@ -86,9 +88,10 @@ if (selectAnioProfesor) selectAnioProfesor.addEventListener('change', cargarMate
 if (btnAgregarCatedra) btnAgregarCatedra.addEventListener('click', agregarCatedraProfesorBolsa);
 if (formUsuario) formUsuario.addEventListener('submit', procesarGuardarUsuario);
 if (btnCancelarEdicion) btnCancelarEdicion.addEventListener('click', desactivarModoEdicion);
-if (filtroBusqueda) filtroBusqueda.addEventListener('input', renderizarTablaUsuarios);
-if (filtroRolBase) filtroRolBase.addEventListener('change', renderizarTablaUsuarios);
-if (filtroCursoDivision) filtroCursoDivision.addEventListener('change', renderizarTablaUsuarios);
+const reiniciarYPaginacion = () => { paginaActual = 1; renderizarTablaUsuarios(); };
+if (filtroBusqueda) filtroBusqueda.addEventListener('input', reiniciarYPaginacion);
+if (filtroRolBase) filtroRolBase.addEventListener('change', reiniciarYPaginacion);
+if (filtroCursoDivision) filtroCursoDivision.addEventListener('change', reiniciarYPaginacion);
 
 // --- PROTECCIÓN COERCITIVA RBAC ---
 async function verificarAutenticacionAdmin() {
@@ -542,7 +545,20 @@ async function renderizarTablaUsuarios() {
 
         return mBusqueda && mRol && mCurso;
     });
+        // === CÁLCULO DE PAGINACIÓN ===
+        const totalUsuariosFiltrados = usuariosFiltrados.length;
+        const totalPaginas = Math.ceil(totalUsuariosFiltrados / usuariosPorPagina);
 
+        // Si por los filtros aplicados la página actual quedó fuera de rango, la reseteamos a la primera
+        if (paginaActual > totalPaginas) {
+            paginaActual = 1;
+        }
+
+        // Cortamos el array para mostrar solo el segmento de la página actual
+        const indiceInicio = (paginaActual - 1) * usuariosPorPagina;
+        const indiceFin = indiceInicio + usuariosPorPagina;
+        usuariosFiltrados = usuariosFiltrados.slice(indiceInicio, indiceFin);
+        // =============================
 
     if (usuariosFiltrados.length === 0) {
         const trVacio = document.createElement('t' + 'r');
@@ -714,10 +730,27 @@ async function renderizarTablaUsuarios() {
         tr.appendChild(tdRol);
         tr.appendChild(tdResp);
         tr.appendChild(tdAcciones);
-
         tbody.appendChild(tr);
     });
+
+    // === INYECCIÓN DE CONTROLES DE PAGINACIÓN ===
+    const contenedorPaginacion = document.getElementById('paginacion-controles');
+    if (contenedorPaginacion && totalPaginas > 1) {
+        contenedorPaginacion.innerHTML = `
+            <button id="btnAnterior" style="padding: 6px 12px; background: #64748b; color: white; border: none; border-radius: 4px; cursor: pointer;">◀ Anterior</button>
+            <span style="padding: 0 10px; font-weight: 600;">Página ${paginaActual} de ${totalPaginas}</span>
+            <button id="btnSiguiente" style="padding: 6px 12px; background: #64748b; color: white; border: none; border-radius: 4px; cursor: pointer;">Siguiente ▶</button>
+        `;
+        document.getElementById("btnAnterior").disabled = (paginaActual === 1);
+        document.getElementById("btnSiguiente").disabled = (paginaActual === totalPaginas);
+        document.getElementById("btnAnterior").onclick = () => { paginaActual--; renderizarTablaUsuarios(); };
+        document.getElementById("btnSiguiente").onclick = () => { paginaActual++; renderizarTablaUsuarios(); };
+
+    } else if (contenedorPaginacion) {
+        contenedorPaginacion.innerHTML = "";
+    }
 }
+
 
 // --- ANCLAJES GLOBALES AL OBJETO WINDOW ---
 window.activarModoEdicion = async function(dni) {

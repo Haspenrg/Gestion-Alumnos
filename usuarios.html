@@ -244,6 +244,8 @@ div.form-registro-usuario + div {
     border: 2px solid #1a73e8 !important;
     border-radius: 8px !important;
     padding: 15px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
 }
 
 /* 2. Centra el título "Usuarios Registrados" y le da un tono formal */
@@ -255,8 +257,10 @@ h3:contains("Usuarios Registrados") {
     font-size: 20px !important;
     font-weight: 700 !important;
     color: #1e293b !important;
-    margin-bottom: 12px !important;
+    margin-top: 2px !important;     /* Achica el espacio de arriba */
+    margin-bottom: 2px !important;  /* Achica el espacio de abajo */
 }
+
 
 /* 3. Hace que los campos de búsqueda y filtro de auditoría sean más finos */
 #buscarUsuario,
@@ -299,7 +303,8 @@ table a {
 </head>
 <body>
 <div class="panel-container">
-                <header style="background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box; margin-bottom: 25px; border-radius: 8px;">
+                <!-- REEMPLAZAR EN LINEA: 181 -->
+        <header style="background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box; margin-bottom: 12px; border-radius: 8px;">
             <div style="display: flex; flex-direction: column; align-items: flex-start;">
                 <h2 style="color: white; font-size: 28px; font-weight: 800; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); font-family: inherit;">COLEGIO PROVINCIAL HASPEN</h2>
                 <p style="color: rgba(255, 255, 255, 0.95); font-size: 14px; font-weight: 500; margin: 5px 0 0 0; text-align: left; font-family: inherit;">Gestión de Usuarios — Administración de accesos, roles y responsabilidades híbridas</p>
@@ -307,11 +312,21 @@ table a {
             <img src="logo1.png" alt="Escudo Colegio" style="height: 55px; width: auto; filter: drop-shadow(1px 1px 4px rgba(0,0,0,0.2));">
         </header>
 
+<!-- CONTENEDOR FLEXBOX ULTRA-ESTRICTO PARA MANTENER LA MISMA LÍNEA -->
+<div style="width: 100% !important; display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; margin-top: 2px !important; margin-bottom: 2px !important; box-sizing: border-box !important;">
+    
+    <!-- Botón Izquierdo: Registro -->
+    <button type="button" id="btn-toggle-formulario" style="background-color: #1b4d82; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 0 !important;">
+        <span id="icono-toggle-form">➕</span> Registrar Nuevo Usuario
+    </button>
 
+    <!-- Botón Derecho: Volver al Panel (Sin márgenes que empujen) -->
+    <button class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; color: white; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 0 !important;">
+        ↩️ Volver al Panel
+    </button>
 
+</div>
 
-<!-- Botón para Alternar el Formulario de Registro -->
-<div style="width: 100%; display: flex; justify-content: flex-start; margin-bottom: 15px;"><button type="button" id="btn-toggle-formulario" style="background-color: #1b4d82; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><span id="icono-toggle-form">➕</span> Registrar Nuevo Usuario</button></div>
 
 
 <!-- Sección 1: Formulario Responsivo Multirrol (Oculto por defecto en el inicio) -->
@@ -432,10 +447,11 @@ table a {
 </form>
 </div>
 <!-- Sección 2: Tabla de Datos con Barra de Auditoría Masiva -->
-<div class="tabla-usuarios-contenedor" style="margin-top: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">
-<h3 class="text-lg font-bold text-gray-800 mb-2 text-center" style="text-align: center !important; width: 100% !important; color: #1e293b; font-size: 20px;">Usuarios Registrados</h3>
-<p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">💡 Utilice la barra de controles inferiores para auditar superpoblaciones o buscar perfiles.</p>
-<!-- CONTENEDOR PRINCIPAL: BARRA DE FILTROS UNIFICADA SIMÉTRICA -->
+<div class="tabla-usuarios-contenedor" style="margin-top: 2px; background: white; padding: 5px 20px 20px 20px !important; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">
+    <h3 class="text-lg font-bold text-gray-800 mb-2 text-center" style="text-align: center !important; width: 100% !important; color: #1e293b; font-size: 20px; margin-top: 0 !important;"> Usuarios Registrados</h3>
+    <p style="font-size: 12px; color: #64748b; margin-top: 2px !important; margin-bottom: 5px !important;">💡 Utilice la barra de controles inferiores para auditar superpoblaciones o buscar perfiles.</p>
+
+    <!-- CONTENEDOR PRINCIPAL: BARRA DE FILTROS UNIFICADA SIMÉTRICA -->
 <div class="grid-barra-auditoria" style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
     
     <!-- 1. BUSCAR USUARIO -->
@@ -443,7 +459,6 @@ table a {
         <label for="filtroBusquedaRapida" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Buscar Usuario</label>
         <input type="text" id="filtroBusquedaRapida" placeholder="Nombre, DNI o Email..." style="width: 100%; height: 32px; font-size: 13px;">
     </div>
-
    <!-- 2. ROL BASE -->
 <div>
     <label for="filtroRolBase" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Cargo / Rol Base</label>
@@ -451,7 +466,6 @@ table a {
         <option value="">Todos los cargos / roles</option>
     </select>
 </div>
-
 <!-- 3. CURSO / DIVISIÓN -->
 <div>
     <label for="filtroCursoDivision" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Curso / División</label>
@@ -459,7 +473,6 @@ table a {
         <option value="">Todos los cursos</option>
     </select>
 </div>
-
 
     <style>
         @media (min-width: 768px) { .grid-barra-auditoria { grid-template-columns: repeat(3, 1fr) !important; } }
@@ -481,10 +494,13 @@ table a {
 <tbody id="tablaUsuariosBody">
 </tbody>
 </table>
-</div>
-</div>
-<button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
-</div>
+        </div> <!-- Cierre del div de overflow-x -->
+        
+        <!-- CONTENEDOR PARA LOS BOTONES DE PAGINACIÓN -->
+        <div id="paginacion-controles" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #e2e8f0; width: 100%;"></div>
+
+    </div> <!-- Cierre del div .tabla-usuarios-contenedor -->
+
 <script type="module" src="usuarios.js"></script>
 
 <!-- Script local para el control estético de despliegue del formulario -->
