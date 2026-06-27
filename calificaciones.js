@@ -88,83 +88,89 @@ if (esModoLectura && bannerLectura) {
     }
 }
 
-// REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 70)
-// REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 70)
+
 async function cargarSelectoresIniciales() {
     if (!selectCurso) return;
     selectCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
 
+    let cursos = [];
+
     try {
+        const { collection, getDocs } = await import(b + 'firebase-firestore.js');
+        const querySnapshot = await getDocs(collection(db, "cursos"));
+        cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+    } catch (errorDb) {
+        console.warn("Fallo de red al consultar Firestore, activando contingencia local...", errorDb);
         let cursosRaw = localStorage.getItem('cursosColegio');
-        let cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
-        const bolsaDocente = usuarioLogueado.bolsaHoras || [];
+        cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+    }
 
-        // Eje de Inmunidad Local: Si la red o gstatic bloquean la descarga, auto-hidratamos el curso de la docente
-        if (cursos.length === 0 && bolsaDocente.length > 0) {
-            console.warn("Aviso: Inicializando auto-hidratación de estructuras académicas locales...");
-            bolsaDocente.forEach(catedra => {
-                const firmaPura = catedra.replace(/\[.*?\]\s*/, "").trim();
-                const partes = firmaPura.split(" - ");
-                if (partes.length >= 2) {
-                    const cId = partes[0].trim();
-                    const mNombre = partes[1].trim();
-                    
-                    // Decodificamos el ID nativo (ej: 1-A-M) en sus componentes visuales
-                    const subPartes = cId.split("-");
-                    const cicloExtraido = subPartes[0] || "1";
-                    const divExtraida = subPartes[1] || "A";
-                    let turnoExtraido = "Mañana";
-                    if (subPartes[2] === "T") turnoExtraido = "Tarde";
-                    if (subPartes[2] === "V" || subPartes[2] === "N") turnoExtraido = "Vespertino";
+    const bolsaDocente = usuarioLogueado.bolsaHoras || [];
+    const permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas || false;
 
-                    // Verificamos si ya inyectamos este curso de respaldo
-                    if (!cursos.some(c => c.id === cId)) {
-                        cursos.push({
-                            id: cId,
-                            ciclo: cicloExtraido,
-                            division: divExtraida,
-                            turno: turnoExtraido,
-                            materias: [mNombre]
-                        });
-                    } else {
-                        const cursoExistente = cursos.find(c => c.id === cId);
-                        if (!cursoExistente.materias.includes(mNombre)) {
-                            cursoExistente.materias.push(mNombre);
-                        }
+    if (cursos.length === 0 && bolsaDocente.length > 0) {
+        console.warn("Aviso: Inicializando auto-hidratación de estructuras académicas locales...");
+        bolsaDocente.forEach(catedra => {
+            const partes = catedra.replace(/\[.*?\]\s*/, "").trim().split(" - ");
+            if (partes.length >= 2) {
+                const cId = partes[0];
+                const mNombre = partes[1];
+                const subPartes = cId.split("-");
+                const cicloExtraido = subPartes[0] || "1";
+                const divExtraida = subPartes[1] || "A";
+                let turnoExtraido = "Mañana";
+                if (subPartes[2] === "T") turnoExtraido = "Tarde";
+                if (subPartes[2] === "V" || subPartes[2] === "N") turnoExtraido = "Vespertino";
+
+                if (!cursos.some(c => c.id === cId)) {
+                    cursos.push({
+                        id: cId,
+                        ciclo: cicloExtraido,
+                        division: divExtraida,
+                        turno: turnoExtraido,
+                        materias: [mNombre]
+                    });
+                } else {
+                    const cursoExistente = cursos.find(c => c.id === cId);
+                    if (!cursoExistente.materias.includes(mNombre)) {
+                        cursoExistente.materias.push(mNombre);
                     }
                 }
+            }
+        });
+        localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+    }
+
+      cursos.forEach(curso => {
+        let esVisible = (permiteCargaTotalNotas === true);
+        
+        if (!esVisible) {
+            esVisible = bolsaDocente.some(catedra => {
+                const firmaPura = catedra.replace(/\[.*?\]\s*/, "").trim();
+                return firmaPura.startsWith(curso.id + " - ");
             });
-            // Guardamos el respaldo seguro para estabilizar las funciones secundarias de la UI
-            localStorage.setItem('cursosColegio', JSON.stringify(cursos));
         }
 
-        // Control de visualización perimetral por capacidades RBAC
-        if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
-            cursos.forEach(curso => {
+        if (esVisible) {
+            // Control perimetral por capacidades y períodos académicos
+            if (!permiteCargaTotalNotas) {
                 const esDocenteAqui = bolsaDocente.some(catedra => {
                     const cText = catedra.trim();
                     const firmaSinRevista = cText.replace(/\[.*?\]\s*/, "").trim();
                     return firmaSinRevista.startsWith(curso.id + " - ");
                 });
-
-                if (esDocenteAqui) {
-                    selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
-                }
-            });
-
-            if (selectCurso.options.length === 1) {
-                selectCurso.add(new Option("Sin cursos autorizados en su Bolsa de Horas", ""));
+                if (!esDocenteAqui) return;
             }
-        } else {
-            // Administradores, Directivos o usuarios con Carga Total listan la planta completa
-            cursos.forEach(curso => {
-                selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
-            });
+            selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
         }
-    } catch (error) {
-        console.error("Error crítico al cargar selectores de cursos:", error);
+    });
+
+    if (selectCurso.options.length === 1) {
+        selectCurso.add(new Option("Sin cursos autorizados en su perfil o Bolsa de Horas", ""));
     }
 }
+
 
 
     // --- FILTRADO RELACIONAL ESTRICTO DE MATERIAS SEGÚN CURSO Y BOLSA ---
@@ -215,6 +221,21 @@ async function cargarSelectoresIniciales() {
         const cursoId = selectCurso.value;
         const materiaId = selectMateria.value;
         if (!cursoId || !materiaId) return;
+
+        let periodosHabilitados = {};
+try {
+    const { doc, getDoc } = await import(baseCdnFirebase + 'firebase-firestore.js');
+    const docRef = doc(db, "configuraciones", "periodos_academicos");
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        periodosHabilitados = docSnap.data();
+    } else {
+        periodosHabilitados = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
+    }
+} catch (e) {
+    console.warn("Error leyendo períodos en red, usando copia local:", e);
+    periodosHabilitados = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
+}
 
         tablaNotasBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:15px; color:#1a73e8; font-weight:500;">🔄 Descargando nómina real desde Cloud Firestore...</td></tr>`;
 
@@ -327,26 +348,33 @@ tablaNotasBody.innerHTML = "";
         } else if (alumno.trayectoriaFlexible === true) {
             badgePPI = ` <span style="display:inline-block; background-color:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 Flex</span>`;
         }
+        const p1 = periodosHabilitados["chk-trim1-n1"] ? "" : "disabled";
+        const p2 = periodosHabilitados["chk-trim1-n2"] ? "" : "disabled";
+        const p3 = periodosHabilitados["chk-trim1-ef"] ? "" : "disabled";
+        const p4 = periodosHabilitados["chk-trim2-n1"] ? "" : "disabled";
+        const p5 = periodosHabilitados["chk-trim2-n2"] ? "" : "disabled";
+        const p6 = periodosHabilitados["chk-trim2-ef"] ? "" : "disabled";
+        const p7 = periodosHabilitados["chk-dic"] ? "" : "disabled";
+        const p8 = periodosHabilitados["chk-feb"] ? "" : "disabled";
 
             tr. innerHTML = `
                 <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${ index + 1}</td>
                 <td style="font-weight:500; padding: 2px 4px;">${ alumno. nombre} ${ badgePPI}</td>
             <!-- 1ER CUATRIMESTRE -->
-            <td><input type="number" class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
-            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+                        <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td class="col-calculada" style="padding: 20px 4px; font-size: 13px;"></td>
             <!-- 2DO CUATRIMESTRE -->
-            <td><input type="number" class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
-            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
+
             <!-- INSTANCIAS ANUALES DE EXAMEN -->
             <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-            <td><input type="number" class="input-nota inst-dic" min="1" max="10" value="${persistenciaNota?.diciembre || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" class="input-nota inst-feb" min="1" max="10" value="${persistenciaNota?.febrero || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDiciembreExiste || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebreroExiste || ''}" data-dni="${alumno.dni}"></td>
             <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
-
             `;
 
             tablaNotasBody.appendChild(tr);
