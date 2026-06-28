@@ -221,21 +221,26 @@ async function cargarSelectoresIniciales() {
         const cursoId = selectCurso.value;
         const materiaId = selectMateria.value;
         if (!cursoId || !materiaId) return;
-
-        let periodosHabilitados = {};
-try {
-    const { doc, getDoc } = await import(baseCdnFirebase + 'firebase-firestore.js');
-    const docRef = doc(db, "configuraciones", "periodos_academicos");
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        periodosHabilitados = docSnap.data();
-    } else {
-        periodosHabilitados = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
+    let configPeriodos = {};
+    try {
+        if (window.cachePeriodosEscuela) {
+            configPeriodos = window.cachePeriodosEscuela;
+        } else {
+            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
+            const docRef = doc(db, "configuraciones", "periodos_academicos");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                configPeriodos = docSnap.data();
+                window.cachePeriodosEscuela = configPeriodos;
+            } else {
+                configPeriodos = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
+            }
+        }
+    } catch (e) {
+        console.warn("Error leyendo períodos en red, usando copia local:", e);
+        configPeriodos = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
     }
-} catch (e) {
-    console.warn("Error leyendo períodos en red, usando copia local:", e);
-    periodosHabilitados = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
-}
+
 
         tablaNotasBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:15px; color:#1a73e8; font-weight:500;">🔄 Descargando nómina real desde Cloud Firestore...</td></tr>`;
 
@@ -348,97 +353,57 @@ tablaNotasBody.innerHTML = "";
         } else if (alumno.trayectoriaFlexible === true) {
             badgePPI = ` <span style="display:inline-block; background-color:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 Flex</span>`;
         }
-        const p1 = periodosHabilitados["chk-trim1-n1"] ? "" : "disabled";
-        const p2 = periodosHabilitados["chk-trim1-n2"] ? "" : "disabled";
-        const p3 = periodosHabilitados["chk-trim1-ef"] ? "" : "disabled";
-        const p4 = periodosHabilitados["chk-trim2-n1"] ? "" : "disabled";
-        const p5 = periodosHabilitados["chk-trim2-n2"] ? "" : "disabled";
-        const p6 = periodosHabilitados["chk-trim2-ef"] ? "" : "disabled";
-        const p7 = periodosHabilitados["chk-dic"] ? "" : "disabled";
-        const p8 = periodosHabilitados["chk-feb"] ? "" : "disabled";
+        const p1 = configPeriodos["p_c1-n1"] === true ? "" : "disabled";
+        const p2 = configPeriodos["p_c1-n2"] === true ? "" : "disabled";
+        const p3 = configPeriodos["p_c1-ef"] === true ? "" : "disabled";
+        const p4 = configPeriodos["p_c2-n1"] === true ? "" : "disabled";
+        const p5 = configPeriodos["p_c2-n2"] === true ? "" : "disabled";
+        const p6 = configPeriodos["p_c2-ef"] === true ? "" : "disabled";
+        const p7 = configPeriodos["p_dic"] === true ? "" : "disabled";
+        const p8 = configPeriodos["p_feb"] === true ? "" : "disabled";
 
-            tr. innerHTML = `
-                <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${ index + 1}</td>
-                <td style="font-weight:500; padding: 2px 4px;">${ alumno. nombre} ${ badgePPI}</td>
-            <!-- 1ER CUATRIMESTRE -->
-                        <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
-            <td class="col-calculada" style="padding: 20px 4px; font-size: 13px;"></td>
-            <!-- 2DO CUATRIMESTRE -->
-            <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
 
-            <!-- INSTANCIAS ANUALES DE EXAMEN -->
-            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-            <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDiciembreExiste || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebreroExiste || ''}" data-dni="${alumno.dni}"></td>
-            <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
+                       tr.innerHTML = `
+                <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${index + 1}</td>
+                <td style="font-weight:500; padding: 2px 4px;">${alumno.nombre} ${badgePPI}</td>
+                
+                <!-- 1ER CUATRIMESTRE -->
+                <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+                
+                <!-- 2DO CUATRIMESTRE -->
+                <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+
+                <!-- INSTANCIAS ANUALES DE EXAMEN -->
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+                <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDicExistente || ''}" data-dni="${alumno.dni}"></td>
+                <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebExistente || ''}" data-dni="${alumno.dni}"></td>
+                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
             `;
 
             tablaNotasBody.appendChild(tr);
 
-    const inputsFila = tr.querySelectorAll('.input-nota');
-
-            // --- DESCARGA CONSOLIDADA DE PERÍODOS REALES DESDE FIRESTORE ---
-        let configPeriodos = {};
-        try {
-          if (window.cachePeriodosEscuela) {
-            configPeriodos = window.cachePeriodosEscuela;
-          } else {
-            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
-            const docSnap = await getDoc(doc(db, "configuraciones", "periodos_academicos"));
-            if (docSnap.exists()) {
-              configPeriodos = docSnap.data();
-              window.cachePeriodosEscuela = configPeriodos;
-            } else {
-              const pRaw = localStorage.getItem('estadoPeriodosColegio');
-              configPeriodos = pRaw ? JSON.parse(pRaw) : {};
-            }
-          }
-        } catch (errPeriodos) {
-          console.warn("Fallo de red en consulta de períodos, activando contingencia local:", errPeriodos);
-          const pRaw = localStorage.getItem('estadoPeriodosColegio');
-          configPeriodos = pRaw ? JSON.parse(pRaw) : {};
-        }
-
-    inputsFila.forEach(input => {
-        // 1. Si es modo lectura global (Directivo), se bloquea incondicionalmente
-        if (esModoLectura) {
-            input.disabled = true;
-        } else if (!permiteCargaTotalNotas) {
-            // 2. Mapear de forma forense las clases del input con los IDs del control de períodos
-            let idPeriodoAsociado = "";
-            if (input.classList.contains('c1-n1')) idPeriodoAsociado = 'p_c1-n1';
-            else if (input.classList.contains('c1-n2')) idPeriodoAsociado = 'p_c1-n2';
-            else if (input.classList.contains('c1-ef')) idPeriodoAsociado = 'p_c1-ef';
-            else if (input.classList.contains('c2-n1')) idPeriodoAsociado = 'p_c2-n1';
-            else if (input.classList.contains('c2-n2')) idPeriodoAsociado = 'p_c2-n2';
-            else if (input.classList.contains('c2-ef')) idPeriodoAsociado = 'p_c2-ef';
-            else if (input.classList.contains('inst-dic')) idPeriodoAsociado = 'p_dic';
-            else if (input.classList.contains('inst-feb')) idPeriodoAsociado = 'p_feb';
-
-            // 3. Si el período no está explícitamente habilitado, se bloquea coercitivamente
-            if (idPeriodoAsociado && configPeriodos[idPeriodoAsociado] !== true) {
-                input.disabled = true;
-            }
-        }
-
-        input.addEventListener('input', (e) => {
-            sanitizarEntradaNotaEntera(e.target);
-            calcularMatrizFilaCalificaciones(tr);
+        tr.querySelectorAll('.input-nota').forEach(input => {
+            input.addEventListener('input', (e) => {
+                sanitizarEntradaNotaEntera(e.target);
+                calcularMatrizFilaCalificaciones(tr);
+            });
         });
-    });
 
-
-            calcularMatrizFilaCalificaciones(tr);
+        calcularMatrizFilaCalificaciones(tr);
         });
+
 
         if (bloqueGuardar) {
             bloqueGuardar.style.display = esModoLectura ? "none" : "block";
         }
-    }
+     }
+ 
 
     function sanitizarEntradaNotaEntera(input) {
         let valor = input.value.replace(/[^0-9]/g, '');
@@ -452,110 +417,104 @@ tablaNotasBody.innerHTML = "";
         }
     }
 
-    function calcularMatrizFilaCalificaciones(filaTr) {
-        const c1n2 = parseInt(filaTr.querySelector('.c1-n2').value, 10);
-        const c1ef = parseInt(filaTr.querySelector('.c1-ef').value, 10);
+   function calcularMatrizFilaCalificaciones(filaTr) {
+    // 1. Captura segura con clases DOM reales (.c1-n2, .c1-ef, .c2-n2, .c2-ef, .dic, .feb)
+    const c1n2 = parseInt(filaTr.querySelector('.c1-n2')?.value, 10);
+    const c1ef = parseInt(filaTr.querySelector('.c1-ef')?.value, 10);
+    const c2n2 = parseInt(filaTr.querySelector('.c2-n2')?.value, 10);
+    const c2ef = parseInt(filaTr.querySelector('.c2-ef')?.value, 10);
+    const dic = parseInt(filaTr.querySelector('.dic')?.value, 10);
+    const feb = parseInt(filaTr.querySelector('.feb')?.value, 10);
 
-        const c2n2 = parseInt(filaTr.querySelector('.c2-n2').value, 10);
-        const c2ef = parseInt(filaTr.querySelector('.c2-ef').value, 10);
+    const celdasFila = filaTr.querySelectorAll('td');
+    if (celdasFila.length < 14) return;
 
-        const dic = parseInt(filaTr.querySelector('.inst-dic').value, 10);
-        const feb = parseInt(filaTr.querySelector('.inst-feb').value, 10);
+    const celdaC1Prom = celdasFila[5];   
+    const celdaC2Prom = celdasFila[9];   
+    const celdaAnual = celdasFila[10];  
+    const inputDic = filaTr.querySelector('.dic');
+    const inputFeb = filaTr.querySelector('.feb');
+    const celdaDef = celdasFila[13];    
 
-        const celdasFila = filaTr.querySelectorAll('td');
-        if (celdasFila.length < 14) return;
+    // 2. PROCESAMIENTO REACTIVO DEL 1ER CUATRIMESTRE
+    let notaFinalC1 = null;
+    if (!isNaN(c1n2)) {
+        notaFinalC1 = (c1n2 >= 6) ? c1n2 : (!isNaN(c1ef) ? c1ef : null);
+    }
+    if (notaFinalC1 !== null) {
+        celdaC1Prom.textContent = notaFinalC1;
+        aplicarColorFormatoPedagógico(celdaC1Prom, notaFinalC1);
+    } else {
+        celdaC1Prom.textContent = "-";
+        celdaC1Prom.className = "col-calculada";
+    }
 
-        const celdaC1Prom = celdasFila[5];   
-        const celdaC2Prom = celdasFila[9];   
-        const celdaAnual = celdasFila[10];  
-        const inputDic = filaTr.querySelector('.inst-dic');
-        const inputFeb = filaTr.querySelector('.inst-feb');
-        const celdaDef = celdasFila[13];    
+    // 3. PROCESAMIENTO REACTIVO DEL 2DO CUATRIMESTRE
+    let notaFinalC2 = null;
+    if (!isNaN(c2n2)) {
+        notaFinalC2 = (c2n2 >= 6) ? c2n2 : (!isNaN(c2ef) ? c2ef : null);
+    }
+    if (notaFinalC2 !== null) {
+        celdaC2Prom.textContent = notaFinalC2;
+        aplicarColorFormatoPedagógico(celdaC2Prom, notaFinalC2);
+    } else {
+        celdaC2Prom.textContent = "-";
+        celdaC2Prom.className = "col-calculada";
+    }
 
-        // 1. REPLICACIÓN PRIMER CUATRIMESTRE
-        let notaFinalC1 = null;
-        if (!isNaN(c1n2)) {
-            if (c1n2 >= 6) {
-                notaFinalC1 = c1n2;
-            } else if (!isNaN(c1ef)) {
-                notaFinalC1 = c1ef;
-            }
-        }
+       // 4. DETERMINACIÓN DIRECTA DE LA COLUMNA ANUAL Y NOTA DEFINITIVA FINAL
+    if (notaFinalC2 !== null) {
+        // La columna Anual es un espejo directo del 2do Cuatrimestre
+        celdaAnual.textContent = notaFinalC2;
+        aplicarColorFormatoPedagógico(celdaAnual, notaFinalC2);
 
-        if (notaFinalC1 !== null) {
-            celdaC1Prom.textContent = notaFinalC1;
-            aplicarColorFormatoPedagógico(celdaC1Prom, notaFinalC1);
-        } else {
-            celdaC1Prom.textContent = "-";
-            celdaC1Prom.className = "col-calculada";
-        }
-
-        // 2. REPLICACIÓN SEGUNDO CUATRIMESTRE
-        let notaFinalC2 = null;
-        if (!isNaN(c2n2)) {
-            if (c2n2 >= 6) {
-                notaFinalC2 = c2n2;
-            } else if (!isNaN(c2ef)) {
-                notaFinalC2 = c2ef;
-            }
-        }
-
-        if (notaFinalC2 !== null) {
-            celdaC2Prom.textContent = notaFinalC2;
-            aplicarColorFormatoPedagógico(celdaC2Prom, notaFinalC2);
-        } else {
-            celdaC2Prom.textContent = "-";
-            celdaC2Prom.className = "col-calculada";
-        }
-
-        // 3. ARRASTRE ANUAL Y DEFINITIVA
-        if (notaFinalC1 !== null && notaFinalC2 !== null) {
-            const notaAnualCalculada = notaFinalC2;
-            celdaAnual.textContent = notaAnualCalculada;
-            aplicarColorFormatoPedagógico(celdaAnual, notaAnualCalculada);
-
-            if (notaAnualCalculada >= 6) {
-                celdaDef.textContent = notaAnualCalculada;
-                aplicarColorFormatoPedagógico(celdaDef, notaAnualCalculada);
-                if (!esModoLectura) {
-                    if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
-                    if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
-                }
-            } else {
-                if (!esModoLectura && inputDic) inputDic.disabled = false;
-
-                let notaCierreFinal = null;
-                if (!isNaN(dic)) {
-                    if (dic >= 6) {
-                        notaCierreFinal = dic;
-                        if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
-                    } else {
-                        if (!esModoLectura && inputFeb) inputFeb.disabled = false;
-                        if (!isNaN(feb)) notaCierreFinal = feb;
-                    }
-                } else {
-                    if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
-                }
-
-                if (notaCierreFinal !== null) {
-                    celdaDef.textContent = notaCierreFinal;
-                    aplicarColorFormatoPedagógico(celdaDef, notaCierreFinal);
-                } else {
-                    celdaDef.textContent = "-";
-                    celdaDef.className = "col-calculada";
-                }
-            }
-        } else {
-            celdaAnual.textContent = "-";
-            celdaAnual.className = "col-calculada";
-            celdaDef.textContent = "-";
-            celdaDef.className = "col-calculada";
+        if (notaFinalC2 >= 6) {
+            // Aprobación directa por segundo cuatrimestre
+            celdaDef.textContent = notaFinalC2;
+            aplicarColorFormatoPedagógico(celdaDef, notaFinalC2);
             if (!esModoLectura) {
                 if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
                 if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
             }
+        } else {
+            // Habilitación de periodos finales de examen por desaprobación de Q2
+            if (!esModoLectura && inputDic) inputDic.disabled = false;
+
+            let notaCierreFinal = null;
+            if (!isNaN(dic)) {
+                if (dic >= 6) {
+                    notaCierreFinal = dic;
+                    if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
+                } else {
+                    if (!esModoLectura && inputFeb) inputFeb.disabled = false;
+                    if (!isNaN(feb)) notaCierreFinal = feb;
+                }
+            } else {
+                if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
+            }
+
+            if (notaCierreFinal !== null) {
+                celdaDef.textContent = notaCierreFinal;
+                aplicarColorFormatoPedagógico(celdaDef, notaCierreFinal);
+            } else {
+                celdaDef.textContent = "-";
+                celdaDef.className = "col-calculada";
+            }
+        }
+    } else {
+        // Si aún no hay notas en Q2, todo se mantiene limpio y bloqueado
+        celdaAnual.textContent = "-";
+        celdaAnual.className = "col-calculada";
+        celdaDef.textContent = "-";
+        celdaDef.className = "col-calculada";
+        if (!esModoLectura) {
+            if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
+            if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
         }
     }
+
+}
+
 
     function aplicarColorFormatoPedagógico(celda, nota) {
         celda.className = "col-calculada";
@@ -799,7 +758,5 @@ if (btnGuardarPeriodosConfig) {
         btnGuardarRefrescado.addEventListener('click', procesarGuardarConfiguracionPeriodos);
     }
 }
-
 })();
-
 
