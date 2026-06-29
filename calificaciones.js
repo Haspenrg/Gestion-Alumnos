@@ -43,7 +43,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (formPlanilla) formPlanilla.addEventListener('submit', procesarGuardarPlanilla);
 
     // Manejo de eventos del modal utilizando directamente las referencias globales ya declaradas
-    if (btnAbrirModalPeriodos) btnAbrirModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'flex'; });
+    if (btnAbrirModalPeriodos) {
+    btnAbrirModalPeriodos.addEventListener('click', async () => {
+        try {
+            // Importación y consulta express a Firestore para validar en caliente
+            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
+            const userSnap = await getDoc(doc(db, "usuarios", usuarioLogueado.dni));
+            
+            if (userSnap.exists()) {
+                const datosActuales = userSnap.data();
+                const rolLimpio = datosActuales.rol?.toLowerCase().trim();
+                
+                // Si el permiso fue revocado en la nube, cancelamos la acción inmediatamente
+                if (rolLimpio !== "administrador" && !datosActuales.permisoGestionPeriodos) {
+                    alert("Acceso denegado: Su permiso para gestionar períodos ha sido revocado.");
+                    btnAbrirModalPeriodos.style.display = "none";
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error("Error al validar permisos en tiempo real:", error);
+        }
+
+        // Si la validación pasa, ejecuta la apertura del modal original
+        if (typeof modalPeriodos !== "undefined" && modalPeriodos) {
+            modalPeriodos.style.display = "block";
+        }
+    });
+}
+
     if (btnCerrarModalPeriodos) btnCerrarModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'none'; });
     if (btnGuardarPeriodosConfig) btnGuardarPeriodosConfig.addEventListener('click', procesarGuardarConfiguracionPeriodos);
 });
@@ -63,6 +91,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         usuarioLogueado = JSON.parse(datosSesion);
 rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
 permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
+       // --- BLINDAJE VISUAL: CONTROL DE PERÍODOS SEGÚN PRIVILEGIOS ---
+    const btnControlPeriodos = document.getElementById('btnAbrirModalPeriodos');
+    if (btnControlPeriodos) {
+        if (rolNormalizado === "administrador" || usuarioLogueado.permisoGestionPeriodos) {
+            btnControlPeriodos.style.display = "inline-flex"; // O "block" según diseño, para mostrarlo
+        } else {
+            btnControlPeriodos.style.display = "none"; // Asegura que quede oculto
+        }
+    }
+
 
 // 1. Extraemos las capacidades y definimos el Modo Monitor si el permiso NO es "escritura"
 const capacidadesRol = usuarioLogueado.permisosDelRol || {};
@@ -586,9 +624,8 @@ async function procesarGuardarPlanilla(e) {
             const c2n1 = parseInt(fila.querySelector('.c2-n1').value, 10);
             const c2n2 = parseInt(fila.querySelector('.c2-n2').value, 10);
             const c2ef = parseInt(fila.querySelector('.c2-ef').value, 10);
-            const dic = parseInt(fila.querySelector('.inst-dic').value, 10);
-            const feb = parseInt(fila.querySelector('.inst-feb').value, 10);
-            
+            const dic = parseInt( fila. querySelector('.dic')?. value, 10);
+            const feb = parseInt( fila. querySelector('.feb')?. value, 10);
             const celdas = fila.querySelectorAll('td');
             let notaC1 = null, notaC2 = null, notaAnual = null, notaDefinitiva = null;
             
@@ -641,12 +678,11 @@ async function procesarGuardarPlanilla(e) {
             const promesaEscritura = setDoc(docRef, estructuraCalificacionAlumno, { merge: true })
                 .then(async () => {
                     if (tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
-                        const esAltaNueva = !estadoPrevio;
-                        const subcatAuditoria = esAltaNueva ? "ALTA_NOTAS" : "MODIFICACION_CALIFICACIONES";
-                        const descAuditoria = esAltaNueva 
-                            ? `Carga inicial de calificaciones en la asignatura ${materiaId}.`
-                            : `Modificación de registros académicos en la asignatura ${materiaId}.`;
-
+                        const esAltaNueva = ! estadoPrevio;
+                        const subcatAuditoria = esAltaNueva ? "CARGA_NOTA" : "RECTIFICACION";
+                        const descAuditoria = esAltaNueva
+                        ? `Carga de notas efectuada en la asignatura ${materiaId}.`
+                        : `Rectificación de notas efectuada en la asignatura ${materiaId}.`;
                         const snapshotForense = {
                             materia: materiaId,
                             cursoId: cursoId,
