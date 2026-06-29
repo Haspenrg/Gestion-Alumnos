@@ -108,6 +108,33 @@ async function cargarSelectoresIniciales() {
 
     const bolsaDocente = usuarioLogueado.bolsaHoras || [];
     const permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas || false;
+// --- PARCHE SENIOR: CONTROL DE CICLOS LECTIVOS HISTÓRICOS ---
+window.cicloLectivoTrabajado = "2026"; 
+
+if (permiteCargaTotalNotas === true) {
+    const contenedorCiclo = document.getElementById('grupoCicloLectivoPlanilla');
+    const selectorCiclo = document.getElementById('filtroCicloLectivo');
+    
+    if (contenedorCiclo && selectorCiclo) {
+        // Hacer visible el selector en la interfaz
+        contenedorCiclo.style.display = "block";
+        
+        // Poblar dinámicamente desde el año actual (2026) descendiendo hasta 2021
+        selectorCiclo.innerHTML = "";
+        for (let anio = 2026; anio >= 2021; anio--) {
+            selectorCiclo.add(new Option(`Ciclo Lectivo ${anio}`, `${anio}`));
+        }
+        
+        // Escuchar los cambios de año para actualizar la variable global
+        selectorCiclo.addEventListener('change', function() {
+            window.cicloLectivoTrabajado = this.value;
+            // Forzar la recarga de la nómina cuando cambie el año
+            if (typeof cargarNominaEstudiantes === 'function') {
+                cargarNominaEstudiantes();
+            }
+        });
+    }
+}
 
     if (cursos.length === 0 && bolsaDocente.length > 0) {
         console.warn("Aviso: Inicializando auto-hidratación de estructuras académicas locales...");
@@ -260,10 +287,11 @@ let alumnosReales = [];
     usuarios = usuariosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     // 3. Descarga y filtrado en caliente de alumnos regulares asignados a este curso
-    const alumnosSnapshot = await getDocs(collection(db, "alumnos"));
-    alumnosReales = alumnosSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(al => al.cursoId === cursoId && al.estado === "Regular");
+           const alumnosSnapshot = await getDocs(collection(db, "alumnos"));
+        alumnosReales = alumnosSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(al => al.cursoId === cursoId && al.estado === "Regular" && al.cicloLectivo === window.cicloLectivoTrabajado);
+
 
     // 4. Ordenamiento alfabético por apellido y nombre
     alumnosReales.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));

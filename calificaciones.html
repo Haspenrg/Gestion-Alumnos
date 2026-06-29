@@ -138,31 +138,46 @@
         </header>
 
 
-        <!-- Sección 1: Selectores en cascada para filtrar la Planilla -->
-        <div class="cabecera-planilla">
-            <div class="input-group" style="margin: 0;">
-                <label for="selectCursoNotas" style="font-size: 12px; color: #475569;">Curso / División Destino:</label>
-                <select id="selectCursoNotas" style="height: 32px; font-size: 13px; padding: 4px;" required>
-                    <option value="" disabled selected>Seleccione estructura...</option>
-                </select>
-            </div>
-            
-            <div class="input-group" style="margin: 0;">
-                <label for="selectMateriaNotas" style="font-size: 12px; color: #475569;">Asignatura / Espacio Curricular:</label>
-                <select id="selectMateriaNotas" style="height: 32px; font-size: 13px; padding: 4px;" required>
-                    <option value="" disabled selected>Seleccione primero un curso...</option>
-                </select>
-            </div>
-
-            <!-- Panel Informativo Informatizado de Cátedra -->
-            <div id="infoCatedraDocente" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; background: #ffffff; padding: 12px 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; font-size: 14px;">
-        <div style="display: flex; flex-direction: column; justify-content: center;">
-            <span>👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
-            <span style="margin-top: 4px;">🛡️ <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
-        </div>
-        <button type="button" id="btnAbrirModalPeriodos" style="display: none; background: #1b4d82; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; align-items: center; gap: 4px;">⚙️ Control Períodos</button>
+<!-- Sección 1: Selectores en cascada e Información de Cátedra unificados -->
+<div class="cabecera-planilla" style="display: flex; flex-direction: row; gap: 15px; align-items: flex-end; justify-content: flex-start; flex-wrap: nowrap; width: 100%;">
+    
+    <!-- Selector Ciclo Lectivo -->
+    <div id="grupoCicloLectivoPlanilla" class="input-group" style="margin: 0; display: none; flex: 0 0 130px; max-width: 130px;">
+        <label for="filtroCicloLectivo" style="font-size: 12px; color: #475569; white-space: nowrap;">Ciclo Lectivo:</label>
+        <select id="filtroCicloLectivo" style="height: 32px; font-size: 13px; padding: 4px; width: 100%;" required>
+            <!-- Hidratado dinámicamente desde JavaScript -->
+        </select>
     </div>
-        </div>
+
+    <!-- Selector Curso / División -->
+    <div class="input-group" style="margin: 0; flex: 0 0 200px; max-width: 200px;">
+        <label for="selectCursoNotas" style="font-size: 12px; color: #475569; white-space: nowrap;">Curso / División Destino:</label>
+        <select id="selectCursoNotas" style="height: 32px; font-size: 13px; padding: 4px; width: 100%;" required>
+            <option value="" disabled selected>Seleccione estructura...</option>
+        </select>
+    </div>
+
+    <!-- Selector Asignatura / Espacio Curricular -->
+    <div class="input-group" style="margin: 0; flex: 1; max-width: 320px;">
+        <label for="selectMateriaNotas" style="font-size: 12px; color: #475569; white-space: nowrap;">Asignatura / Espacio Curricular:</label>
+        <select id="selectMateriaNotas" style="height: 32px; font-size: 13px; padding: 4px; width: 100%;" required>
+            <option value="" disabled selected>Seleccione curso...</option>
+        </select>
+    </div>
+
+    <!-- Parche Senior: Panel Informativo Compactado a la Derecha -->
+    <div id="infocatedraDocente" style="margin-left: auto; display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #475569; padding-bottom: 2px;">
+        <span style="white-space: nowrap;">👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
+        <span style="white-space: nowrap;">📍 <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
+    </div>
+
+    <!-- Botón de Control Periodos integrado al final -->
+    <button type="button" id="btnAbrirModalPeriodos" style="display: none; background: #1b4d82; color: white; border: none; height: 32px; padding: 0 12px; font-size: 12px; border-radius: 4px; cursor: pointer; white-space: nowrap; align-items: center; gap: 5px;">
+        ⚙️ Control Periodos
+    </button>
+
+</div>
+
 
         <!-- Banner de advertencia de solo lectura para Preceptores/Directivos -->
         <div id="bannerModoLecturaCalificaciones" class="indicador-edicion" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; margin-bottom: 15px; display: none;">
