@@ -324,11 +324,18 @@ let alumnosReales = [];
     const usuariosSnapshot = await getDocs(collection(db, "usuarios"));
     usuarios = usuariosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // 3. Descarga y filtrado en caliente de alumnos regulares asignados a este curso
-           const alumnosSnapshot = await getDocs(collection(db, "alumnos"));
+             // 3. Descarga optimizada en servidor por ID de curso y ciclo lectivo verificado (Histórico Blindado)
+        const qAlumnos = query(
+            collection(db, "alumnos"),
+            where("cursoId", "==", cursoId),
+            where("cicloLectivo", "==", window.cicloLectivoTrabajado)
+        );
+        
+        const alumnosSnapshot = await getDocs(qAlumnos);
         alumnosReales = alumnosSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(al => al.cursoId === cursoId && al.estado === "Regular" && al.cicloLectivo === window.cicloLectivoTrabajado);
+            .filter(al => al.estado === "Regular");
+
 
 
     // 4. Ordenamiento alfabético por apellido y nombre
@@ -430,27 +437,28 @@ tablaNotasBody.innerHTML = "";
 
 
                        tr.innerHTML = `
-                <td style="text-align:center; font-weight:bold; color:#64748b; padding: 2px 4px;">${index + 1}</td>
-                <td style="font-weight:500; padding: 2px 4px;">${alumno.nombre} ${badgePPI}</td>
-                
-                <!-- 1ER CUATRIMESTRE -->
-                <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-                
-                <!-- 2DO CUATRIMESTRE -->
-                <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            <td style="text-align: center; font-weight: bold; color: #64748b; padding: 2px 4px;">${index + 1}</td>
+            <td style="font-weight: 500; padding: 2px 4px;">${alumno.nombre} ${badgePPI}</td>
+            
+            <!-- 1ER CUATRIMESTRE -->
+            <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td data-tipo="prom-c1" class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            
+            <!-- 2DO CUATRIMESTRE -->
+            <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td data-tipo="prom-c2" class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            
+            <!-- INSTANCIAS ANUALES DE EXAMEN -->
+            <td data-tipo="anual" class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
+            <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDicExistente || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebExistente || ''}" data-dni="${alumno.dni}"></td>
+            <td data-tipo="definitiva" class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
+        `;
 
-                <!-- INSTANCIAS ANUALES DE EXAMEN -->
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-                <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDicExistente || ''}" data-dni="${alumno.dni}"></td>
-                <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebExistente || ''}" data-dni="${alumno.dni}"></td>
-                <td class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
-            `;
 
             tablaNotasBody.appendChild(tr);
 
@@ -491,16 +499,15 @@ tablaNotasBody.innerHTML = "";
     const c2ef = parseInt(filaTr.querySelector('.c2-ef')?.value, 10);
     const dic = parseInt(filaTr.querySelector('.dic')?.value, 10);
     const feb = parseInt(filaTr.querySelector('.feb')?.value, 10);
-
-    const celdasFila = filaTr.querySelectorAll('td');
-    if (celdasFila.length < 14) return;
-
-    const celdaC1Prom = celdasFila[5];   
-    const celdaC2Prom = celdasFila[9];   
-    const celdaAnual = celdasFila[10];  
+    const celdaC1Prom = filaTr.querySelector('[data-tipo="prom-c1"]');
+    const celdaC2Prom = filaTr.querySelector('[data-tipo="prom-c2"]');
+    const celdaAnual = filaTr.querySelector('[data-tipo="anual"]');
+    const celdaDef = filaTr.querySelector('[data-tipo="definitiva"]');
     const inputDic = filaTr.querySelector('.dic');
     const inputFeb = filaTr.querySelector('.feb');
-    const celdaDef = celdasFila[13];    
+
+    if (!celdaC1Prom || !celdaC2Prom || !celdaAnual || !celdaDef) return;
+
 
     // 2. PROCESAMIENTO REACTIVO DEL 1ER CUATRIMESTRE
     let notaFinalC1 = null;
