@@ -177,17 +177,7 @@ async function obtenerSesionLocal() {
     }
 }
 
-async function obtenerPermisosRol(rolId) {
-    try {
-        const rolesRaw = localStorage.getItem('rolesColegio');
-        if (!rolesRaw) return null;
-        const roles = JSON.parse(rolesRaw);
-        return roles.find(r => r.id.toLowerCase().trim() === rolId.toLowerCase().trim()) || null;
-    } catch (error) {
-        console.error("Error al leer matriz de roles:", error);
-        return null;
-    }
-}
+
 
 async function verificarYConfigurarPanel() {
     const usuario = await obtenerSesionLocal();
@@ -310,10 +300,11 @@ async function gestionarCambioClaveAutónomo() {
     if (nuevaClave === null) return; 
     
     const claveLimpia = nuevaClave.trim();
-    if (claveLimpia.length < 4) {
-        alert("Operación inválida: La contraseña debe tener al menos 4 caracteres.");
-        return;
-    }
+   if (claveLimpia.length < 6) {
+    alert("Operación inválida: Por razones de seguridad institucional, la nueva contraseña debe tener al menos 6 caracteres.");
+    return;
+}
+
 
      try {
     // 1. Fragmentación CDN Mandatoria para evitar bloqueos por URLs
@@ -331,16 +322,14 @@ async function gestionarCambioClaveAutónomo() {
       ultimaModificacionClave: new Date().toISOString()
     });
 
-    // 4. Actualización en el espejo local del almacenamiento del colegio
-    const rolesRaw = localStorage.getItem('usuariosColegio');
-    if (rolesRaw) {
-      let listaUsuarios = JSON.parse(rolesRaw);
-      const indice = listaUsuarios.findIndex(u => String(u.dni).trim() === String(usuario.dni).trim());
-      if (indice !== -1) {
-        listaUsuarios[indice].clave = claveLimpia;
-        localStorage.setItem('usuariosColegio', JSON.stringify(listaUsuarios));
-      }
-    }
+            // 4. Actualización en el espejo local de la sesión activa antes del cierre
+        const datosSesionRaw = localStorage.getItem('usuarioActivo');
+        if (datosSesionRaw) {
+            let usuarioSesion = JSON.parse(datosSesionRaw);
+            usuarioSesion.clave = claveLimpia;
+            localStorage.setItem('usuarioActivo', JSON.stringify(usuarioSesion));
+        }
+
 
     alert("¡Contraseña sincronizada con éxito en la base de datos central!\nPor seguridad, su sesión se cerrará.");
     cerrarSesion();
