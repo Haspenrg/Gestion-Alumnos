@@ -53,9 +53,9 @@
 </head>
 <body>
 <div class="panel-container">
-    <header class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-b border-gray-200 pb-4 mb-6" style="display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
+   <header class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 pb-4 mb-6" style="display: grid !important; grid-template-columns: repeat(3, 1fr) !important; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
     <!-- Columna Izquierda: Datos del Usuario y Acciones Rápidas -->
-    <div class="header-textos" style="display: flex; flex-direction: column; gap: 8px;">
+    <div class="header-textos" style="display: flex; flex-direction: column; gap: 8px; justify-content: center; width: 100%;">
         <div>
             <h1 id="saludo-usuario" style="font-size: 1.4rem; font-weight: bold; margin: 0; color: #1b4d82;">Sistema HASPEN</h1>
             <p id="rol-usuario" style="font-size: 0.8rem; color: #666; margin: 3px 0 0 0; font-weight: 500;">Panel de Administración Principal</p>
@@ -67,22 +67,23 @@
         </div>
     </div>
 
+    <!-- Columna Central: Título Institucional con Mayor Jerarquía Visual -->
+    <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; overflow: visible;">
+        <h2 style="color: #1b4d82; font-size: 2.1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 0; white-space: nowrap; line-height: 1;">
+            COLEGIO PROVINCIAL HASPEN
+        </h2>
+        <p style="color: #555; font-size: 1.05rem; font-weight: 600; font-style: italic; margin: 6px 0 0 0; white-space: nowrap;">
+            Prof. Luis Felippa Adam
+        </p>
+    </div>
 
-            <!-- Columna Central: Título Institucional con Mayor Jerarquía Visual -->
-        <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <h2 style="color: #1b4d82; font-size: 2.1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 0; white-space: nowrap; line-height: 1;">
-                COLEGIO PROVINCIAL HASPEN
-            </h2>
-            <p style="color: #555; font-size: 1.05rem; font-weight: 600; font-style: italic; margin: 6px 0 0 0;">
-                Prof. Luis Felippa Adam
-            </p>
-        </div>
+    <!-- Columna Derecha: Escudo Agrandado (Evitando cortes de línea) -->
+    <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+        <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" style="height: 110px !important; width: auto !important; object-fit: contain; margin: 0;">
+    </div>
+</header>
 
-        <!-- Columna Derecha: Escudo Agrandado (Evitando cortes de línea) -->
-        <div style="display: flex; justify-content: flex-end; align-items: center;">
-            <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" style="height: 110px !important; width: auto !important; object-fit: contain;">
-        </div>
-    </header>
+
 
 <!-- Contenedor Principal de Módulos Dividido en Dos Secciones -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
@@ -264,6 +265,34 @@ function configurarEnlaceModulo(idModulo, destino) {
         }
     };
 }
+// --- SISTEMA CENTRALIZADO DE NOTIFICACIONES ESTILIZADAS (TOAST) ---
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const contenedorExistente = document.getElementById('contenedor-toasts-haspen');
+    let contenedor = contenedorExistente;
+    
+    if (!contenedor) {
+        contenedor = document.createElement('div');
+        contenedor.id = 'contenedor-toasts-haspen';
+        contenedor.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 350px; width: calc(100% - 40px);';
+        document.body.appendChild(contenedor);
+    }
+    
+    const toast = document.createElement('div');
+    const colorBg = tipo === 'error' ? '#fde8e8' : '#e1effe';
+    const colorTexto = tipo === 'error' ? '#9b1c1c' : '#1e429f';
+    const colorBorde = tipo === 'error' ? '#f8b4b4' : '#b3d1ff';
+    
+    toast.style.cssText = `background-color: ${colorBg}; color: ${colorTexto}; border: 1px solid ${colorBorde}; padding: 16px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); opacity: 0; transition: opacity 0.3s ease; line-height: 1.4;`;
+    toast.innerText = mensaje;
+    
+    contenedor.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '1'; }, 10);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.remove(); if (contenedor.childElementCount === 0) contenedor.remove(); }, 300);
+    }, 4000);
+}
 
 function bloquearModuloFisico(idModulo) {
     const elemento = document.getElementById(idModulo);
@@ -273,7 +302,7 @@ function bloquearModuloFisico(idModulo) {
     elemento.onclick = function(e) {
         e.preventDefault();
         e.stopPropagation();
-        alert("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.");
+        mostrarNotificacion("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.", "error");
         return false;
     };
 }
@@ -286,12 +315,15 @@ function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
     elemento.onclick = function(e) {
         e.preventDefault();
         e.stopPropagation();
-        alert(`Acceso de SOLO LECTURA a [${nombreModulo}].\nUsted operará bajo modalidad de consulta o filtrado restringido sin permisos de modificación estructural.`);
+        mostrarNotificacion(`Acceso de SOLO LECTURA a [${nombreModulo}]. Operará bajo modalidad de consulta sin permisos de modificación.`, "info");
         if (urlRedireccion) {
-            window.location.href = urlRedireccion;
+            setTimeout(() => {
+                window.location.href = urlRedireccion;
+            }, 1500);
         }
     };
 }
+
 async function gestionarCambioClaveAutónomo() {
     const usuario = await obtenerSesionLocal();
     if (!usuario || !usuario.dni) return;
