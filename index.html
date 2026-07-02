@@ -83,6 +83,15 @@ const { auth, db } = await import('./firebase-config.js');
 const { signInWithEmailAndPassword, sendPasswordResetEmail } = await import( b + 'firebase-auth.js');
 const { doc, getDoc } = await import( b + 'firebase-firestore.js');
 
+// Función auxiliar para generar el Hash SHA-256 de forma nativa y segura
+async function generarHashSHA256(cadena) {
+    const encoder = new TextEncoder();
+    const datos = encoder.encode(cadena);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', datos);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Procesa el inicio de sesión buscando el Email Real asociado al DNI en Firestore
 async function procesarAutenticacion( e) {
 e.preventDefault();
@@ -148,9 +157,30 @@ if (btnSubmit) {
 return;
 }
 
+// === CONTROL COMPATIBLE DE PARIDAD DE CONTRASEÑA ===
+const claveDbFirestore = datosDb.clave;
+const hashDeClaveIngresada = await generarHashSHA256(claveIngresada);
+
+// Si en Firestore ya hay un hash guardado, verificamos que coincida antes de pasar a Firebase Auth
+if (claveDbFirestore && claveDbFirestore.length === 64) {
+    if (claveDbFirestore !== hashDeClaveIngresada) {
+        mostrarAlertaUI(txtMensaje, "Credenciales inválidas. Verifique el DNI y la contraseña.", "#dc2626");
+        if (inputUsuario) inputUsuario.disabled = false;
+        if (inputClave) inputClave.disabled = false;
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = textoOriginalBoton;
+        }
+        return;
+    }
+}
+
+// Si el usuario cambió la clave, pasamos el hash como clave a Firebase Auth para emparejar la base de datos
+const claveParaAutenticar = (claveDbFirestore && claveDbFirestore.length === 64) ? hashDeClaveIngresada : claveIngresada;
 // 2. Realizamos la autenticación en Firebase utilizando su email real de fondo
-const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveIngresada);
+const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveParaAutenticar);
 const user = credenciales.user;
+
 
       // ====== PARCHE ARQUITECTÓNICO: HIDRATACIÓN DE MATRIZ DE PERMISOS RBAC DINÁMICA ======
        let matrizPermisosRol = {

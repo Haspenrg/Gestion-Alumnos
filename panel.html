@@ -14,13 +14,16 @@
             background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%) !important;
         }
 
-        /* Estilos coercitivos requeridos por directiva para módulos inhabilitados */
+       /* Estilos coercitivos requeridos por directiva para módulos inhabilitados */
         .modulo-bloqueado {
-            pointer-events: none !important;
             opacity: 0.4 !important;
             cursor: not-allowed !important;
             user-select: none;
         }
+        .modulo-bloqueado * {
+            pointer-events: none !important; /* Evita que los iconos internos rompan el clic de la tarjeta */
+        }
+
 
         /* Indicador estético visual para el estado de solo lectura */
         .modulo-solo-lectura {
@@ -49,10 +52,7 @@
         width: auto !important;
         object-fit: contain;
         }
-        /* Transición mandatoria para el correcto desvanecimiento de alertas */
-        #contenedor-toasts-haspen div {
-        transition: opacity 0.3s ease-in-out !important;
-        }
+        
 
     </style>
 </head>
@@ -272,50 +272,71 @@ function configurarEnlaceModulo(idModulo, destino) {
 }
 // --- SISTEMA CENTRALIZADO DE NOTIFICACIONES ESTILIZADAS (TOAST) ---
 function mostrarNotificacion(mensaje, tipo = 'info') {
-    const contenedorExistente = document.getElementById('contenedor-toasts-haspen');
-    let contenedor = contenedorExistente;
+    const containerId = 'contenedor-toasts-haspen';
+    let contenedor = document.getElementById(containerId);
     
+    // REGLA DE CONTROL: Si el contenedor ya existe y tiene algún cartel adentro, no hacemos nada
+    if (contenedor && contenedor.childElementCount > 0) {
+        return;
+    }
+
     if (!contenedor) {
         contenedor = document.createElement('div');
-        contenedor.id = 'contenedor-toasts-haspen';
-        contenedor.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 350px; width: calc(100% - 40px);';
+        contenedor.id = containerId;
+        contenedor.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 400px; width: calc(100% - 40px); pointer-events: none;';
         document.body.appendChild(contenedor);
     }
     
     const toast = document.createElement('div');
-    const colorBg = tipo === 'error' ? '#fde8e8' : '#e1effe';
-    const colorTexto = tipo === 'error' ? '#9b1c1c' : '#1e429f';
-    const colorBorde = tipo === 'error' ? '#f8b4b4' : '#b3d1ff';
+    const isError = tipo === 'error';
     
-    toast.style.cssText = `background-color: ${colorBg}; color: ${colorTexto}; border: 1px solid ${colorBorde}; padding: 16px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); line-height: 1.4;`;
+    // Iniciamos con opacity: 0 para controlar la animación
+    toast.style.cssText = `background-color: ${isError ? '#fde8e8' : '#e1effe'}; color: ${isError ? '#9b1c1c' : '#1e429f'}; border: 1px solid ${isError ? '#f8b4b4' : '#b3d1ff'}; padding: 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); text-align: center; opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: auto;`;
     toast.innerText = mensaje;
-
     contenedor.appendChild(toast);
-
     
+    // Forzamos un pequeño reflujo para que el navegador aplique la transición de entrada
+    setTimeout(() => { toast.style.opacity = '1'; }, 10);
+    
+    // Programamos el desvanecimiento y posterior eliminación
     setTimeout(() => {
         toast.style.opacity = '0';
-        setTimeout(() => { toast.remove(); if (contenedor.childElementCount === 0) contenedor.remove(); }, 300);
+        setTimeout(() => { 
+            toast.remove(); 
+            if (contenedor.childElementCount === 0) contenedor.remove(); 
+        }, 300);
     }, 4000);
 }
+
+
 
 function bloquearModuloFisico(idModulo) {
     const elemento = document.getElementById(idModulo);
     if (!elemento) return;
-    elemento.classList.add('modulo-bloqueado');
-    elemento.classList.remove('modulo-solo-lectura');
+    
+    // Remueve clases conflictivas y aplica estilos de deshabilitado
+    elemento.classList.remove('modulo-bloqueado', 'modulo-solo-lectura');
+    elemento.style.opacity = "0.4";
+    elemento.style.cursor = "not-allowed";
+    elemento.style.userSelect = "none";
+    
+    // Desactiva eventos de puntero en hijos para evitar conflictos
+    const hijos = elemento.querySelectorAll('*');
+    hijos.forEach(hijo => {
+        hijo.style.pointerEvents = "none";
+    });
+
+    // Interceptación de clic conectada al sistema de Toasts del proyecto
     elemento.onclick = function(e) {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        
-        // Sistema forzado de alerta nativa infalible para pruebas
-        alert("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.");
+        // Usamos la función nativa del proyecto para mostrar la notificación visual
+        mostrarNotificacion("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.", "error");
         return false;
     };
 }
-
 
 
 function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
@@ -335,53 +356,110 @@ function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
     };
 }
 
+// Función auxiliar para generar el Hash SHA-256 de forma nativa y segura
+async function generarHashSHA256(cadena) {
+    const encoder = new TextEncoder();
+    const datos = encoder.encode(cadena);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', datos);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function gestionarCambioClaveAutónomo() {
     const usuario = await obtenerSesionLocal();
     if (!usuario || !usuario.dni) return;
 
-    const nuevaClave = prompt("Ingrese su nueva contraseña (mínimo 4 caracteres):");
-    if (nuevaClave === null) return; 
+    // Crear un prompt seguro con DOS campos utilizando un modal HTML básico inyectado dinámicamente
+    const modalFondo = document.createElement('div');
+    modalFondo.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
     
-    const claveLimpia = nuevaClave.trim();
-   if (claveLimpia.length < 6) {
-    alert("Operación inválida: Por razones de seguridad institucional, la nueva contraseña debe tener al menos 6 caracteres.");
-    return;
-}
-
-
-     try {
-    // 1. Fragmentación CDN Mandatoria para evitar bloqueos por URLs
-    const cdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+    const modalCuerpo = document.createElement('div');
+    modalCuerpo.style.cssText = 'background: white; padding: 25px; border-radius: 8px; max-width: 340px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; font-family: sans-serif;';
+    modalCuerpo.innerHTML = `
+        <h3 style="color: #1b4d82; margin-top: 0; font-size: 1.2rem; margin-bottom: 15px;">Cambiar Contraseña</h3>
+        
+        <p style="font-size: 0.85rem; color: #555; margin-bottom: 5px; text-align: left; font-weight: 600;">Nueva contraseña:</p>
+        <input type="password" id="input-nueva-clave-segura" style="width: 100%; padding: 8px; border: 1px solid #9ca3af; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; text-align: center; font-size: 1rem;">
+        
+        <p style="font-size: 0.85rem; color: #555; margin-bottom: 5px; text-align: left; font-weight: 600;">Confirmar contraseña:</p>
+        <input type="password" id="input-confirmar-clave-segura" style="width: 100%; padding: 8px; border: 1px solid #9ca3af; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; text-align: center; font-size: 1rem;">
+        
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="btn-cancelar-clave-segura" style="background: #e5e7eb; color: #374151; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Cancelar</button>
+            <button id="btn-guardar-clave-segura" style="background: #1b4d82; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Guardar</button>
+        </div>
+    `;
     
-    // 2. Inyección dinámica de módulos necesarios de Firestore
-    const { getFirestore, doc, updateDoc } = await import(`${cdn}firebase-firestore.js`);
-    const { firebaseApp } = await import('./firebase-config.js');
-    const db = getFirestore(firebaseApp);
+    modalFondo.appendChild(modalCuerpo);
+    document.body.appendChild(modalFondo);
+    
+    setTimeout(() => { document.getElementById('input-nueva-clave-segura').focus(); }, 50);
 
-    // 3. Actualización Forense en la Base de Datos Centralizada (Firestore)
-    const usuarioRef = doc(db, "usuarios", String(usuario.dni).trim());
-    await updateDoc(usuarioRef, {
-      clave: claveLimpia,
-      ultimaModificacionClave: new Date().toISOString()
-    });
+    document.getElementById('btn-cancelar-clave-segura').onclick = function() {
+        modalFondo.remove();
+    };
 
-            // 4. Actualización en el espejo local de la sesión activa antes del cierre
-        const datosSesionRaw = localStorage.getItem('usuarioActivo');
-        if (datosSesionRaw) {
-            let usuarioSesion = JSON.parse(datosSesionRaw);
-            usuarioSesion.clave = claveLimpia;
-            localStorage.setItem('usuarioActivo', JSON.stringify(usuarioSesion));
+    document.getElementById('btn-guardar-clave-segura').onclick = async function() {
+        const nuevaClave = document.getElementById('input-nueva-clave-segura').value;
+        const confirmarClave = document.getElementById('input-confirmar-clave-segura').value;
+        
+        const claveLimpia = nuevaClave ? nuevaClave.trim() : "";
+        const confirmacionLimpia = confirmarClave ? confirmarClave.trim() : "";
+
+        if (claveLimpia.length < 6) {
+            alert("Operación inválida: Por razones de seguridad la contraseña debe tener al menos 6 caracteres.");
+            return;
         }
 
+        if (claveLimpia !== confirmacionLimpia) {
+            alert("Operación inválida: La nueva contraseña y la confirmación no coinciden.");
+            return;
+        }
 
-    alert("¡Contraseña sincronizada con éxito en la base de datos central!\nPor seguridad, su sesión se cerrará.");
-    cerrarSesion();
-  } catch (error) {
-    console.error("Error crítico de sincronización con la base de datos:", error);
-    alert("Error de red: No se pudo actualizar la contraseña en el servidor institucional. Intente nuevamente.");
-  }
+        modalFondo.remove();
 
+        try {
+            const claveHasheada = await generarHashSHA256(claveLimpia);
+
+            // 1. Fragmentación CDN Mandatoria para evitar bloqueos por URLs
+            const cdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+            
+            // 2. Inyección dinámica de módulos de Firestore y de Auth (para updatePassword)
+            const { getFirestore, doc, updateDoc } = await import(`${cdn}firebase-firestore.js`);
+            const { updatePassword } = await import(`${cdn}firebase-auth.js`);
+            const { firebaseApp, auth } = await import('./firebase-config.js');
+            const db = getFirestore(firebaseApp);
+
+            // === CONTROL DE PARIDAD EN VIVO ===
+            // Actualiza la clave de autenticación interna de Firebase Auth para que no se desvinculen
+            if (auth.currentUser) {
+                await updatePassword(auth.currentUser, claveHasheada);
+            }
+
+            // 3. Actualización en la Base de Datos Centralizada (Firestore)
+            const usuarioRef = doc(db, "usuarios", String(usuario.dni).trim());
+            await updateDoc(usuarioRef, {
+                clave: claveHasheada,
+                ultimaModificacionClave: new Date().toISOString()
+            });
+
+            // 4. Actualización en el espejo local del navegador
+            const datosSesionRaw = localStorage.getItem('usuarioActivo');
+            if (datosSesionRaw) {
+                let usuarioSesion = JSON.parse(datosSesionRaw);
+                usuarioSesion.clave = claveHasheada;
+                localStorage.setItem('usuarioActivo', JSON.stringify(usuarioSesion));
+            }
+
+            alert("¡Contraseña sincronizada con éxito en todo el ecosistema institucional!\nPor seguridad, su sesión se cerrará.");
+            cerrarSesion();
+        } catch (error) {
+            console.error("Error crítico de sincronización con la base de datos:", error);
+            alert("Error: Si hace mucho que inició sesión, deba reautenticarse para aplicar el cambio. Intente cerrando sesión y volviendo a ingresar.");
+        }
+    };
 }
+
 
 
 // Remoción matemática de sesión local
