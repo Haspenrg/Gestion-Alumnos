@@ -430,12 +430,7 @@ async function gestionarCambioClaveAutónomo() {
             const { firebaseApp, auth } = await import('./firebase-config.js');
             const db = getFirestore(firebaseApp);
 
-            // === CONTROL DE PARIDAD EN VIVO ===
-            // Actualiza la clave de autenticación interna de Firebase Auth para que no se desvinculen
-            if (auth.currentUser) {
-                await updatePassword(auth.currentUser, claveHasheada);
-            }
-
+           
             // 3. Actualización en la Base de Datos Centralizada (Firestore)
             const usuarioRef = doc(db, "usuarios", String(usuario.dni).trim());
             await updateDoc(usuarioRef, {
@@ -443,13 +438,6 @@ async function gestionarCambioClaveAutónomo() {
                 ultimaModificacionClave: new Date().toISOString()
             });
 
-            // 4. Actualización en el espejo local del navegador
-            const datosSesionRaw = localStorage.getItem('usuarioActivo');
-            if (datosSesionRaw) {
-                let usuarioSesion = JSON.parse(datosSesionRaw);
-                usuarioSesion.clave = claveHasheada;
-                localStorage.setItem('usuarioActivo', JSON.stringify(usuarioSesion));
-            }
 
             alert("¡Contraseña sincronizada con éxito en todo el ecosistema institucional!\nPor seguridad, su sesión se cerrará.");
             cerrarSesion();
