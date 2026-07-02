@@ -44,11 +44,16 @@
             align-items: flex-start;
         }
 
-        .logo-panel-chico {
-            height: 65px !important;
-            width: auto !important;
-            object-fit: contain;
+       .logo-panel-chico {
+        height: 65 px !important;
+        width: auto !important;
+        object-fit: contain;
         }
+        /* Transición mandatoria para el correcto desvanecimiento de alertas */
+        #contenedor-toasts-haspen div {
+        transition: opacity 0.3s ease-in-out !important;
+        }
+
     </style>
 </head>
 <body>
@@ -282,11 +287,11 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     const colorTexto = tipo === 'error' ? '#9b1c1c' : '#1e429f';
     const colorBorde = tipo === 'error' ? '#f8b4b4' : '#b3d1ff';
     
-    toast.style.cssText = `background-color: ${colorBg}; color: ${colorTexto}; border: 1px solid ${colorBorde}; padding: 16px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); opacity: 0; transition: opacity 0.3s ease; line-height: 1.4;`;
+    toast.style.cssText = `background-color: ${colorBg}; color: ${colorTexto}; border: 1px solid ${colorBorde}; padding: 16px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); line-height: 1.4;`;
     toast.innerText = mensaje;
-    
+
     contenedor.appendChild(toast);
-    setTimeout(() => { toast.style.opacity = '1'; }, 10);
+
     
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -300,12 +305,18 @@ function bloquearModuloFisico(idModulo) {
     elemento.classList.add('modulo-bloqueado');
     elemento.classList.remove('modulo-solo-lectura');
     elemento.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        mostrarNotificacion("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.", "error");
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Sistema forzado de alerta nativa infalible para pruebas
+        alert("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.");
         return false;
     };
 }
+
+
 
 function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
     const elemento = document.getElementById(idModulo);
@@ -319,7 +330,7 @@ function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
         if (urlRedireccion) {
             setTimeout(() => {
                 window.location.href = urlRedireccion;
-            }, 1500);
+            }, 3500);
         }
     };
 }
