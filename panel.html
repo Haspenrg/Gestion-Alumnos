@@ -411,14 +411,22 @@ async function gestionarCambioClaveAutónomo() {
             return;
         }
 
-        if (claveLimpia !== confirmacionLimpia) {
+        if ( claveLimpia !== confirmacionLimpia) {
             alert("Operación inválida: La nueva contraseña y la confirmación no coinciden.");
             return;
-        }
+            }
 
-        modalFondo.remove();
+            // Estado de Carga: Bloqueo de controles y cambio de texto instantáneo
+            const btnGuardar = document.getElementById('btn-guardar-clave-segura');
+            const btnCancelar = document.getElementById('btn-cancelar-clave-segura');
+            btnGuardar.disabled = true;
+            btnCancelar.disabled = true;
+            btnGuardar.innerText = "Guardando...";
+            btnGuardar.style.opacity = "0.7";
+            btnGuardar.style.cursor = "wait";
 
-        try {
+            try {
+
             const claveHasheada = await generarHashSHA256(claveLimpia);
 
             // 1. Fragmentación CDN Mandatoria para evitar bloqueos por URLs
@@ -438,13 +446,35 @@ async function gestionarCambioClaveAutónomo() {
                 ultimaModificacionClave: new Date().toISOString()
             });
 
-
-            alert("¡Contraseña sincronizada con éxito en todo el ecosistema institucional!\nPor seguridad, su sesión se cerrará.");
-            cerrarSesion();
-        } catch (error) {
-            console.error("Error crítico de sincronización con la base de datos:", error);
-            alert("Error: Si hace mucho que inició sesión, deba reautenticarse para aplicar el cambio. Intente cerrando sesión y volviendo a ingresar.");
-        }
+             // Mostrar modal de éxito
+        modalCuerpo.innerHTML = `
+      <div style="text-align: center; padding: 15px;">
+        <div style="color: #0e6245; font-size: 3rem; margin-bottom: 10px;">✓</div>
+        <h3 style="color: #1b4d82; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; font-size: 1.2rem;">¡Sincronización Exitosa!</h3>
+        <p style="color: #4b5563; margin-bottom: 20px; font-size: 0.9rem;">Contraseña actualizada en el sistema.<br>
+          <span style="color: #941b1b; font-weight: bold;">Su sesión se cerrará por seguridad.</span></p>
+        <button id="btn-entendido-clave" style="background: #1b4d82; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Entendido</button>
+      </div>
+    `;
+    document.getElementById('btn-entendido-clave').onclick = function() {
+        modalFondo.remove();
+        cerrarSesion();
+    };
+} catch (error) {
+    console.error("Error crítico de sincronización con la base de datos:", error);   
+    modalCuerpo.innerHTML = `
+      <div style="text-align: center; padding: 15px;">
+        <div style="color: #941b1b; font-size: 3rem; margin-bottom: 10px;">✕</div>
+        <h3 style="color: #941b1b; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; font-size: 1.2rem;">Error de Sincronización</h3>
+        <p style="color: #4b5563; margin-bottom: 20px; font-size: 0.9rem;">Debe reautenticarse para aplicar el cambio.<br>
+          <span style="font-weight: 600;">Intente cerrando sesión y volviendo a ingresar.</span></p>
+        <button id="btn-entendido-error" style="background: #4b5563; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Cerrar</button>
+      </div>
+    `;
+    document.getElementById('btn-entendido-error').onclick = function() {
+        modalFondo.remove();
+    };
+}
     };
 }
 
