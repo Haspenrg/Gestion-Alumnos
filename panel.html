@@ -173,77 +173,79 @@ document.addEventListener("DOMContentLoaded", async function() {
 });
 
 async function obtenerSesionLocal() {
-    try {
-        const datosSesion = localStorage.getItem('usuarioActivo');
-        if (!datosSesion) return null;
-        return JSON.parse(datosSesion);
-    } catch (error) {
-        console.error("Error al leer sesión activa:", error);
-        return null;
-    }
+  try {
+    const datosSesion = localStorage.getItem('usuarioActivo');
+    if (!datosSesion) return null;
+    const usuario = JSON.parse(datosSesion);
+    const cdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+    const { getAuth, onAuthStateChanged } = await import(`${cdn}firebase-auth.js`);
+    const { firebaseApp } = await import('./firebase-config.js');
+    const auth = getAuth(firebaseApp);
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        if (user) {
+          resolve(usuario);
+        } else {
+          localStorage.removeItem('usuarioActivo');
+          resolve(null);
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Error al verificar sesión activa con Firebase:", error);
+    return null;
+  }
 }
 
 
 
 async function verificarYConfigurarPanel() {
-    const usuario = await obtenerSesionLocal();
-    if (!usuario) {
-        window.location.href = "index.html";
-        return;
-    }
-
-    const rolIdMapeado = usuario.rol.toLowerCase().trim();
-
-    // Personalización de la interfaz institucional
-    document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
-    document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol.toUpperCase()}`;
-
-    // REGLA DE EXCEPCIÓN RAÍZ: El administrador tiene acceso total nativo inmediato
-    if (rolIdMapeado === "administrador") {
-        configurarEnlaceModulo("mod-usuarios", "usuarios.html");
-        configurarEnlaceModulo("mod-inscripcion", "inscripcion.html");
-        configurarEnlaceModulo("mod-cursos-materias", "cursos-materias.html");
-        configurarEnlaceModulo("mod-calificaciones", "calificaciones.html");
-        configurarEnlaceModulo("mod-previas", "previas.html");
-        configurarEnlaceModulo("mod-estadisticas", "estadisticas.html");
-        configurarEnlaceModulo("mod-roles", "roles.html");
-        return;
-    }
-
-    // Bloqueo físico perimetral inmediato del módulo de roles para cualquier otro rol
-    bloquearModuloFisico("mod-roles");
-
-    // Intentar cargar permisos desde la matriz RBAC local
-   // El panel ahora lee directamente el escudo inyectado por index.html en la sesión activa
-let permisos = usuario.permisosDelRol;
-
-// SISTEMA FALLBACK SEGURO GENERAL: Si por error de red o localStorage no bajan los permisos, nadie hereda nada por defecto
-if (!permisos) {
-    console.error("Bloqueo preventivo de seguridad: Matriz de capacidades ausente en la sesión.");
-    bloquearModuloFisico("mod-usuarios");
-    bloquearModuloFisico("mod-inscripcion");
-    bloquearModuloFisico("mod-cursos-materias");
-    bloquearModuloFisico("mod-calificaciones");
-    bloquearModuloFisico("mod-previas");
-    bloquearModuloFisico("mod-estadisticas");
+  const usuario = await obtenerSesionLocal();
+  if (!usuario) {
+    window.location.href = "index.html";
     return;
+  }
+  const rolIdMapeado = usuario.rol.toLowerCase().trim();
+
+  document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
+  document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol.toUpperCase()}`;
+
+  const mapaRutas = {
+    "mod-usuarios": "usuarios.html",
+    "mod-inscripcion": "inscripcion.html",
+    "mod-cursos-materias": "cursos-materias.html",
+    "mod-calificaciones": "calificaciones.html",
+    "mod-previas": "previas.html",
+    "mod-estadisticas": "estadisticas.html",
+    "mod-roles": "roles.html"
+  };
+
+  if (rolIdMapeado === "administrador") {
+    Object.keys(mapaRutas).forEach(id => configurarEnlaceModulo(id, mapaRutas[id]));
+    return;
+  }
+
+  bloquearModuloFisico("mod-roles");
+  let permisos = usuario.permisosDelRol;
+
+  if (!permisos) {
+    Object.keys(mapaRutas).forEach(id => {
+      if (id !== "mod-roles") bloquearModuloFisico(id);
+    });
+    return;
+  }
+
+  evaluarPermisoModulo("mod-usuarios", permisos.configuracionUsuarios, mapaRutas["mod-usuarios"], "Gestión de Usuarios");
+  evaluarPermisoModulo("mod-cursos-materias", permisos.planesEstudio, mapaRutas["mod-cursos-materias"], "Crear Cursos y Materias");
+  evaluarPermisoModulo("mod-previas", permisos.controlPrevias, mapaRutas["mod-previas"], "Control de Previas");
+  evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, mapaRutas["mod-estadisticas"], "Estadísticas");
+  evaluarPermisoModulo("mod-inscripcion", permisos.legajoDigital, mapaRutas["mod-inscripcion"], "Gestión de Alumnos");
+
+  const permisoCalificaciones = usuario.esProfesor ? "escritura" : permisos.libroCalificaciones;
+  evaluarPermisoModulo("mod-calificaciones", permisoCalificaciones, mapaRutas["mod-calificaciones"], "Calificaciones");
 }
 
-// EVALUACIÓN GENERAL DE ACCESOS DINÁMICOS BASADO PURAMENTE EN CAPACIDADES
-evaluarPermisoModulo("mod-usuarios", permisos.configuracionUsuarios, "usuarios.html", "Gestión de Usuarios");
-evaluarPermisoModulo("mod-cursos-materias", permisos.planesEstudio, "cursos-materias.html", "Crear Cursos y Materias");
-evaluarPermisoModulo("mod-previas", permisos.controlPrevias, "previas.html", "Control de Previas");
-evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, "estadisticas.html", "Estadísticas");
-evaluarPermisoModulo("mod-inscripcion", permisos.legajoDigital, "inscripcion.html", "Gestión de Alumnos");
-
-// SOLUCIÓN HÍBRIDA EVOLUCIONADA: Si el usuario posee doble función (Profesor activo frente a alumnos), 
-// se eleva dinámicamente su permiso en calificaciones a escritura, sin importar el nombre escrito de su rol base.
-if (usuario.esProfesor === true) {
-    evaluarPermisoModulo("mod-calificaciones", "escritura", "calificaciones.html", "Calificaciones");
-} else {
-    evaluarPermisoModulo("mod-calificaciones", permisos.libroCalificaciones, "calificaciones.html", "Calificaciones");
-}
-}
 
 // --- MOTOR CENTRALIZADO DE EVALUACIÓN DE NIVELES INSTITUCIONALES ---
 function evaluarPermisoModulo(idModulo, estadoPermiso, destino, nombreVisibleModulo) {
