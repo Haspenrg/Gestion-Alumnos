@@ -248,21 +248,39 @@ async function verificarYConfigurarPanel() {
 
 
 // --- MOTOR CENTRALIZADO DE EVALUACIÓN DE NIVELES INSTITUCIONALES ---
-function evaluarPermisoModulo(idModulo, estadoPermiso, destino, nombreVisibleModulo) {
-    const estado = estadoPermiso ? estadoPermiso.toLowerCase().trim() : "ninguno";
-    if (estado === "escritura" || estado === "acceso") {
-        configurarEnlaceModulo(idModulo, destino);
-    } else if (estado === "lectura" || estado === "solo-vista-filtrado") {
-        configurarModoSoloLectura(idModulo, nombreVisibleModulo, destino.startsWith("alert") ? null : destino);
-    } else {
-        bloquearModuloFisico(idModulo);
+function evaluarPermisoModulo(idModulo, nivelPermiso, urlDestino, nombreModulo) {
+  if (!nivelPermiso || nivelPermiso === "ninguno") {
+    bloquearModuloFisico(idModulo);
+  } else if (nivelPermiso === "lectura") {
+    configurarEnlaceModulo(idModulo, urlDestino);
+    // Configura el panel en modo solo lectura si la función existe en el archivo
+    if (typeof configurarModoSoloLectura === "function") {
+      configurarModoSoloLectura(idModulo);
     }
+  } else if (nivelPermiso === "escritura") {
+    configurarEnlaceModulo(idModulo, urlDestino);
+  }
 }
 
 function configurarEnlaceModulo(idModulo, destino) {
     const elemento = document.getElementById(idModulo);
     if (!elemento) return;
+    
+    // 1. Quitar clases CSS restrictivas
     elemento.classList.remove('modulo-bloqueado', 'modulo-solo-lectura');
+    
+    // 2. CORRECCIÓN CLAVE: Forzar la restauración de opacidad y habilitar los eventos del puntero
+    elemento.style.opacity = "1";
+    elemento.style.cursor = "pointer";
+    elemento.style.userSelect = "auto";
+    
+    // Habilitar clics en los iconos/elementos hijos internos
+    const hijos = elemento.querySelectorAll('*');
+    hijos.forEach(hijo => {
+        hijo.style.pointerEvents = "auto";
+    });
+
+    // 3. Asignación limpia del evento de redirección
     elemento.onclick = function() {
         if (destino.startsWith("alert")) {
             const mensaje = destino.match(/'([^']+)'/);
@@ -272,6 +290,8 @@ function configurarEnlaceModulo(idModulo, destino) {
         }
     };
 }
+
+
 // --- SISTEMA CENTRALIZADO DE NOTIFICACIONES ESTILIZADAS (TOAST) ---
 function mostrarNotificacion(mensaje, tipo = 'info') {
     const containerId = 'contenedor-toasts-haspen';
@@ -316,6 +336,9 @@ function bloquearModuloFisico(idModulo) {
     const elemento = document.getElementById(idModulo);
     if (!elemento) return;
     
+    // Blindaje de seguridad: Remueve físicamente el destino del enlace del DOM
+    elemento.removeAttribute('href');
+    
     // Remueve clases conflictivas y aplica estilos de deshabilitado
     elemento.classList.remove('modulo-bloqueado', 'modulo-solo-lectura');
     elemento.style.opacity = "0.4";
@@ -339,6 +362,7 @@ function bloquearModuloFisico(idModulo) {
         return false;
     };
 }
+
 
 
 function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {

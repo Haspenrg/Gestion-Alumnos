@@ -95,6 +95,7 @@ async function generarHashSHA256(cadena) {
 // Procesa el inicio de sesión buscando el Email Real asociado al DNI en Firestore
 async function procesarAutenticacion( e) {
 e.preventDefault();
+localStorage.removeItem('usuarioActivo');
 const txtMensaje = document.getElementById('mensaje');
 if (! txtMensaje) return;
 txtMensaje.textContent = "";

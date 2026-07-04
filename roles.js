@@ -147,17 +147,17 @@ async function obtenerRolesDesdeStorage() {
     }
 }
 
-async function guardarRolesEnStorage(arrayRoles) {
+// --- FUNCIÓN DE PERSISTENCIA INDIVIDUAL OPTIMIZADA CONTRA CONSUMO DE ESCRITURAS ---
+async function guardarRolIndividualInSitu(rol) {
     try {
-        for (const rol of arrayRoles) {
-            await setDoc(doc(db, "roles", rol.id), rol);
-        }
+        await setDoc(doc(db, "roles", rol. id), rol);
         return true;
-    } catch (error) {
-        console.error("Error al persistir la matriz RBAC en la nube:", error);
+    } catch ( error) {
+        console. error("Error al persistir el rol individual en la nube:", error);
         return false;
     }
 }
+
 
 // --- CONSTRUCCIÓN REACTIVA DEL SPREADSHEET DE ROLES ORIGINAL ---
 async function cargarTablaRoles() {
@@ -256,12 +256,11 @@ function asociarEventosBotonesAccion() {
     });
 }
 
-// --- PROCESAMIENTO GENERAL DEL FORMULARIO DE ALTA Y EDICIÓN ORIGINAL ---
+// --- PROCESAMIENTO GENERAL DEL FORMULARIO DE ALTA Y EDICIÓN OPTIMIZADO ---
 formRol.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nombre = nombreRolInput.value.trim();
     const idEditar = editRolId.value;
-    let listaRoles = await obtenerRolesDesdeStorage();
     
     const estructuraPermisosMapeada = {
         configuracionUsuarios: pUsuarios.value,
@@ -273,41 +272,54 @@ formRol.addEventListener('submit', async (e) => {
         inclusionPpi: pPpi.value
     };
 
+    let rolFinal = null;
+
     if (idEditar !== "") {
-        listaRoles = listaRoles.map(rol => {
-            if (rol.id === idEditar) {
-                return {
-                    ...rol,
-                    nombre: nombre,
-                    permisos: estructuraPermisosMapeada
-                };
+        rolFinal = {
+            id: idEditar,
+            nombre: nombre,
+            permisos: estructuraPermisosMapeada
+        };
+        
+        try {
+            await setDoc(doc(db, "roles", idEditar), rolFinal);
+            alert("Perfil de seguridad actualizado y sincronizado en la matriz RBAC.");
+        } catch (error) {
+            console.error("Error al actualizar el rol en Firestore:", error);
+            alert("Error al conectar con la base de datos.");
+            return;
+        }
+    } else {
+        const idNuevo = sanitizarIdRol(nombre);
+        
+        try {
+            const docRef = doc(db, "roles", idNuevo);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                alert("Error de duplicación: Ya existe un perfil registrado con un nombre idéntico o identificador equivalente.");
+                return;
             }
-            return rol;
-        });
-        alert("Perfil de seguridad actualizado y sincronizado en la matriz RBAC.");
-    // REEMPLAZAR POR (Corrección de tipografía en el mapeo de permisos):
-} else {
-    const idNuevo = sanitizarIdRol(nombre);
-    if (listaRoles.some(r => r.id === idNuevo)) {
-        alert("Error de duplicación: Ya existe un perfil registrado con un nombre idéntico o identificador equivalente.");
-        return;
+            
+            rolFinal = {
+                id: idNuevo,
+                nombre: nombre,
+                permisos: estructuraPermisosMapeada
+            };
+            
+            await setDoc(docRef, rolFinal);
+            alert("Nuevo rol institucional incorporado con éxito a la base de datos en la nube.");
+        } catch (error) {
+            console.error("Error al verificar o crear el rol en Firestore:", error);
+            alert("Error de comunicación con la base de datos.");
+            return;
+        }
     }
-    const nuevoRolEstructura = {
-        id: idNuevo,
-        nombre: nombre,
-        permisos: estructuraPermisosMapeada // <-- CORREGIDO: ahora coincide con la variable de arriba
-    };
-    listaRoles.push(nuevoRolEstructura);
-    alert("Nuevo rol institucional incorporado con éxito a la base de datos en la nube.");
-}
 
-
-    const guardadoExitoso = await guardarRolesEnStorage(listaRoles);
-    if (guardadoExitoso) {
-        restaurarEstadoFormulario();
-        await cargarTablaRoles();
-    }
+    restaurarEstadoFormulario();
+    await cargarTablaRoles();
 });
+
 
 // --- ENTRADA AL MODO EDICIÓN EN CALIENTE ORIGINAL ---
 function prepararEdicionRol(rol) {
@@ -341,20 +353,14 @@ async function eliminarRolSistema(id) {
     }
 }
 
-// --- LIMPIEZA Y RESTAURACIÓN DE CONTEXTOS ORIGINAL ---
+// --- LIMPIEZA Y RESTAURACIÓN DE CONTEXTOS OPTIMIZADA ---
 function restaurarEstadoFormulario() {
     formTitulo.textContent = "Crear Nuevo Perfil / Rol";
     btnGuardar.textContent = "Guardar Rol";
     editRolId.value = "";
     formRol.reset();
     if (bannerEdicion) bannerEdicion.style.display = "none";
-    pLegajo.value = "ninguno";
-    pUsuarios.value = "ninguno";
-    pPlanes.value = "ninguno";
-    pCalificaciones.value = "ninguno";
-    pAsistencia.value = "ninguno";
-    pReportes.value = "ninguno";
-    pPpi.value = "ninguno";
 }
+
 
 })();
