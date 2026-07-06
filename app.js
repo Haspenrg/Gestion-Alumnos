@@ -1,16 +1,13 @@
 // 1. Inicializamos la base de datos local si no existe aún (Semillas con soporte Multirrol)
+// 1. Inicializamos la base de datos local si no existe aún (Solo Administrador de Resguardo)
 const usuariosSemilla = [
-    { dni: "11111111", nombre: "Administrador General", clave: "1234", rol: "Administrador", esProfesor: false },
-    { dni: "22222222", nombre: "Carlos Rodríguez (Preceptor)", clave: "22222222", rol: "Preceptor", esProfesor: false },
-    { dni: "33333333", nombre: "Ana Martínez (Directivo)", clave: "33333333", rol: "Directivo", esProfesor: false },
-    { dni: "44444444", nombre: "Juan Pérez (Profesor)", clave: "44444444", rol: "Profesor", esProfesor: true },
-    { dni: "55555555", nombre: "Marta Gómez (Coordinación)", clave: "55555555", rol: "Coordinación", esProfesor: false },
-    { dni: "66666666", nombre: "Luis Sosa (Prosecretario)", clave: "66666666", rol: "Prosecretario", esProfesor: false }
+  { dni: "11111111", nombre: "Administrador General", clave: "1234", rol: "Administrador", esProfesor: false }
 ];
 
 if (!localStorage.getItem('usuariosColegio')) {
-    localStorage.setItem('usuariosColegio', JSON.stringify(usuariosSemilla));
+  localStorage.setItem('usuariosColegio', JSON.stringify(usuariosSemilla));
 }
+
 
 // Obtener los usuarios actualizados de la memoria local simbiótica asíncrona
 async function obtenerUsuarios() {
@@ -28,65 +25,11 @@ const btnCancelarModal = document.getElementById('btn-cancelar-modal');
 const btnCambiarModal = document.getElementById('btn-cambiar-modal');
 const modalMensaje = document.getElementById('modal-mensaje');
 
-// ====== PARCHE: VALIDACIÓN DE ACCESO EN VIVO CONTRA FIRESTORE ======
+// ====== PARCHE: CONTROL UNIFICADO EN INDEX.HTML ======
 if (formulario) {
-    formulario.addEventListener('submit', async function(evento) {
-        evento.preventDefault();
-        const usuarioIngresado = document.getElementById('usuario').value.trim();
-        const claveIngresada = document.getElementById('password').value;
-
-        if (!contenedorMensaje) return;
-        contenedorMensaje.textContent = "";
-        contenedorMensaje.style.color = "red";
-
-        try {
-            // Importación bajo demanda de los módulos necesarios desde la configuración central
-            const { db } = await import('./firebase-config.js');
-            const { doc, getDoc } = await import('https://gstatic.com');
-
-            // Consulta directa a la colección 'usuarios' usando el DNI ingresado como ID del documento
-            const docRef = doc(db, "usuarios", usuarioIngresado);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                const datosUsuario = docSnap.data();
-
-                // Validación de la contraseña almacenada en la base de datos
-                if (datosUsuario.clave === claveIngresada) {
-                    
-                    // Inyección y normalización dinámica de los permisos recuperados de la nube
-                    const tokenSesion = {
-                        nombre: datosUsuario.nombre,
-                        rol: datosUsuario.rol,
-                        dni: datosUsuario.dni,
-                        esProfesor: datosUsuario.esProfesor || false,
-                        permisoGestionPeriodos: datosUsuario.permisoGestionPeriodos === true || datosUsuario.permisoGestionPeriodos === "true"
-                    };
-
-                    localStorage.setItem('usuarioActivo', JSON.stringify(tokenSesion));
-                    
-                    contenedorMensaje.style.color = "green";
-                    contenedorMensaje.textContent = `¡Acceso en vivo concedido! Bienvenido/a ${datosUsuario.nombre}...`;
-                    
-                    setTimeout(() => {
-                        window.location.href = "panel.html";
-                    }, 1000);
-                    return;
-                }
-            }
-            
-            // Mensaje de error genérico unificado por seguridad
-            contenedorMensaje.textContent = "DNI o contraseña incorrectos";
-            const passInput = document.getElementById('password');
-            if (passInput) passInput.value = "";
-
-        } catch (error) {
-            console.error("Error en la conexión viva de autenticación con Firestore:", error);
-            contenedorMensaje.textContent = "Error de conexión: No se pudo verificar sus credenciales en la nube.";
-        }
-    });
+    console.log("Módulo de autenticación unificado activo en la interfaz index.html");
 }
-// ==================================================================
+
 
 
 // 3. Abrir y Cerrar la Ventana Modal Autónoma
