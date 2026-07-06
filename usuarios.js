@@ -405,6 +405,16 @@ window.removerCatedraBolsa = function(indice) {
     catedrasTemporales.splice(indice, 1);
     actualizarTagsBolsaHoras();
 };
+// Motor de conversión nativo SHA-256 para paridad con index.html
+async function generarHashSHA256(cadena) {
+    const encoder = new TextEncoder();
+    const datos = encoder.encode(cadena);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', datos);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+
 
 async function procesarGuardarUsuario(e) {
     e.preventDefault();
@@ -488,9 +498,10 @@ async function procesarGuardarUsuario(e) {
             permisoGestionPeriodos: valorGestionPeriodos
         };
 
-        if (!dniOriginal) {
-            payloadUsuario.clave = valClave;
-        }
+            if (!dniOriginal) {
+        // Corrección de paridad: Hasheamos la contraseña antes de subirla a Cloud Firestore
+        payloadUsuario.clave = await generarHashSHA256(valClave);
+    }
 
         if (dniOriginal && dniOriginal !== dni) {
             await deleteDoc(doc(db, "usuarios", dniOriginal));
