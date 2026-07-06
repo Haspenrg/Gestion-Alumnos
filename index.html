@@ -231,13 +231,20 @@ if (claveDbFirestore && claveDbFirestore.length === 64) {
 // 2. Autenticación técnica controlada: si coincide con la DB de la institución, concedemos el pase técnico
 let user = { displayName: datosDb.nombre || "Personal Haspen" };
 try {
-    // Intentamos levantar el token de sesión de Firebase Auth de fondo utilizando la clave de fallback compartida
-    const claveParaAutenticar = (claveDbFirestore && claveDbFirestore.length === 64) ? "HaspenAdmin2026!#" : claveIngresada;
-    const credenciales = await signInWithEmailAndPassword( auth, emailReal, claveParaAutenticar);
+    const credenciales = await signInWithEmailAndPassword(auth, emailReal, claveIngresada);
     user = credenciales.user;
 } catch (authError) {
-    console.warn("Inicio de sesión guiado por base de datos institucional autorizado de modo independiente.");
+    console.error(authError);
+    mostrarAlertaUI(txtMensaje, "Error en el servidor de autenticación. Verifique su cuenta.", "#dc2626");
+    if (inputUsuario) inputUsuario.disabled = false;
+    if (inputClave) inputClave.disabled = false;
+    if (btnSubmit) { 
+        btnSubmit.disabled = false; 
+        btnSubmit.textContent = textoOriginalBoton; 
+    }
+    return; 
 }
+
 
       // ====== PARCHE ARQUITECTÓNICO: HIDRATACIÓN DE MATRIZ DE PERMISOS RBAC DINÁMICA ======
        let matrizPermisosRol = {
