@@ -648,10 +648,12 @@ async function procesarGuardarPlanilla(e) {
                 notaDefinitiva = (txtDef === "-" || txtDef === "") ? null : parseInt(txtDef, 10);
             }
 
+         // ====== PARCHE: INYECCIÓN DE CICLO LECTIVO E ID HISTÓRICO BLINDADO ======
             const estructuraCalificacionAlumno = {
                 alumnoDni: dniAlumno,
                 cursoId: cursoId,
                 materia: materiaId,
+                cicloLectivo: window.cicloLectivoTrabajado || new Date().getFullYear().toString(),
                 notas: {
                     trim1: { n1: isNaN(c1n1) ? null : c1n1, n2: isNaN(c1n2) ? null : c1n2, ef: isNaN(c1ef) ? null : c1ef },
                     trim2: { n1: isNaN(c2n1) ? null : c2n1, n2: isNaN(c2n2) ? null : c2n2, ef: isNaN(c2ef) ? null : c2ef }
@@ -679,17 +681,59 @@ async function procesarGuardarPlanilla(e) {
                 }
             }
 
-            const docIdUnico = `${dniAlumno}_${materiaId.trim().replace(/\s+/g, '_')}_${cursoId}`;
+            // ID Único indexado por año para evitar sobreescritura destructiva interanual
+            const matIdLimpia = materiaId.trim().replace(/\s+/g, '_');
+            const anioTrabajado = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
+            const docIdUnico = `${dniAlumno}_${matIdLimpia}_${anioTrabajado}`;
             const docRef = doc(db, "alumnos_calificaciones", docIdUnico);
+            // ====== FIN DEL PARCHE ======
 
-            const promesaEscritura = setDoc(docRef, estructuraCalificacionAlumno, { merge: true })
-                .then(async () => {
+
+                       const promesaEscritura = setDoc(docRef, estructuraCalificacionAlumno, { merge: true })
+                    .then(async () => {
+                    const baseCdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
+                    const { doc: docFirestore, setDoc: setDocFirestore, deleteDoc } = await import(baseCdn + 'firebase-firestore.js');
+                    
+                    const matIdLimpia = materiaId.trim().replace(/\s+/g, '_').toUpperCase();
+                    const anioOrigenNum = parseInt(window.cicloLectivoTrabajado || new Date().getFullYear().toString(), 10);
+                    const idPreviaRaizUnico = `${dniAlumno}_${matIdLimpia}_${anioOrigenNum}`;
+                    const previaDocRef = docFirestore(db, "previas", idPreviaRaizUnico);
+
+                    if (estructuraCalificacionAlumno.notaFinal !== null) {
+                        if (estructuraCalificacionAlumno.notaFinal < 6) {
+                            const cursosCache = JSON.parse(localStorage.getItem('cursosColegio')) || [];
+                            const cursoData = cursosCache.find(c => c.id === cursoId) || {};
+                            const textoCursoVisor = `${cursoData.ciclo || ''} - DIV: ${cursoData.division || ''} (${cursoData.turno || ''})`.toUpperCase();
+                            const orientacionData = (cursoData.orientacion || ((cursoData.ciclo || '').includes("1°") || (cursoData.ciclo || '').includes("2°") || (cursoData.ciclo || '').includes("3°") ? "CICLO BÁSICO" : "SIN ESPECIFICAR")).toUpperCase();
+
+                            await setDocFirestore(previaDocRef, {
+                                dni: dniAlumno,
+                                alumnoNombre: (fila.cells[1]?.textContent || "ALUMNO SIN NOMBRE").replace(/🗲.*/, "").trim().toUpperCase(),
+                                materia: materiaId.trim().toUpperCase(),
+                                curso: textoCursoVisor,
+                                cursoOrigen: cursoId,
+                                orientacion: orientacionData,
+                                anioOrigen: anioOrigenNum,
+                                notaFinalCursada: estructuraCalificacionAlumno.notaFinal,
+                                libroFolio: "-",
+                                notaExamen: "-",
+                                fechaExamen: "-",
+                                estado: "Pendiente",
+                                origen: "AUTOMATICO_FEBRERO_CALIFICACIONES",
+                                ultimaModificacion: new Date()
+                            }, { merge: true });
+                        } else {
+                            await deleteDoc(previaDocRef);
+                        }
+                    }
+
                     if (tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
-                        const esAltaNueva = ! estadoPrevio;
+                        const esAltaNueva = !estadoPrevio;
                         const subcatAuditoria = esAltaNueva ? "CARGA_NOTA" : "RECTIFICACION";
                         const descAuditoria = esAltaNueva
-                        ? `Carga de notas efectuada en la asignatura ${materiaId}.`
-                        : `Rectificación de notas efectuada en la asignatura ${materiaId}.`;
+                            ? `Carga de notas efectuada en la asignatura ${materiaId}.`
+                            : `Rectificación de notas efectuada en la asignatura ${materiaId}.`;
+                        
                         const snapshotForense = {
                             materia: materiaId,
                             cursoId: cursoId,
@@ -712,6 +756,7 @@ async function procesarGuardarPlanilla(e) {
                         );
                     }
                 });
+
 
             operacionesPersistencia.push(promesaEscritura);
         });
