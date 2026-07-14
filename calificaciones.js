@@ -609,10 +609,17 @@ async function procesarGuardarPlanilla(e) {
     if (!cursoId || !materiaId) return;
 
     const botonSubmit = formPlanilla.querySelector('button[type="submit"]');
-    if (botonSubmit) {
-        botonSubmit.disabled = true;
-        botonSubmit.textContent = "💾 Sincronizando Red...";
-    }
+const txtNotificacion = document.getElementById('notificacionGuardadoNotas');
+
+if (botonSubmit) {
+    botonSubmit.disabled = true;
+    botonSubmit.textContent = "💾 Sincronizando Red...";
+}
+if (txtNotificacion) {
+    txtNotificacion.style.color = "#1b4d82";
+    txtNotificacion.textContent = "🔄 Procesando registros académicos...";
+}
+
 
        try {
         const { doc, setDoc } = await import(b + 'firebase-firestore.js');
@@ -761,16 +768,28 @@ async function procesarGuardarPlanilla(e) {
             operacionesPersistencia.push(promesaEscritura);
         });
 
-        await Promise.all(operacionesPersistencia);
-        alert("Sincronización con Firestore y auditoría forense finalizadas con éxito.");
-        await cargarNominaEstudiantes();
-
-    } catch (error) {
-        console.error("Error crítico durante la sincronización inteligente:", error);
-        alert("Ocurrió un error al intentar sincronizar con Firestore. Revise la consola.");
+     await Promise.all(operacionesPersistencia);
+    if (txtNotificacion) {
+        txtNotificacion.style.color = "#16a34a";
+        txtNotificacion.textContent = "✅ ¡Sincronización finalizada con éxito!";
+        setTimeout(() => { txtNotificacion.textContent = ""; }, 4000);
     }
-
+    await cargarNominaEstudiantes();
+  } catch (error) {
+    console.error("Error crítico durante la sincronización inteligente:", error);
+    if (txtNotificacion) {
+        txtNotificacion.style.color = "#dc2626";
+        txtNotificacion.textContent = "❌ Error al intentar sincronizar con la base de datos.";
+    }
+  } finally {
+    if (botonSubmit) {
+        botonSubmit.disabled = false;
+        botonSubmit.textContent = "Guardar Planilla";
+    }
+  }
 }
+
+
 
 // ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
 const IDs_PERIODOS_REALES = [
