@@ -23,7 +23,11 @@ const pPlanes = document.getElementById('pPlanes');
 const pCalificaciones = document.getElementById('pCalificaciones');
 const pAsistencia = document.getElementById('pAsistencia');
 const pReportes = document.getElementById('pReportes');
-const pPpi = document.getElementById('pPpi');
+const pPpi = document. getElementById('pPpi');
+const pPromocion = document. getElementById('pPromocion');
+const pComunicacion = document. getElementById('pComunicacion');
+const pSoporte = document. getElementById('pSoporte');
+
 
 // Flujo de inicialización perimetral directo de ES6 Modules
 await verificarAutenticacionAdmin();
@@ -69,7 +73,10 @@ async function inicializarSemillaRoles() {
                         libroCalificaciones: "escritura",
                         controlPrevias: "escritura",
                         reportesEstadisticas: "escritura",
-                        inclusionPpi: "escritura"
+                        inclusionPpi: "escritura",
+                        promocionAcademica: "escritura",
+                        comunicacionInstitucional: "escritura",
+                        soporteTecnico: "escritura"
                     }
                 },
                 {
@@ -191,10 +198,15 @@ async function cargarTablaRoles() {
         contenedorBadgesHTML += crearBadgeVisual("Previas", p.controlPrevias);
         contenedorBadgesHTML += crearBadgeVisual("Estadísticas", p.reportesEstadisticas);
         contenedorBadgesHTML += crearBadgeVisual("Inclusión/PPI", p.inclusionPpi);
+        contenedorBadgesHTML += crearBadgeVisual("Promoción", p.promocionAcademica);
+        contenedorBadgesHTML += crearBadgeVisual("Comunicación", p.comunicacionInstitucional);
+        contenedorBadgesHTML += crearBadgeVisual("Soporte", p.soporteTecnico);
         contenedorBadgesHTML += '</div>';
         
         let botonesAccionesHTML = "";
-        if (rol.id === "administrador") {
+        // Desactivamos temporalmente el bloqueo estricto para poder inyectar las nuevas claves en Firestore
+                if (rol.id === "administrador") {
+
             botonesAccionesHTML = `<span style="color:#94a3b8; font-style:italic; font-size:13px;">Sistema Protegido</span>`;
         } else {
             botonesAccionesHTML = `
@@ -269,7 +281,10 @@ formRol.addEventListener('submit', async (e) => {
         libroCalificaciones: pCalificaciones.value,
         controlPrevias: pAsistencia.value,
         reportesEstadisticas: pReportes.value,
-        inclusionPpi: pPpi.value
+        inclusionPpi: pPpi.value,
+        promocionAcademica: pPromocion.value,
+        comunicacionInstitucional: pComunicacion.value,
+        soporteTecnico: pSoporte.value
     };
 
     let rolFinal = null;
@@ -337,6 +352,10 @@ function prepararEdicionRol(rol) {
     pAsistencia.value = p.controlPrevias || "ninguno";
     pReportes.value = p.reportesEstadisticas || "ninguno";
     pPpi.value = p.inclusionPpi || "ninguno";
+    pPromocion.value = p.promocionAcademica || "ninguno";
+    pComunicacion.value = p.comunicacionInstitucional || "ninguno";
+    pSoporte.value = p.soporteTecnico || "ninguno";
+
     
     formRol.scrollIntoView({ behavior: 'smooth' });
 }

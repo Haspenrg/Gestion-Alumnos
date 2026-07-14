@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comunicación Institucional - Colegio HASPEN</title>
+    <!-- Importamos Tailwind CSS para los estilos nativos -->
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        .panel-container {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="panel-container p-4 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white rounded-xl border border-blue-100 shadow-sm p-6">
+        <!-- Encabezado Institucional -->
+        <div class="flex flex-col md:flex-row justify-between items-center border-b-2 border-[#1b4d82] pb-4 mb-6 gap-4">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-50 rounded-lg">
+                    <svg class="w-8 h-8 text-[#1b4d82]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" xmlns="http://w3.org">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L22 8m-2 11H4a2 2 0 01-2-2V8a2 2 0 012-2h16a2 2 0 012 2v9a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-[#1b4d82]">Comunicación Institucional</h1>
+                    <p class="text-sm text-gray-500">Mapeo y envío de mensajería digital a alumnos y tutores</p>
+                </div>
+            </div>
+            <!-- Botón Volver al Panel -->
+            <button onclick="window.location.href='panel.html'" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Volver al Panel
+            </button>
+        </div>
+
+        <!-- Área de Trabajo Principal (Vacía por ahora para ir paso a paso) -->
+        <div class="border-2 border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-gray-400">
+            <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0h18a2.25 2.25 0 0 1 2.25 2.25v4.25A2.25 2.25 0 0 1 19.5 21h-15A2.25 2.25 0 0 1 2.25 18.75v-4.25A2.25 2.25 0 0 1 2.25 13.5Zm0-4.5h18A2.25 2.25 0 0 1 22 11.25v.75H2V11.25A2.25 2.25 0 0 1 4.25 9Zm0 0V5.25A2.25 2.25 0 0 1 4.25 3h15A2.25 2.25 0 0 1 21 5.25V9"/></svg>
+            <p class="text-lg font-medium text-gray-500">Módulo en preparación</p>
+            <p class="text-sm text-gray-400 mt-1">Próximamente conectaremos las consolas de mensajería por curso e institucionales.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa de Ayuda - Colegio HASPEN</title>
+    <!-- Importamos Tailwind CSS para los estilos nativos -->
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        .panel-container {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="panel-container p-4 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white rounded-xl border border-blue-100 shadow-sm p-6">
+        <!-- Encabezado Institucional -->
+        <div class="flex flex-col md:flex-row justify-between items-center border-b-2 border-[#1b4d82] pb-4 mb-6 gap-4">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-50 rounded-lg">
+                    <svg class="w-8 h-8 text-[#1b4d82]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" xmlns="http://w3.org">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a2.25 2.25 0 0 1-3.181-3.183l3.277-3.276a4.5 4.5 0 0 0-6.336 4.486c.048.58.024 1.193-.14 1.743m-1.156 1.156-.232.232m0 0-1.665 1.664m-4.64-4.64 2.496-3.03c.29-.35.64-.619 1.033-.792m-1.033.792L3.093 11.42a2.548 2.548 0 1 1 3.586-3.586l4.64 4.64M6.68 6.68l.232-.232" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-[#1b4d82]">Mesa de Ayuda</h1>
+                    <p class="text-sm text-gray-500">Reporte de incidencias, errores de carga y solicitudes técnicas</p>
+                </div>
+            </div>
+            <!-- Botón Volver al Panel -->
+            <button onclick="window.location.href='panel.html'" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Volver al Panel
+            </button>
+        </div>
+
+        <!-- Área de Trabajo Principal (Vacía por ahora para ir paso a paso) -->
+        <div class="border-2 border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-gray-400">
+            <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.008 1.24l.885 1.77a2.25 2.25 0 0 0 2.007 1.24h1.98a2.25 2.25 0 0 0 2.007-1.24l.885-1.77a2.25 2.25 0 0 1 2.007-1.24h3.86m-18 0h18a2.25 2.25 0 0 1 2.25 2.25v4.25A2.25 2.25 0 0 1 19.5 21h-15A2.25 2.25 0 0 1 2.25 18.75v-4.25A2.25 2.25 0 0 1 2.25 13.5Zm0-4.5h18A2.25 2.25 0 0 1 22 11.25v.75H2V11.25A2.25 2.25 0 0 1 4.25 9Zm0 0V5.25A2.25 2.25 0 0 1 4.25 3h15A2.25 2.25 0 0 1 21 5.25V9"/></svg>
+            <p class="text-lg font-medium text-gray-500">Módulo en preparación</p>
+            <p class="text-sm text-gray-400 mt-1">Próximamente habilitaremos la bandeja de mensajes directos para el administrador.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -93,73 +93,95 @@
 <!-- Contenedor Principal de Módulos Dividido en Dos Secciones -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
     
-   <!-- REEMPLAZO PARA: Contenedor Izquierdo: Gestión Académica -->
+<!-- REEMPLAZO PARA: Contenedor Izquierdo: Gestión Académica -->
 <div style=" border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
     <h3 style=" color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
         Gestión Académica
     </h3>
-    <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+    <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
         <!-- 2. Gestión de Alumnos -->
-        <div id="mod-inscripcion" class=" modulo-card" style=" margin: 0;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+        <div id="mod-inscripcion" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
                 <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
             </span>
-            <h4>Gestión de Alumnos</h4>
+            <h4 style="margin: 0; text-align: center;">Gestión de Alumnos</h4>
         </div>
         <!-- 4. Calificaciones -->
-        <div id="mod-calificaciones" class=" modulo-card" style=" margin: 0;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+        <div id="mod-calificaciones" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
                 <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
             </span>
-            <h4>Calificaciones</h4>
+            <h4 style="margin: 0; text-align: center;">Calificaciones</h4>
         </div>
         <!-- 5. Control de Previas -->
-        <div id="mod-previas" class=" modulo-card" style=" margin: 0;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+        <div id="mod-previas" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
                 <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" /></svg>
             </span>
-            <h4>Control de Previas</h4>
+            <h4 style="margin: 0; text-align: center;">Control de Previas</h4>
         </div>
         <!-- 6. Estadísticas -->
-        <div id="mod-estadisticas" class=" modulo-card" style=" margin: 0;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+        <div id="mod-estadisticas" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
                 <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v5.25c0 .621-.504 1.125-1.125 1.125h-2.25A1.125 1.125 0 0 1 3 18.375v-5.25ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125v-9.75ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v14.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
             </span>
-            <h4>Estadísticas</h4>
+            <h4 style="margin: 0; text-align: center;">Estadísticas</h4>
+        </div>
+        <!-- 7. Promoción -->
+        <div id="mod-promocion" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </span>
+            <h4 style="margin: 0; text-align: center;">Promoción</h4>
+        </div>
+        <!-- 8. Comunicación Institucional -->
+        <div id="mod-comunicacion" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L22 8m-2 11H4a2 2 0 01-2-2V8a2 2 0 012-2h16a2 2 0 012 2v9a2 2 0 01-2 2z"/></svg>
+            </span>
+            <h4 style="margin: 0; text-align: center;">Comunicación Institucional</h4>
         </div>
     </div>
 </div>
 
 
- <!-- REEMPLAZO PARA: Contenedor Derecho: Configuraciones del Sistema -->
+<!-- REEMPLAZO PARA: Contenedor Derecho: Configuraciones del Sistema -->
 <div style=" border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
     <h3 style=" color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
         Configuraciones del sistema
     </h3>
     <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-        <!-- 1. Gestión de Usuarios -->
-        <div id="mod-usuarios" class=" modulo-card" style=" margin: 0;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+        <!-- Gestión de Usuarios -->
+        <div id="mod-usuarios" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0-3.741-4.794M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-9.75 8.97c0-2.456 1.547-4.522 3.741-4.793A9.094 9.094 0 0 0 5.466 14.167M12 18.75V21m-4.5-2.25H3.375a1.125 1.125 0 0 1-1.125-1.125V11.25a1.125 1.125 0 0 1 1.125-1.125h4.125M21 16.5V11.25a1.125 1.125 0 0 0-1.125-1.125H15.75M12 3v1.5M12 18.75a3.375 3.375 0 0 0 3.375-3.375V12h-6.75v3.375A3.375 3.375 0 0 0 12 18.75Z" /></svg>
             </span>
-            <h4>Gestión de Usuarios</h4>
+            <h4 style="margin: 0; text-align: center;">Gestión de Usuarios</h4>
         </div>
-        <!-- 7. Creación de Roles -->
-        <div id="mod-roles" class=" modulo-card" style=" margin: 0;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+        <!-- Creación de Roles -->
+        <div id="mod-roles" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751A11.956 11.956 0 0 1 12 2.714Z" /></svg>
             </span>
-            <h4>Creación de Roles</h4>
+            <h4 style="margin: 0; text-align: center;">Creación de Roles</h4>
         </div>
-        <!-- 3. Creación de Cursos y Materias -->
-        <div id="mod-cursos-materias" class=" modulo-card" style=" margin: 0; grid-column: span 2;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 8px;">
+        <!-- Creación de Cursos y Materias -->
+        <div id="mod-cursos-materias" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
                 <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" /></svg>
             </span>
-            <h4>Creación de Cursos y Materias</h4>
+            <h4 style="margin: 0; text-align: center;">Creación de Cursos y Materias</h4>
+        </div>
+        <!-- Soporte Técnico -->
+        <div id="mod-soporte" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
+                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a2.25 2.25 0 0 1-3.181-3.183l3.277-3.276a4.5 4.5 0 0 0-6.336 4.486c.048.58.024 1.193-.14 1.743m-1.156 1.156-.232.232m0 0-1.665 1.664m-4.64-4.64 2.496-3.03c.29-.35.64-.619 1.033-.792m-1.033.792L3.093 11.42a2.548 2.548 0 1 1 3.586-3.586l4.64 4.64M6.68 6.68l.232-.232" /></svg>
+            </span>
+            <h4 style="margin: 0; text-align: center;">Soporte Técnico</h4>
         </div>
     </div>
 </div>
+
 
 
 
@@ -211,15 +233,19 @@ async function verificarYConfigurarPanel() {
   document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
   document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol.toUpperCase()}`;
 
-  const mapaRutas = {
-    "mod-usuarios": "usuarios.html",
-    "mod-inscripcion": "inscripcion.html",
-    "mod-cursos-materias": "cursos-materias.html",
-    "mod-calificaciones": "calificaciones.html",
-    "mod-previas": "previas.html",
-    "mod-estadisticas": "estadisticas.html",
-    "mod-roles": "roles.html"
-  };
+      const mapaRutas = {
+        "mod-usuarios": "usuarios.html",
+        "mod-inscripcion": "inscripcion.html",
+        "mod-cursos-materias": "cursos-materias.html",
+        "mod-calificaciones": "calificaciones.html",
+        "mod-previas": "previas.html",
+        "mod-estadisticas": "estadisticas.html",
+        "mod-roles": "roles.html",
+        "mod-promocion": "promocion.html",
+        "mod-comunicacion": "comunicacion.html",
+        "mod-soporte": "soporte.html"
+    };
+
 
   if (rolIdMapeado === "administrador") {
     Object.keys(mapaRutas).forEach(id => configurarEnlaceModulo(id, mapaRutas[id]));
@@ -242,8 +268,13 @@ async function verificarYConfigurarPanel() {
   evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, mapaRutas["mod-estadisticas"], "Estadísticas");
   evaluarPermisoModulo("mod-inscripcion", permisos.legajoDigital, mapaRutas["mod-inscripcion"], "Gestión de Alumnos");
 
-  const permisoCalificaciones = usuario.esProfesor ? "escritura" : permisos.libroCalificaciones;
+    const permisoCalificaciones = usuario.esProfesor ? "escritura" : permisos.libroCalificaciones;
   evaluarPermisoModulo("mod-calificaciones", permisoCalificaciones, mapaRutas["mod-calificaciones"], "Calificaciones");
+  
+  evaluarPermisoModulo("mod-promocion", permisos.promocionAcademica, mapaRutas["mod-promocion"], "Promoción Académica");
+  evaluarPermisoModulo("mod-comunicacion", permisos.comunicacionInstitucional, mapaRutas["mod-comunicacion"], "Comunicación Institucional");
+  evaluarPermisoModulo("mod-soporte", permisos.soporteTecnico, mapaRutas["mod-soporte"], "Soporte Técnico");
+
 }
 
 
