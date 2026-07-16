@@ -3,7 +3,7 @@
     const { collection, getDocs } = await import(b + 'firebase-firestore.js');
     const db = (await import('./firebase-config.js')).db;
 
-       const selectAnioOrigen = document.getElementById("select-anio-origen");
+    const selectAnioOrigen = document.getElementById("select-anio-origen");
     const selectCursoOrigen = document.getElementById("select-curso-origen");
     const selectAnioDestino = document.getElementById("select-anio-destino");
     const selectCursoDestino = document.getElementById("select-curso-destino");
@@ -15,6 +15,13 @@
     const popover = document.getElementById("popover-irregularidad");
     const popoverContenido = document.getElementById("popover-contenido");
     const filaVaciaDestino = document.getElementById("fila-vacia-destino");
+
+    const btnVolverPanel = document.getElementById("btn-volver-panel");
+    if (btnVolverPanel) {
+        btnVolverPanel.addEventListener("click", () => {
+            window.location.href = "panel.html";
+        });
+    }
 
     let alumnosOrigenCargados = [];
 
@@ -121,11 +128,13 @@
                     : "Sin materias pendientes.";
 
                 const alumnoObjeto = {
-                    dni: alumnoData.dni,
-                    nombre: alumnoData.nombre,
-                    esRegular: esRegular,
-                    textoPopover: textoPopover
-                };
+                dni: alumnoData.dni,
+                nombre: alumnoData.nombre,
+                esRegular: esRegular,
+                textoPopover: textoPopover,
+                cursoOrigenId: cursoId
+            };
+
 
                 alumnosOrigenCargados.push(alumnoObjeto);
                 renderizarFilaAlumno(alumnoObjeto);
@@ -182,38 +191,87 @@
         const checkboxes = tbodyOrigen.querySelectorAll(".check-alumno");
         checkboxes.forEach(cb => cb.checked = checkTodosOrigen.checked);
     });
+// Actualización reactiva de la tabla derecha cuando cambia el curso destino
+    selectCursoDestino.addEventListener("change", () => {
+        const nuevoCursoId = selectCursoDestino.value;
+        const nuevoCursoTexto = selectCursoDestino.options[selectCursoDestino.selectedIndex]?.text || "";
 
-    btnPromocionar.addEventListener("click", () => {
-        const checkboxesSeleccionados = tbodyOrigen.querySelectorAll(".check-alumno:checked");
+        // Buscamos todas las filas de alumnos cargadas en la tabla de destino
+        const filasDestino = tbodyDestino.querySelectorAll("tr[data-dni]");
+        
+        filasDestino.forEach(tr => {
+            // Verificamos si la fila corresponde a un alumno regular (Promoción)
+            const esPromocion = tr.innerHTML.includes("Promoción");
+            
+            if (esPromocion) {
+                // Actualizamos el atributo interno para Firebase
+                tr.setAttribute("data-curso-destino", nuevoCursoId);
+                
+                // Actualizamos visualmente el texto de la tercera columna (Curso Destino)
+                const celdas = tr.querySelectorAll("td");
+                if (celdas.length >= 3) {
+                    celdas[2].innerText = nuevoCursoTexto;
+                }
+            }
+        });
+    });
+   btnPromocionar.addEventListener("click", () => {
+    const cursoDestinoIdSeleccionado = selectCursoDestino.value;
+    const cursoDestinoTextoSeleccionado = selectCursoDestino.options[selectCursoDestino.selectedIndex]?.text || "";
 
-        if (checkboxesSeleccionados.length === 0) {
+    // Recuperamos el texto usando la variable global correcta ya existente
+    const cursoOrigenTexto = selectCursoOrigen.options[selectCursoOrigen.selectedIndex]?.text || "";
+
+    const checkboxesSeleccionados = tbodyOrigen.querySelectorAll(".check-alumno:checked");
+
+
+    if (checkboxesSeleccionados.length === 0) {
+
             alert("Por favor, seleccione al menos un alumno para promocionar.");
             return;
         }
 
         if (filaVaciaDestino) filaVaciaDestino.style.display = "none";
 
-        checkboxesSeleccionados.forEach(cb => {
-            const dni = cb.value;
-            const alumnoData = alumnosOrigenCargados.find(a => a.dni === dni);
+            checkboxesSeleccionados.forEach(cb => {
+        const dni = cb.value;
+        const alumnoData = alumnosOrigenCargados.find(a => a.dni === dni);
 
-            if (!alumnoData) return;
+        if (!alumnoData) return;
 
-            const yaExiste = tbodyDestino.querySelector(`[data-dni="${dni}"]`);
-            if (!yaExiste) {
-                const tr = document.createElement("tr");
-                tr.setAttribute("data-dni", dni);
-                tr.style.borderBottom = "1px solid #f1f5f9";
-                tr.innerHTML = `
-                    <td style="padding: 10px; font-family: monospace;">${dni}</td>
-                    <td style="padding: 10px; font-weight: 500;">${alumnoData.nombre}</td>
-                    <td style="padding: 10px; text-align: right;">
-                        <span style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 12px; background-color: #dbeafe; color: #1e40af;">Listo</span>
-                    </td>
-                `;
-                tbodyDestino.appendChild(tr);
+        const yaExiste = tbodyDestino.querySelector(`[data-dni="${dni}"]`);
+        if (!yaExiste) {
+            // Decidimos curso e indicadores según la regularidad académica
+            let cursoFinalId = "";
+            let cursoFinalTexto = "";
+            let badgeHtml = "";
+
+            if (alumnoData.esRegular) {
+                cursoFinalId = cursoDestinoIdSeleccionado;
+                cursoFinalTexto = cursoDestinoTextoSeleccionado;
+                badgeHtml = `<span style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 12px; background-color: #dcfce7; color: #16a34a;">Promoción</span>`;
+            } else {
+                cursoFinalId = alumnoData.cursoOrigenId;
+                cursoFinalTexto = cursoOrigenTexto;
+                badgeHtml = `<span style="display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 12px; background-color: #ffedd5; color: #ea580c;">Permanencia</span>`;
             }
-        });
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-dni", dni);
+            tr.setAttribute("data-curso-destino", cursoFinalId); // Atributo clave para el guardado final
+            tr.style.borderBottom = "1px solid #f1f5f9";
+            tr.innerHTML = `
+                <td style="padding: 10px; font-family: monospace;">${dni}</td>
+                <td style="padding: 10px; font-weight: 500;">${alumnoData.nombre}</td>
+                <td style="padding: 10px; color: #475569;">${cursoFinalTexto}</td>
+                <td style="padding: 10px; text-align: right;">
+                    ${badgeHtml}
+                </td>
+            `;
+            tbodyDestino.appendChild(tr);
+        }
+    });
+
     });
            btnGuardarCambios.addEventListener("click", async () => {
         const anioOrigen = selectAnioOrigen.value;

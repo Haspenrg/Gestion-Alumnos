@@ -114,40 +114,46 @@
         <!-- TABLA DESTINO LIMPIA -->
         <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-                <thead style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 10;">
-                    <tr>
-                        <th style="padding: 10px; color: #4a5568; font-weight: 700;">DNI</th>
-                        <th style="padding: 10px; color: #4a5568; font-weight: 700;">Alumno</th>
-                        <th style="padding: 10px; color: #4a5568; font-weight: 700; text-align: right;">Estatus</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-destino" style="color: #334155;">
-                    <tr id="fila-vacia-destino">
-                        <td colspan="3" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">
-                            Seleccione alumnos a la izquierda y presione "Promocionar"
-                        </td>
-                    </tr>
-                </tbody>
+                					<thead style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 10;">
+						<tr>
+							<th style="padding: 10px; color: #4a5568; font-weight: 700;">DNI</th>
+							<th style="padding: 10px; color: #4a5568; font-weight: 700;">Alumno</th>
+							<th style="padding: 10px; color: #4a5568; font-weight: 700;">Curso Destino</th>
+							<th style="padding: 10px; color: #4a5568; font-weight: 700; text-align: right;">Estatus</th>
+						</tr>
+					</thead>
+					<tbody id="tbody-destino" style="color: #334155;">
+						<tr id="fila-vacia-destino">
+							<td colspan="4" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">
+								Seleccione alumnos a la izquierda y presione "Promocionar"
+							</td>
+						</tr>
+
+                    </tbody>
             </table>
         </div>
     </div>
 
 </div>
 
-<!-- BOTONERA DE CONTROL -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; flex-wrap: wrap; gap: 15px; width: 100%; box-sizing: border-box;">
+<!-- BOTONERA DE CONTROL MODIFICADA -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background-color: #f8fafc; border-top: 1px solid #e2e8f0;">
     <div style="font-size: 12px; color: #64748b; max-width: 500px;">
-        <strong>Control de proceso:</strong> Use "Promocionar" para verificar el listado en la pantalla de destino. Una vez consolidada la lista, presione "Guardar Cambios" para confirmar en la base de datos.
+        <strong>Control de proceso:</strong> Use "Promocionar" para verificar el listado en la pantalla de destino. Una vez consolidada la lista...
     </div>
     <div style="display: flex; gap: 12px;">
-        <button id="btn-promocionar" type="button" style="padding: 10px 20px; font-size: 14px; font-weight: 600; color: #ffffff; background-color: #1b4d82; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+        <button id="btn-volver-panel" type="button" style="padding: 10px 20px; font-size: 14px; font-weight: 600; color: #ffffff; background-color: #475569; border: none; border-radius: 6px; cursor: pointer;">
+            Volver al Panel
+        </button>
+        <button id="btn-promocionar" type="button" style="padding: 10px 20px; font-size: 14px; font-weight: 600; color: #ffffff; background-color: #2563eb; border: none; border-radius: 6px; cursor: pointer;">
             Promocionar
         </button>
-        <button id="btn-guardar-cambios" type="button" style="padding: 10px 20px; font-size: 14px; font-weight: 600; color: #ffffff; background-color: #10b981; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+        <button id="btn-guardar-cambios" type="button" style="padding: 10px 20px; font-size: 14px; font-weight: 600; color: #ffffff; background-color: #10b981; border: none; border-radius: 6px; cursor: pointer;">
             Guardar Cambios
         </button>
     </div>
 </div>
+
 
 <!-- SINGLE POPOVER TEMPLATE LIMPIO -->
 <div id="popover-irregularidad" style="display: none; position: fixed; z-index: 1000; width: 280px; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); padding: 12px; font-family: sans-serif; pointer-events: none;">
