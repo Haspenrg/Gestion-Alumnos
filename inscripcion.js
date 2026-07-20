@@ -1,19 +1,65 @@
 (async function() {
 'use strict';
+// MOTOR DE MENSAJERÍA INSTITUCIONAL COLEGIO HASPEN (REEMPLAZO DE ALERT/CONFIRM)
+window.haspenAlert = function(mensaje, tipo = "info") {
+    const contenedor = document.getElementById('haspen-toast-container');
+    if (!contenedor) return;
+    const toast = document.createElement('div');
+    let bg = "#1e293b", icono = "ℹ️";
+    if (tipo === "exito") { bg = "#16a34a"; icono = "✅"; }
+    else if (tipo === "error") { bg = "#dc2626"; icono = "❌"; }
+    else if (tipo === "alerta") { bg = "#d97706"; icono = "⚠️"; }
+    
+    toast.style.cssText = `background: ${bg}; color: white; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);`;
+    toast.innerHTML = `<span>${icono}</span><span style="flex: 1;">${mensaje}</span>`;
+    contenedor.appendChild(toast);
+    
+    setTimeout(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; }, 10);
+    setTimeout(() => {
+        toast.style.opacity = "0"; toast.style.transform = "translateY(-20px)";
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+};
+
+window.haspenConfirm = function(mensaje, titulo = "Confirmar Acción", icono = "⚠️") {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('haspen-modal-confirm');
+        const txtTitulo = document.getElementById('haspen-confirm-titulo');
+        const txtMensaje = document.getElementById('haspen-confirm-mensaje');
+        const icoElement = document.getElementById('haspen-confirm-icono');
+        const btnAceptar = document.getElementById('haspen-confirm-btn-aceptar');
+        const btnCancelar = document.getElementById('haspen-confirm-btn-cancelar');
+        
+        if (!modal || !txtMensaje) return resolve(false);
+        
+        txtTitulo.textContent = titulo;
+        txtMensaje.textContent = mensaje;
+        icoElement.textContent = icono;
+        modal.style.display = "flex";
+        
+        const cerrar = (resultado) => {
+            modal.style.display = "none";
+            btnAceptar.onclick = null;
+            btnCancelar.onclick = null;
+            resolve(resultado);
+        };
+        
+        btnAceptar.onclick = () => cerrar(true);
+        btnCancelar.onclick = () => cerrar(false);
+    });
+};
+
 
 // Estándar de Conexión Anti-CORS Institucional (Crítico)
 const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-
 const { db } = await import('./firebase-config.js');
 const { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, query, where } = await import(b + 'firebase-firestore.js');
-
 // Elementos de la interfaz y selectores avanzados modificados
 const formInscripcion = document.getElementById('formInscripcion');
 const tbodyAlumnos = document.getElementById('tablaAlumnosBody');
 const selectCursoFiltro = document.getElementById('filtroCursoEstructural');
 const btnLoteInforme = document.getElementById('btnEmitirLoteInforme');
 const btnLoteBoletin = document.getElementById('btnEmitirLoteBoletin');
-
 // Elementos del Modal de Impresión
 const modalContenedor = document.getElementById('modalImpresionContenedor');
 const modalCuerpo = document.getElementById('modalImpresionCuerpo');
@@ -21,12 +67,9 @@ const btnCerrarModal = document.getElementById('btnCerrarModalImpresion');
 // 🆕 AGREGAR ESTAS DOS LÍNEAS DEBAJO DE LAS REFERENCIAS DEL FORMULARIO:
 const dniTutorAlumno = document.getElementById('dniTutorAlumno');
 const emailTutor = document.getElementById('emailTutor');
-
-
 // Variables de contexto de sesión globales
 let usuarioLogueado = null;
 let rolNormalizado = "";
-
 // Objeto de persistencia digital
 let base64DocumentosTemporales = {
     dni_alumno: null,
@@ -37,14 +80,12 @@ let base64DocumentosTemporales = {
     dni_tutor: null,
     acta_ppi: null
 };
-
 // Inicialización asíncrona estructurada al cargar el DOM con retardo de seguridad
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => setTimeout(inicializarModuloInscripciones, 50));
 } else {
     setTimeout(inicializarModuloInscripciones, 50);
 }
-
 async function inicializarModuloInscripciones() {
     const datosSesionRaw = localStorage.getItem('usuarioActivo');
     if (!datosSesionRaw) {
@@ -53,20 +94,15 @@ async function inicializarModuloInscripciones() {
     }
     usuarioLogueado = JSON.parse(datosSesionRaw);
     rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
-
     // Escudo de capacidades dinámicas extraído directamente de la sesión activa
 const capacidadesSesion = usuarioLogueado.permisosDelRol || {};
 window.permisoMatricula = capacidadesSesion.legajoDigital ? capacidadesSesion.legajoDigital.toLowerCase().trim() : "ninguno";
-
 // Salvaguarda de infraestructura para cuentas de administración nativa
 if (rolNormalizado.includes("admin") || rolNormalizado.includes("administrador")) {
     window.permisoMatricula = "escritura";
 }
-
 // Gobernación atómica del modo de operación de la pantalla
 window.esSoloLectura = (window.permisoMatricula !== "escritura");
-
-
         if ( window. esSoloLectura === true) {
         const formulario = document. getElementById('contenedorFormularioAlta');
         const banner = document. getElementById('bannerPreceptor');
@@ -74,15 +110,12 @@ window.esSoloLectura = (window.permisoMatricula !== "escritura");
         if ( banner) banner. style. display = "block";
         document.body.classList.add('modo-lectura-activo');
     }
-
     inicializarCiclosLectivosDinamicos();
     await inicializarSelectoresCursosDesdeCloud();
-
     // FILTRO REAL DE PRECEPTORES: Consulta a Firebase usando el DNI de la sesión activa
     const sesionLocal = localStorage.getItem('usuarioActivo');
     if (window.esSoloLectura === true && selectCursoFiltro && window.cachedCursosColegio && sesionLocal) {
-        const usuarioReal = JSON.parse(sesionLocal);
-        
+        const usuarioReal = JSON.parse(sesionLocal);        
         // Vamos a la base de datos a buscar el documento de este usuario usando su DNI
         if (usuarioReal.dni) {
             getDoc(doc(db, "usuarios", usuarioReal.dni)).then((userDocSnap) => {
@@ -96,13 +129,11 @@ window.esSoloLectura = (window.permisoMatricula !== "escritura");
                             const nombreFormateado = `${curso.ciclo} "${curso.division}"`;
                             return permitidos.includes(curso.id) || permitidos.includes(nombreFormateado);
                         });
-                        
                         selectCursoFiltro.innerHTML = '<option value="">Todos los Cursos</option>';
                         cursosFiltrados.forEach(curso => {
                             const numeroAnio = curso.ciclo ? curso.ciclo.charAt(0) : "1";
                             selectCursoFiltro.add(new Option(`${numeroAnio}° "${curso.division}"`, curso.id));
-                        });
-                        
+                        });                       
                         // Forzamos a la tabla a refrescarse con el primer curso permitido de la lista
                         if (cursosFiltrados.length > 0 && typeof procesarFiltrosYNomina === 'function') {
                             selectCursoFiltro.value = cursosFiltrados[0].id;
@@ -113,72 +144,47 @@ window.esSoloLectura = (window.permisoMatricula !== "escritura");
             }).catch(err => console.error("Error al recuperar cursos del preceptor:", err));
         }
     }
-
-
-
     await procesarFiltrosYNomina();
     inicializarManejadoresArchivosDigitales();
     inicializarManejadorReactivoPPI();
     inicializarManejadorReactivoPases();
-
     // Escuchador dinámico táctil para el cálculo automático de edad en vivo
     const inputFecha = document.getElementById('fechaNacimiento');
     if (inputFecha) {
         inputFecha.addEventListener('input', ejecutarCalculoEdadDinamico);
         inputFecha.addEventListener('change', ejecutarCalculoEdadDinamico);
     }
-
     if (formInscripcion) formInscripcion.addEventListener('submit', guardarLegajoDigital);
-    document.getElementById('btnCancelarEdicion')?.addEventListener('click', salirModoEdicion);
-    
+    document.getElementById('btnCancelarEdicion')?.addEventListener('click', salirModoEdicion);    
     document.getElementById('filtroCicloLectivo').addEventListener('change', function() {
         localStorage.setItem('ultimoCicloTrabajado', this.value);
         procesarFiltrosYNomina();
-    });
-    
+    });   
     document.getElementById('filtroBusquedaRapida').addEventListener('input', procesarFiltrosYNomina);
     document.getElementById('filtroEstadoMatricula').addEventListener('change', procesarFiltrosYNomina);
     document.getElementById('filtroAuditoriaDocs').addEventListener('change', procesarFiltrosYNomina);
     document.getElementById('filtroPPI')?.addEventListener('change', procesarFiltrosYNomina);
-
 if (selectCursoFiltro) {
         selectCursoFiltro.addEventListener('change', () => {
             gestionarHabilitacionBotoneraLote();
             procesarFiltrosYNomina();
         });
     }
-// ==========================================
-// 💥 CONTROL DE CUIL DE ALUMNO Y TUTOR (MANUAL)
-// ==========================================
-const elDniAlu = document.getElementById('dniAlumno');
-const elGenAlu = document.getElementById('generoAlumno');
-const elCuiAlu = document.getElementById('cuilAlumno');
-
-const elDniTut = document.getElementById('dniTutorAlumno');
-const elGenTut = document.getElementById('generoTutor');
-const elCuiTut = document.getElementById('cuilTutor');
-
-
-
 
    /* ==========================================================================
    ANCLA_REPARACION_CONSOLA: Parche de Seguridad de Carga Masiva
    ========================================================================== */
 btnLoteInforme?.addEventListener('click', () => emitirDocumentosEnLote('INFORME'));
 btnLoteBoletin?.addEventListener('click', () => emitirDocumentosEnLote('BOLETIN'));
-
 document.getElementById('estadoAlumno')?.addEventListener('change', () => {
     evaluarEstadoMesaEntrada();
     evaluarVisibilidadPanelPases();
 });
-
 evaluarVisibilidadPanelPases();
-
 // --- CONTROL COERCITIVO EXCLUSIVO DE CARGA MASIVA PARA EL ADMINISTRADOR ---
 const divCargaMasiva = document.getElementById('contenedorCargaMasiva');
 if (divCargaMasiva) {
-    const rolUsuarioActivo = usuarioLogueado && usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
-    
+    const rolUsuarioActivo = usuarioLogueado && usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";   
     if (rolUsuarioActivo === "administrador") {
         divCargaMasiva.style.display = "flex";
         // Ejecución segura del Motor de Carga Masiva solo para el Administrador
@@ -192,9 +198,6 @@ if (divCargaMasiva) {
 }
 
 }
-
-
-
 // --- CÁLCULO DE EDAD DINÁMICO ---
 function ejecutarCalculoEdadDinamico() {
     const fechaNacValue = document.getElementById('fechaNacimiento').value;
@@ -222,15 +225,12 @@ function ejecutarCalculoEdadDinamico() {
 function inicializarCiclosLectivosDinamicos() {
     const selectorCiclo = document.getElementById('filtroCicloLectivo');
     if (!selectorCiclo) return;
-
     const anioActual = 2026;
     selectorCiclo.innerHTML = "";
-
     for (let anio = anioActual; anio >= 2021; anio--) {
         const opcion = new Option(`Ciclo ${anio}`, `${anio}`);
         selectorCiclo.add(opcion);
     }
-
     const ultimoCicloGuardado = localStorage.getItem('ultimoCicloTrabajado');
     if (ultimoCicloGuardado && Array.from(selectorCiclo.options).some(opt => opt.value === ultimoCicloGuardado)) {
         selectorCiclo.value = ultimoCicloGuardado;
@@ -239,7 +239,6 @@ function inicializarCiclosLectivosDinamicos() {
         localStorage.setItem('ultimoCicloTrabajado', `${anioActual}`);
     }
 }
-
 // --- MANEJADOR REACTIVO INTERACTIVO DE PASES ---
 function inicializarManejadorReactivoPases() {
     const selectorEstado = document.getElementById('estadoAlumno');
@@ -247,12 +246,10 @@ function inicializarManejadorReactivoPases() {
         selectorEstado.addEventListener('change', evaluarVisibilidadPanelPases);
     }
 }
-
 function evaluarVisibilidadPanelPases() {
     const estado = document.getElementById('estadoAlumno').value;
     const panelPase = document.getElementById('panelCamposPase');
     if (!panelPase) return;
-
     if (estado === "Pase" || estado === "Baja") {
         panelPase.style.display = 'flex';
         document.getElementById('paseFecha').setAttribute('required', 'true');
@@ -268,7 +265,6 @@ function inicializarManejadorReactivoPPI() {
     const panelPPI = document.getElementById('panelCamposPPI');
     const filaDocPPI = document.getElementById('filaDocumentoPPI');
     if (!checkboxPPI || !panelPPI || !filaDocPPI) return;
-
     checkboxPPI.addEventListener('change', function() {
         if (this.checked) {
             panelPPI.style.display = 'flex';
@@ -286,11 +282,9 @@ function inicializarManejadorReactivoPPI() {
         }
     });
 }
-
 // --- MANEJADOR DE AUDITORÍA DIGITAL CON COMPRESIÓN DE ALTA FIDELIDAD ---
 function inicializarManejadoresArchivosDigitales() {
-    const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');
-    
+    const inputsArchivos = document.querySelectorAll('.input-archivo-oculto');   
     // Función interna para comprimir imágenes mediante Canvas manteniendo alta nitidez
     function procesarYComprimirImagen(base64Original) {
         return new Promise((resolve) => {
@@ -298,21 +292,17 @@ function inicializarManejadoresArchivosDigitales() {
             img.src = base64Original;
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
+                const ctx = canvas.getContext('2d');                
                 const MAX_WIDTH = 1600; // Resolución optimizada para lectura de textos finos
                 let width = img.width;
                 let height = img.height;
-
                 if (width > MAX_WIDTH) {
                     height *= MAX_WIDTH / width;
                     width = MAX_WIDTH;
                 }
-
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
-
                 // Exporta como JPEG al 75% de fidelidad (equilibrio perfecto nitidez/peso)
                 resolve(canvas.toDataURL('image/jpeg', 0.75));
             };
@@ -321,7 +311,6 @@ function inicializarManejadoresArchivosDigitales() {
             };
         });
     }
-
     inputsArchivos.forEach(input => {
         input.addEventListener('click', function(e) {
             const key = this.getAttribute('data-key');
@@ -334,7 +323,6 @@ function inicializarManejadoresArchivosDigitales() {
                 }
             }
         });
-
         input.addEventListener('change', function(e) {
             const archivo = e.target.files[0]; // Captura segura del archivo individual
             const key = this.getAttribute('data-key');
@@ -344,13 +332,11 @@ function inicializarManejadoresArchivosDigitales() {
             lectorBinario.onload = async function(evt) {
                 let stringBase64Final = evt.target.result;
                 const umbralSeguroBytes = 300 * 1024; // 300 KB
-
                 // Intercepta solo si supera el umbral y es formato gráfico
                 if (archivo.size > umbralSeguroBytes && archivo.type.startsWith('image/')) {
                     console.log(`[Compresor HD] Optimizando imagen pesada de ${(archivo.size / 1024).toFixed(1)} KB.`);
                     stringBase64Final = await procesarYComprimirImagen(stringBase64Final);
                 }
-
                 base64DocumentosTemporales[key] = stringBase64Final;
                 actualizarFilaUIArchivo(key, stringBase64Final, archivo.name);
             };
@@ -359,8 +345,6 @@ function inicializarManejadoresArchivosDigitales() {
         });
     });
 }
-
-
 function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
     const chk = document.getElementById(`chk-${key}`);
     if (chk) chk.checked = !!base64Data;
@@ -377,7 +361,6 @@ function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
         }
     }
 }
-
 function abrirDocumentoPestanaNueva(base64Data, nombreArchivo) {
     const ventanaEmergente = window.open();
     if (!ventanaEmergente) {
@@ -394,7 +377,6 @@ function abrirDocumentoPestanaNueva(base64Data, nombreArchivo) {
     `);
     ventanaEmergente.document.close();
 }
-
 function evaluarEstadoMesaEntrada() {
     const estado = document.getElementById('estadoAlumno').value;
     const selectCurso = document.getElementById('selectCursoAlumno');
@@ -408,14 +390,11 @@ function evaluarEstadoMesaEntrada() {
         selectCurso.disabled = false;
     }
 }
-
 async function inicializarSelectoresCursosDesdeCloud() {
     const selectForm = document.getElementById('selectCursoAlumno');
-    if (!selectForm || !selectCursoFiltro) return;
-    
+    if (!selectForm || !selectCursoFiltro) return;    
     selectForm.innerHTML = '<option value="" disabled selected>Seleccione el curso destino...</option>';
     selectCursoFiltro.innerHTML = '<option value="">Todos los Cursos</option>';
-
     try {
         const querySnapshot = await getDocs(collection(db, "cursos"));
         const listaCursos = [];
@@ -423,10 +402,8 @@ async function inicializarSelectoresCursosDesdeCloud() {
             // Guardamos el ID del documento de Firebase junto con sus datos
             listaCursos.push({ id: docSnap.id, ...docSnap.data() });
         });
-
         listaCursos.sort((a, b) => (a.ciclo || "").localeCompare(b.ciclo || ""));
         window.cachedCursosColegio = listaCursos;
-
         listaCursos.forEach(curso => {
             const texto = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
             selectForm.add(new Option(texto, curso.id));
@@ -437,23 +414,17 @@ async function inicializarSelectoresCursosDesdeCloud() {
         console.error("Fallo al descargar la grilla de cursos:", error);
     }
 }
-
-
-
-
 function gestionarHabilitacionBotoneraLote() {
     const cursoSeleccionado = selectCursoFiltro.value;
     const deshabilitar = (cursoSeleccionado === "" || cursoSeleccionado === "todos");
     if (btnLoteInforme) btnLoteInforme.disabled = deshabilitar;
     if (btnLoteBoletin) btnLoteBoletin.disabled = deshabilitar;
 }
-
 async function procesarFiltrosYNomina() {
     window.paginaActualAlumnos = 1; // Resetea a la primera página ante cualquier cambio de filtro
     if (!tbodyAlumnos) return;
     tbodyAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Descargando legajos digitalizados desde Cloud Firestore...</td></tr>`;
     let listaAlumnos = [];
-
     try {
         const querySnapshot = await getDocs(collection(db, "alumnos"));
         querySnapshot.forEach(docSnap => {
@@ -464,21 +435,16 @@ async function procesarFiltrosYNomina() {
         tbodyAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor.</td></tr>`;
         return;
     }
-
     const inputCicloDOM = document.getElementById('filtroCicloLectivo');
-    const ciclo = (inputCicloDOM && inputCicloDOM.value) ? inputCicloDOM.value : (localStorage.getItem('ultimoCicloTrabajado') || "2026");
-    
+    const ciclo = (inputCicloDOM && inputCicloDOM.value) ? inputCicloDOM.value : (localStorage.getItem('ultimoCicloTrabajado') || "2026");    
     const busqueda = document.getElementById('filtroBusquedaRapida').value.toLowerCase().trim();
     const cursoFiltro = selectCursoFiltro.value;
     const estadoFiltro = document.getElementById('filtroEstadoMatricula').value;
     const docFiltro = document.getElementById('filtroAuditoriaDocs').value;
     const ppiFiltro = document.getElementById('filtroPPI')?.value || "";
-
     // TOTAL MATRÍCULAS POR CICLO (Fijo y absoluto: No lo alteran los filtros secundarios)
     const totalMatriculasBrutasSinFiltro = listaAlumnos.filter(alumno => alumno.cicloLectivo === ciclo).length;
 
-       // =========================================================================
-    // UBICACIÓN: Líneas 446 a 458 (Filtro por trayectoria institucional)
     // REPARACIÓN: Restricción por territorio explícito (Aplica a preceptores comunes)
     // =========================================================================
     if (window.esSoloLectura === true) {
@@ -491,19 +457,15 @@ async function procesarFiltrosYNomina() {
             listaAlumnos = listaAlumnos.filter(al => cursosPermitidos.includes(al.cursoId));
         }
     }
-
-
     let alumnosFiltrados = listaAlumnos.filter(alumno => {
         if (alumno.cicloLectivo !== ciclo) return false;
         if (cursoFiltro && alumno.cursoId !== cursoFiltro) return false;
-        if (estadoFiltro && alumno.estado !== estadoFiltro) return false;
-        
+        if (estadoFiltro && alumno.estado !== estadoFiltro) return false;        
         if (ppiFiltro && ppiFiltro !== "todos") {
             const tienePPI = !!alumno.tienePPI;
             if (ppiFiltro === "ConPPI" && !tienePPI) return false;
             if (ppiFiltro === "SinPPI" && tienePPI) return false;
         }
-
         if (docFiltro) {
             const dMap = alumno.documentosDigitales || {};
             const totalRequisitosBase = 6;
@@ -513,7 +475,6 @@ async function procesarFiltrosYNomina() {
             if (docFiltro === "Completo" && !esCompleto) return false;
             if (docFiltro === "Incompleto" && esCompleto) return false;
         }
-
         if (busqueda) {
             const mNombre = alumno.nombre ? alumno.nombre.toLowerCase().includes(busqueda) : false;
             const mDni = alumno.dni ? alumno.dni.includes(busqueda) : false;
@@ -521,17 +482,14 @@ async function procesarFiltrosYNomina() {
         }
         return true;
     });
-
     const totalGeneralSpan = document.getElementById('contadorEstudiantes');
     if (totalGeneralSpan) {
         totalGeneralSpan.textContent = `Matrículas Visualizadas: ${alumnosFiltrados.length}`;
     }
-
     const totalAbsolutoSpan = document.getElementById('contadorTotalEstudiantes');
     if (totalAbsolutoSpan) {
         totalAbsolutoSpan.textContent = `Total Matrículas: ${totalMatriculasBrutasSinFiltro}`;
     }
-
     tbodyAlumnos.innerHTML = "";
     if (alumnosFiltrados.length === 0) {
         tbodyAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No se encontraron legajos con los criterios seleccionados.</td></tr>`;
@@ -546,62 +504,49 @@ async function procesarFiltrosYNomina() {
    ========================================================================== */
 function renderizarFilasEnTabla(alumnos) {
     tbodyAlumnos.innerHTML = "";
-
     if (typeof window.paginaActualAlumnos === 'undefined') {
         window.paginaActualAlumnos = 1;
     }
     if (typeof window.registrosPorPaginaAlumnos === 'undefined') {
         window.registrosPorPaginaAlumnos = 25;
     }
-
     window.totalAlumnosFiltradosPaginacion = alumnos.length;
-
     const indiceInicio = (window.paginaActualAlumnos - 1) * window.registrosPorPaginaAlumnos;
     const indiceFin = indiceInicio + window.registrosPorPaginaAlumnos;
     const alumnosPaginados = alumnos.slice(indiceInicio, indiceFin);
-
     alumnosPaginados.forEach(alumno => {
-
         const tr = document.createElement('tr');
         tr.className = "fila-alumno";
         tr.style.borderBottom = "1px solid #e2e8f0";
-        let celdaCurso = `<span class="badge-curso" style="background:#f1f5f9; color:#64748b;">Mesa Entrada</span>`;
-        
+        let celdaCurso = `<span class="badge-curso" style="background:#f1f5f9; color:#64748b;">Mesa Entrada</span>`;       
         if (alumno.cursoId && window.cachedCursosColegio) {
             const cRef = window.cachedCursosColegio.find(c => c.id === alumno.cursoId);
             if (cRef) {
                 const numeroAnio = cRef.ciclo ? cRef.ciclo.charAt(0) : "1";
                 celdaCurso = `<span class="badge-curso">${numeroAnio} ° "${cRef.division}"</span>`;
             }
-        }
-        
+        }        
         // Renderizado del estado mediante badges institucionales acumulativos
         if (alumno.estado === "Pase") {
             const tipoPase = alumno.paseHistorial?.tipo === "Saliente" ? "Saliente" : "Entrante";
             celdaCurso += ` <span class="badge-pase" style="background:#dbeafe; color:#1d4ed8;">Pase ${tipoPase}</span>`;
         }
         if (alumno.estado === "Baja") celdaCurso += ` <span class="badge-baja">Baja</span>`;
-
         const dMap = alumno.documentosDigitales || {};
         const cargados = ['dni_alumno', 'partida_nac', 'cert_primaria', 'buena_salud', 'carnet_vacunas', 'dni_tutor']
             .filter(k => dMap[k] !== null && dMap[k] !== undefined).length;
         const celdaAuditoria = cargados === 6
             ? `<span class="documentos-completos">✓ Completo (6/6)</span>`
             : `<span class="alerta-documentos">⚠ Incompleto (${cargados}/6)</span>`;
-
                 const celdaInclusion = (alumno.trayectoriaPPI === true || alumno.tienePPI === true)
             ? `<span style="color:#e056fd; font-weight:bold; font-size:11px;">🗲 Con PPI</span>`
             : (alumno.trayectoriaFlexible === true
                 ? `<span style="color:#0ea5e9; font-weight:bold; font-size:11px;">🗲 Flexible</span>`
                 : `<span style="color:#94a3b8; font-size:11px;">Estándar</span>`);
-
-
         // Renderizado de la celda de acciones basada en la matriz de capacidades oficiales (RBAC)
         let accionesHTML = "";
-
         const nombreEstudianteValido = alumno.nombreAlumno || alumno.nombre || 'Sin registrar';
         const direccionEstudianteValida = alumno.direccionAlumno || alumno.direccion || 'No especificada';
-
         if (window.permisoMatricula === "escritura") {
             // Modo Escritura Completa (Alta Dirección y Administradores autorizados en roles.html)
             accionesHTML = `
@@ -630,17 +575,13 @@ function renderizarFilasEnTabla(alumnos) {
             </div>
             `;
         }
-
-
                // Parche Seguro: Limpieza automática de nombres duplicados de la carga masiva
         let nombreParaMostrar = alumno.nombre || "";
-        const palabrasNombre = nombreParaMostrar.trim().split(/\s+/);
-        
+        const palabrasNombre = nombreParaMostrar.trim().split(/\s+/);       
         if (palabrasNombre.length >= 4) {
             const mitad = Math.floor(palabrasNombre.length / 2);
             const primeraMitad = palabrasNombre.slice(0, mitad).join(" ").toLowerCase();
-            const segundaMitad = palabrasNombre.slice(mitad).join(" ").toLowerCase();
-            
+            const segundaMitad = palabrasNombre.slice(mitad).join(" ").toLowerCase();        
             if (primeraMitad === segundaMitad) {
                 nombreParaMostrar = palabrasNombre.slice(0, mitad).join(" ");
             }
@@ -665,10 +606,6 @@ function renderizarFilasEnTabla(alumnos) {
         });
         tbodyAlumnos.appendChild(tr);
     });
-
-
-            // =========================================================================
-    // UBICACIÓN: Líneas 554 a 563 (Reemplazo exacto del bloque del informe)
     // REPARACIÓN: Asignación por recorrido para independizar el hilo del evento click
     // =========================================================================
     tbodyAlumnos.querySelectorAll('.btn-fila-informe').forEach(btn => {
@@ -680,8 +617,6 @@ function renderizarFilasEnTabla(alumnos) {
             }
         });
     });
-
-
     tbodyAlumnos.querySelectorAll('.btn-fila-boletin').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -702,7 +637,6 @@ function renderizarFilasEnTabla(alumnos) {
             window.open(`boletin.html?dni=${dniAlumno}`, '_blank');
         });
     });
-
             // Inyección dinámica y asignación de eventos para el botón de Historial ("📜")
         tbodyAlumnos.querySelectorAll('button[style*="background:#ef4444"]').forEach(btnBaja => {
             const contenedorAcciones = btnBaja.parentElement;
@@ -713,18 +647,15 @@ function renderizarFilasEnTabla(alumnos) {
                 const btnHistorial = document.createElement('button');
                 btnHistorial.className = 'btn-historial-dinamico px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 font-semibold rounded-md border border-slate-600 transition-colors shadow-sm ml-1';
                 btnHistorial.title = 'Ver Historial de Trazabilidad';
-                btnHistorial.innerHTML = '📜 Historial';
-                
+                btnHistorial.innerHTML = '📜 Historial';                
                 btnHistorial.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (dniAlumnoFila) {
                         window.open(`historial.html?dni=${dniAlumnoFila}`, '_blank');
                     }
-                });
-                
+                });                
                 contenedorAcciones.insertBefore(btnHistorial, btnBaja);
             }
-
             // Mantener el escuchador nativo de la baja preexistente
             btnBaja.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -733,7 +664,6 @@ function renderizarFilasEnTabla(alumnos) {
         });
 
 }
-
 function cargarLegajoEnFormulario(alumno) {
     document.getElementById('idOriginalEdicion').value = alumno.dni;
     document.getElementById('formTitulo').textContent = "Modificar Legajo Digital";
@@ -750,8 +680,7 @@ function cargarLegajoEnFormulario(alumno) {
                 nombreLimpioForm = palabrasNombreForm.slice(0, mitadForm).join(" ");
             }
         }
-        document.getElementById('nombreAlumno').value = nombreLimpioForm;
-
+    document.getElementById('nombreAlumno').value = nombreLimpioForm;
     document.getElementById('dniAlumno').value = alumno.dni || "";
     document.getElementById('dniAlumno').disabled = true;
     document.getElementById('cuilAlumno').value = alumno.cuil || "";   
@@ -768,7 +697,7 @@ function cargarLegajoEnFormulario(alumno) {
         } else {
             document.getElementById('fechaNacimiento').value = fNacRaw;
         }
-  document.getElementById('lugarNacimiento').value = alumno.lugarNacimiento || "";
+    document.getElementById('lugarNacimiento').value = alumno.lugarNacimiento || "";
     document.getElementById('nacionalidad').value = alumno.nacionalidad || "Argentina";
     document.getElementById('direccionAlumno').value = alumno.direccion || "";
     document.getElementById('telefono1').value = alumno.telefono1 || "";
@@ -777,27 +706,20 @@ function cargarLegajoEnFormulario(alumno) {
             // Sincronización de Géneros y Datos del Adulto Responsable
         const elGenAluForm = document.getElementById('generoAlumno');
         if (elGenAluForm) elGenAluForm.value = alumno.genero || "Masculino";
-
         const elDniTutForm = document.getElementById('dniTutorAlumno');
         if (elDniTutForm) elDniTutForm.value = alumno.dniTutor || "";
-
         const elGenTutForm = document.getElementById('generoTutor');
         if (elGenTutForm) elGenTutForm.value = alumno.generoTutor || "Masculino";
-
         const elEmaTutForm = document.getElementById('emailTutor');
         if (elEmaTutForm) elEmaTutForm.value = alumno.emailTutor || "";
-
     if (document.getElementById('cuilTutor')) document.getElementById('cuilTutor').value = alumno.cuilTutor || "";
-
     document.getElementById('estadoAlumno').value = alumno.estado || "Regular";
     ejecutarCalculoEdadDinamico();
-
     const selectCurso = document.getElementById('selectCursoAlumno');
     if (selectCurso) {
         selectCurso.value = alumno.cursoId || "";
         evaluarEstadoMesaEntrada();
     }
-
     // Inyección adaptativa del panel relacional de pases/bajas
     evaluarVisibilidadPanelPases();
     if (alumno.estado === "Pase" || alumno.estado === "Baja") {
@@ -806,10 +728,8 @@ function cargarLegajoEnFormulario(alumno) {
         document.getElementById('paseInstitucion').value = alumno.paseHistorial?.colegio || "";
         document.getElementById('paseProvincia').value = alumno.paseHistorial?.provincia || "";
     }
-
     // Guardado en memoria volátil de la matriz histórica oculta para reingresos sucesivos
     window.currentPaseRegistroHistoricoCached = alumno.paseHistorial?.registroHistorico || [];
-
     const chkPPI = document.getElementById('chkHabilitarPPI');
     if (chkPPI) {
         chkPPI.checked = !!alumno.tienePPI;
@@ -826,7 +746,6 @@ function cargarLegajoEnFormulario(alumno) {
             filaDocPPI.style.display = 'none';
         }
     }
-
     base64DocumentosTemporales = {
         dni_alumno: alumno.documentosDigitales?.dni_alumno || null,
         partida_nac: alumno.documentosDigitales?.partida_nac || null,
@@ -836,13 +755,11 @@ function cargarLegajoEnFormulario(alumno) {
         dni_tutor: alumno.documentosDigitales?.dni_tutor || null,
         acta_ppi: alumno.documentosDigitales?.acta_ppi || null
     };
-
     Object.keys(base64DocumentosTemporales).forEach(key => {
         actualizarFilaUIArchivo(key, base64DocumentosTemporales[key], `archivo_${key}`);
     });
     document.getElementById('contenedorFormularioAlta').scrollIntoView({ behavior: 'smooth' });
 }
-
 function salirModoEdicion() {
     if (formInscripcion) formInscripcion.reset();
     document.getElementById('idOriginalEdicion').value = "";
@@ -858,28 +775,21 @@ function salirModoEdicion() {
     const filaDocPPI = document.getElementById('filaDocumentoPPI');
     if (panelPPI) panelPPI.style.display = 'none';
     if (filaDocPPI) filaDocPPI.style.display = 'none';
-
     const panelPase = document.getElementById('panelCamposPase');
     if (panelPase) panelPase.style.display = 'none';
-
     window.currentPaseRegistroHistoricoCached = [];
-
     base64DocumentosTemporales = { dni_alumno: null, partida_nac: null, cert_primaria: null, buena_salud: null, carnet_vacunas: null, dni_tutor: null, acta_ppi: null };
     Object.keys(base64DocumentosTemporales).forEach(key => actualizarFilaUIArchivo(key, null));
     evaluarEstadoMesaEntrada();
 }
-
 async function guardarLegajoDigital(e) {
     e.preventDefault();
     if (rolNormalizado === "preceptor") return;
-
     const dni = document.getElementById('dniAlumno').value.trim();
     const idEdicion = document.getElementById('idOriginalEdicion').value;
     const cicloLectivo = document.getElementById('filtroCicloLectivo').value;
     const estadoActual = document.getElementById('estadoAlumno').value;
-
     let matrizHistoricaPases = window.currentPaseRegistroHistoricoCached || [];
-
     // SI EL ALUMNO ESTABA EN EDICIÓN Y ANTES SE HABÍA IDO DE PASE, PERO AHORA VUELVE A ESTAR REGULAR
     if (idEdicion) {
         try {
@@ -907,7 +817,6 @@ async function guardarLegajoDigital(e) {
             return;
         }
     }
-
     const nuevoLegajo = {
         dni,
         cicloLectivo,
@@ -940,11 +849,9 @@ async function guardarLegajoDigital(e) {
         },
         documentosDigitales: { ...base64DocumentosTemporales }
     };
-
       try {
         await setDoc( doc( db, "alumnos", dni), nuevoLegajo);
-        localStorage. setItem('ultimoCicloTrabajado', cicloLectivo);
-        
+        localStorage. setItem('ultimoCicloTrabajado', cicloLectivo);        
                 // --- Registro inmutable en el historial global del Colegio HASPEN ---
         if (typeof window.registrarEventoLegajo === 'function') {
             if (idEdicion) {
@@ -953,7 +860,6 @@ async function guardarLegajoDigital(e) {
                 await window.registrarEventoLegajo(dni, "MATRICULA", "ALTA_INSCRIPCION", `Matriculación inicial exitosa del estudiante en el sistema a través del formulario analógico.`);
             }
         }
-
         alert( idEdicion ? "Legajo digital modificado con éxito." : "Estudiante matriculado con éxito.");
         salirModoEdicion();
         await procesarFiltrosYNomina();
@@ -961,8 +867,6 @@ async function guardarLegajoDigital(e) {
         console.error("Error al persistir legajo:", error);
         alert("Error crítico: No se completó el resguardo remoto.");
     }
-
-
 async function ejecutarBajaEstudianteFirestore(dni) {
     if (!confirm(`¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`)) return;
         try {
@@ -970,17 +874,14 @@ async function ejecutarBajaEstudianteFirestore(dni) {
         if (typeof window.registrarEventoLegajo === 'function') {
             await window.registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
         }
-
         await deleteDoc(doc(db, "alumnos", dni));
         alert("Legajo digital purgado correctamente.");
         if (document.getElementById('idOriginalEdicion').value === dni) salirModoEdicion();
         await procesarFiltrosYNomina();
-
     } catch (error) {
         alert("No se pudo completar la baja.");
     }
 }
-
     return `
     <div class="contenedor-media-hoja-pdf">
         <div style="text-align:center; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px;">
@@ -1037,11 +938,9 @@ async function ejecutarBajaEstudianteFirestore(dni) {
     </div>
     `;
 }
-
 function construirHojaA4BoletinOficial(alumno, cursoTexto, materias, calificaciones) {
     return ``;
 }
-
 function cerrarModalPrevisualizacion() {
     modalContenedor.style.display = "none";
     modalCuerpo.innerHTML = "";
@@ -1059,56 +958,10 @@ if (botonCerrarInterno) {
     });
 }
 
-
-// MOTOR MATEMÁTICO ADAPTATIVO PARA CÁLCULO DE CUIL (ALGORITMO ANSES)
-function calcularCuilAutomatico(dniStr, generoStr) {
-    const dniLimpio = dniStr.replace(/[^0-9]/g, '');
-    if (dniLimpio.length < 7 || dniLimpio.length > 8) return "";
-
-    // Completar con ceros a la izquierda si el DNI tiene 7 dígitos
-    const dniPad = dniLimpio.padStart(8, '0');
-    
-    // Determinar prefijo según género (Masculino: 20, Femenino: 27)
-    let prefijo = "20"; 
-    if (generoStr && generoStr.toLowerCase() === "femenino") {
-        prefijo = "27";
-    }
-
-    const baseXY = prefijo + dniPad;
-    const factores = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    
-    let suma = 0;
-    for (let i = 0; i < 10; i++) {
-        suma += parseInt(baseXY[i]) * factores[i];
-    }
-
-    let resto = suma % 11;
-    let verificador = 0;
-
-    if (resto === 1) {
-        // Corrección reglamentaria de ANSES para evitar verificador de dos dígitos
-        if (prefijo === "20") prefijo = "23";
-        else if (prefijo === "27") prefijo = "23";
-        
-        const nuevaBase = prefijo + dniPad;
-        let nuevaSuma = 0;
-        for (let i = 0; i < 10; i++) {
-            nuevaSuma += parseInt(nuevaBase[i]) * factores[i];
-        }
-        let nuevoResto = nuevaSuma % 11;
-        verificador = nuevoResto === 0 ? 0 : 11 - nuevoResto;
-    } else if (resto > 1) {
-        verificador = 11 - resto;
-    }
-
-    return prefijo + dniPad + verificador;
-}
-
     // ====== PARCHE: Interceptor reactivo basado en Atributos del DOM ======
     document.getElementById('tablaAlumnosBody')?.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-fila-ficha');
-        if (!btn) return;
-        
+        if (!btn) return;        
         // Extraemos las propiedades dinámicas inyectadas desde el HTML
         const nombre = btn.getAttribute('data-nombre');
         const dni = btn.getAttribute('data-dni');
@@ -1116,11 +969,9 @@ function calcularCuilAutomatico(dniStr, generoStr) {
         const tel1 = btn.getAttribute('data-tel1');
         const tel2 = btn.getAttribute('data-tel2');
         const tutor = btn.getAttribute('data-tutor');
-        const tutordni = btn.getAttribute('data-tutordni');
-        
+        const tutordni = btn.getAttribute('data-tutordni');        
         const contenedorModal = document.getElementById('modalImpresionContenedor');
-        const cuerpoModal = document.getElementById('modalImpresionCuerpo');
-        
+        const cuerpoModal = document.getElementById('modalImpresionCuerpo');        
         if (contenedorModal && cuerpoModal) {
             cuerpoModal.innerHTML = `
             <div style="padding: 20px; background: white; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; text-align: left; max-width: 550px; margin: 30px auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -1142,7 +993,6 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             contenedorModal.style.display = "flex";
         }
        }); // <-- ESTE ERA EL CIERRE FALTA DE LA TABLA ALUMNOS
-
     // ANCLA_REPARACION_LOGICA_PAGINACION_FINAL
     document.getElementById('btnPrevDesktop')?.addEventListener('click', () => {
         if (window.paginaActualAlumnos > 1) {
@@ -1154,7 +1004,6 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             }
         }
     });
-
     document.getElementById('btnNextDesktop')?.addEventListener('click', () => {
         const totalRegistros = window.totalAlumnosFiltradosPaginacion || 0;
         const limitePorPagina = window.registrosPorPaginaAlumnos || 25;
@@ -1168,7 +1017,6 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             }
         }
     });
-
     document.getElementById('btnResetPagina')?.addEventListener('click', () => {
         window.paginaActualAlumnos = 1;
         const lbl = document.getElementById('lblPaginaActual');
@@ -1177,7 +1025,6 @@ function calcularCuilAutomatico(dniStr, generoStr) {
             renderizarFilasEnTabla(window.currentAlumnosFiltradosCached);
         }
     });
-
 window.emitirDocumentoIndividual = async function(tipo, dni) {
     try {
         const snapAlumno = await getDoc(doc(db, "alumnos", dni));
@@ -1185,7 +1032,6 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
         const alumno = snapAlumno.data();
         let cursoTexto = "Mesa de Entrada";
         let materiasEstructura = [];
-
         if (alumno.cursoId) {
             const snapCurso = await getDoc(doc(db, "cursos", alumno.cursoId));
             if (snapCurso.exists()) {
@@ -1194,7 +1040,6 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
                 materiasEstructura = cData.materias || [];
             }
         }
-
               // ====== PARCHE V2: SANEAMIENTO DE VALORES NULOS Y NOTAS CUATRIMESTRALES ======
         let calificacionesMapeadas = {};
         try {
@@ -1203,8 +1048,7 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
                 collection(db, "alumnos_calificaciones"),
                 where("alumnoDni", "==", String(dni).trim())
             );
-            const snapCalificaciones = await getDocs(consultaNotas);
-            
+            const snapCalificaciones = await getDocs(consultaNotas);           
             snapCalificaciones.forEach(cDoc => {
                 const cData = cDoc.data();
                 if (cData && cData.materia) {
@@ -1219,29 +1063,21 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
                         c1_inf1: t1.n1 !== null && t1.n1 !== undefined && t1.n1 !== "" ? String(t1.n1) : "-",
                         c1_inf2: t1.n2 !== null && t1.n2 !== undefined && t1.n2 !== "" ? String(t1.n2) : "-",
                         c1_forta: t1.ef !== null && t1.ef !== undefined && t1.ef !== "" ? String(t1.ef) : "-",
-                        c1_nota: cData.notaCuatrimestre1 !== null && cData.notaCuatrimestre1 !== undefined && cData.notaCuatrimestre1 !== "" ? String(cData.notaCuatrimestre1) : "-",
-                        
+                        c1_nota: cData.notaCuatrimestre1 !== null && cData.notaCuatrimestre1 !== undefined && cData.notaCuatrimestre1 !== "" ? String(cData.notaCuatrimestre1) : "-",                        
                         c2_inf1: t2.n1 !== null && t2.n1 !== undefined && t2.n1 !== "" ? String(t2.n1) : "-",
                         c2_inf2: t2.n2 !== null && t2.n2 !== undefined && t2.n2 !== "" ? String(t2.n2) : "-",
                         c2_forta: t2.ef !== null && t2.ef !== undefined && t2.ef !== "" ? String(t2.ef) : "-",
-                        c2_nota: cData.notaCuatrimestre2 !== null && cData.notaCuatrimestre2 !== undefined && cData.notaCuatrimestre2 !== "" ? String(cData.notaCuatrimestre2) : "-",
-                        
+                        c2_nota: cData.notaCuatrimestre2 !== null && cData.notaCuatrimestre2 !== undefined && cData.notaCuatrimestre2 !== "" ? String(cData.notaCuatrimestre2) : "-",                        
                         nota_final: cData.notaFinal !== null && cData.notaFinal !== undefined && cData.notaFinal !== "" ? String(cData.notaFinal) : "-",
                         diciembre: cData.diciembre !== null && cData.diciembre !== undefined && cData.diciembre !== "" ? String(cData.diciembre) : "-",
                         febrero: cData.febrero !== null && cData.febrero !== undefined && cData.febrero !== "" ? String(cData.febrero) : "-",
                         observaciones: cData.observaciones || ""
                     };
-                    // ===================================================================
-
                 }
             });
-        // =========================================================================
-
-
         } catch (err) {
             console.warn("No se pudo sincronizar la matriz de calificaciones.");
         }
-
         let inasistenciasTotales = 0;
         try {
             const snapAsistencias = await getDocs(collection(db, "asistencias"));
@@ -1254,7 +1090,6 @@ window.emitirDocumentoIndividual = async function(tipo, dni) {
         } catch (err) {
             console.warn("No se pudo sincronizar del total de inasistencias.");
         }
-
         modalCuerpo.innerHTML = tipo === 'INFORME'
             ? construirMediaHojaInformePedagogico(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas, inasistenciasTotales)
             : construirHojaA4BoletinOficial(alumno, cursoTexto, materiasEstructura, calificacionesMapeadas);
@@ -1269,8 +1104,7 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
         filasHTML = `<tr><td colspan="10" style="padding:10px; color:#666;">Sin asignaturas asignadas.</td></tr>`;
     } else {
         materias.forEach(materia => {
-            const c = calificaciones[materia] || {};
-            
+            const c = calificaciones[materia] || {};            
             // ====== PARCHE V4.1: REEMPLAZO COERCITIVO DE CEROS POR GUIONES DE PROCESO ======
             const inf1_1   = c.c1_inf1   && c.c1_inf1   !== "0" ? c.c1_inf1   : "-";
             const inf1_2   = c.c1_inf2   && c.c1_inf2   !== "0" ? c.c1_inf2   : "-";
@@ -1280,9 +1114,7 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
             const inf2_2   = c.c2_inf2   && c.c2_inf2   !== "0" ? c.c2_inf2   : "-";
             const forta2   = c.c2_forta  && c.c2_forta  !== "0" ? c.c2_forta  : "-";
             const notaC2   = c.c2_nota   && c.c2_nota   !== "0" ? c.c2_nota   : "-";
-            const finalNota = c.nota_final && c.nota_final !== "0" ? c.nota_final : "-";
-            // ==============================================================================
-
+            const finalNota = c.nota_final && c.nota_final !== "0" ? c.nota_final : "-";            
                        // ====== PARCHE V5: OPTIMIZACIÓN DE LEGIBILIDAD Y ESCALA TIPOGRÁFICA ======
             filasHTML += `
             <tr>
@@ -1298,8 +1130,6 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
                 <td style="background:#e2e8f0; font-weight:bold; font-size:12px; color:#0f172a;">${finalNota}</td>
             </tr>
             `;
-            // =========================================================================
-
         });
 
     // =========================================================================
@@ -1368,7 +1198,6 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     const cursoId = selectCursoFiltro.value;
     const cicloLectivo = document.getElementById('filtroCicloLectivo').value;
     if (!cursoId) return;
-
     if (tipo === 'BOLETIN') {
         if (window.firebaseConfig) {
             localStorage.setItem('firebaseConfig', JSON.stringify(window.firebaseConfig));
@@ -1392,7 +1221,6 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     const cRef = window.cachedCursosColegio.find(c => c.id === cursoId);
     const cursoTexto = cRef ? `${cRef.ciclo} - "${cRef.division}" (${cRef.turno})` : "";
     const materiasEstructura = cRef ? (cRef.materias || []) : [];
-
     let todasCalificaciones = [];
     try {
         const snapCalificaciones = await getDocs(collection(db, "calificaciones"));
@@ -1400,7 +1228,6 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     } catch (err) {
         console.warn("Fallo masivo de calificaciones.");
     }
-
     let todasAsistencias = [];
     try {
         const snapAsistencias = await getDocs(collection(db, "asistencias"));
@@ -1408,7 +1235,6 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     } catch (err) {
         console.warn("Fallo masivo de asistencias.");
     }
-
     window.currentAlumnosFiltradosCached.forEach(alumno => {
         let calificacionesMapeadas = {};
         todasCalificaciones.forEach(cData => {

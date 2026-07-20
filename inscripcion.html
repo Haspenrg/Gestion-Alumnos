@@ -526,7 +526,7 @@
 <div class="subgrid-movil-bloque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
     <div class="input-group">
         <label for="cuilTutor">CUIL del Tutor (Automático)</label>
-        <input type="text" id="cuilTutor" placeholder="Se calcula solo" readonly style="background: #f1f5f9;">
+        <input type="text" id="cuilTutor" placeholder="Ej: 20481234567" style="background: #ffffff;">
     </div>
     <div class="input-group">
         <label for="emailTutor">Correo Electrónico del Tutor</label>
@@ -796,6 +796,26 @@
             </div>
         </div>
     </div>
+    <!-- Contenedor Global de Notificaciones Flotantes (Toasts Elegantes) -->
+<div id="haspen-toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 350px;"></div>
+
+<!-- Ventana Emergente de Confirmación Estilizada (Reemplazo de confirm) -->
+<div id="haspen-modal-confirm" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: white; padding: 24px; border-radius: 12px; max-width: 400px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; transform: scale(0.95); transition: transform 0.2s ease;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <div id="haspen-confirm-icono" style="font-size: 24px; line-height: 1;">⚠️</div>
+            <div>
+                <h3 id="haspen-confirm-titulo" style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Confirmar Acción</h3>
+                <p id="haspen-confirm-mensaje" style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;"></p>
+            </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px;">
+            <button id="haspen-confirm-btn-cancelar" type="button" style="padding: 8px 16px; font-size: 14px; font-weight: 500; color: #475569; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">Cancelar</button>
+            <button id="haspen-confirm-btn-aceptar" type="button" style="padding: 8px 16px; font-size: 14px; font-weight: 500; color: white; background: #dc2626; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">Confirmar</button>
+        </div>
+    </div>
+</div>
+
     <script type="module" src="historial.js"></script>
     <script src="carga-masiva.js"></script>
     <script src="inscripcion.js"></script>

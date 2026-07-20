@@ -1,8 +1,7 @@
 (async () => {
     const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-    const { collection, getDocs } = await import(b + 'firebase-firestore.js');
+    const { collection, getDocs, writeBatch, doc } = await import(b + 'firebase-firestore.js');
     const db = (await import('./firebase-config.js')).db;
-
     const selectAnioOrigen = document.getElementById("select-anio-origen");
     const selectCursoOrigen = document.getElementById("select-curso-origen");
     const selectAnioDestino = document.getElementById("select-anio-destino");
@@ -15,7 +14,7 @@
     const popover = document.getElementById("popover-irregularidad");
     const popoverContenido = document.getElementById("popover-contenido");
     const filaVaciaDestino = document.getElementById("fila-vacia-destino");
-
+    const cartelProcesando = document.getElementById("cartel-procesando");
     const btnVolverPanel = document.getElementById("btn-volver-panel");
     if (btnVolverPanel) {
         btnVolverPanel.addEventListener("click", () => {
@@ -267,68 +266,103 @@
                 <td style="padding: 10px; text-align: right;">
                     ${badgeHtml}
                 </td>
+                <td style="padding: 10px; text-align: right;">
+                    <button class="btn-retornar" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 0 5px; font-weight: bold;" title="Quitar de la lista">✕</button>
+                </td>
             `;
-            tbodyDestino.appendChild(tr);
-        }
-    });
 
-    });
-           btnGuardarCambios.addEventListener("click", async () => {
-        const anioOrigen = selectAnioOrigen.value;
-        const cursoOrigenTexto = selectCursoOrigen.options[selectCursoOrigen.selectedIndex]?.text;
-        
-        const anioDestino = selectAnioDestino.value;
-        const cursoDestinoId = selectCursoDestino.value;
-        const cursoDestinoTexto = selectCursoDestino.options[selectCursoDestino.selectedIndex]?.text;
-        
-        const filasPromovidas = tbodyDestino.querySelectorAll("tr:not(#fila-vacia-destino)");
-
-        if (!anioDestino || !cursoDestinoId) {
-            await mostrarModalSistema("Control de seguridad", "Debe seleccionar el Año y Curso de destino antes de guardar.");
-            return;
-        }
-
-        if (filasPromovidas.length === 0) {
-            await mostrarModalSistema("Control de seguridad", "No hay alumnos en la lista de destino para ser guardados.");
-            return;
-        }
-
-        if (parseInt(anioDestino, 10) <= parseInt(anioOrigen, 10)) {
-            await mostrarModalSistema("Error de coherencia escolar", `El Año de Destino (${anioDestino}) debe ser estrictamente MAYOR al Año de Origen (${anioOrigen}).`);
-            return;
-        }
-
-                const mensajeConfirmacion = `Está por traspasar de forma definitiva un lote de ${filasPromovidas.length} alumno(s) en el sistema.\n\n• ORIGEN ACTUAL: Año ${anioOrigen} — ${cursoOrigenTexto}\n• DESTINO NUEVO: Año ${anioDestino} — ${cursoDestinoTexto}\n\n¿Confirma que los datos son correctos y desea impactar los cambios en la base de datos central del colegio?`;
-
-
-        const confirmaGuardado = await mostrarModalSistema("⚠️ ADVERTENCIA DE PROMOCIÓN MASIVA ⚠️", mensajeConfirmacion, true);
-        if (!confirmaGuardado) return;
-
-        try {
-            const batch = writeBatch(db);
-
-            filasPromovidas.forEach(fila => {
-                const dni = fila.getAttribute("data-dni");
-                const alumnoRef = doc(db, "alumnos", dni);
-                
-                batch.update(alumnoRef, {
-                    cicloLectivo: anioDestino,
-                    cursoId: cursoDestinoId
-                });
+            tr.querySelector(".btn-retornar").addEventListener("click", () => {
+                tr.remove();
+                const cbOrigen = tbodyOrigen.querySelector(`.check-alumno[value="${dni}"]`);
+                if (cbOrigen) {
+                    cbOrigen.checked = false;
+                }
+                if (tbodyDestino.querySelectorAll("tr:not(#fila-vacia-destino)").length === 0 && filaVaciaDestino) {
+                    filaVaciaDestino.style.display = "table-row";
+                }
             });
 
-            await batch.commit();
-            await mostrarModalSistema("Sincronización Exitosa", "¡Promoción masiva ejecutada con éxito! Los alumnos han sido actualizados en la base de datos central.");
-            
-            tbodyDestino.innerHTML = '';
-            if (filaVaciaDestino) filaVaciaDestino.style.display = "table-row";
-            await cargarAlumnosOrigen();
+            tbodyDestino.appendChild(tr);
 
-        } catch (error) {
-            console.error("Error crítico en proceso Batch:", error);
-            await mostrarModalSistema("Error del sistema", "No se pudieron guardar los cambios en la base de datos.");
         }
     });
+
+    });
+    btnGuardarCambios.addEventListener("click", async () => {
+    const anioOrigen = selectAnioOrigen.value;
+    const cursoOrigenTexto = selectCursoOrigen.options[selectCursoOrigen.selectedIndex]?.text || "";
+    const anioDestino = selectAnioDestino.value;
+    const cursoDestinoId = selectCursoDestino.value;
+    const cursoDestinoTexto = selectCursoDestino.options[selectCursoDestino.selectedIndex]?.text || "";
+    const filasPromovidas = tbodyDestino.querySelectorAll("tr[data-dni]");
+
+    if (!anioDestino || !cursoDestinoId) {
+        await mostrarModalSistema("Control de seguridad", "Debe seleccionar el Año y Curso de destino antes de guardar.");
+        return;
+    }
+
+    if (filasPromovidas.length === 0) {
+        await mostrarModalSistema("Control de seguridad", "No hay alumnos en la lista de destino para ser guardados.");
+        return;
+    }
+
+    if (parseInt(anioDestino, 10) <= parseInt(anioOrigen, 10)) {
+        await mostrarModalSistema("Error de coherencia escolar", `El Año de Destino (${anioDestino}) debe ser estrictamente MAYOR al Año de Origen (${anioOrigen}).`);
+        return;
+    }
+
+    const mensajeConfirmacion = `Está por traspasar de forma definitiva un lote de ${filasPromovidas.length} alumno(s) en el sistema. ¿Desea continuar?`;
+    const confirmaGuardado = await mostrarModalSistema("⚠️ ADVERTENCIA DE PROMOCIÓN MASIVA ⚠️", mensajeConfirmacion, true);
+    if (!confirmaGuardado) return;
+
+    // Bloqueamos controles y mostramos cartel verde de procesamiento
+    const cartelProcesando = document.getElementById("cartel-procesando");
+    const btnVolverPanel = document.getElementById("btn-volver-panel");
+
+    if (cartelProcesando) cartelProcesando.style.display = "flex";
+    if (btnPromocionar) btnPromocionar.disabled = true;
+    if (btnGuardarCambios) btnGuardarCambios.disabled = true;
+    if (btnVolverPanel) btnVolverPanel.disabled = true;
+
+    try {
+        const batch = writeBatch(db);
+
+        filasPromovidas.forEach(fila => {
+            const dni = fila.getAttribute("data-dni");
+            const alumnoRef = doc(db, "alumnos", dni);
+
+            batch.update(alumnoRef, {
+                cicloLectivo: anioDestino,
+                cursoId: cursoDestinoId
+            });
+        });
+
+        await batch.commit();
+
+        // Ocultamos cartel y rehabilitamos botones al tener éxito
+        if (cartelProcesando) cartelProcesando.style.display = "none";
+        if (btnPromocionar) btnPromocionar.disabled = false;
+        if (btnGuardarCambios) btnGuardarCambios.disabled = false;
+        if (btnVolverPanel) btnVolverPanel.disabled = false;
+
+        await mostrarModalSistema("Sincronización Exitosa", "¡Promoción masiva ejecutada con éxito! Los alumnos han sido actualizados.");
+
+        tbodyDestino.innerHTML = '';
+        if (filaVaciaDestino) filaVaciaDestino.style.display = "table-row";
+        await cargarAlumnosOrigen();
+
+    } catch (error) {
+        // En caso de error, también ocultamos el cartel y rehabilitamos para permitir reintentar
+        if (cartelProcesando) cartelProcesando.style.display = "none";
+        if (btnPromocionar) btnPromocionar.disabled = false;
+        if (btnGuardarCambios) btnGuardarCambios.disabled = false;
+        if (btnVolverPanel) btnVolverPanel.disabled = false;
+
+        console.error("Error crítico en proceso Batch:", error);
+        await mostrarModalSistema("Error del sistema", "No se pudieron guardar los cambios en la base de datos.");
+    }
+});
+
 
 
 })();

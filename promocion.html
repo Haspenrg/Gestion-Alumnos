@@ -120,7 +120,8 @@
 							<th style="padding: 10px; color: #4a5568; font-weight: 700;">Alumno</th>
 							<th style="padding: 10px; color: #4a5568; font-weight: 700;">Curso Destino</th>
 							<th style="padding: 10px; color: #4a5568; font-weight: 700; text-align: right;">Estatus</th>
-						</tr>
+						    <th style="padding: 10px; color: #4a5568; font-weight: 700; text-align: right;">Acciones</th>
+                        </tr>
 					</thead>
 					<tbody id="tbody-destino" style="color: #334155;">
 						<tr id="fila-vacia-destino">
@@ -141,6 +142,12 @@
     <div style="font-size: 12px; color: #64748b; max-width: 500px;">
         <strong>Control de proceso:</strong> Use "Promocionar" para verificar el listado en la pantalla de destino. Una vez consolidada la lista...
     </div>
+    <!-- CARTEL DE PROCESANDO (Oculto por defecto) -->
+    <div id="cartel-procesando" style="display: none; align-items: center; gap: 8px; color: #16a34a; font-weight: 600; font-size: 14px;">
+    <span style="display: inline-block; width: 16px; height: 16px; border: 2px solid #16a34a; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite;"></span>
+    Procesando datos, por favor espere...
+    </div>
+
     <div style="display: flex; gap: 12px;">
         <button id="btn-volver-panel" type="button" style="padding: 10px 20px; font-size: 14px; font-weight: 600; color: #ffffff; background-color: #475569; border: none; border-radius: 6px; cursor: pointer;">
             Volver al Panel
@@ -178,6 +185,11 @@
         </footer>
     </div>
 </div>
+<style>
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
 
 
 <script type="module" src="promocion.js"></script>
