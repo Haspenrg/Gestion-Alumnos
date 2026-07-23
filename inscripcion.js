@@ -312,17 +312,24 @@ function inicializarManejadoresArchivosDigitales() {
         });
     }
     inputsArchivos.forEach(input => {
-        input.addEventListener('click', function(e) {
-            const key = this.getAttribute('data-key');
-            if (base64DocumentosTemporales[key]) {
-                e.preventDefault();
-                const confirmarEliminacion = confirm(`Atención:\nYa se encuentra cargado un documento.\n\n¿Desea eliminar el archivo y dejar el casillero vacío?`);
-                if (confirmarEliminacion) {
-                    base64DocumentosTemporales[key] = null;
-                    actualizarFilaUIArchivo(key, null);
-                }
-            }
-        });
+        // ====== PARCHE: Reemplazo confirm() nativo por haspenConfirm asíncrono ======
+  input.addEventListener('click', async function(e) {
+    const key = this.getAttribute('data-key');
+    if (base64DocumentosTemporales[key]) {
+      e.preventDefault();
+      const confirmarEliminacion = await window.haspenConfirm(
+        "Ya se encuentra cargado un documento. ¿Desea eliminar el archivo y dejar el casillero vacío?",
+        "Atención",
+        "⚠️"
+      );
+      if (confirmarEliminacion) {
+        base64DocumentosTemporales[key] = null;
+        actualizarFilaUIArchivo(key, null);
+      }
+    }
+  });
+// =========================================================================
+
         input.addEventListener('change', function(e) {
             const archivo = e.target.files[0]; // Captura segura del archivo individual
             const key = this.getAttribute('data-key');
@@ -361,22 +368,25 @@ function actualizarFilaUIArchivo(key, base64Data, nombreArchivo = "documento") {
         }
     }
 }
+// ====== PARCHE: Reemplazo alert() nativo por haspenAlert en pop-ups ======
 function abrirDocumentoPestanaNueva(base64Data, nombreArchivo) {
-    const ventanaEmergente = window.open();
-    if (!ventanaEmergente) {
-        alert("Autorice los pop-ups en el navegador para visualizar documentos.");
-        return;
-    }
-    ventanaEmergente.document.write(`
-        <html>
-        <head><title>Previsualización: ${nombreArchivo}</title></head>
-        <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-        ${base64Data.startsWith("data:application/pdf") ? `<iframe src="${base64Data}" style="width:100vw; height:100vh; border:none;"></iframe>` : `<img src="${base64Data}" style="max-width:95%; max-height:95vh; object-fit:contain;">`}
-        </body>
-        </html>
-    `);
-    ventanaEmergente.document.close();
+  const ventanaEmergente = window.open();
+  if (!ventanaEmergente) {
+    window.haspenAlert("Autorice los pop-ups en el navegador para visualizar documentos.", "alerta");
+    return;
+  }
+  ventanaEmergente.document.write(`
+    <html>
+    <head><title>Previsualización: ${nombreArchivo}</title></head>
+    <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+    ${base64Data.startsWith("data:application/pdf") ? `<iframe src="${base64Data}" style="width:100vw; height:100vh; border:none;"></iframe>` : `<img src="${base64Data}" style="max-width:95%; max-height:95vh; object-fit:contain;">`}
+    </body>
+    </html>
+  `);
+  ventanaEmergente.document.close();
 }
+// =========================================================================
+
 function evaluarEstadoMesaEntrada() {
     const estado = document.getElementById('estadoAlumno').value;
     const selectCurso = document.getElementById('selectCursoAlumno');
@@ -554,7 +564,7 @@ function renderizarFilasEnTabla(alumnos) {
                 <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨</button>
                 <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📋</button>
                 <button type="button" class="btn-accion-fila" onclick="window.open('historial.html?dni=${ alumno. dni}', '_blank')" title="Historial del Legajo">📜</button>
-                <button type="button" class="btn-accion-fila btn-fila-borrar" data-dni="${alumno.dni}" title="Eliminar Alumno">🗑</button>
+                <button type="button" class="btn-accion-fila btn-fila-borrar" onclick="(async () => { await window.ejecutarBajaEstudianteFirestore('${alumno.dni}'); })()" title="Eliminar Alumno">🗑️</button>
             </div>
             `;
         } else {
@@ -868,20 +878,32 @@ async function guardarLegajoDigital(e) {
         alert("Error crítico: No se completó el resguardo remoto.");
     }
 async function ejecutarBajaEstudianteFirestore(dni) {
-    if (!confirm(`¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`)) return;
-        try {
-               // --- Registro automático en el historial global antes de purgar al estudiante ---
-        if (typeof window.registrarEventoLegajo === 'function') {
-            await window.registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
-        }
-        await deleteDoc(doc(db, "alumnos", dni));
-        alert("Legajo digital purgado correctamente.");
-        if (document.getElementById('idOriginalEdicion').value === dni) salirModoEdicion();
-        await procesarFiltrosYNomina();
-    } catch (error) {
-        alert("No se pudo completar la baja.");
+  const confirmarBaja = await window.haspenConfirm(
+    `¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`,
+    "Confirmar Purgado",
+    "🗑️"
+  );
+  if (!confirmarBaja) return;
+
+  try {
+    // // --- Registro automático en el historial global antes de purgar al estudiante ---
+    if (typeof window.registrarEventoLegajo === 'function') {
+      await window.registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
     }
+    await deleteDoc(doc(db, "alumnos", dni));
+    window.haspenAlert("Legajo digital purgado correctamente.", "exito");
+    if (document.getElementById('idOriginalEdicion').value === dni) salirModoEdicion();
+    await procesarFiltrosYNomina();
+  } catch (error) {
+    console.error("Error en la baja:", error);
+    window.haspenAlert("No se pudo completar la baja.", "error");
+  }
 }
+
+// Vinculación global obligatoria después de definir la función
+window.ejecutarBajaEstudianteFirestore = ejecutarBajaEstudianteFirestore;
+
+
     return `
     <div class="contenedor-media-hoja-pdf">
         <div style="text-align:center; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px;">
@@ -1253,5 +1275,6 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     modalCuerpo.innerHTML = htmlAcumulado;
     modalContenedor.style.display = "flex";
 }
+
 
 })();
