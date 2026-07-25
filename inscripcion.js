@@ -563,8 +563,8 @@ function renderizarFilasEnTabla(alumnos) {
             <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
                 <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" title="Informe Pedagógico">🖨</button>
                 <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" title="Boletín Escolar">📋</button>
-                <button type="button" class="btn-accion-fila" onclick="window.open('historial.html?dni=${ alumno. dni}', '_blank')" title="Historial del Legajo">📜</button>
-                <button type="button" class="btn-accion-fila btn-fila-borrar" onclick="(async () => { await window.ejecutarBajaEstudianteFirestore('${alumno.dni}'); })()" title="Eliminar Alumno">🗑️</button>
+                <button type="button" class="btn-accion-fila" onclick="window.open('historial.html?dni=${alumno.dni}', '_blank')" title="Historial del Legajo">📜</button>
+                <button type="button" class="btn-accion-fila btn-fila-borrar" data-dni="${alumno.dni}" title="Eliminar Alumno">🗑️</button>
             </div>
             `;
         } else {
@@ -647,31 +647,22 @@ function renderizarFilasEnTabla(alumnos) {
             window.open(`boletin.html?dni=${dniAlumno}`, '_blank');
         });
     });
-            // Inyección dinámica y asignación de eventos para el botón de Historial ("📜")
-        tbodyAlumnos.querySelectorAll('button[style*="background:#ef4444"]').forEach(btnBaja => {
-            const contenedorAcciones = btnBaja.parentElement;
-            if (contenedorAcciones && !contenedorAcciones.querySelector('.btn-historial-dinamico')) {
-                const dniAlumnoFila = btnBaja.getAttribute('data-dni');
-                
-                // Crear el botón de historial con diseño Tailwind integrado
-                const btnHistorial = document.createElement('button');
-                btnHistorial.className = 'btn-historial-dinamico px-2 py-1 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 font-semibold rounded-md border border-slate-600 transition-colors shadow-sm ml-1';
-                btnHistorial.title = 'Ver Historial de Trazabilidad';
-                btnHistorial.innerHTML = '📜 Historial';                
-                btnHistorial.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (dniAlumnoFila) {
-                        window.open(`historial.html?dni=${dniAlumnoFila}`, '_blank');
-                    }
-                });                
-                contenedorAcciones.insertBefore(btnHistorial, btnBaja);
-            }
-            // Mantener el escuchador nativo de la baja preexistente
-            btnBaja.addEventListener('click', (e) => {
+    
+
+
+        // INDEPENDIENTE: Gestión del Borrado (🗑️)
+        // 
+        tbodyAlumnos.querySelectorAll('.btn-fila-borrar').forEach(btnBorrar => {
+            btnBorrar.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                ejecutarBajaEstudianteFirestore(e.target.getAttribute('data-dni'));
+                const dniDestino = e.currentTarget.getAttribute('data-dni');
+                if (dniDestino) {
+                await window.ejecutarBajaEstudianteFirestore(dniDestino);
+
+                }
             });
         });
+
 
 }
 function cargarLegajoEnFormulario(alumno) {
@@ -795,6 +786,16 @@ function salirModoEdicion() {
 async function guardarLegajoDigital(e) {
     e.preventDefault();
     if (rolNormalizado === "preceptor") return;
+
+    const elBtnGuardar = document.getElementById('btnGuardar');
+    let textoOriginalBtn = "Resguardar Legajo Digital";
+    if (elBtnGuardar) {
+        textoOriginalBtn = elBtnGuardar.textContent;
+        elBtnGuardar.disabled = true;
+        elBtnGuardar.textContent = "⏳ Procesando resguardo...";
+        elBtnGuardar.style.opacity = "0.7";
+    }
+
     const dni = document.getElementById('dniAlumno').value.trim();
     const idEdicion = document.getElementById('idOriginalEdicion').value;
     const cicloLectivo = document.getElementById('filtroCicloLectivo').value;
@@ -823,7 +824,7 @@ async function guardarLegajoDigital(e) {
     } else {
         const docSnap = await getDoc(doc(db, "alumnos", dni));
         if (docSnap.exists()) {
-            alert(`El DNI "${dni}" ya pertenece a un estudiante registrado.`);
+         await window.haspenConfirm(`El DNI "${dni}" ya pertenece a un estudiante registrado en el sistema. Verifique los datos.`, "Estudiante Duplicado", "⚠️");
             return;
         }
     }
@@ -870,15 +871,38 @@ async function guardarLegajoDigital(e) {
                 await window.registrarEventoLegajo(dni, "MATRICULA", "ALTA_INSCRIPCION", `Matriculación inicial exitosa del estudiante en el sistema a través del formulario analógico.`);
             }
         }
-        alert( idEdicion ? "Legajo digital modificado con éxito." : "Estudiante matriculado con éxito.");
+         if (idEdicion) {
+            await window.haspenConfirm("Los cambios en el legajo digital han sido guardados en el servidor con éxito.", "Legajo Modificado", "✅");
+        } else {
+            await window.haspenConfirm("El estudiante ha sido matriculado y su legajo digital fue creado con éxito.", "Inscripción Exitosa", "✅");
+        }
         salirModoEdicion();
         await procesarFiltrosYNomina();
     } catch (error) {
         console.error("Error al persistir legajo:", error);
-        alert("Error crítico: No se completó el resguardo remoto.");
+        await window.haspenConfirm("No se pudo completar el resguardo remoto en la nube. Verifique su conexión a internet.", "Error de Conexión", "❌");
+    } finally {
+
+        if (elBtnGuardar) {
+            elBtnGuardar.disabled = false;
+            elBtnGuardar.textContent = textoOriginalBtn;
+            elBtnGuardar.style.opacity = "1";
+        }
     }
-async function ejecutarBajaEstudianteFirestore(dni) {
+
+    
+window.ejecutarBajaEstudianteFirestore = (dni) => ejecutarBajaEstudianteFirestore(dni); async function ejecutarBajaEstudianteFirestore(dni) {
+
+
+
+  // Salvaguarda coercitiva de seguridad para Preceptores (Solo Lectura)
+  if (window.esSoloLectura === true) {
+    window.haspenAlert("Acción denegada: Su perfil no posee permisos de escritura.", "error");
+    return;
+  }
+
   const confirmarBaja = await window.haspenConfirm(
+
     `¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`,
     "Confirmar Purgado",
     "🗑️"
@@ -898,8 +922,8 @@ async function ejecutarBajaEstudianteFirestore(dni) {
     console.error("Error en la baja:", error);
     window.haspenAlert("No se pudo completar la baja.", "error");
   }
-}
 
+}
 // Vinculación global obligatoria después de definir la función
 window.ejecutarBajaEstudianteFirestore = ejecutarBajaEstudianteFirestore;
 
@@ -1276,5 +1300,33 @@ function construirMediaHojaInformePedagogico(alumno, cursoTexto, materias, calif
     modalContenedor.style.display = "flex";
 }
 
+window.ejecutarBajaEstudianteFirestore = async function(dni) {
+    if (window.esSoloLectura === true) {
+        window.haspenAlert("Acción denegada: Su perfil no posee permisos de escritura.", "error");
+        return;
+    }
+
+    const confirmarBaja = await window.haspenConfirm(
+        `¿Está seguro de eliminar por completo el legajo del DNI ${dni}?`,
+        "Confirmar Purgado",
+        "🗑️"
+    );
+    if (!confirmarBaja) return;
+
+    try {
+        if (typeof window.registrarEventoLegajo === 'function') {
+            await window.registrarEventoLegajo(dni, "MATRICULA", "BAJA_PURGADO", `Se eliminó por completo el legajo digital del estudiante del servidor.`);
+        }
+        await deleteDoc(doc(db, "alumnos", dni));
+        window.haspenAlert("Legajo digital purgado correctamente.", "exito");
+        if (document.getElementById('idOriginalEdicion').value === dni) salirModoEdicion();
+        await procesarFiltrosYNomina();
+    } catch (error) {
+        console.error("Error en la baja:", error);
+        window.haspenAlert("No se pudo completar la baja.", "error");
+    }
+};
 
 })();
+
+
