@@ -183,8 +183,6 @@
 </div>
 
 
-
-
 <!-- SCRIPT DE CONTROL DE ROLES ADAPTADO PARA PERSONAL HÍBRIDO Y FIREBASE -->
 <script>
 document.addEventListener("DOMContentLoaded", async function() {
@@ -286,7 +284,7 @@ function evaluarPermisoModulo(idModulo, nivelPermiso, urlDestino, nombreModulo) 
     configurarEnlaceModulo(idModulo, urlDestino);
     // Configura el panel en modo solo lectura si la función existe en el archivo
     if (typeof configurarModoSoloLectura === "function") {
-      configurarModoSoloLectura(idModulo);
+            configurarModoSoloLectura(idModulo, nombreModulo, urlDestino);
     }
   } else if (nivelPermiso === "escritura") {
     configurarEnlaceModulo(idModulo, urlDestino);
