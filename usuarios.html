@@ -396,22 +396,19 @@ table a {
         <span style="margin-left: 8px; font-weight: 700; color: #1b4d82;">¿Habilitar el botón de apertura y cierre de notas (Control Períodos)?</span>
     </label>
 </div>
-<!-- Campos Dinámicos Responsivos para Preceptores -->
 <div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
-<label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Responsabilidad (2 Cursos Estructurales)</label>
-<div class="grid-preceptor-cursos">
-<div>
-<label style="font-size: 13px; margin-bottom: 3px; display:block;">Primer Curso</label>
-<select id="altaAnio1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-</select>
+  <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 8px;">Asignación de Responsabilidad (Cursos Estructurales)</label>
+  
+  <div style="background: #f1f5f9; padding: 6px 12px; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1;">
+    <input type="checkbox" id="checkSeleccionarTodosLosCursos" style="margin: 0; cursor: pointer; transform: scale(1.1);">
+    <label for="checkSeleccionarTodosLosCursos" style="font-size: 12px; font-weight: bold; color: #334155; cursor: pointer; user-select: none;">--- SELECCIONAR TODOS LOS CURSOS DE LA INSTITUCIÓN ---</label>
+  </div>
+
+  <div id="contenedorCursosCheckboxes" style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; max-height: 250px; overflow-y: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;">
+    <span style="color: #94a3b8; font-size: 12px; grid-column: 1 / -1;">Cargando organigrama escolar de divisiones...</span>
+  </div>
 </div>
-<div>
-<label style="font-size: 13px; margin-bottom: 3px; display:block;">Segundo Curso</label>
-<select id="altaAnio2" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-</select>
-</div>
-</div>
-</div>
+
 <!-- Campos Dinámicos para Profesores con Escalafón Jerárquico -->
 <div id="grupoAsignacionProfesor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
 <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Cátedras Múltiples (Bolsa de Horas Docente)</label>
