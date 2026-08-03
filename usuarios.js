@@ -325,9 +325,53 @@
     }
   }
 
+    // FUNCIÓN COINCIDENTE PARA RENDERIZAR CHECKBOXES DINÁMICOS DESDE FIRESTORE
+  function renderizarCheckboxesCursos() {
+    const contenedor = document.getElementById("contenedorCursosCheckboxes");
+    if (!contenedor) return;
+    contenedor.innerHTML = "";
+
+    // Crear las 6 columnas fijas para los años (1° a 6°) usando Tailwind nativo
+    for (let i = 1; i <= 6; i++) {
+      const col = document.createElement("div");
+      col.className = "flex flex-col gap-2 bg-gray-50 p-3 rounded border border-gray-200 text-left";
+      col.innerHTML = `<h5 class="text-xs font-bold text-gray-700 border-b pb-1 mb-1">${i}° Año</h5>`;
+      
+      // Filtrar los cursos que pertenecen a este año desde la caché descargada
+      const cursosDelAnio = (cacheCursos || []).filter(c => {
+        const cicloTexto = c.ciclo || "";
+        return cicloTexto.startsWith(i + "°");
+      });
+
+      // Ordenar las divisiones alfabéticamente (A, B, C...)
+      cursosDelAnio.sort((a, b) => (a.division || "").localeCompare(b.division || ""));
+
+      if (cursosDelAnio.length === 0) {
+        col.innerHTML += `<p class="text-xs text-gray-400 italic">Sin cursos</p>`;
+      } else {
+        cursosDelAnio.forEach((curso) => {
+          const item = document.createElement("div");
+          item.className = "flex items-center gap-2";
+          
+          const turnoLetra = (curso.turno || "").substring(0, 1).toUpperCase();
+          const etiquetaVisual = `${curso.division} (${turnoLetra})`;
+
+          item.innerHTML = `
+            <input type="checkbox" name="cursosPreceptorMatriz" value="${curso.id}" id="chk-matriz-${curso.id}" class="rounded text-blue-600 focus:ring-blue-500 cursor-pointer">
+            <label for="chk-matriz-${curso.id}" class="text-xs text-gray-700 cursor-pointer select-none">
+              ${etiquetaVisual}
+            </label>
+          `;
+          col.appendChild(item);
+        });
+      }
+      contenedor.appendChild(col);
+    }
+  }
+
   // PARCHE DE AJUSTE DE SCOPE REUNIFICADO PARA GESTIONAR PANELES
   function gestionarPanelesFormulario() {
-    const selectRol = document.getElementById("altaCargoRol");
+    const selectRol = document.getElementById("rolUsuario");
     const panelPreceptor = document.getElementById("grupoCursosPreceptor");
     const panelProfesor = document.getElementById("grupoAsignacionProfesor");
     const checkProfesor = document.getElementById("checkEsProfesor");
