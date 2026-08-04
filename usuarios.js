@@ -263,34 +263,37 @@
       }
     }
 
-    // 2. Poblar selectores tradicionales y ubicar checkboxes (Claves con mayúscula según consola)
-    // Reemplazar únicamente el bloque cursos.forEach dentro de inicializarSelectoresCursos
+    // PEGAR ESTE NUEVO BLOQUE CORREGIDO:
     cursos.forEach((curso, index) => {
-      // Validación de resguardo: Si el curso no tiene ciclo o datos mínimos, se salta para evitar errores
-      if (!curso || !curso.Ciclo) return;
+      // Sincronización con las propiedades en minúscula de la base de datos
+      if (!curso || !curso.ciclo) return;
 
-      const texto = `${curso.Ciclo} - Div: ${curso.Division} (${curso.Turno})`;
+      const texto = `${curso.ciclo} - Div: ${curso.division} (${curso.turno})`;
       if (selectProf) selectProf.add(new Option(texto, curso.id));
       if (selectFiltro) selectFiltro.add(new Option(texto, curso.id));
 
-      // Limpiar el texto de forma segura verificando que exista el campo
-      const numAnio = parseInt(curso.Ciclo.replace(/[^0-9]/g, ""));
+      // Extraer el número de año de forma segura
+      const numAnio = parseInt(curso.ciclo.replace(/[^0-9]/g, ""));
 
       if (contenedorCheckboxes && columnas[numAnio]) {
         const divItem = document.createElement("div");
-        divItem.style.cssText = "display: flex; align-items: center; gap: 6px;";
+        divItem.style.cssText =
+          "display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 6px !important; margin: 4px 0 !important; width: 100% !important; text-align: left !important; box-sizing: border-box !important;";
 
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.name = "cursosPreceptorMatriz";
         checkbox.value = curso.id;
         checkbox.id = `chk-curso-${index}`;
-        checkbox.style.cssText = "margin: 0; cursor: pointer;";
+        checkbox.style.cssText =
+          "width: 14px !important; height: 14px !important; min-width: 14px !important; max-width: 14px !important; margin: 0 !important; padding: 0 !important; cursor: pointer !important; display: inline-block !important; vertical-align: middle !important; flex: none !important;";
 
         const label = document.createElement("label");
         label.htmlFor = `chk-curso-${index}`;
-        label.style.cssText = "font-size: 11px; cursor: pointer; user-select: none; white-space: nowrap;";
-        label.textContent = `Div: ${curso.Division} (${curso.Turno})`;
+        label.style.cssText =
+          "width: auto !important; max-width: none !important; min-width: 0 !important; font-size: 11px !important; cursor: pointer !important; user-select: none !important; white-space: nowrap !important; display: inline-block !important; vertical-align: middle !important; line-height: 1.2 !important; margin: 0 0 0 4px !important; padding: 0 !important; color: #334155 !important; font-weight: 500 !important; text-align: left !important; flex: none !important;";
+
+        label.textContent = `Div: ${curso.division} (${curso.turno})`;
 
         divItem.appendChild(checkbox);
         divItem.appendChild(label);
@@ -298,15 +301,24 @@
       }
     });
 
-    // 3. Lógica del checkbox Maestro "Seleccionar Todos"
+    // 3. Lógica y alineación estricta del checkbox Maestro "Seleccionar Todos"
     if (chkTodos) {
+      const padreChkTodos = chkTodos.parentElement;
+      if (padreChkTodos) {
+        padreChkTodos.style.cssText =
+          "background: #f1f5f9 !important; padding: 6px 12px !important; border-radius: 4px !important; margin-bottom: 10px !important; display: flex !important; flex-direction: row !important; justify-content: center !important; align-items: center !important; gap: 8px !important; border: 1px solid #cbd5e1 !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; color: #475569 !important; font-size: 11px !important; font-weight: 600 !important;";
+      }
+
+      // Anulamos el ancho total heredado para centrar el cuadrito maestro de forma segura
+      chkTodos.style.cssText =
+        "width: 14px !important; height: 14px !important; min-width: 14px !important; max-width: 14px !important; margin: 0 !important; padding: 0 !important; cursor: pointer !important; display: inline-block !important; vertical-align: middle !important; flex: none !important;";
+
       chkTodos.addEventListener("change", () => {
         const checksCursos = document.querySelectorAll('input[name="cursosPreceptorMatriz"]');
         checksCursos.forEach((cb) => (cb.checked = chkTodos.checked));
       });
     }
   }
-
   async function cargarMateriasPorCursoSeleccionado() {
     const cursoId = document.getElementById("anioProfesor").value;
     const selectMateria = document.getElementById("materiaProfesor");
@@ -325,7 +337,7 @@
     }
   }
 
-    // FUNCIÓN COINCIDENTE PARA RENDERIZAR CHECKBOXES DINÁMICOS DESDE FIRESTORE
+  // FUNCIÓN COINCIDENTE PARA RENDERIZAR CHECKBOXES DINÁMICOS DESDE FIRESTORE
   function renderizarCheckboxesCursos() {
     const contenedor = document.getElementById("contenedorCursosCheckboxes");
     if (!contenedor) return;
@@ -336,9 +348,9 @@
       const col = document.createElement("div");
       col.className = "flex flex-col gap-2 bg-gray-50 p-3 rounded border border-gray-200 text-left";
       col.innerHTML = `<h5 class="text-xs font-bold text-gray-700 border-b pb-1 mb-1">${i}° Año</h5>`;
-      
+
       // Filtrar los cursos que pertenecen a este año desde la caché descargada
-      const cursosDelAnio = (cacheCursos || []).filter(c => {
+      const cursosDelAnio = (cacheCursos || []).filter((c) => {
         const cicloTexto = c.ciclo || "";
         return cicloTexto.startsWith(i + "°");
       });
@@ -352,7 +364,7 @@
         cursosDelAnio.forEach((curso) => {
           const item = document.createElement("div");
           item.className = "flex items-center gap-2";
-          
+
           const turnoLetra = (curso.turno || "").substring(0, 1).toUpperCase();
           const etiquetaVisual = `${curso.division} (${turnoLetra})`;
 
@@ -608,15 +620,14 @@
       }
     }
 
+    // PEGAR ESTE NUEVO BLOQUE DE RECOLECCIÓN EN LOTE:
     let rolesCursos = [];
-    if (rol === "preceptor") {
-      const c1 = document.getElementById("altaAnio1").value;
-      const c2 = document.getElementById("altaAnio2").value;
-      if (!c1 || !c2 || c1 === "Ninguno" || c2 === "Ninguno" || c1 === c2) {
-        alert("Error: Un preceptor debe tener asignados exactamente 2 cursos estructurales distintos.");
-        return;
-      }
-      rolesCursos = [c1, c2];
+    const panelPreceptor = document.getElementById("grupoCursosPreceptor");
+
+    // Si el recuadro de asignación está visible, recolectamos dinámicamente lo que se haya tildado
+    if (panelPreceptor && panelPreceptor.style.display === "block") {
+      const checkboxesMarcados = document.querySelectorAll('input[name="cursosPreceptorMatriz"]:checked');
+      rolesCursos = Array.from(checkboxesMarcados).map((cb) => cb.value);
     }
 
     try {
@@ -958,15 +969,13 @@
     gestionarPanelesFormulario();
 
     const userRol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
-    if (userRol === "preceptor" && usuario.cursosAsignados && usuario.cursosAsignados.length >= 2) {
+    if (usuario.cursosAsignados && usuario.cursosAsignados.length > 0) {
       setTimeout(() => {
-        const select1 = document.getElementById("altaAnio1");
-        const select2 = document.getElementById("altaAnio2");
-        if (select1 && select2) {
-          select1.value = usuario.cursosAsignados[0];
-          select2.value = usuario.cursosAsignados[1];
-        }
-      }, 80); // 80ms bastan para que GitHub active los contenedores del DOM ocultos
+        usuario.cursosAsignados.forEach((cursoId) => {
+          const chk = document.querySelector(`input[name="cursosPreceptorMatriz"][value="${cursoId}"]`);
+          if (chk) chk.checked = true;
+        });
+      }, 100); // Tolerancia temporal de milisegundos para garantizar el renderizado previo del DOM
     }
 
     catedrasTemporales = usuario.bolsaHoras ? [...usuario.bolsaHoras] : [];
@@ -1007,6 +1016,11 @@
     document.getElementById("checkGestionPeriodos").checked = false;
     catedrasTemporales = [];
     actualizarTagsBolsaHoras();
+    // Parche de seguridad: Limpiar y destildar la grilla de checkboxes completa
+    const checksCursosVaciar = document.querySelectorAll('input[name="cursosPreceptorMatriz"]');
+    checksCursosVaciar.forEach((cb) => (cb.checked = false));
+    const chkTodosVaciar = document.getElementById("checkSeleccionarTodosLosCursos");
+    if (chkTodosVaciar) chkTodosVaciar.checked = false;
     gestionarPanelesFormulario();
   }
 })();
