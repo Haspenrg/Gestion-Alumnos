@@ -83,6 +83,98 @@
   const claveUsuario = document.getElementById("claveUsuario");
   const confirmarClaveUsuario = document.getElementById("confirmarClaveUsuario");
 
+  // --- COMPONENTE DE NOTIFICACIONES FLOTANTES INSTITUCIONALES (ALTO IMPACTO VISUAL) ---
+  function mostrarToast(mensaje, tipo = "exito") {
+    let contenedorToasts = document.getElementById("contenedor-toasts-escolar");
+    if (!contenedorToasts) {
+      contenedorToasts = document.createElement("div");
+      contenedorToasts.id = "contenedor-toasts-escolar";
+      contenedorToasts.style.cssText =
+        "position: fixed; top: 24px; right: 24px; z-index: 999999 !important; display: flex; flex-direction: column; gap: 12px; pointer-events: none;";
+      document.body.appendChild(contenedorToasts);
+    }
+
+    // Configuración de paletas cromáticas integrales de alta visibilidad institucional
+    let colorFondo = "#ecfdf5"; // Fondo verde claro suave
+    let colorBorde = "#10b981"; // Borde verde esmeralda vibrante
+    let colorTexto = "#064e3b"; // Texto verde muy oscuro (legibilidad máxima)
+    let fondoIcono = "#ffffff"; // Contenedor del ícono en blanco para contraste
+    let colorIcono = "#059669";
+    let iconoVisual = "✓";
+
+    if (tipo === "error") {
+      colorFondo = "#fff1f2"; // Fondo rosado/rojo claro
+      colorBorde = "#f43f5e"; // Borde rosa/rojo vibrante
+      colorTexto = "#4c0519"; // Texto rojo vino muy oscuro
+      fondoIcono = "#ffffff";
+      colorIcono = "#e11d48";
+      iconoVisual = "✕";
+    } else if (tipo === "advertencia") {
+      colorFondo = "#fffbeb"; // Fondo amarillo/ámbar claro
+      colorBorde = "#f59e0b"; // Borde ámbar vibrante
+      colorTexto = "#78350f"; // Texto marrón/miel muy oscuro
+      fondoIcono = "#ffffff";
+      colorIcono = "#d97706";
+      iconoVisual = "⚠";
+    }
+
+    const elementoToast = document.createElement("div");
+
+    // Tarjeta con fondo integral de color suave, bordes definidos del mismo tono y esquinas redondeadas
+    elementoToast.style.cssText = `
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 16px !important;
+      padding: 16px !important;
+      background-color: ${colorFondo} !important;
+      border: 2px solid ${colorBorde} !important;
+      border-radius: 12px !important;
+      width: 380px !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08) !important;
+      font-family: system-ui, -apple-system, sans-serif !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      opacity: 0 !important;
+      transform: translateX(50px) !important;
+      pointer-events: auto !important;
+      box-sizing: border-box !important;
+    `;
+
+    elementoToast.innerHTML = `
+      <div style="display: flex !important; align-items: center !important; justify-content: center !important; width: 32px !important; height: 32px !important; min-width: 32px !important; border-radius: 8px !important; background-color: ${fondoIcono} !important; color: ${colorIcono} !important; font-size: 14px !important; font-weight: bold !important; margin: 0 !important; padding: 0 !important; flex-shrink: 0 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;">
+        ${iconoVisual}
+      </div>
+      <div style="flex: 1 !important; color: ${colorTexto} !important; font-size: 14px !important; font-weight: 600 !important; line-height: 1.4 !important; padding-top: 4px !important; text-align: left !important;">
+        ${mensaje}
+      </div>
+      <button style="background: none !important; border: none !important; color: ${colorBorde} !important; cursor: pointer !important; font-size: 22px !important; line-height: 1 !important; padding: 0 4px !important; margin: -2px 0 0 0 !important; transition: opacity 0.2s !important; outline: none !important; font-weight: bold !important; flex-shrink: 0 !important; opacity: 0.7 !important;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+        &times;
+      </button>
+    `;
+
+    const botonCerrar = elementoToast.querySelector("button");
+    botonCerrar.onclick = () => {
+      elementoToast.style.opacity = "0";
+      elementoToast.style.transform = "translateX(50px)";
+      setTimeout(() => elementoToast.remove(), 300);
+    };
+
+    contenedorToasts.appendChild(elementoToast);
+
+    setTimeout(() => {
+      elementoToast.style.opacity = "1";
+      elementoToast.style.transform = "translateX(0)";
+    }, 20);
+
+    // Auto-destrucción controlada
+    setTimeout(() => {
+      if (elementoToast.parentNode) {
+        elementoToast.style.opacity = "0";
+        elementoToast.style.transform = "translateX(50px)";
+        setTimeout(() => elementoToast.remove(), 300);
+      }
+    }, 4500);
+  }
+
   // Flujo de inicialización secuencial robusto y protegido contra bloqueos de red
   try {
     await verificarAutenticacionAdmin();
@@ -192,18 +284,19 @@
     }
   }
 
-  // --- INYECCIÓN DINÁMICA DE ROLES DESDE CLOUD FIRESTORE (EXTENDIDA) ---
+  // --- INYECCIÓN DINÁMICA DE ROLES DESDE CLOUD FIRESTORE (EXTENDIDA CON CACHÉ LOCAL) ---
   async function cargarRolesEnSelector() {
     if (!rolUsuario) return;
     rolUsuario.innerHTML = '<option value="" disabled selected>Seleccione un rol...</option>';
 
-    // Limpiamos y preparamos también el nuevo selector de la barra de filtros
     if (filtroRolBase) {
       filtroRolBase.innerHTML = '<option value="">Todos los cargos / roles</option>';
     }
 
     try {
       const querySnapshot = await getDocs(collection(db, "roles"));
+      const listaRolesParaCache = []; // Matriz temporal de resguardo
+
       if (querySnapshot.empty) {
         rolUsuario.add(new Option("Administrador (Por Defecto)", "administrador"));
         if (filtroRolBase) filtroRolBase.add(new Option("Administrador (Por Defecto)", "administrador"));
@@ -215,14 +308,17 @@
         const nombreRol = rol.nombre;
         const idRol = rol.id.toLowerCase().trim();
 
-        // Inyecta en el formulario de registro
+        listaRolesParaCache.push(rol); // Almacenamos el objeto completo con sus permisos
+
         rolUsuario.add(new Option(nombreRol, idRol));
 
-        // Inyecta en la barra de filtros unificada
         if (filtroRolBase) {
           filtroRolBase.add(new Option(nombreRol, idRol));
         }
       });
+
+      // Sincronizamos la memoria local para que la interfaz responda por capacidades RBAC
+      localStorage.setItem("rolesColegio", JSON.stringify(listaRolesParaCache));
     } catch (error) {
       console.error("Error al inyectar catálogo de roles dinámicos:", error);
       rolUsuario.add(new Option("Administrador (Por Defecto)", "administrador"));
@@ -381,7 +477,7 @@
     }
   }
 
-  // PARCHE DE AJUSTE DE SCOPE REUNIFICADO PARA GESTIONAR PANELES
+  // PARCHE DE AJUSTE DE SCOPE REUNIFICADO PARA GESTIONAR PANELES POR CAPACIDADES RBAC
   function gestionarPanelesFormulario() {
     const selectRol = document.getElementById("rolUsuario");
     const panelPreceptor = document.getElementById("grupoCursosPreceptor");
@@ -392,14 +488,16 @@
 
     const rolSeleccionado = selectRol.value;
     const rolesDisponibles = JSON.parse(localStorage.getItem("rolesColegio")) || [];
-    const permisosDelRolSeleccionado = rolesDisponibles.find((r) => r.id === rolSeleccionado) || {};
+    const rolEncontrado = rolesDisponibles.find((r) => r.id === rolSeleccionado) || {};
 
-    // Forzar la apertura si el rol es preceptor, tutor, prosecretaria o si audita legajos
-    const esPerfilConsulta =
-      rolSeleccionado === "preceptor" || rolSeleccionado === "tutor" || rolSeleccionado === "prosecretaria";
-    const requiereAsignarCursos = esPerfilConsulta || permisosDelRolSeleccionado.legajoDigital === "lectura";
+    // Extracción segura del sub-objeto de permisos de la matriz RBAC institucional
+    const permisosDelRol = rolEncontrado.permisos || {};
+    const nivelLegajo = permisosDelRol.legajoDigital ? permisosDelRol.legajoDigital.toLowerCase().trim() : "ninguno";
 
-    // Control visual del bloque de Cursos
+    // El panel de asignación estructural se activa si el rol posee capacidades de consulta o edición
+    const requiereAsignarCursos = nivelLegajo === "lectura" || nivelLegajo === "escritura";
+
+    // Control visual del bloque de Cursos Estructurales (Panel Gris)
     if (panelPreceptor) {
       if (requiereAsignarCursos === true) {
         panelPreceptor.style.display = "block";
@@ -438,7 +536,7 @@
     }
   }
 
-  // REEMPLAZAR FUNCIÓN COMPLETA EN usuarios.js (Líneas 254 a 314)
+  // REEMPLAZAR FUNCIÓN COMPLETA EN usuarios.js (Auditoría de Cátedras con UI Renovada y Lenguaje Institucional)
   async function agregarCatedraProfesorBolsa() {
     const selectCurso = document.getElementById("anioProfesor");
     const selectMateria = document.getElementById("materiaProfesor");
@@ -451,22 +549,24 @@
       selectCurso.selectedIndex <= 0 ||
       selectMateria.selectedIndex <= 0
     ) {
-      alert("Error: Seleccione un Curso, Materia y Situación de Revista válida para operar.");
+      mostrarToast("Por favor, seleccione un Curso, Materia y Situación de Revista válida para operar.", "advertencia");
       return;
     }
 
-    const cursoIdReal = selectCurso.value; // ID inmutable de Firebase (ej: 1-A-M)
-    const textoCurso = selectCurso.options[selectCurso.selectedIndex].text; // Respaldo visual
+    const cursoIdReal = selectCurso.value;
+    const textoCurso = selectCurso.options[selectCurso.selectedIndex].text;
     const nombreMateria = selectMateria.value;
     const situacionRevista = selectRevista.value;
 
-    // Eje de sincronización: Usamos el ID del curso y la materia de forma unívoca
     const baseCatedraId = `${cursoIdReal} - ${nombreMateria}`;
     const identificadorCompleto = `[${situacionRevista}] ${baseCatedraId}`;
 
     // 1. Control de duplicados en la sesión del formulario actual
     if (catedrasTemporales.some((c) => c.includes(baseCatedraId))) {
-      alert("Este profesor ya posee una asignación registrada para esta misma materia y curso.");
+      mostrarToast(
+        "Este docente ya posee una asignación registrada para esta misma materia y curso en el formulario actual.",
+        "advertencia"
+      );
       return;
     }
 
@@ -475,7 +575,7 @@
       const dniEdicion = document.getElementById("dniOriginalEdicion").value;
       let docentesAsignados = [];
 
-      // 2. Auditoría en caliente cruzada contra otros docentes en la base de datos
+      // 2. Auditoría en caliente cruzada contra otros docentes en el sistema institucional
       usuariosTotales.forEach((u) => {
         if (dniEdicion && u.dni === dniEdicion) return;
         const bolsa = u.bolsaHoras || [];
@@ -489,19 +589,24 @@
 
       if (docentesAsignados.length > 0) {
         const tieneTitular = docentesAsignados.some((d) => d.revista === "TITULAR");
+
+        // Bloqueo reglamentario institucional adaptado a Toast de advertencia
         if (situacionRevista === "TITULAR" && tieneTitular) {
           const nombreTitular = docentesAsignados.find((d) => d.revista === "TITULAR").nombre;
-          alert(
-            `ALERTA REGLAMENTARIA:\nNo se puede asignar como TITULAR. Este curso ya posee un Docente Titular activo: ${nombreTitular}.\nModifique la situación de revista de la hora a tipo Suplente.`
+          mostrarToast(
+            `Normativa Escolar: No se puede asignar como TITULAR. Este espacio ya posee un Docente Titular activo: ${nombreTitular}. Modifique la situación de revista a tipo Suplente.`,
+            "error"
           );
           return;
         }
 
         const listaDetalle = docentesAsignados.map((d) => `• ${d.nombre} (${d.revista})`).join("\n");
+
+        // Mensaje de confirmación interactivo con vocabulario claro para el operador escolar
         const autorizar = confirm(
-          `⚠ AUDITORÍA EN CALIENTE - DETECCIÓN DE MULTI-DOCENTES:\n\n` +
-            `La cátedra [ ${nombreMateria} en ${textoCurso} ] ya tiene personal asociado:\n${listaDetalle}\n\n` +
-            `¿Desea autorizar el ingreso de este nuevo registro bajo la condición de ${situacionRevista}?`
+          `Aviso del Sistema - Registro de Multi-Docentes:\n\n` +
+            `El espacio de [ ${nombreMateria} en ${textoCurso} ] ya cuenta con personal asociado:\n${listaDetalle}\n\n` +
+            `¿Desea autorizar el ingreso de este nuevo registro bajo la condición de cargo ${situacionRevista}?`
         );
         if (!autorizar) return;
       }
@@ -511,6 +616,7 @@
 
     // 3. Inyección segura en el array temporal de la vista
     catedrasTemporales.push(identificadorCompleto);
+    mostrarToast("Espacio curricular añadido correctamente a la bolsa temporal del docente.", "exito");
     actualizarTagsBolsaHoras();
   }
 
@@ -600,22 +706,32 @@
     const valClave = inputClaveElement ? inputClaveElement.value : "";
     const valConfirmar = inputConfirmarElement ? inputConfirmarElement.value : "";
 
+    // === REEMPLAZO COMPONENTE VISUAL: VALIDACIONES ESCOLARES DEL FORMULARIO ===
     if (!dni || !nombreCompleto || !email || !rol) {
-      alert("Por favor, complete todos los campos obligatorios del formulario.");
+      mostrarToast(
+        "Por favor, complete todos los campos obligatorios del formulario antes de continuar.",
+        "advertencia"
+      );
       return;
     }
 
     if (!dniOriginal) {
       if (!valClave || !valConfirmar) {
-        alert("Error: Para registrar una cuenta nueva debe ingresar una contraseña y su respectiva confirmación.");
+        mostrarToast(
+          "Para registrar una cuenta nueva debe ingresar una contraseña y su confirmación correspondientemente.",
+          "advertencia"
+        );
         return;
       }
       if (valClave.length < 6) {
-        alert("Error: La contraseña inicial provista debe poseer un mínimo de 6 caracteres reglamentarios.");
+        mostrarToast(
+          "La contraseña ingresada debe poseer un mínimo de 6 caracteres por seguridad del sistema.",
+          "advertencia"
+        );
         return;
       }
       if (valClave !== valConfirmar) {
-        alert("Error: La contraseña ingresada y su confirmación no coinciden. Verifique los datos.");
+        mostrarToast("Las contraseñas ingresadas no coinciden. Por favor, verifique los datos.", "error");
         return;
       }
     }
@@ -635,16 +751,19 @@
         const docRef = doc(db, "usuarios", dni);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          alert("Error: Ya existe un usuario registrado con el DNI ingresado.");
+          mostrarToast("Ya existe un miembro del personal registrado con el DNI ingresado.", "advertencia");
           return;
         }
         try {
           await mAuth.createUserWithEmailAndPassword(secondaryAuth, email, valClave);
           await mAuth.signOut(secondaryAuth);
         } catch (authError) {
-          console.error("Error al registrar credenciales en Firebase Auth:", authError);
+          console.error("Error operativo de credenciales:", authError);
           if (authError.code !== "auth/email-already-in-use") {
-            alert("Error Auth: " + authError.message);
+            mostrarToast(
+              "No se pudieron registrar las credenciales de acceso. Verifique el correo electrónico.",
+              "error"
+            );
             return;
           }
         }
@@ -663,7 +782,6 @@
       };
 
       if (!dniOriginal) {
-        // Corrección de paridad: Hasheamos la contraseña antes de subirla a Cloud Firestore
         payloadUsuario.clave = await generarHashSHA256(valClave);
       }
 
@@ -672,16 +790,20 @@
       }
 
       await setDoc(doc(db, "usuarios", dni), payloadUsuario, { merge: true });
-      alert(
+
+      // Mensaje institucional unificado e intuitivo para el operador de la secretaría
+      mostrarToast(
         dniOriginal
-          ? "Datos de cuenta actualizados en Cloud Firestore."
-          : "Cuenta registrada con éxito en la nube de Firebase Auth y Firestore."
+          ? "Los datos del usuario fueron actualizados correctamente en el sistema."
+          : "La cuenta de personal ha sido registrada con éxito en los registros del colegio.",
+        "exito"
       );
+
       desactivarModoEdicion();
       await renderizarTablaUsuarios();
     } catch (error) {
-      console.error("Error al persistir el legajo en Firebase:", error);
-      alert("Error de red: No se pudieron guardar los cambios en el servidor.");
+      console.error("Error al persistir legajo:", error);
+      mostrarToast("No se pudieron guardar los cambios debido a un inconveniente de conexión con el sistema.", "error");
     }
   }
   async function renderizarTablaUsuarios() {
@@ -795,7 +917,9 @@
       tdResp.style.cssText = "padding:12px; font-size:12px; vertical-align:top;";
 
       let flagResp = false;
-      if (userRolNormalizado === "preceptor" && user.cursosAsignados && user.cursosAsignados.length > 0) {
+
+      // PARCHE RBAC: Renderiza las divisiones asignadas si el usuario posee registros en su matriz de cobertura
+      if (user.cursosAsignados && user.cursosAsignados.length > 0) {
         flagResp = true;
         const cursosRaw = localStorage.getItem("cursosColegio");
         const listaCursos = cursosRaw ? JSON.parse(cursosRaw) : [];
@@ -803,12 +927,11 @@
           const c = listaCursos.find((cur) => cur.id === id);
           if (!c) return "Sin Asignar";
 
-          // Primero hacemos el split, tomamos la primera parte del ciclo y a esa parte le aplicamos el trim
           const cicloLimpio = c.ciclo.split("-")[0].trim();
           return `${cicloLimpio} ° ${c.division}`;
         });
-        const dPre = document.createElement("d" + "i" + "v");
-        dPre.innerHTML = "🔹 <strong>Cursos Preceptoría:</strong> " + nombresCursos.join(" y ");
+        const dPre = document.createElement("div");
+        dPre.innerHTML = "🔹 <strong>Cursos Asignados:</strong> " + nombresCursos.join(" y ");
         tdResp.appendChild(dPre);
       }
 
@@ -985,17 +1108,34 @@
   window.eliminarCuentaUsuario = async function (dni) {
     const datosSesion = localStorage.getItem("usuarioActivo");
     const usuarioLogueado = datosSesion ? JSON.parse(datosSesion) : {};
+
+    // 1. Bloqueo de auto-eliminación con Toast estético y lenguaje institucional
     if (usuarioLogueado.dni === dni) {
-      alert("Operación denegada: No puede eliminar la cuenta con la que se encuentra logueado.");
+      mostrarToast(
+        "Operación no permitida: No puede eliminar la cuenta con la que se encuentra trabajando actualmente.",
+        "advertencia"
+      );
       return;
     }
-    if (!confirm("¿Está seguro de que desea eliminar esta cuenta de personal en Cloud Firestore?")) return;
+
+    // 2. Confirmación tradicional adaptada temporalmente con lenguaje amigable
+    if (
+      !confirm(
+        "¿Está completamente seguro de que desea remover esta cuenta de personal del sistema institucional? Esta acción no se puede deshacer."
+      )
+    )
+      return;
+
     try {
       await deleteDoc(doc(db, "usuarios", dni));
-      alert("El legajo de personal fue removido de la nube de forma segura.");
+      mostrarToast("El registro del personal fue removido de la base de datos escolar correctamente.", "exito");
       await renderizarTablaUsuarios();
     } catch (e) {
       console.error("Error al remover el documento:", e);
+      mostrarToast(
+        "No se pudo completar la eliminación debido a un inconveniente de conexión con el sistema.",
+        "error"
+      );
     }
   };
 
