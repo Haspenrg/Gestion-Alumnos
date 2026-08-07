@@ -530,556 +530,101 @@
         </button>
       </div>
     </div>
+    <!-- PARCHE: Estructura y Estilos del Sistema de Alertas Flotantes Institucionales -->
+    <style>
+      .modal-alerta-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      .modal-alerta-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .modal-alerta-caja {
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 420px;
+        box-shadow:
+          0 10px 25px -5px rgba(0, 0, 0, 0.1),
+          0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        border-top: 6px solid #1a73e8;
+        transform: scale(0.9);
+        transition: transform 0.2s ease;
+      }
+      .modal-alerta-overlay.active .modal-alerta-caja {
+        transform: scale(1);
+      }
+      .modal-alerta-texto {
+        font-size: 14px;
+        color: #334155;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        white-space: pre-line;
+        font-weight: 500;
+      }
+      .modal-alerta-botones {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .btn-alerta-primario {
+        background: #1a73e8;
+        color: white;
+        border: none;
+        padding: 8px 18px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      .btn-alerta-primario:hover {
+        background: #1557b0;
+      }
+      .btn-alerta-secundario {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        padding: 8px 18px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      .btn-alerta-secundario:hover {
+        background: #e2e8f0;
+      }
+    </style>
+
+    <div id="customAlertOverlay" class="modal-alerta-overlay">
+      <div class="modal-alerta-caja" id="customAlertBox">
+        <div id="customAlertText" class="modal-alerta-texto"></div>
+        <div class="modal-alerta-botones">
+          <button type="button" id="customAlertBtnCancel" class="btn-alerta-secundario" style="display: none">
+            Cancelar
+          </button>
+          <button type="button" id="customAlertBtnOk" class="btn-alerta-primario">Aceptar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CONTROLADOR ASÍNCRONO CON FORMATO DE RUTA DE USUARIOS.JS -->
-    <script type="module">
-      (async function () {
-        "use strict";
-
-        // Importación dinámica evasiva por sub-bloques de caracteres
-        const b =
-          "h" +
-          "t" +
-          "t" +
-          "p" +
-          "s" +
-          ":" +
-          "/" +
-          "/" +
-          "w" +
-          "w" +
-          "w" +
-          "." +
-          "g" +
-          "s" +
-          "t" +
-          "a" +
-          "t" +
-          "i" +
-          "c" +
-          "." +
-          "c" +
-          "o" +
-          "m" +
-          "/f" +
-          "i" +
-          "r" +
-          "e" +
-          "b" +
-          "a" +
-          "s" +
-          "e" +
-          "j" +
-          "s" +
-          "/10.12.0/";
-        const { db } = await import("./firebase-config.js");
-        const { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, query, where } = await import(
-          b + "firebase-firestore.js"
-        );
-
-        // VALORES SEMILLA DE CONTINGENCIA INSTITUCIONAL
-        let configDivisiones = ["A", "B", "C", "D", "E", "F", "G"];
-        let configOrientaciones = {
-          comun: ["PRÁCTICAS DEL LENGUAJE", "MATEMÁTICA", "INGLÉS", "LENGUAJES ARTÍSTICOS", "EDUCACIÓN FÍSICA"],
-          basico: [
-            "HISTORIA",
-            "GEOGRAFÍA",
-            "BIOLOGÍA",
-            "FÍSICO-QUÍMICA",
-            "CONSTRUCCIÓN CIUDADANA",
-            "EDUCACIÓN TECNOLOGICA"
-          ],
-          "Ciclo Básico": [],
-          "Ciencias Sociales": [
-            "HISTORIA ORIENTADA",
-            "GEOGRAFÍA ORIENTADA",
-            "BIOLOGÍA, QUÍMICA Y SOCIEDAD",
-            "SALUD Y DERECHO",
-            "SOCIOLOGÍA",
-            "COMUNICACIÓN",
-            "CIENCIAS POLÍTICAS",
-            "FILOSOFÍA",
-            "PSICOLOGÍA",
-            "FÍSICA ORIENTADA",
-            "ECONOMÍA"
-          ],
-          "Economía y Administración": [
-            "ADMINISTRACIÓN",
-            "SISTEMA INFORMACIÓN CONTABLE",
-            "MICROECONOMÍA",
-            "FILOSOFÍA",
-            "DERECHO ECONÓMICO",
-            "FÍSICA ORIENTADA",
-            "LEGISLACIÓN IMPOSITIVA",
-            "MICROEMPRENDIMIENTO",
-            "ECONOMÍA"
-          ],
-          "Agro y Ambiente": [
-            "CIENCIAS DE LA TIERRA",
-            "AGROECOSISTEMA",
-            "PRODUCCION VEGETAL",
-            "EMPRENDIMIENTO",
-            "PROCESOS PRODUCTIVOS"
-          ]
-        };
-        let cacheCursos = []; // Caché en memoria local
-
-        // Verificación estricta de sesión RBAC
-        const datosSesion = localStorage.getItem("usuarioActivo");
-        if (!datosSesion) {
-          window.location.href = "index.html";
-          return;
-        }
-        const usuarioLogueado = JSON.parse(datosSesion);
-        const rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
-
-        async function inicializarEstructura() {
-          if (rolNormalizado.includes("admin")) {
-            const btnToggle = document.getElementById("btn-toggle-semillas");
-            if (btnToggle) {
-              btnToggle.style.display = "block";
-              btnToggle.addEventListener("click", alternarVisibilidadPanelSemillas);
-            }
-
-            const btnAddOrientacion = document.getElementById("btn-add-orientacion");
-            if (btnAddOrientacion) btnAddOrientacion.addEventListener("click", agregarNuevaOrientacionCaliente);
-            const btnAddDivision = document.getElementById("btn-add-division");
-            if (btnAddDivision) btnAddDivision.addEventListener("click", agregarNuevaDivisionCaliente);
-          } // <-- Asegurate de dejar esta llave de cierre de la función inicializarEstructura()
-
-          // Control Dinámico de Layout Responsivo
-          const gridPrincipal = document.querySelector(".grid-formulario");
-          if (gridPrincipal) {
-            if (rolNormalizado.includes("direct") || rolNormalizado.includes("dir")) {
-              const contenedorForm = document.querySelector(".form-container");
-              if (contenedorForm) contenedorForm.style.display = "none";
-              gridPrincipal.style.gridTemplateColumns = "1fr";
-            } else {
-              const adaptarLayout = () => {
-                if (window.innerWidth >= 1024) {
-                  gridPrincipal.style.gridTemplateColumns = "0.75fr 2.25fr";
-                } else {
-                  gridPrincipal.style.gridTemplateColumns = "1fr";
-                }
-              };
-              adaptarLayout();
-              window.addEventListener("resize", adaptarLayout);
-            }
-          }
-
-          // ACTIVACIÓN DE ESCUCHADORES REACTIVOS CRUZADOS
-          const filtroAnioElement = document.getElementById("filtro-anio");
-          const filtroOriElement = document.getElementById("filtro-orientacion");
-          const filtroTurnoElement = document.getElementById("filtro-turno");
-
-          if (filtroAnioElement) filtroAnioElement.addEventListener("change", aplicarFiltrosCurriculares);
-          if (filtroOriElement) filtroOriElement.addEventListener("change", aplicarFiltrosCurriculares);
-          if (filtroTurnoElement) filtroTurnoElement.addEventListener("change", aplicarFiltrosCurriculares);
-
-          await cargarConfiguracionBaseFirestore();
-          inicializarSelectoresBase();
-          await renderizarTablaCursos();
-
-          const selectCiclo = document.getElementById("select-ciclo");
-          if (selectCiclo) selectCiclo.addEventListener("change", actualizarFiltroOrientacionesPorAño);
-
-          const selectOrientacion = document.getElementById("select-orientacion");
-          if (selectOrientacion) selectOrientacion.addEventListener("change", cargarMateriasSugeridas);
-
-          const formCurso = document.getElementById("form-curso");
-          if (formCurso) formCurso.addEventListener("submit", procesarGuardarCurso);
-
-          const btnCancelarEdicion = document.getElementById("btn-cancelar-edicion-curso");
-          if (btnCancelarEdicion) btnCancelarEdicion.addEventListener("click", salirModoEdicion);
-        }
-
-        function alternarVisibilidadPanelSemillas() {
-          const panelExpansion = document.getElementById("panel-expansion-institucional");
-          if (!panelExpansion) return;
-          if (panelExpansion.style.display === "grid") {
-            panelExpansion.style.display = "none";
-          } else {
-            panelExpansion.style.display = "grid";
-            panelExpansion.scrollIntoView({ behavior: "smooth" });
-          }
-        }
-        async function cargarConfiguracionBaseFirestore() {
-          try {
-            const docRef = doc(db, "configuracion", "valoresBase");
-            const docSnapshot = await getDoc(docRef);
-            if (docSnapshot.exists()) {
-              const datos = docSnapshot.data();
-              if (datos.divisiones && datos.divisiones.length > 0) configDivisiones = datos.divisiones;
-              if (datos.orientaciones) configOrientaciones = datos.orientaciones;
-            } else {
-              await setDoc(docRef, { divisiones: configDivisiones, orientaciones: configOrientaciones });
-            }
-          } catch (error) {
-            console.warn("Fallo de red en Cloud Firestore, operando localmente:", error);
-          }
-        }
-
-        async function agregarNuevaDivisionCaliente() {
-          const input = document.getElementById("input-nueva-division");
-          if (!input) return;
-          const divisionNueva = input.value.trim().toUpperCase();
-          if (!divisionNueva) return;
-          if (configDivisiones.includes(divisionNueva)) {
-            alert("La división ingresada ya se encuentra activa.");
-            return;
-          }
-          configDivisiones.push(divisionNueva);
-          configDivisiones.sort();
-          try {
-            await setDoc(
-              doc(db, "configuracion", "valoresBase"),
-              { divisiones: configDivisiones, orientaciones: configOrientaciones },
-              { merge: true }
-            );
-            alert(`División "${divisionNueva}" inyectada con éxito en Cloud Firestore.`);
-            input.value = "";
-            inicializarSelectoresBase();
-          } catch (e) {
-            alert("Error al intentar sincronizar con el servidor remoto.");
-          }
-        }
-
-        async function agregarNuevaOrientacionCaliente() {
-          const inputOri = document.getElementById("input-nueva-orientacion");
-          const inputMats = document.getElementById("input-nuevas-materias");
-          if (!inputOri || !inputMats) return;
-          const nombreOri = inputOri.value.trim();
-          const materiasTexto = inputMats.value.trim();
-          if (!nombreOri || !materiasTexto) {
-            alert("Complete el nombre de la especialidad y cargue al menos una materia.");
-            return;
-          }
-          if (configOrientaciones[nombreOri]) {
-            alert("Esta orientación académica ya está registrada.");
-            return;
-          }
-          const arrayMaterias = materiasTexto
-            .split(",")
-            .map((m) => m.trim().toUpperCase())
-            .filter((m) => m.length > 0);
-          configOrientaciones[nombreOri] = arrayMaterias;
-          try {
-            await setDoc(
-              doc(db, "configuracion", "valoresBase"),
-              { divisiones: configDivisiones, orientaciones: configOrientaciones },
-              { merge: true }
-            );
-            alert(`Modalidad/Especialidad "${nombreOri}" incorporada en Cloud Firestore.`);
-            inputOri.value = "";
-            inputMats.value = "";
-            inicializarSelectoresBase();
-          } catch (e) {
-            alert("Error al intentar sincronizar con el servidor remoto.");
-          }
-        }
-        function inicializarSelectoresBase() {
-          const selectDiv = document.getElementById("select-division");
-          if (!selectDiv) return;
-          selectDiv.innerHTML = '<option value="">Seleccione división...</option>';
-          configDivisiones.forEach((div) => selectDiv.add(new Option(div, div)));
-          actualizarFiltroOrientacionesPorAño();
-        }
-
-        function actualizarFiltroOrientacionesPorAño() {
-          const selectCiclo = document.getElementById("select-ciclo");
-          const selectOri = document.getElementById("select-orientacion");
-          if (!selectCiclo || !selectOri) return;
-
-          const ciclo = selectCiclo.value; // Ej: "1° Año" o "4° Año"
-          const valorGuardadoEdicion = window.orientacionEditarCarga || "";
-
-          selectOri.innerHTML = '<option value="">Seleccione orientación...</option>';
-
-          if (!ciclo) {
-            cargarMateriasSugeridas();
-            return;
-          }
-
-          // Evaluamos si el año corresponde al primer bloque común o al segundo orientado
-          const esAnioBajo = ciclo.includes("1°") || ciclo.includes("2°") || ciclo.includes("3°");
-
-          if (esAnioBajo) {
-            selectOri.add(new Option("Ciclo Básico", "Ciclo Básico"));
-            selectOri.value = "Ciclo Básico";
-          } else {
-            // Para 4°, 5° y 6° año se listan las especialidades reales de la institución
-            Object.keys(configOrientaciones).forEach((ori) => {
-              if (ori !== "comun" && ori !== "basico" && ori !== "Ciclo Básico" && ori !== "Común (1° a 3° Año)") {
-                selectOri.add(new Option(ori, ori));
-              }
-            });
-            if (
-              valorGuardadoEdicion &&
-              valorGuardadoEdicion !== "Ciclo Básico" &&
-              valorGuardadoEdicion !== "Común (1° a 3° Año)"
-            ) {
-              selectOri.value = valorGuardadoEdicion;
-            }
-          }
-
-          cargarMateriasSugeridas();
-        }
-
-        function cargarMateriasSugeridas() {
-          const selectCiclo = document.getElementById("select-ciclo");
-          const selectOrientacion = document.getElementById("select-orientacion");
-          const contenedor = document.getElementById("contenedor-materias-checkbox");
-          if (!selectCiclo || !selectOrientacion || !contenedor) return;
-
-          const ciclo = selectCiclo.value;
-          const orientacion = selectOrientacion.value;
-
-          if (!ciclo || !orientacion) {
-            contenedor.innerHTML =
-              '<p style="font-size: 13px; color: #666; margin: 0;">Seleccione Año y Orientación para desplegar el mapa estricto de asignaturas.</p>';
-            return;
-          }
-
-          contenedor.innerHTML = "";
-          let listaMaterias = [...configOrientaciones.comun];
-
-          const esAnioBajo = ciclo.includes("1°") || ciclo.includes("2°") || ciclo.includes("3°");
-
-          if (esAnioBajo) {
-            // Combina el tronco común escolar más las materias específicas de los primeros años
-            listaMaterias = listaMaterias.concat(configOrientaciones.basico);
-          } else {
-            // Trae las materias de la especialidad correspondiente elegida en el select
-            if (configOrientaciones[orientacion]) {
-              listaMaterias = listaMaterias.concat(configOrientaciones[orientacion]);
-            }
-          }
-
-          const materiasPreviamenteSeleccionadas = window.materiasEditarCarga || [];
-
-          listaMaterias.forEach((materia, i) => {
-            const item = document.createElement("div");
-            item.style.margin = "4px 0";
-            item.style.display = "grid";
-            item.style.gridTemplateColumns = "24px 1fr";
-            item.style.alignItems = "center";
-
-            const checkedAttr = materiasPreviamenteSeleccionadas.includes(materia) ? "checked" : "";
-            item.innerHTML = `
-                        <input type="checkbox" name="materias-curso" value="${materia}" id="mat-${i}" ${checkedAttr} style="margin: 0; cursor: pointer;">
-                        <label for="mat-${i}" style="font-size: 13px; cursor: pointer; color: #3c4043; font-weight: normal; line-height: 1.2; text-align: left; width: 100%;">
-                            ${materia}
-                        </label>
-                    `;
-            contenedor.appendChild(item);
-          });
-        }
-
-        async function procesarGuardarCurso(e) {
-          e.preventDefault();
-          const idEdicion = document.getElementById("idOriginalEdicion").value;
-          const selectCiclo = document.getElementById("select-ciclo");
-          const selectDivision = document.getElementById("select-division");
-          const selectTurno = document.getElementById("select-turno");
-          const selectOrientacion = document.getElementById("select-orientacion");
-          if (!selectCiclo || !selectDivision || !selectTurno || !selectOrientacion) return;
-          const ciclo = selectCiclo.value;
-          const division = selectDivision.value;
-          const turno = selectTurno.value;
-          const orientacion = selectOrientacion.value;
-          const checkboxes = document.querySelectorAll('input[name="materias-curso"]:checked');
-          if (checkboxes.length === 0) {
-            alert("Error: Debe asociar al menos una materia para registrar la estructura curricular del curso.");
-            return;
-          }
-          const materiasSeleccionadas = Array.from(checkboxes).map((cb) => cb.value);
-          const numeroAnio = ciclo.charAt(0);
-          const letraTurno = turno.substring(0, 1).toUpperCase();
-          const cursoId = `${numeroAnio}-${division}-${letraTurno}`;
-
-          try {
-            if (!idEdicion) {
-              const docCursoRef = doc(db, "cursos", cursoId);
-              const checkDoc = await getDoc(docCursoRef);
-              if (checkDoc.exists()) {
-                alert("Error: Esta estructura de curso, división y turno ya se encuentra registrada en Firestore.");
-                return;
-              }
-            }
-            if (idEdicion && idEdicion !== cursoId) {
-              if (
-                confirm(
-                  `Ha modificado parámetros clave del curso. Los alumnos asignados al ID anterior ("${idEdicion}") se enviarán a Mesa de Entrada de forma automática. ¿Desea continuar?`
-                )
-              ) {
-                await reubicarAlumnosAMesaEntrada(idEdicion);
-                await deleteDoc(doc(db, "cursos", idEdicion));
-              } else {
-                return;
-              }
-            }
-            const docDestinoRef = doc(db, "cursos", cursoId);
-            const nuevoCurso = { id: cursoId, ciclo, division, turno, orientacion, materias: materiasSeleccionadas };
-            await setDoc(docDestinoRef, nuevoCurso);
-            alert(
-              idEdicion
-                ? "Estructura Curricular actualizada con éxito."
-                : "Estructura Curricular registrada con éxito en Cloud Firestore."
-            );
-            salirModoEdicion();
-            await renderizarTablaCursos();
-          } catch (error) {
-            console.error("Error al persistir el curso:", error);
-            alert("Error: No se pudieron guardar los cambios en el servidor.");
-          }
-        }
-        async function cargarCursoEnFormulario(idCurso) {
-          try {
-            const docSnapshot = await getDoc(doc(db, "cursos", idCurso));
-            if (!docSnapshot.exists()) return;
-            const curso = docSnapshot.data();
-            document.getElementById("idOriginalEdicion").value = curso.id;
-            document.getElementById("formulario-titulo-curso").textContent = "Modificar Estructura Curricular";
-            document.getElementById("btn-submit-formulario").textContent = "Guardar Cambios Estructurales";
-            document.getElementById("banner-edicion-curso").style.display = "block";
-            document.getElementById("select-ciclo").value = curso.ciclo || "";
-            document.getElementById("select-division").value = curso.division || "";
-            document.getElementById("select-turno").value = curso.turno || "";
-            window.orientacionEditarCarga = curso.orientacion || "";
-            window.materiasEditarCarga = curso.materias || [];
-            actualizarFiltroOrientacionesPorAño();
-            document.getElementById("formulario-titulo-curso").scrollIntoView({ behavior: "smooth" });
-          } catch (error) {
-            console.error("Error al recuperar el legajo del curso:", error);
-            alert("No se pudo cargar la información para su edición.");
-          }
-        }
-
-        function salirModoEdicion() {
-          const form = document.getElementById("form-curso");
-          if (form) form.reset();
-          document.getElementById("idOriginalEdicion").value = "";
-          document.getElementById("formulario-titulo-curso").textContent = "Configurar Curso y Materias";
-          document.getElementById("btn-submit-formulario").textContent = "Registrar Estructura Completa";
-          document.getElementById("banner-edicion-curso").style.display = "none";
-          window.materiasEditarCarga = [];
-          window.orientacionEditarCarga = "";
-          actualizarFiltroOrientacionesPorAño();
-        }
-
-        async function reubicarAlumnosAMesaEntrada(idCurso) {
-          const q = query(collection(db, "alumnos"), where("cursoId", "==", idCurso));
-          const snapshot = await getDocs(q);
-          if (!snapshot.empty) {
-            const lote = writeBatch(db);
-            snapshot.forEach((documento) => {
-              const refAlumno = doc(db, "alumnos", documento.id);
-              lote.update(refAlumno, {
-                cursoId: "",
-                estado: "Entrante",
-                observaciones:
-                  (documento.data().observaciones || "") +
-                  `\n[Auditoría: Reubicado automáticamente en Mesa de Entrada por remoción o alteración del curso ${idCurso}].`
-              });
-            });
-            await lote.commit();
-          }
-        }
-
-        async function renderizarTablaCursos() {
-          const tbody = document.getElementById("tabla-cursos-body");
-          if (!tbody) return;
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando registros curriculares con Cloud Firestore...</td></tr>`;
-          try {
-            const querySnapshot = await getDocs(collection(db, "cursos"));
-            cacheCursos = [];
-            querySnapshot.forEach((documento) => {
-              cacheCursos.push(documento.data());
-            });
-            aplicarFiltrosCurriculares();
-          } catch (error) {
-            console.error("Error al descargar listado de cursos:", error);
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #ea4335;">Error al cargar datos.</td></tr>`;
-          }
-        }
-
-        function aplicarFiltrosCurriculares() {
-          const tbody = document.getElementById("tabla-cursos-body");
-          if (!tbody) return;
-          tbody.innerHTML = "";
-          const valAnio = document.getElementById("filtro-anio").value;
-          const valOri = document.getElementById("filtro-orientacion").value;
-          const valTurno = document.getElementById("filtro-turno").value
-            ? document.getElementById("filtro-turno").value.trim()
-            : "";
-
-          const registrosFiltrados = cacheCursos.filter((curso) => {
-            // Compara de forma exacta el año limpio ("1° Año", "2° Año", etc.)
-            const cumpleAnio = !valAnio || curso.ciclo === valAnio;
-            const cumpleOri = !valOri || curso.orientacion === valOri;
-
-            const turnoCursoLimpio = curso.turno ? curso.turno.toString().trim() : "";
-            const cumpleTurno = !valTurno || turnoCursoLimpio === valTurno;
-
-            return cumpleAnio && cumpleOri && cumpleTurno;
-          });
-
-          if (registrosFiltrados.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #94a3b8;">No se encontraron estructuras con los filtros aplicados.</td></tr>`;
-            return;
-          }
-
-          registrosFiltrados.forEach((curso) => {
-            const tr = document.createElement("tr");
-            tr.style.borderBottom = "1px solid #f1f3f4";
-            const listaMateriasTexto = curso.materias ? curso.materias.join(", ") : "";
-            let botonesAcciones = `<span style="color:#94a3b8; font-size:11px;">Restringido</span>`;
-            if (rolNormalizado.includes("admin")) {
-              botonesAcciones = `
-                            <div style="display: flex; gap: 6px; justify-content: center;">
-                                <button type="button" class="btn-accion-editar" data-id="${curso.id}" style="background:#1a73e8; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Editar</button>
-                                <button type="button" class="btn-accion-eliminar" data-id="${curso.id}" style="background:#ea4335; color:#fff; border:none; padding: 6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">Borrar</button>
-                            </div>`;
-            }
-            tr.innerHTML = `
-                        <td style="padding: 5px 12px; font-weight: 500;">${curso.ciclo || ""}<br><span style="color:#5f6368; font-size:12px;">División: ${curso.division || ""} (${curso.turno || ""})</span></td>
-                        <td style="padding: 5px 12px; font-size: 13px; color: #1a73e8; font-weight: bold;">${curso.orientacion || "Sin Especificar"}</td>
-                        <td style="padding: 5px 12px; font-size: 12px; color: #5f6368; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${listaMateriasTexto}">${listaMateriasTexto}</td>
-                        <td style="padding: 5px 12px; text-align: center;">${botonesAcciones}</td>`;
-            tbody.appendChild(tr);
-          });
-
-          tbody
-            .querySelectorAll(".btn-accion-editar")
-            .forEach((b) =>
-              b.addEventListener("click", (e) => cargarCursoEnFormulario(e.target.getAttribute("data-id")))
-            );
-          tbody.querySelectorAll(".btn-accion-eliminar").forEach((b) =>
-            b.addEventListener("click", async (e) => {
-              const idCurso = e.target.getAttribute("data-id");
-              if (
-                confirm(
-                  `¿Está completamente seguro de eliminar la estructura curricular "${idCurso}"?\n\nTodos los alumnos inscritos perderán el curso asignado.`
-                )
-              ) {
-                try {
-                  await reubicarAlumnosAMesaEntrada(idCurso);
-                  await deleteDoc(doc(db, "cursos", idCurso));
-                  salirModoEdicion();
-                  await renderizarTablaCursos();
-                } catch (error) {
-                  console.error("Error en baja relacional:", error);
-                }
-              }
-            })
-          );
-        }
-
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", inicializarEstructura);
-        } else {
-          await inicializarEstructura();
-        }
-      })();
-    </script>
+    <script type="module" src="cursos-materias.js"></script>
   </body>
 </html>
