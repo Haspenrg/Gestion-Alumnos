@@ -63,6 +63,10 @@
           justify-content: center !important;
           align-items: center !important;
         }
+        header div[style*="justify-content: flex-end"] {
+          justify-content: center !important;
+        }
+
         h2 {
           font-size: 1.5rem !important;
           white-space: normal !important;
@@ -900,12 +904,14 @@
           const confirmacionLimpia = confirmarClave ? confirmarClave.trim() : "";
 
           if (claveLimpia.length < 6) {
-            alert("Operación inválida: Por razones de seguridad la contraseña debe tener al menos 6 caracteres.");
+            mostrarNotificacion(
+              "Operación inválida: Por razones de seguridad la contraseña debe tener al menos 6 caracteres.",
+              "error"
+            );
             return;
           }
-
           if (claveLimpia !== confirmacionLimpia) {
-            alert("Operación inválida: La nueva contraseña y la confirmación no coinciden.");
+            mostrarNotificacion("Operación inválida: La nueva contraseña y la confirmación no coinciden.", "error");
             return;
           }
 
