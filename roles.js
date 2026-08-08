@@ -78,9 +78,28 @@
       window.location.href = "index.html";
       return;
     }
-    const usuario = JSON.parse(datosSesion);
-    if (usuario.rol.toLowerCase().trim() !== "administrador") {
-      alert("Acceso denegado: Este módulo de configuración crítica de seguridad es exclusivo del Administrador.");
+    const usuarioLocal = JSON.parse(datosSesion);
+    if (!usuarioLocal.dni) {
+      window.location.href = "index.html";
+      return;
+    }
+    try {
+      const usuarioRef = doc(db, "usuarios", String(usuarioLocal.dni).trim());
+      const docSnap = await getDoc(usuarioRef);
+      if (!docSnap.exists()) {
+        window.location.href = "index.html";
+        return;
+      }
+      const usuarioNube = docSnap.data();
+      const rolValidado = String(usuarioNube.rol || "")
+        .toLowerCase()
+        .trim();
+      if (rolValidado !== "administrador") {
+        alert("Acceso denegado: Este módulo de configuración crítica de seguridad es exclusivo del Administrador.");
+        window.location.href = "panel.html";
+      }
+    } catch (error) {
+      console.error("Error en validación perimetral:", error);
       window.location.href = "panel.html";
     }
   }
