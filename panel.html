@@ -1,436 +1,872 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
+  <head>
     <!-- Parche para el Icono de la Pestaña (Favicon) -->
-<link rel="icon" type="image/png" href="logo1.png">
+    <link rel="icon" type="image/png" href="logo1.png" />
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - Colegio HASPEN</title>
-    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="estilos.css" />
     <style>
-        /* Aplicación del fondo institucional sin alterar la funcionalidad */
-        body {
-            background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%) !important;
-        }
+      /* Aplicación del fondo institucional sin alterar la funcionalidad */
+      body {
+        background: linear-gradient(135deg, #a4c2e6 0%, #f7e6d5 50%, #fbc280 100%) !important;
+      }
 
-       /* Estilos coercitivos requeridos por directiva para módulos inhabilitados */
-        .modulo-bloqueado {
-            opacity: 0.4 !important;
-            cursor: not-allowed !important;
-            user-select: none;
-        }
-        .modulo-bloqueado * {
-            pointer-events: none !important; /* Evita que los iconos internos rompan el clic de la tarjeta */
-        }
+      /* Estilos coercitivos requeridos por directiva para módulos inhabilitados */
+      .modulo-bloqueado {
+        opacity: 0.4 !important;
+        cursor: not-allowed !important;
+        user-select: none;
+      }
+      .modulo-bloqueado * {
+        pointer-events: none !important; /* Evita que los iconos internos rompan el clic de la tarjeta */
+      }
 
+      /* Indicador estético visual para el estado de solo lectura */
+      .modulo-solo-lectura {
+        border-left: 5px solid #1a73e8 !important;
+      }
 
-        /* Indicador estético visual para el estado de solo lectura */
-        .modulo-solo-lectura {
-            border-left: 5px solid #1a73e8 !important;
-        }
+      /* Control de alineación fluida para ubicar el escudo en chico a la derecha */
+      .header-dashboard {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+      }
 
-        /* Control de alineación fluida para ubicar el escudo en chico a la derecha */
-        .header-dashboard {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            text-align: left !important;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
+      .header-textos {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
 
-        .header-textos {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-       .logo-panel-chico {
+      .logo-panel-chico {
         height: 65 px !important;
         width: auto !important;
         object-fit: contain;
-        }
-        
+      }
 
+      @media (max-width: 768px) {
+        header,
+        [style*="grid-template-columns: repeat(3, 1fr)"] {
+          grid-template-columns: 1fr !important;
+          text-align: center !important;
+          gap: 20px !important;
+        }
+        header div {
+          justify-content: center !important;
+          align-items: center !important;
+        }
+        h2 {
+          font-size: 1.5rem !important;
+          white-space: normal !important;
+        }
+        header p {
+          white-space: normal !important;
+        }
+        [style*="grid-template-columns: 1fr 1fr"] {
+          grid-template-columns: 1fr !important;
+          gap: 15px !important;
+        }
+        .dashboard-grid,
+        [style*="grid-template-columns: repeat(3, 1fr)"],
+        [style*="grid-template-columns: repeat(2, 1fr)"] {
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+          gap: 12px !important;
+        }
+        .modulo-card {
+          padding: 10px !important;
+          height: auto !important;
+          min-height: 105px !important;
+        }
+      }
     </style>
-</head>
-<body>
-<div class="panel-container">
-   <header class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 pb-4 mb-6" style="display: grid !important; grid-template-columns: repeat(3, 1fr) !important; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">
-    <!-- Columna Izquierda: Datos del Usuario y Acciones Rápidas -->
-    <div class="header-textos" style="display: flex; flex-direction: column; gap: 8px; justify-content: center; width: 100%;">
-        <div>
-            <h1 id="saludo-usuario" style="font-size: 1.4rem; font-weight: bold; margin: 0; color: #1b4d82;">Sistema HASPEN</h1>
-            <p id="rol-usuario" style="font-size: 0.8rem; color: #666; margin: 3px 0 0 0; font-weight: 500;">Panel de Administración Principal</p>
+  </head>
+  <body>
+    <div class="panel-container">
+      <header
+        class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 pb-4 mb-6"
+        style="
+          display: grid !important;
+          grid-template-columns: repeat(3, 1fr) !important;
+          border-bottom: 2px solid #eee;
+          padding-bottom: 15px;
+          margin-bottom: 25px;
+        "
+      >
+        <!-- Columna Izquierda: Datos del Usuario y Acciones Rápidas -->
+        <div
+          class="header-textos"
+          style="display: flex; flex-direction: column; gap: 8px; justify-content: center; width: 100%"
+        >
+          <div>
+            <h1 id="saludo-usuario" style="font-size: 1.4rem; font-weight: bold; margin: 0; color: #1b4d82">
+              Sistema HASPEN
+            </h1>
+            <p id="rol-usuario" style="font-size: 0.8rem; color: #666; margin: 3px 0 0 0; font-weight: 500">
+              Panel de Administración Principal
+            </p>
+          </div>
+          <!-- Contenedor Compacto de Botones de Gestión de Cuenta -->
+          <div style="display: flex; gap: 8px; width: 100%; max-width: 240px; margin-top: 4px">
+            <button
+              id="btn-cambiar-clave-perfil"
+              style="
+                background-color: transparent;
+                color: #4b5563;
+                border: 1px solid #9ca3af;
+                padding: 5px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.75rem;
+                font-weight: 600;
+                flex: 1;
+              "
+            >
+              Clave
+            </button>
+            <button
+              id="btn-cerrar-sesion"
+              class="btn-salir"
+              style="
+                background-color: #941b1b;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.75rem;
+                font-weight: 600;
+                flex: 1;
+                margin: 0;
+              "
+            >
+              Salir
+            </button>
+          </div>
         </div>
-        <!-- Contenedor Compacto de Botones de Gestión de Cuenta -->
-        <div style="display: flex; gap: 8px; width: 100%; max-width: 240px; margin-top: 4px;">
-            <button id="btn-cambiar-clave-perfil" style="background-color: transparent; color: #4b5563; border: 1px solid #9ca3af; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1;">Clave</button>
-            <button id="btn-cerrar-sesion" class="btn-salir" style="background-color: #941b1b; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1; margin: 0;">Salir</button>
-        </div>
-    </div>
 
-    <!-- Columna Central: Título Institucional con Mayor Jerarquía Visual -->
-    <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; overflow: visible;">
-        <h2 style="color: #1b4d82; font-size: 2.1rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 0; white-space: nowrap; line-height: 1;">
+        <!-- Columna Central: Título Institucional con Mayor Jerarquía Visual -->
+        <div
+          style="
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            overflow: visible;
+          "
+        >
+          <h2
+            style="
+              color: #1b4d82;
+              font-size: 2.1rem;
+              font-weight: 900;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+              margin: 0;
+              white-space: nowrap;
+              line-height: 1;
+            "
+          >
             COLEGIO PROVINCIAL HASPEN
-        </h2>
-        <p style="color: #555; font-size: 1.05rem; font-weight: 600; font-style: italic; margin: 6px 0 0 0; white-space: nowrap;">
+          </h2>
+          <p
+            style="
+              color: #555;
+              font-size: 1.05rem;
+              font-weight: 600;
+              font-style: italic;
+              margin: 6px 0 0 0;
+              white-space: nowrap;
+            "
+          >
             Prof. Luis Felippa Adam
-        </p>
+          </p>
+        </div>
+
+        <!-- Columna Derecha: Escudo Agrandado (Evitando cortes de línea) -->
+        <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%">
+          <img
+            src="logo1.png"
+            alt="Escudo Oficial Colegio HASPEN"
+            style="height: 110px !important; width: auto !important; object-fit: contain; margin: 0"
+          />
+        </div>
+      </header>
+
+      <!-- Contenedor Principal de Módulos Dividido en Dos Secciones -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%">
+        <!-- REEMPLAZO PARA: Contenedor Izquierdo: Gestión Académica -->
+        <div style="border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6)">
+          <h3
+            style="
+              color: #1b4d82;
+              font-size: 1.2rem;
+              font-weight: bold;
+              margin-top: 0;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #1b4d82;
+              padding-bottom: 5px;
+            "
+          >
+            Gestión Académica
+          </h3>
+          <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px">
+            <!-- 2. Gestión de Alumnos -->
+            <div
+              id="mod-inscripcion"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Gestión de Alumnos</h4>
+            </div>
+            <!-- 4. Calificaciones -->
+            <div
+              id="mod-calificaciones"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Calificaciones</h4>
+            </div>
+            <!-- 5. Control de Previas -->
+            <div
+              id="mod-previas"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Control de Previas</h4>
+            </div>
+            <!-- 6. Estadísticas -->
+            <div
+              id="mod-estadisticas"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v5.25c0 .621-.504 1.125-1.125 1.125h-2.25A1.125 1.125 0 0 1 3 18.375v-5.25ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125v-9.75ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v14.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Estadísticas</h4>
+            </div>
+            <!-- 7. Promoción -->
+            <div
+              id="mod-promocion"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Promoción</h4>
+            </div>
+            <!-- 8. Comunicación Institucional -->
+            <div
+              id="mod-comunicacion"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L22 8m-2 11H4a2 2 0 01-2-2V8a2 2 0 012-2h16a2 2 0 012 2v9a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Comunicación Institucional</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- REEMPLAZO PARA: Contenedor Derecho: Configuraciones del Sistema -->
+        <div style="border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6)">
+          <h3
+            style="
+              color: #1b4d82;
+              font-size: 1.2rem;
+              font-weight: bold;
+              margin-top: 0;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #1b4d82;
+              padding-bottom: 5px;
+            "
+          >
+            Configuraciones del sistema
+          </h3>
+          <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px">
+            <!-- Gestión de Usuarios -->
+            <div
+              id="mod-usuarios"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M18 18.72a9.094 9.094 0 0 0-3.741-4.794M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-9.75 8.97c0-2.456 1.547-4.522 3.741-4.793A9.094 9.094 0 0 0 5.466 14.167M12 18.75V21m-4.5-2.25H3.375a1.125 1.125 0 0 1-1.125-1.125V11.25a1.125 1.125 0 0 1 1.125-1.125h4.125M21 16.5V11.25a1.125 1.125 0 0 0-1.125-1.125H15.75M12 3v1.5M12 18.75a3.375 3.375 0 0 0 3.375-3.375V12h-6.75v3.375A3.375 3.375 0 0 0 12 18.75Z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Gestión de Usuarios</h4>
+            </div>
+            <!-- Creación de Roles -->
+            <div
+              id="mod-roles"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751A11.956 11.956 0 0 1 12 2.714Z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Creación de Roles</h4>
+            </div>
+            <!-- Creación de Cursos y Materias -->
+            <div
+              id="mod-cursos-materias"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Creación de Cursos y Materias</h4>
+            </div>
+            <!-- Soporte Técnico -->
+            <div
+              id="mod-soporte"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
+                <svg
+                  xmlns="http://w3.org"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a2.25 2.25 0 0 1-3.181-3.183l3.277-3.276a4.5 4.5 0 0 0-6.336 4.486c.048.58.024 1.193-.14 1.743m-1.156 1.156-.232.232m0 0-1.665 1.664m-4.64-4.64 2.496-3.03c.29-.35.64-.619 1.033-.792m-1.033.792L3.093 11.42a2.548 2.548 0 1 1 3.586-3.586l4.64 4.64M6.68 6.68l.232-.232"
+                  />
+                </svg>
+              </span>
+              <h4 style="margin: 0; text-align: center">Soporte Técnico</h4>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Columna Derecha: Escudo Agrandado (Evitando cortes de línea) -->
-    <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
-        <img src="logo1.png" alt="Escudo Oficial Colegio HASPEN" style="height: 110px !important; width: auto !important; object-fit: contain; margin: 0;">
-    </div>
-</header>
-
-
-
-<!-- Contenedor Principal de Módulos Dividido en Dos Secciones -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
-    
-<!-- REEMPLAZO PARA: Contenedor Izquierdo: Gestión Académica -->
-<div style=" border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
-    <h3 style=" color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
-        Gestión Académica
-    </h3>
-    <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-        <!-- 2. Gestión de Alumnos -->
-        <div id="mod-inscripcion" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Gestión de Alumnos</h4>
-        </div>
-        <!-- 4. Calificaciones -->
-        <div id="mod-calificaciones" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Calificaciones</h4>
-        </div>
-        <!-- 5. Control de Previas -->
-        <div id="mod-previas" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Control de Previas</h4>
-        </div>
-        <!-- 6. Estadísticas -->
-        <div id="mod-estadisticas" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v5.25c0 .621-.504 1.125-1.125 1.125h-2.25A1.125 1.125 0 0 1 3 18.375v-5.25ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125v-9.75ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v14.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Estadísticas</h4>
-        </div>
-        <!-- 7. Promoción -->
-        <div id="mod-promocion" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Promoción</h4>
-        </div>
-        <!-- 8. Comunicación Institucional -->
-        <div id="mod-comunicacion" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L22 8m-2 11H4a2 2 0 01-2-2V8a2 2 0 012-2h16a2 2 0 012 2v9a2 2 0 01-2 2z"/></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Comunicación Institucional</h4>
-        </div>
-    </div>
-</div>
-
-
-<!-- REEMPLAZO PARA: Contenedor Derecho: Configuraciones del Sistema -->
-<div style=" border: 1px solid #1b4d82; border-radius: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6);">
-    <h3 style=" color: #1b4d82; font-size: 1.2rem; font-weight: bold; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #1b4d82; padding-bottom: 5px;">
-        Configuraciones del sistema
-    </h3>
-    <div class=" dashboard-grid" style=" display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-        <!-- Gestión de Usuarios -->
-        <div id="mod-usuarios" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0-3.741-4.794M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm-9.75 8.97c0-2.456 1.547-4.522 3.741-4.793A9.094 9.094 0 0 0 5.466 14.167M12 18.75V21m-4.5-2.25H3.375a1.125 1.125 0 0 1-1.125-1.125V11.25a1.125 1.125 0 0 1 1.125-1.125h4.125M21 16.5V11.25a1.125 1.125 0 0 0-1.125-1.125H15.75M12 3v1.5M12 18.75a3.375 3.375 0 0 0 3.375-3.375V12h-6.75v3.375A3.375 3.375 0 0 0 12 18.75Z" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Gestión de Usuarios</h4>
-        </div>
-        <!-- Creación de Roles -->
-        <div id="mod-roles" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751A11.956 11.956 0 0 1 12 2.714Z" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Creación de Roles</h4>
-        </div>
-        <!-- Creación de Cursos y Materias -->
-        <div id="mod-cursos-materias" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Creación de Cursos y Materias</h4>
-        </div>
-        <!-- Soporte Técnico -->
-        <div id="mod-soporte" class=" modulo-card" style=" margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <span class=" icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px;">
-                <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a2.25 2.25 0 0 1-3.181-3.183l3.277-3.276a4.5 4.5 0 0 0-6.336 4.486c.048.58.024 1.193-.14 1.743m-1.156 1.156-.232.232m0 0-1.665 1.664m-4.64-4.64 2.496-3.03c.29-.35.64-.619 1.033-.792m-1.033.792L3.093 11.42a2.548 2.548 0 1 1 3.586-3.586l4.64 4.64M6.68 6.68l.232-.232" /></svg>
-            </span>
-            <h4 style="margin: 0; text-align: center;">Soporte Técnico</h4>
-        </div>
-    </div>
-</div>
-
-
-<!-- SCRIPT DE CONTROL DE ROLES ADAPTADO PARA PERSONAL HÍBRIDO Y FIREBASE -->
-<script>
-document.addEventListener("DOMContentLoaded", async function() {
-    await verificarYConfigurarPanel();
-    document.getElementById('btn-cerrar-sesion').addEventListener('click', cerrarSesion);
-    document.getElementById('btn-cambiar-clave-perfil').addEventListener('click', gestionarCambioClaveAutónomo);
-
-});
-
-async function obtenerSesionLocal() {
-  try {
-    const datosSesion = localStorage.getItem('usuarioActivo');
-    if (!datosSesion) return null;
-    const usuario = JSON.parse(datosSesion);
-    const cdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-    const { getAuth, onAuthStateChanged } = await import(`${cdn}firebase-auth.js`);
-    const { firebaseApp } = await import('./firebase-config.js');
-    const auth = getAuth(firebaseApp);
-    return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        unsubscribe();
-        if (user) {
-          resolve(usuario);
-        } else {
-          localStorage.removeItem('usuarioActivo');
-          resolve(null);
-        }
+    <!-- SCRIPT DE CONTROL DE ROLES ADAPTADO PARA PERSONAL HÍBRIDO Y FIREBASE -->
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        await verificarYConfigurarPanel();
+        document.getElementById("btn-cerrar-sesion").addEventListener("click", cerrarSesion);
+        document.getElementById("btn-cambiar-clave-perfil").addEventListener("click", gestionarCambioClaveAutónomo);
       });
-    });
-  } catch (error) {
-    console.error("Error al verificar sesión activa con Firebase:", error);
-    return null;
-  }
-}
 
+      async function obtenerSesionLocal() {
+        try {
+          const datosSesion = localStorage.getItem("usuarioActivo");
+          if (!datosSesion) return null;
+          const usuario = JSON.parse(datosSesion);
+          const cdn =
+            "h" +
+            "t" +
+            "t" +
+            "p" +
+            "s" +
+            ":" +
+            "/" +
+            "/" +
+            "w" +
+            "w" +
+            "w" +
+            "." +
+            "g" +
+            "s" +
+            "t" +
+            "a" +
+            "t" +
+            "i" +
+            "c" +
+            "." +
+            "c" +
+            "o" +
+            "m" +
+            "/f" +
+            "i" +
+            "r" +
+            "e" +
+            "b" +
+            "a" +
+            "s" +
+            "e" +
+            "j" +
+            "s" +
+            "/10.12.0/";
+          const { getAuth, onAuthStateChanged } = await import(`${cdn}firebase-auth.js`);
+          const { firebaseApp } = await import("./firebase-config.js");
+          const auth = getAuth(firebaseApp);
+          return new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+              unsubscribe();
+              if (user) {
+                resolve(usuario);
+              } else {
+                localStorage.removeItem("usuarioActivo");
+                resolve(null);
+              }
+            });
+          });
+        } catch (error) {
+          console.error("Error al verificar sesión activa con Firebase:", error);
+          return null;
+        }
+      }
 
+      async function verificarYConfigurarPanel() {
+        const usuario = await obtenerSesionLocal();
+        if (!usuario) {
+          window.location.href = "index.html";
+          return;
+        }
+        const rolIdMapeado = usuario.rol.toLowerCase().trim();
 
-async function verificarYConfigurarPanel() {
-  const usuario = await obtenerSesionLocal();
-  if (!usuario) {
-    window.location.href = "index.html";
-    return;
-  }
-  const rolIdMapeado = usuario.rol.toLowerCase().trim();
+        document.getElementById("saludo-usuario").textContent = `Hola, ${usuario.nombre}`;
+        document.getElementById("rol-usuario").textContent = `Perfil: ${usuario.rol.toUpperCase()}`;
 
-  document.getElementById('saludo-usuario').textContent = `Hola, ${usuario.nombre}`;
-  document.getElementById('rol-usuario').textContent = `Perfil: ${usuario.rol.toUpperCase()}`;
+        const mapaRutas = {
+          "mod-usuarios": "usuarios.html",
+          "mod-inscripcion": "inscripcion.html",
+          "mod-cursos-materias": "cursos-materias.html",
+          "mod-calificaciones": "calificaciones.html",
+          "mod-previas": "previas.html",
+          "mod-estadisticas": "estadisticas.html",
+          "mod-roles": "roles.html",
+          "mod-promocion": "promocion.html",
+          "mod-comunicacion": "comunicacion.html",
+          "mod-soporte": "soporte.html"
+        };
 
-      const mapaRutas = {
-        "mod-usuarios": "usuarios.html",
-        "mod-inscripcion": "inscripcion.html",
-        "mod-cursos-materias": "cursos-materias.html",
-        "mod-calificaciones": "calificaciones.html",
-        "mod-previas": "previas.html",
-        "mod-estadisticas": "estadisticas.html",
-        "mod-roles": "roles.html",
-        "mod-promocion": "promocion.html",
-        "mod-comunicacion": "comunicacion.html",
-        "mod-soporte": "soporte.html"
-    };
+        if (rolIdMapeado === "administrador") {
+          Object.keys(mapaRutas).forEach((id) => configurarEnlaceModulo(id, mapaRutas[id]));
+          return;
+        }
 
+        bloquearModuloFisico("mod-roles");
+        let permisos = usuario.permisosDelRol;
 
-  if (rolIdMapeado === "administrador") {
-    Object.keys(mapaRutas).forEach(id => configurarEnlaceModulo(id, mapaRutas[id]));
-    return;
-  }
+        if (!permisos) {
+          Object.keys(mapaRutas).forEach((id) => {
+            if (id !== "mod-roles") bloquearModuloFisico(id);
+          });
+          return;
+        }
 
-  bloquearModuloFisico("mod-roles");
-  let permisos = usuario.permisosDelRol;
+        evaluarPermisoModulo(
+          "mod-usuarios",
+          permisos.configuracionUsuarios,
+          mapaRutas["mod-usuarios"],
+          "Gestión de Usuarios"
+        );
+        evaluarPermisoModulo(
+          "mod-cursos-materias",
+          permisos.planesEstudio,
+          mapaRutas["mod-cursos-materias"],
+          "Crear Cursos y Materias"
+        );
+        evaluarPermisoModulo("mod-previas", permisos.controlPrevias, mapaRutas["mod-previas"], "Control de Previas");
+        evaluarPermisoModulo(
+          "mod-estadisticas",
+          permisos.reportesEstadisticas,
+          mapaRutas["mod-estadisticas"],
+          "Estadísticas"
+        );
+        evaluarPermisoModulo(
+          "mod-inscripcion",
+          permisos.legajoDigital,
+          mapaRutas["mod-inscripcion"],
+          "Gestión de Alumnos"
+        );
 
-  if (!permisos) {
-    Object.keys(mapaRutas).forEach(id => {
-      if (id !== "mod-roles") bloquearModuloFisico(id);
-    });
-    return;
-  }
+        const permisoCalificaciones = usuario.esProfesor ? "escritura" : permisos.libroCalificaciones;
+        evaluarPermisoModulo(
+          "mod-calificaciones",
+          permisoCalificaciones,
+          mapaRutas["mod-calificaciones"],
+          "Calificaciones"
+        );
 
-  evaluarPermisoModulo("mod-usuarios", permisos.configuracionUsuarios, mapaRutas["mod-usuarios"], "Gestión de Usuarios");
-  evaluarPermisoModulo("mod-cursos-materias", permisos.planesEstudio, mapaRutas["mod-cursos-materias"], "Crear Cursos y Materias");
-  evaluarPermisoModulo("mod-previas", permisos.controlPrevias, mapaRutas["mod-previas"], "Control de Previas");
-  evaluarPermisoModulo("mod-estadisticas", permisos.reportesEstadisticas, mapaRutas["mod-estadisticas"], "Estadísticas");
-  evaluarPermisoModulo("mod-inscripcion", permisos.legajoDigital, mapaRutas["mod-inscripcion"], "Gestión de Alumnos");
+        evaluarPermisoModulo(
+          "mod-promocion",
+          permisos.promocionAcademica,
+          mapaRutas["mod-promocion"],
+          "Promoción Académica"
+        );
+        evaluarPermisoModulo(
+          "mod-comunicacion",
+          permisos.comunicacionInstitucional,
+          mapaRutas["mod-comunicacion"],
+          "Comunicación Institucional"
+        );
+        evaluarPermisoModulo("mod-soporte", permisos.soporteTecnico, mapaRutas["mod-soporte"], "Soporte Técnico");
+      }
 
-    const permisoCalificaciones = usuario.esProfesor ? "escritura" : permisos.libroCalificaciones;
-  evaluarPermisoModulo("mod-calificaciones", permisoCalificaciones, mapaRutas["mod-calificaciones"], "Calificaciones");
-  
-  evaluarPermisoModulo("mod-promocion", permisos.promocionAcademica, mapaRutas["mod-promocion"], "Promoción Académica");
-  evaluarPermisoModulo("mod-comunicacion", permisos.comunicacionInstitucional, mapaRutas["mod-comunicacion"], "Comunicación Institucional");
-  evaluarPermisoModulo("mod-soporte", permisos.soporteTecnico, mapaRutas["mod-soporte"], "Soporte Técnico");
-
-}
-
-
-// --- MOTOR CENTRALIZADO DE EVALUACIÓN DE NIVELES INSTITUCIONALES ---
-function evaluarPermisoModulo(idModulo, nivelPermiso, urlDestino, nombreModulo) {
-  if (!nivelPermiso || nivelPermiso === "ninguno") {
-    bloquearModuloFisico(idModulo);
-  } else if (nivelPermiso === "lectura") {
-    configurarEnlaceModulo(idModulo, urlDestino);
-    // Configura el panel en modo solo lectura si la función existe en el archivo
-    if (typeof configurarModoSoloLectura === "function") {
+      // --- MOTOR CENTRALIZADO DE EVALUACIÓN DE NIVELES INSTITUCIONALES ---
+      function evaluarPermisoModulo(idModulo, nivelPermiso, urlDestino, nombreModulo) {
+        if (!nivelPermiso || nivelPermiso === "ninguno") {
+          bloquearModuloFisico(idModulo);
+        } else if (nivelPermiso === "lectura") {
+          configurarEnlaceModulo(idModulo, urlDestino);
+          // Configura el panel en modo solo lectura si la función existe en el archivo
+          if (typeof configurarModoSoloLectura === "function") {
             configurarModoSoloLectura(idModulo, nombreModulo, urlDestino);
-    }
-  } else if (nivelPermiso === "escritura") {
-    configurarEnlaceModulo(idModulo, urlDestino);
-  }
-}
+          }
+        } else if (nivelPermiso === "escritura") {
+          configurarEnlaceModulo(idModulo, urlDestino);
+        }
+      }
 
-function configurarEnlaceModulo(idModulo, destino) {
-    const elemento = document.getElementById(idModulo);
-    if (!elemento) return;
-    
-    // 1. Quitar clases CSS restrictivas
-    elemento.classList.remove('modulo-bloqueado', 'modulo-solo-lectura');
-    
-    // 2. CORRECCIÓN CLAVE: Forzar la restauración de opacidad y habilitar los eventos del puntero
-    elemento.style.opacity = "1";
-    elemento.style.cursor = "pointer";
-    elemento.style.userSelect = "auto";
-    
-    // Habilitar clics en los iconos/elementos hijos internos
-    const hijos = elemento.querySelectorAll('*');
-    hijos.forEach(hijo => {
-        hijo.style.pointerEvents = "auto";
-    });
+      function configurarEnlaceModulo(idModulo, destino) {
+        const elemento = document.getElementById(idModulo);
+        if (!elemento) return;
 
-    // 3. Asignación limpia del evento de redirección
-    elemento.onclick = function() {
-        if (destino.startsWith("alert")) {
+        // 1. Quitar clases CSS restrictivas
+        elemento.classList.remove("modulo-bloqueado", "modulo-solo-lectura");
+
+        // 2. CORRECCIÓN CLAVE: Forzar la restauración de opacidad y habilitar los eventos del puntero
+        elemento.style.opacity = "1";
+        elemento.style.cursor = "pointer";
+        elemento.style.userSelect = "auto";
+
+        // Habilitar clics en los iconos/elementos hijos internos
+        const hijos = elemento.querySelectorAll("*");
+        hijos.forEach((hijo) => {
+          hijo.style.pointerEvents = "auto";
+        });
+
+        // 3. Asignación limpia del evento de redirección
+        elemento.onclick = function () {
+          if (destino.startsWith("alert")) {
             const mensaje = destino.match(/'([^']+)'/);
             alert(mensaje ? mensaje[1] : "Próximamente");
-        } else {
+          } else {
             window.location.href = destino;
+          }
+        };
+      }
+
+      // --- SISTEMA CENTRALIZADO DE NOTIFICACIONES ESTILIZADAS (TOAST) ---
+      function mostrarNotificacion(mensaje, tipo = "info") {
+        const containerId = "contenedor-toasts-haspen";
+        let contenedor = document.getElementById(containerId);
+
+        // REGLA DE CONTROL: Si el contenedor ya existe y tiene algún cartel adentro, no hacemos nada
+        if (contenedor && contenedor.childElementCount > 0) {
+          return;
         }
-    };
-}
 
+        if (!contenedor) {
+          contenedor = document.createElement("div");
+          contenedor.id = containerId;
+          contenedor.style.cssText =
+            "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 400px; width: calc(100% - 40px); pointer-events: none;";
+          document.body.appendChild(contenedor);
+        }
 
-// --- SISTEMA CENTRALIZADO DE NOTIFICACIONES ESTILIZADAS (TOAST) ---
-function mostrarNotificacion(mensaje, tipo = 'info') {
-    const containerId = 'contenedor-toasts-haspen';
-    let contenedor = document.getElementById(containerId);
-    
-    // REGLA DE CONTROL: Si el contenedor ya existe y tiene algún cartel adentro, no hacemos nada
-    if (contenedor && contenedor.childElementCount > 0) {
-        return;
-    }
+        const toast = document.createElement("div");
+        const isError = tipo === "error";
 
-    if (!contenedor) {
-        contenedor = document.createElement('div');
-        contenedor.id = containerId;
-        contenedor.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 400px; width: calc(100% - 40px); pointer-events: none;';
-        document.body.appendChild(contenedor);
-    }
-    
-    const toast = document.createElement('div');
-    const isError = tipo === 'error';
-    
-    // Iniciamos con opacity: 0 para controlar la animación
-    toast.style.cssText = `background-color: ${isError ? '#fde8e8' : '#e1effe'}; color: ${isError ? '#9b1c1c' : '#1e429f'}; border: 1px solid ${isError ? '#f8b4b4' : '#b3d1ff'}; padding: 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); text-align: center; opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: auto;`;
-    toast.innerText = mensaje;
-    contenedor.appendChild(toast);
-    
-    // Forzamos un pequeño reflujo para que el navegador aplique la transición de entrada
-    setTimeout(() => { toast.style.opacity = '1'; }, 10);
-    
-    // Programamos el desvanecimiento y posterior eliminación
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => { 
-            toast.remove(); 
-            if (contenedor.childElementCount === 0) contenedor.remove(); 
-        }, 300);
-    }, 4000);
-}
+        // Iniciamos con opacity: 0 para controlar la animación
+        toast.style.cssText = `background-color: ${isError ? "#fde8e8" : "#e1effe"}; color: ${isError ? "#9b1c1c" : "#1e429f"}; border: 1px solid ${isError ? "#f8b4b4" : "#b3d1ff"}; padding: 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); text-align: center; opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: auto;`;
+        toast.innerText = mensaje;
+        contenedor.appendChild(toast);
 
+        // Forzamos un pequeño reflujo para que el navegador aplique la transición de entrada
+        setTimeout(() => {
+          toast.style.opacity = "1";
+        }, 10);
 
+        // Programamos el desvanecimiento y posterior eliminación
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          setTimeout(() => {
+            toast.remove();
+            if (contenedor.childElementCount === 0) contenedor.remove();
+          }, 300);
+        }, 4000);
+      }
 
-function bloquearModuloFisico(idModulo) {
-    const elemento = document.getElementById(idModulo);
-    if (!elemento) return;
-    
-    // Blindaje de seguridad: Remueve físicamente el destino del enlace del DOM
-    elemento.removeAttribute('href');
-    
-    // Remueve clases conflictivas y aplica estilos de deshabilitado
-    elemento.classList.remove('modulo-bloqueado', 'modulo-solo-lectura');
-    elemento.style.opacity = "0.4";
-    elemento.style.cursor = "not-allowed";
-    elemento.style.userSelect = "none";
-    
-    // Desactiva eventos de puntero en hijos para evitar conflictos
-    const hijos = elemento.querySelectorAll('*');
-    hijos.forEach(hijo => {
-        hijo.style.pointerEvents = "none";
-    });
+      function bloquearModuloFisico(idModulo) {
+        const elemento = document.getElementById(idModulo);
+        if (!elemento) return;
 
-    // Interceptación de clic conectada al sistema de Toasts del proyecto
-    elemento.onclick = function(e) {
-        if (e) {
+        // Blindaje de seguridad: Remueve físicamente el destino del enlace del DOM
+        elemento.removeAttribute("href");
+
+        // Remueve clases conflictivas y aplica estilos de deshabilitado
+        elemento.classList.remove("modulo-bloqueado", "modulo-solo-lectura");
+        elemento.style.opacity = "0.4";
+        elemento.style.cursor = "not-allowed";
+        elemento.style.userSelect = "none";
+
+        // Desactiva eventos de puntero en hijos para evitar conflictos
+        const hijos = elemento.querySelectorAll("*");
+        hijos.forEach((hijo) => {
+          hijo.style.pointerEvents = "none";
+        });
+
+        // Interceptación de clic conectada al sistema de Toasts del proyecto
+        elemento.onclick = function (e) {
+          if (e) {
             e.preventDefault();
             e.stopPropagation();
-        }
-        // Usamos la función nativa del proyecto para mostrar la notificación visual
-        mostrarNotificacion("Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.", "error");
-        return false;
-    };
-}
+          }
+          // Usamos la función nativa del proyecto para mostrar la notificación visual
+          mostrarNotificacion(
+            "Acceso denegado: Su rol actual no posee permisos parametrizados para ingresar a este módulo.",
+            "error"
+          );
+          return false;
+        };
+      }
 
-
-
-function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
-    const elemento = document.getElementById(idModulo);
-    if (!elemento) return;
-    elemento.classList.remove('modulo-bloqueado');
-    elemento.classList.add('modulo-solo-lectura');
-    elemento.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        mostrarNotificacion(`Acceso de SOLO LECTURA a [${nombreModulo}]. Operará bajo modalidad de consulta sin permisos de modificación.`, "info");
-        if (urlRedireccion) {
+      function configurarModoSoloLectura(idModulo, nombreModulo, urlRedireccion) {
+        const elemento = document.getElementById(idModulo);
+        if (!elemento) return;
+        elemento.classList.remove("modulo-bloqueado");
+        elemento.classList.add("modulo-solo-lectura");
+        elemento.onclick = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          mostrarNotificacion(
+            `Acceso de SOLO LECTURA a [${nombreModulo}]. Operará bajo modalidad de consulta sin permisos de modificación.`,
+            "info"
+          );
+          if (urlRedireccion) {
             setTimeout(() => {
-                window.location.href = urlRedireccion;
+              window.location.href = urlRedireccion;
             }, 3500);
-        }
-    };
-}
+          }
+        };
+      }
 
-// Función auxiliar para generar el Hash SHA-256 de forma nativa y segura
-async function generarHashSHA256(cadena) {
-    const encoder = new TextEncoder();
-    const datos = encoder.encode(cadena);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', datos);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+      // Función auxiliar para generar el Hash SHA-256 de forma nativa y segura
+      async function generarHashSHA256(cadena) {
+        const encoder = new TextEncoder();
+        const datos = encoder.encode(cadena);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", datos);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
 
-async function gestionarCambioClaveAutónomo() {
-    const usuario = await obtenerSesionLocal();
-    if (!usuario || !usuario.dni) return;
+      async function gestionarCambioClaveAutónomo() {
+        const usuario = await obtenerSesionLocal();
+        if (!usuario || !usuario.dni) return;
 
-    // Crear un prompt seguro con DOS campos utilizando un modal HTML básico inyectado dinámicamente
-    const modalFondo = document.createElement('div');
-    modalFondo.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-    
-    const modalCuerpo = document.createElement('div');
-    modalCuerpo.style.cssText = 'background: white; padding: 25px; border-radius: 8px; max-width: 340px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; font-family: sans-serif;';
-    modalCuerpo.innerHTML = `
+        // Crear un prompt seguro con DOS campos utilizando un modal HTML básico inyectado dinámicamente
+        const modalFondo = document.createElement("div");
+        modalFondo.style.cssText =
+          "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;";
+
+        const modalCuerpo = document.createElement("div");
+        modalCuerpo.style.cssText =
+          "background: white; padding: 25px; border-radius: 8px; max-width: 340px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; font-family: sans-serif;";
+        modalCuerpo.innerHTML = `
         <h3 style="color: #1b4d82; margin-top: 0; font-size: 1.2rem; margin-bottom: 15px;">Cambiar Contraseña</h3>
         
         <p style="font-size: 0.85rem; color: #555; margin-bottom: 5px; text-align: left; font-weight: 600;">Nueva contraseña:</p>
@@ -444,65 +880,99 @@ async function gestionarCambioClaveAutónomo() {
             <button id="btn-guardar-clave-segura" style="background: #1b4d82; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Guardar</button>
         </div>
     `;
-    
-    modalFondo.appendChild(modalCuerpo);
-    document.body.appendChild(modalFondo);
-    
-    setTimeout(() => { document.getElementById('input-nueva-clave-segura').focus(); }, 50);
 
-    document.getElementById('btn-cancelar-clave-segura').onclick = function() {
-        modalFondo.remove();
-    };
+        modalFondo.appendChild(modalCuerpo);
+        document.body.appendChild(modalFondo);
 
-    document.getElementById('btn-guardar-clave-segura').onclick = async function() {
-        const nuevaClave = document.getElementById('input-nueva-clave-segura').value;
-        const confirmarClave = document.getElementById('input-confirmar-clave-segura').value;
-        
-        const claveLimpia = nuevaClave ? nuevaClave.trim() : "";
-        const confirmacionLimpia = confirmarClave ? confirmarClave.trim() : "";
+        setTimeout(() => {
+          document.getElementById("input-nueva-clave-segura").focus();
+        }, 50);
 
-        if (claveLimpia.length < 6) {
+        document.getElementById("btn-cancelar-clave-segura").onclick = function () {
+          modalFondo.remove();
+        };
+
+        document.getElementById("btn-guardar-clave-segura").onclick = async function () {
+          const nuevaClave = document.getElementById("input-nueva-clave-segura").value;
+          const confirmarClave = document.getElementById("input-confirmar-clave-segura").value;
+
+          const claveLimpia = nuevaClave ? nuevaClave.trim() : "";
+          const confirmacionLimpia = confirmarClave ? confirmarClave.trim() : "";
+
+          if (claveLimpia.length < 6) {
             alert("Operación inválida: Por razones de seguridad la contraseña debe tener al menos 6 caracteres.");
             return;
-        }
+          }
 
-        if ( claveLimpia !== confirmacionLimpia) {
+          if (claveLimpia !== confirmacionLimpia) {
             alert("Operación inválida: La nueva contraseña y la confirmación no coinciden.");
             return;
-            }
+          }
 
-            // Estado de Carga: Bloqueo de controles y cambio de texto instantáneo
-            const btnGuardar = document.getElementById('btn-guardar-clave-segura');
-            const btnCancelar = document.getElementById('btn-cancelar-clave-segura');
-            btnGuardar.disabled = true;
-            btnCancelar.disabled = true;
-            btnGuardar.innerText = "Guardando...";
-            btnGuardar.style.opacity = "0.7";
-            btnGuardar.style.cursor = "wait";
+          // Estado de Carga: Bloqueo de controles y cambio de texto instantáneo
+          const btnGuardar = document.getElementById("btn-guardar-clave-segura");
+          const btnCancelar = document.getElementById("btn-cancelar-clave-segura");
+          btnGuardar.disabled = true;
+          btnCancelar.disabled = true;
+          btnGuardar.innerText = "Guardando...";
+          btnGuardar.style.opacity = "0.7";
+          btnGuardar.style.cursor = "wait";
 
-            try {
-
+          try {
             const claveHasheada = await generarHashSHA256(claveLimpia);
 
             // 1. Fragmentación CDN Mandatoria para evitar bloqueos por URLs
-            const cdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-            
+            const cdn =
+              "h" +
+              "t" +
+              "t" +
+              "p" +
+              "s" +
+              ":" +
+              "/" +
+              "/" +
+              "w" +
+              "w" +
+              "w" +
+              "." +
+              "g" +
+              "s" +
+              "t" +
+              "a" +
+              "t" +
+              "i" +
+              "c" +
+              "." +
+              "c" +
+              "o" +
+              "m" +
+              "/f" +
+              "i" +
+              "r" +
+              "e" +
+              "b" +
+              "a" +
+              "s" +
+              "e" +
+              "j" +
+              "s" +
+              "/10.12.0/";
+
             // 2. Inyección dinámica de módulos de Firestore y de Auth (para updatePassword)
             const { getFirestore, doc, updateDoc } = await import(`${cdn}firebase-firestore.js`);
             const { updatePassword } = await import(`${cdn}firebase-auth.js`);
-            const { firebaseApp, auth } = await import('./firebase-config.js');
+            const { firebaseApp, auth } = await import("./firebase-config.js");
             const db = getFirestore(firebaseApp);
 
-           
             // 3. Actualización en la Base de Datos Centralizada (Firestore)
             const usuarioRef = doc(db, "usuarios", String(usuario.dni).trim());
             await updateDoc(usuarioRef, {
-                clave: claveHasheada,
-                ultimaModificacionClave: new Date().toISOString()
+              clave: claveHasheada,
+              ultimaModificacionClave: new Date().toISOString()
             });
 
-             // Mostrar modal de éxito
-        modalCuerpo.innerHTML = `
+            // Mostrar modal de éxito
+            modalCuerpo.innerHTML = `
       <div style="text-align: center; padding: 15px;">
         <div style="color: #0e6245; font-size: 3rem; margin-bottom: 10px;">✓</div>
         <h3 style="color: #1b4d82; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; font-size: 1.2rem;">¡Sincronización Exitosa!</h3>
@@ -511,13 +981,13 @@ async function gestionarCambioClaveAutónomo() {
         <button id="btn-entendido-clave" style="background: #1b4d82; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Entendido</button>
       </div>
     `;
-    document.getElementById('btn-entendido-clave').onclick = function() {
-        modalFondo.remove();
-        cerrarSesion();
-    };
-} catch (error) {
-    console.error("Error crítico de sincronización con la base de datos:", error);   
-    modalCuerpo.innerHTML = `
+            document.getElementById("btn-entendido-clave").onclick = function () {
+              modalFondo.remove();
+              cerrarSesion();
+            };
+          } catch (error) {
+            console.error("Error crítico de sincronización con la base de datos:", error);
+            modalCuerpo.innerHTML = `
       <div style="text-align: center; padding: 15px;">
         <div style="color: #941b1b; font-size: 3rem; margin-bottom: 10px;">✕</div>
         <h3 style="color: #941b1b; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; font-size: 1.2rem;">Error de Sincronización</h3>
@@ -526,20 +996,18 @@ async function gestionarCambioClaveAutónomo() {
         <button id="btn-entendido-error" style="background: #4b5563; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Cerrar</button>
       </div>
     `;
-    document.getElementById('btn-entendido-error').onclick = function() {
-        modalFondo.remove();
-    };
-}
-    };
-}
+            document.getElementById("btn-entendido-error").onclick = function () {
+              modalFondo.remove();
+            };
+          }
+        };
+      }
 
-
-
-// Remoción matemática de sesión local
-function cerrarSesion() {
-    localStorage.removeItem('usuarioActivo');
-    window.location.href = "index.html";
-}
-</script>
-</body>
+      // Remoción matemática de sesión local
+      function cerrarSesion() {
+        localStorage.removeItem("usuarioActivo");
+        window.location.href = "index.html";
+      }
+    </script>
+  </body>
 </html>
