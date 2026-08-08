@@ -55,10 +55,14 @@
       @media (max-width: 768px) {
         header,
         [style*="grid-template-columns: repeat(3, 1fr)"] {
-          grid-template-columns: 1fr !important;
+          display: block !important;
           text-align: center !important;
-          gap: 20px !important;
         }
+        header > * {
+          margin-bottom: 15px !important;
+          width: 100% !important;
+        }
+
         header div {
           justify-content: center !important;
           align-items: center !important;
