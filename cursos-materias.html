@@ -59,6 +59,51 @@
         min-width: 150px !important;
         max-width: 220px !important;
       }
+      /* DISEÑO RESPONSIVO PARA CELULARES Y TABLETS */
+      @media (max-width: 768px) {
+        /* Evita que el logo y el título se choquen o desborden */
+        header {
+          padding: 16px !important;
+          flex-direction: column !important;
+          text-align: center !important;
+          gap: 12px !important;
+        }
+
+        /* Corrige el panel de configuración para que se apile verticalmente */
+        #panel-expansion-institucional {
+          grid-template-columns: 1fr !important;
+          gap: 16px !important;
+        }
+        .barra-filtros,
+        [style*="flex-direction: row !important"] {
+          flex-direction: row !important;
+          flex-wrap: wrap !important;
+          gap: 10px !important;
+          justify-content: center !important;
+        }
+        .barra-filtros select,
+        .barra-filtros input {
+          width: 100% !important;
+          max-width: none !important;
+        }
+        .tabla-container,
+        div[style*="overflow-y: auto"] {
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        .panel-container {
+          grid-template-columns: 1fr !important;
+          padding: 12px !important;
+        }
+        #tabla-cursos-body button,
+        .btn-accion-inhabilitar,
+        .btn-accion-borrar {
+          padding: 10px 14px !important;
+          font-size: 14px !important;
+          min-width: 44px;
+          min-height: 44px;
+        }
+      }
     </style>
   </head>
   <body>

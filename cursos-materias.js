@@ -38,7 +38,7 @@
     "s" +
     "/10.12.0/";
   const { db } = await import("./firebase-config.js");
-  const { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, query, where } = await import(
+  const { doc, getDoc, setDoc, collection, getDocs, deleteDoc, writeBatch, query, where, limit } = await import(
     b + "firebase-firestore.js"
   );
   // MOTOR DE ALERTAS Y CONFIRMACIONES ESTILIZADAS INSTITUCIONALES
@@ -589,8 +589,10 @@
           const q = query(
             collection(db, "alumnos"),
             where("cursoId", "==", idCurso),
-            where("estado", "in", ["Activo", "Regular"])
+            where("estado", "in", ["Activo", "Regular"]),
+            limit(1)
           );
+
           const snapshotAlumnos = await getDocs(q);
 
           // Si el semáforo encuentra alumnos cursando hoy, bloquea la acción inmediatamente
