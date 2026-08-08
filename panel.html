@@ -52,28 +52,29 @@
         object-fit: contain;
       }
 
+      header {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+
       @media (max-width: 768px) {
-        header,
-        [style*="grid-template-columns: repeat(3, 1fr)"] {
-          display: block !important;
+        header {
+          display: flex !important;
+          flex-direction: column !important;
           text-align: center !important;
         }
         header > * {
           margin-bottom: 15px !important;
           width: 100% !important;
         }
-
         header div {
           justify-content: center !important;
           align-items: center !important;
         }
-        header .logo-panel-chico,
         header img {
           display: block !important;
           margin: 0 auto !important;
-          float: none !important;
         }
-
         h2 {
           font-size: 1.5rem !important;
           white-space: normal !important;
@@ -103,13 +104,7 @@
     <div class="panel-container">
       <header
         class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 pb-4 mb-6"
-        style="
-          display: grid !important;
-          grid-template-columns: repeat(3, 1fr) !important;
-          border-bottom: 2px solid #eee;
-          padding-bottom: 15px;
-          margin-bottom: 25px;
-        "
+        style="border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px"
       >
         <!-- Columna Izquierda: Datos del Usuario y Acciones Rápidas -->
         <div
