@@ -1,549 +1,920 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
+  <head>
     <!-- Parche para el Icono de la Pestaña (Favicon) -->
-<link rel="icon" type="image/png" href="logo1.png">
+    <link rel="icon" type="image/png" href="logo1.png" />
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestión de Usuarios - Colegio HASPEN</title>
-<link rel="stylesheet" href="estilos.css">
-<style>
-/* Optimización Híbrida: Aprovechamiento Widescreen 100% y Adaptabilidad */
-
-body {
-margin: 0;
-padding: 0;
-max-width: 100% !important;
-width: 100vw;
-min-height: 100vh;
-display: flex;
-flex-direction: column;
-justify-content: flex-start;
-align-items: center;
-}
-
-/* Remoción del max-width de tarjeta para usar toda la pantalla en PC */
-.panel-container {
-max-width: 98% !important;
-width: 98%;
-margin: 15px auto;
-padding: 15px;
-text-align: left;
-}
-
-/* Centrado de Títulos Institucionales */
-.header-dashboard {
-width: 100%;
-text-align: center;
-margin-bottom: 20px;
-}
-
-.header-dashboard h2 {
-color: #1a73e8;
-margin-bottom: 5px;
-}
-
-/* Formulario responsivo base: 1 columna en celular, 2 en pantallas mayores */
-.grid-formulario {
-display: grid;
-grid-template-columns: 1fr;
-gap: 15px;
-margin-bottom: 15px;
-}
-
-@media (min-width: 768px) {
-.grid-formulario {
-grid-template-columns: 1fr 1fr 1fr;
-}
-}
-
-.form-registro-usuario {
-background: #ffffff;
-padding: 20px;
-border-radius: 8px;
-border: 2px solid #1a73e8;
-margin-top: 20px;
-position: relative;
-box-shadow: 0 4 px 6 px rgba( 0, 0, 0, 0.02);
-}
-
-
-th, td {
-padding: 12px 10px;
-text-align: left;
-}
-
-.fila-usuario {
-cursor: pointer;
-transition: background 0.2s;
-}
-
-.fila-usuario:hover {
-background: #f1f5f9 !important;
-}
-
-.badge-rol {
-background: #e8f0fe;
-color: #1a73e8;
-padding: 4px 8px;
-border-radius: 12px;
-font-size: 12px;
-font-weight: 500;
-display: inline-block;
-}
-
-.badge-docente {
-background: #e6fffa;
-color: #0d9488;
-border: 1px solid #b2f5ea;
-padding: 2px 6px;
-border-radius: 4px;
-font-size: 11px;
-font-weight: 600;
-margin-left: 5px;
-}
-
-.indicador-edicion {
-display: none;
-background: #fef3c7;
-color: #d97706;
-padding: 8px 12px;
-border-radius: 6px;
-border: 1px solid #fcd34d;
-font-size: 13px;
-font-weight: 500;
-margin-bottom: 15px;
-}
-
-/* Checkbox multirrol estilizado */
-.contenedor-multirrol-check {
-grid-column: 1 / -1;
-display: flex;
-align-items: center;
-gap: 10px;
-background: #fff8e1;
-padding: 12px;
-border-radius: 6px;
-border: 1px dashed #ffe082;
-margin-top: -5px;
-}
-
-.contenedor-multirrol-check input[type="checkbox"] {
-width: 18px !important;
-height: 18px !important;
-cursor: pointer;
-}
-
-/* Grilla adaptiva interna para asignaciones de Preceptores */
-.grid-preceptor-cursos {
-display: grid;
-grid-template-columns: 1fr;
-gap: 15px;
-}
-
-@media (min-width: 576px) {
-.grid-preceptor-cursos {
-grid-template-columns: 1fr 1fr;
-}
-}
-
-/* Grilla adaptiva interna para bolsa de horas de Profesores con Escalafón */
-.grid-profesor-catedras {
-display: grid;
-grid-template-columns: 1fr;
-gap: 12px;
-align-items: flex-end;
-}
-
-@media (min-width: 768px) {
-.grid-profesor-catedras {
-grid-template-columns: 1.5fr 1.5fr 1fr auto;
-}
-}
-
-/* Contenedor de barra de filtros y auditoría */
-.grid-barra-auditoria {
-display: grid;
-grid-template-columns: 1fr;
-gap: 15px;
-margin-bottom: 15px;
-background: #f8fafc;
-padding: 15px;
-border-radius: 8px;
-border: 1px solid #e2e8f0;
-box-sizing: border-box;
-}
-
-@media (min-width: 768px) {
-.grid-barra-auditoria {
-grid-template-columns: 2fr 1fr;
-}
-}
-
-/* PARCHE DE DENSIDAD VISUAL COMPACTA */
-
-/* 1. Achica la altura de todos los cuadros de texto y desplegables */
-#formUsuario input[type="text"],
-#formUsuario input[type="number"],
-#formUsuario input[type="email"],
-#formUsuario input[type="password"],
-#formUsuario select {
-    height: 32px !important;
-    padding: 4px 8px !important;
-    font-size: 13px !important;
-    margin-top: 2px !important;
-}
-
-/* 2. Junta las filas haciendo el espacio entre ellas mucho más fino */
-.grid-formulario {
-    gap: 8px !important;
-    margin-bottom: 8px !important;
-}
-
-/* 3. Achica los textos de los títulos de cada campo (etiquetas) */
-.input-group label {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    color: #475569 !important;
-}
-
-/* 4. Comprime el bloque amarillo de la función docente */
-.contenedor-multirrol-check {
-    padding: 6px 10px !important;
-    margin-top: 2px !important;
-    grid-column: span 3 / span 3 !important;
-}
-
-/* 5. Comprime y achica las cajas de Preceptor y de Profesor */
-#grupoCursosPreceptor, 
-#grupoAsignacionProfesor {
-    padding: 10px !important;
-    margin-top: 4px !important;
-}
-
-#grupoCursosPreceptor label, 
-#grupoAsignacionProfesor label {
-    margin-bottom: 2px !important;
-}
-
-/* 6. Achica la altura de los selectores y el botón dentro de la sección de Profesor */
-#grupoCursosPreceptor select,
-#grupoAsignacionProfesor select,
-#btnAgregarCatedra {
-    height: 32px !important;
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-}
-/* AJUSTES PARA LA SECCIÓN DE USUARIOS REGISTRADOS */
-
-/* 1. Aplica el mismo borde azul al contenedor de abajo */
-.tabla-usuarios-container, 
-#formUsuario + div.bg-white,
-div.form-registro-usuario + div {
-    border: 2px solid #1a73e8 !important;
-    border-radius: 8px !important;
-    padding: 15px !important;
-    margin-top: 0px !important;
-    margin-bottom: 0px !important;
-}
-
-/* 2. Centra el título "Usuarios Registrados" y le da un tono formal */
-div.form-registro-usuario + div h3,
-.tabla-usuarios-container h3,
-h3:contains("Usuarios Registrados") {
-    text-align: center !important;
-    width: 100% !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-    color: #1e293b !important;
-    margin-top: 2px !important;     /* Achica el espacio de arriba */
-    margin-bottom: 2px !important;  /* Achica el espacio de abajo */
-}
-
-
-/* 3. Hace que los campos de búsqueda y filtro de auditoría sean más finos */
-#buscarUsuario,
-#filtroAuditoria,
-div.form-registro-usuario + div input[type="text"],
-div.form-registro-usuario + div select {
-    height: 26px !important;
-    padding: 2px 8px !important;
-    font-size: 10px !important;
-    line-height: 1 !important;
-}
-
-/* 4. Sube los títulos de las columnas de la tabla (reduce el espacio superior) */
-.thead-usuarios th,
-table th {
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
-    font-size: 12px !important;
-    background-color: #f8fafc !important;
-}
-
-/* 5. Junta mucho más a los usuarios entre sí (filas bien compactas) */
-.tbody-usuarios td,
-table td {
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
-    font-size: 13px !important;
-    line-height: 1.2 !important;
-}
-
-/* 6. Reduce el tamaño de los botones Editar y Borrar para acompañar el diseño fino */
-table button,
-table a {
-    padding: 2px 8px !important;
-    font-size: 11px !important;
-    height: auto !important;
-}
-
-</style>
-</head>
-<body>
-<div class="panel-container">
-                <!-- REEMPLAZAR EN LINEA: 181 -->
-        <header style="background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box; margin-bottom: 12px; border-radius: 8px;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                <h2 style="color: white; font-size: 28px; font-weight: 800; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); font-family: inherit;">COLEGIO PROVINCIAL HASPEN</h2>
-                <p style="color: rgba(255, 255, 255, 0.95); font-size: 14px; font-weight: 500; margin: 5px 0 0 0; text-align: left; font-family: inherit;">Gestión de Usuarios — Administración de accesos, roles y responsabilidades híbridas</p>
-            </div>
-            <img src="logo1.png" alt="Escudo Colegio" style="height: 55px; width: auto; filter: drop-shadow(1px 1px 4px rgba(0,0,0,0.2));">
-        </header>
-
-<!-- CONTENEDOR FLEXBOX ULTRA-ESTRICTO PARA MANTENER LA MISMA LÍNEA -->
-<div style="width: 100% !important; display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; margin-top: 2px !important; margin-bottom: 2px !important; box-sizing: border-box !important;">
-    
-    <!-- Botón Izquierdo: Registro -->
-    <button type="button" id="btn-toggle-formulario" style="background-color: #1b4d82; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 0 !important;">
-        <span id="icono-toggle-form">➕</span> Registrar Nuevo Usuario
-    </button>
-
-    <!-- Botón Derecho: Volver al Panel (Sin márgenes que empujen) -->
-    <button class="btn-salir" onclick="window.location.href='panel.html'" style="background-color: #5f6368; color: white; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 0 !important;">
-        ↩️ Volver al Panel
-    </button>
-
-</div>
-
-
-
-<!-- Sección 1: Formulario Responsivo Multirrol (Oculto por defecto en el inicio) -->
-<div class="form-registro-usuario" id="contenedorFormularioUsuario" style="display: none; background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #1a73e8; margin-top: 10px; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-
-<div id="bannerEdicion" class="indicador-edicion">
-<strong>Modo Edición Activo:</strong> Modificando los datos del usuario. Al finalizar, haga clic en "Guardar Usuario" o presione "Cancelar".
-<button type="button" id="btnCancelarEdicion" style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold;">[Cancelar]</button>
-</div>
-<h3 id="formTitulo" style="color: #333; margin-bottom: 15px;">Registrar Nuevo Usuario</h3>
-<form id="formUsuario">
-<input type="hidden" id="dniOriginalEdicion" value="">
-<div class="grid-formulario">
-<!-- CAMPO 1: NOMBRE Y APELLIDO (COLUMNA 1 DE 3) -->
-<div class="col-span-12 md:col-span-4">
-    <label class="block text-sm font-medium text-gray-700">Nombre y Apellido</label>
-    <input type="text" id="nombreApellido" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-</div>
-
-<!-- CAMPO 2: DNI (COLUMNA 2 DE 3) -->
-<div class="col-span-12 md:col-span-4">
-    <label class="block text-sm font-medium text-gray-700">DNI (Será su usuario inicial)</label>
-    <input type="text" id="dniUsuario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-</div>
-
-<!-- CAMPO 3: CORREO ELECTRÓNICO (COLUMNA 3 DE 3) -->
-<div class="col-span-12 md:col-span-4">
-    <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-    <input type="email" id="emailUsuario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-</div>
-
-<!-- CAMPO 4: SELECCIONAR CARGO / ROL BASE (COLUMNA 1 DE 3) -->
-<div class="col-span-12 md:col-span-4">
-    <label class="block text-sm font-medium text-gray-700">Seleccionar Cargo / Rol Base</label>
-    <select id="rolUsuario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-        <!-- Las opciones se cargan dinámicamente -->
-    </select>
-</div>
-
-<!-- CAMPO 5: CONTRASEÑA INICIAL (COLUMNA 2 DE 3) -->
-<div class="col-span-12 md:col-span-4">
-    <label class="block text-sm font-medium text-gray-700">Contraseña Inicial</label>
-    <input type="password" id="claveUsuario" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Mínimo 6 caracteres">
-</div>
-
-<!-- CAMPO 6: CONFIRMAR CONTRASEÑA (COLUMNA 3 DE 3) -->
-<div class="col-span-12 md:col-span-4">
-    <label class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
-    <input type="password" id="confirmarClaveUsuario" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Repita la contraseña">
-</div>
-</div>
-<!-- Checkbox de Habilitación de Función Docente Simultánea -->
-<div class="contenedor-multirrol-check" style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-    <!-- Opción Docente (Existente) -->
-    <label class="checkbox-label-personalizado" style="display: flex; align-items: center; margin: 0;">
-        <input type="checkbox" id="checkEsProfesor">
-        <span style="margin-left: 8px;">¿Este usuario también dicta materias frente a curso como Profesor / Horas Cátedra?</span>
-    </label>
-
-    <!-- Nueva Opción: Permiso Global de Notas -->
-    <label class="checkbox-label-personalizado" style="display: flex; align-items: center; margin: 0; border-top: 1px solid #fef08a; padding-top: 6px;">
-        <input type="checkbox" id="permiteCargaTotalNotasAlta">
-        <span style="margin-left: 8px; font-weight: 700; color: #854d0e;">¿Habilitar carga total de calificaciones de forma global para este usuario?</span>
-    </label>
-    <label class="checkbox-label-personalizado" style=" display: flex; align-items: center; margin: 0; border-top: 1px solid #fef08a; padding-top: 6px;">
-        <input type="checkbox" id="checkGestionPeriodos">
-        <span style="margin-left: 8px; font-weight: 700; color: #1b4d82;">¿Habilitar el botón de apertura y cierre de notas (Control Períodos)?</span>
-    </label>
-</div>
-<div id="grupoCursosPreceptor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
-  <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 8px;">Asignación de Responsabilidad (Cursos Estructurales)</label>
-  
-  <div style="background: #f1f5f9; padding: 6px 12px; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1;">
-    <input type="checkbox" id="checkSeleccionarTodosLosCursos" style="margin: 0; cursor: pointer; transform: scale(1.1);">
-    <label for="checkSeleccionarTodosLosCursos" style="font-size: 12px; font-weight: bold; color: #334155; cursor: pointer; user-select: none;">--- SELECCIONAR TODOS LOS CURSOS DE LA INSTITUCIÓN ---</label>
-  </div>
-
-  <div id="contenedorCursosCheckboxes" style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; max-height: 250px; overflow-y: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;">
-    <span style="color: #94a3b8; font-size: 12px; grid-column: 1 / -1;">Cargando organigrama escolar de divisiones...</span>
-  </div>
-</div>
-
-<!-- Campos Dinámicos para Profesores con Escalafón Jerárquico -->
-<div id="grupoAsignacionProfesor" style="display: none; grid-column: 1 / -1; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 5px;">
-<label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px;">Asignación de Cátedras Múltiples (Bolsa de Horas Docente)</label>
-<div class="grid-profesor-catedras">
-<div>
-<label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Curso Estructural Destino</label>
-<select id="anioProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-</select>
-</div>
-<div>
-<label for="materiaProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Materia Asignada</label>
-<select id="materiaProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-<option value="" disabled selected>Seleccione primero un curso...</option>
-</select>
-</div>
-<div>
-<label for="revistaProfesor" style="font-size: 13px; margin-bottom: 3px; display:block;">Situación de Revista</label>
-<select id="revistaProfesor" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; height: 42px;">
-<option value="TITULAR">Titular</option>
-<option value="SUPLENTE">Suplente</option>
-<option value="SUPL_SUPL">Suplente de Suplente</option>
-</select>
-</div>
-<div>
-<button type="button" id="btnAgregarCatedra" style="width: 100%; height: 42px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; padding: 0 20px;">+ Agregar Cátedra</button>
-</div>
-</div>
-<div id="listaCatedrasProfesor" style="margin-top: 15px; background: white; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 6px; min-height: 45px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-<span style="color: #94a3b8; font-size: 13px;" id="sinCatedrasMensaje">No hay cátedras asignadas aún.</span>
-</div>
-</div>
-<button type="submit" id="btnGuardarUsuario" class="btn-principal" style="max-width: 220px; margin-top: 10px; height: 44px; font-weight: bold;">Guardar Usuario</button>
-</form>
-</div>
-<!-- Sección 2: Tabla de Datos con Barra de Auditoría Masiva -->
-<div class="tabla-usuarios-contenedor" style="margin-top: 2px; background: white; padding: 5px 20px 20px 20px !important; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;">
-    <h3 class="text-lg font-bold text-gray-800 mb-2 text-center" style="text-align: center !important; width: 100% !important; color: #1e293b; font-size: 20px; margin-top: 0 !important;"> Usuarios Registrados</h3>
-    <p style="font-size: 12px; color: #64748b; margin-top: 2px !important; margin-bottom: 5px !important;">💡 Utilice la barra de controles inferiores para auditar superpoblaciones o buscar perfiles.</p>
-
-    <!-- CONTENEDOR PRINCIPAL: BARRA DE FILTROS UNIFICADA SIMÉTRICA -->
-<div class="grid-barra-auditoria" style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
-    
-    <!-- 1. BUSCAR USUARIO -->
-    <div>
-        <label for="filtroBusquedaRapida" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Buscar Usuario</label>
-        <input type="text" id="filtroBusquedaRapida" placeholder="Nombre, DNI o Email..." style="width: 100%; height: 32px; font-size: 13px;">
-    </div>
-   <!-- 2. ROL BASE -->
-<div>
-    <label for="filtroRolBase" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Cargo / Rol Base</label>
-    <select id="filtroRolBase" style="width: 100%; height: 26px !important; font-size: 12px !important; padding: 0px 8px !important; line-height: 26px !important; background-color: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;">
-        <option value="">Todos los cargos / roles</option>
-    </select>
-</div>
-<!-- 3. CURSO / DIVISIÓN -->
-<div>
-    <label for="filtroCursoDivision" style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Curso / División</label>
-    <select id="filtroCursoDivision" style="width: 100%; height: 26px !important; font-size: 12px !important; padding: 0px 8px !important; line-height: 26px !important; background-color: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;">
-        <option value="">Todos los cursos</option>
-    </select>
-</div>
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Usuarios - Colegio HASPEN</title>
+    <link rel="stylesheet" href="estilos.css" />
     <style>
-        @media (min-width: 768px) { .grid-barra-auditoria { grid-template-columns: repeat(3, 1fr) !important; } }
+      /* Optimización Híbrida: Aprovechamiento Widescreen 100% y Adaptabilidad */
+
+      body {
+        margin: 0;
+        padding: 0;
+        max-width: 100% !important;
+        width: 100vw;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      /* Remoción del max-width de tarjeta para usar toda la pantalla en PC */
+      .panel-container {
+        max-width: 98% !important;
+        width: 98%;
+        margin: 15px auto;
+        padding: 15px;
+        text-align: left;
+      }
+
+      /* Centrado de Títulos Institucionales */
+      .header-dashboard {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .header-dashboard h2 {
+        color: #1a73e8;
+        margin-bottom: 5px;
+      }
+
+      /* Formulario responsivo base: 1 columna en celular, 2 en pantallas mayores */
+      .grid-formulario {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      @media (min-width: 768px) {
+        .grid-formulario {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+      }
+
+      .form-registro-usuario {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 2px solid #1a73e8;
+        margin-top: 20px;
+        position: relative;
+        box-shadow: 0 4 px 6 px rgba(0, 0, 0, 0.02);
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+      }
+
+      .fila-usuario {
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .fila-usuario:hover {
+        background: #f1f5f9 !important;
+      }
+
+      .badge-rol {
+        background: #e8f0fe;
+        color: #1a73e8;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-block;
+      }
+
+      .badge-docente {
+        background: #e6fffa;
+        color: #0d9488;
+        border: 1px solid #b2f5ea;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 5px;
+      }
+
+      .indicador-edicion {
+        display: none;
+        background: #fef3c7;
+        color: #d97706;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #fcd34d;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 15px;
+      }
+
+      /* Checkbox multirrol estilizado */
+      .contenedor-multirrol-check {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff8e1;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px dashed #ffe082;
+        margin-top: -5px;
+      }
+
+      .contenedor-multirrol-check input[type="checkbox"] {
+        width: 18px !important;
+        height: 18px !important;
+        cursor: pointer;
+      }
+
+      /* Grilla adaptiva interna para asignaciones de Preceptores */
+      .grid-preceptor-cursos {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      @media (min-width: 576px) {
+        .grid-preceptor-cursos {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      /* Grilla adaptiva interna para bolsa de horas de Profesores con Escalafón */
+      .grid-profesor-catedras {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        align-items: flex-end;
+      }
+
+      @media (min-width: 768px) {
+        .grid-profesor-catedras {
+          grid-template-columns: 1.5fr 1.5fr 1fr auto;
+        }
+      }
+
+      /* Contenedor de barra de filtros y auditoría */
+      .grid-barra-auditoria {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        box-sizing: border-box;
+      }
+
+      @media (min-width: 768px) {
+        .grid-barra-auditoria {
+          grid-template-columns: 2fr 1fr;
+        }
+      }
+
+      /* PARCHE DE DENSIDAD VISUAL COMPACTA */
+
+      /* 1. Achica la altura de todos los cuadros de texto y desplegables */
+      #formUsuario input[type="text"],
+      #formUsuario input[type="number"],
+      #formUsuario input[type="email"],
+      #formUsuario input[type="password"],
+      #formUsuario select {
+        height: 32px !important;
+        padding: 4px 8px !important;
+        font-size: 13px !important;
+        margin-top: 2px !important;
+      }
+
+      /* 2. Junta las filas haciendo el espacio entre ellas mucho más fino */
+      .grid-formulario {
+        gap: 8px !important;
+        margin-bottom: 8px !important;
+      }
+
+      /* 3. Achica los textos de los títulos de cada campo (etiquetas) */
+      .input-group label {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+      }
+
+      /* 4. Comprime el bloque amarillo de la función docente */
+      .contenedor-multirrol-check {
+        padding: 6px 10px !important;
+        margin-top: 2px !important;
+        grid-column: span 3 / span 3 !important;
+      }
+
+      /* 5. Comprime y achica las cajas de Preceptor y de Profesor */
+      #grupoCursosPreceptor,
+      #grupoAsignacionProfesor {
+        padding: 10px !important;
+        margin-top: 4px !important;
+      }
+
+      #grupoCursosPreceptor label,
+      #grupoAsignacionProfesor label {
+        margin-bottom: 2px !important;
+      }
+
+      /* 6. Achica la altura de los selectores y el botón dentro de la sección de Profesor */
+      #grupoCursosPreceptor select,
+      #grupoAsignacionProfesor select,
+      #btnAgregarCatedra {
+        height: 32px !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+      }
+      /* AJUSTES PARA LA SECCIÓN DE USUARIOS REGISTRADOS */
+
+      /* 1. Aplica el mismo borde azul al contenedor de abajo */
+      .tabla-usuarios-container,
+      #formUsuario + div.bg-white,
+      div.form-registro-usuario + div {
+        border: 2px solid #1a73e8 !important;
+        border-radius: 8px !important;
+        padding: 15px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+      }
+
+      /* 2. Centra el título "Usuarios Registrados" y le da un tono formal */
+      div.form-registro-usuario + div h3,
+      .tabla-usuarios-container h3,
+      h3:contains("Usuarios Registrados") {
+        text-align: center !important;
+        width: 100% !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: #1e293b !important;
+        margin-top: 2px !important; /* Achica el espacio de arriba */
+        margin-bottom: 2px !important; /* Achica el espacio de abajo */
+      }
+
+      /* 3. Hace que los campos de búsqueda y filtro de auditoría sean más finos */
+      #buscarUsuario,
+      #filtroAuditoria,
+      div.form-registro-usuario + div input[type="text"],
+      div.form-registro-usuario + div select {
+        height: 26px !important;
+        padding: 2px 8px !important;
+        font-size: 10px !important;
+        line-height: 1 !important;
+      }
+
+      /* 4. Sube los títulos de las columnas de la tabla (reduce el espacio superior) */
+      .thead-usuarios th,
+      table th {
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+        font-size: 12px !important;
+        background-color: #f8fafc !important;
+      }
+
+      /* 5. Junta mucho más a los usuarios entre sí (filas bien compactas) */
+      .tbody-usuarios td,
+      table td {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        font-size: 13px !important;
+        line-height: 1.2 !important;
+      }
+
+      /* 6. Reduce el tamaño de los botones Editar y Borrar para acompañar el diseño fino */
+      table button,
+      table a {
+        padding: 2px 8px !important;
+        font-size: 11px !important;
+        height: auto !important;
+      }
     </style>
-</div>
+  </head>
+  <body>
+    <div class="panel-container">
+      <!-- REEMPLAZAR EN LINEA: 181 -->
+      <header
+        style="
+          background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%);
+          border-bottom: 4px solid #13365b;
+          padding: 20px 32px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          width: 100%;
+          box-sizing: border-box;
+          margin-bottom: 12px;
+          border-radius: 8px;
+        "
+      >
+        <div style="display: flex; flex-direction: column; align-items: flex-start">
+          <h2
+            style="
+              color: white;
+              font-size: 28px;
+              font-weight: 800;
+              text-transform: uppercase;
+              margin: 0;
+              letter-spacing: 0.5px;
+              text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+              font-family: inherit;
+            "
+          >
+            COLEGIO PROVINCIAL HASPEN
+          </h2>
+          <p
+            style="
+              color: rgba(255, 255, 255, 0.95);
+              font-size: 14px;
+              font-weight: 500;
+              margin: 5px 0 0 0;
+              text-align: left;
+              font-family: inherit;
+            "
+          >
+            Gestión de Usuarios — Administración de accesos, roles y responsabilidades híbridas
+          </p>
+        </div>
+        <img
+          src="logo1.png"
+          alt="Escudo Colegio"
+          style="height: 55px; width: auto; filter: drop-shadow(1px 1px 4px rgba(0, 0, 0, 0.2))"
+        />
+      </header>
 
-<div style="width: 100%; overflow-x: auto;">
-<table class="tabla-usuarios" style="width: 100%; border-collapse: collapse; text-align: left; min-width: 850px;">
-<thead>
-<tr style="border-bottom: 2px solid #1a73e8; color: #1e293b; background: #f8fafc;">
-<th style="width: 20%;">Nombre y Apellido</th>
-<th style="width: 12%;">Usuario (DNI)</th>
-<th style="width: 18%;">Email</th>
-<th style="width: 15%;">Rol Personal Base</th>
-<th style="width: 20%;">Cursos / Materias Asignadas</th>
-<th style="text-align: center; width: 15%; min-width: 140px;">Acciones</th>
-</tr>
-</thead>
-<tbody id="tablaUsuariosBody">
-</tbody>
-</table>
-        </div> <!-- Cierre del div de overflow-x -->
-        
+      <!-- CONTENEDOR FLEXBOX ULTRA-ESTRICTO PARA MANTENER LA MISMA LÍNEA -->
+      <div
+        style="
+          width: 100% !important;
+          display: flex !important;
+          flex-direction: row !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          margin-top: 2px !important;
+          margin-bottom: 2px !important;
+          box-sizing: border-box !important;
+        "
+      >
+        <!-- Botón Izquierdo: Registro -->
+        <button
+          type="button"
+          id="btn-toggle-formulario"
+          style="
+            background-color: #1b4d82;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0 !important;
+          "
+        >
+          <span id="icono-toggle-form">➕</span> Registrar Nuevo Usuario
+        </button>
+
+        <!-- Botón Derecho: Volver al Panel (Sin márgenes que empujen) -->
+        <button
+          class="btn-salir"
+          onclick="window.location.href = 'panel.html'"
+          style="
+            background-color: #5f6368;
+            color: white;
+            max-width: 200px;
+            font-weight: bold;
+            border-radius: 6px;
+            height: 40px;
+            padding: 0 15px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0 !important;
+          "
+        >
+          ↩️ Volver al Panel
+        </button>
+      </div>
+
+      <!-- Sección 1: Formulario Responsivo Multirrol (Oculto por defecto en el inicio) -->
+      <div
+        class="form-registro-usuario"
+        id="contenedorFormularioUsuario"
+        style="
+          display: none;
+          background: #ffffff;
+          padding: 20px;
+          border-radius: 8px;
+          border: 2px solid #1a73e8;
+          margin-top: 10px;
+          position: relative;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        "
+      >
+        <div id="bannerEdicion" class="indicador-edicion">
+          <strong>Modo Edición Activo:</strong> Modificando los datos del usuario. Al finalizar, haga clic en "Guardar
+          Usuario" o presione "Cancelar".
+          <button
+            type="button"
+            id="btnCancelarEdicion"
+            style="float: right; background: none; border: none; color: #dc2626; cursor: pointer; font-weight: bold"
+          >
+            [Cancelar]
+          </button>
+        </div>
+        <h3 id="formTitulo" style="color: #333; margin-bottom: 15px">Registrar Nuevo Usuario</h3>
+        <form id="formUsuario">
+          <input type="hidden" id="dniOriginalEdicion" value="" />
+          <div class="grid-formulario">
+            <!-- CAMPO 1: NOMBRE Y APELLIDO (COLUMNA 1 DE 3) -->
+            <div class="col-span-12 md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700">Nombre y Apellido</label>
+              <input
+                type="text"
+                id="nombreApellido"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <!-- CAMPO 2: DNI (COLUMNA 2 DE 3) -->
+            <div class="col-span-12 md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700">DNI (Será su usuario inicial)</label>
+              <input
+                type="text"
+                id="dniUsuario"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <!-- CAMPO 3: CORREO ELECTRÓNICO (COLUMNA 3 DE 3) -->
+            <div class="col-span-12 md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+              <input
+                type="email"
+                id="emailUsuario"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <!-- CAMPO 4: SELECCIONAR CARGO / ROL BASE (COLUMNA 1 DE 3) -->
+            <div class="col-span-12 md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700">Seleccionar Cargo / Rol Base</label>
+              <select
+                id="rolUsuario"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <!-- Las opciones se cargan dinámicamente -->
+              </select>
+            </div>
+
+            <!-- CAMPO 5: CONTRASEÑA INICIAL (COLUMNA 2 DE 3) -->
+            <div class="col-span-12 md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700">Contraseña Inicial</label>
+              <input
+                type="password"
+                id="claveUsuario"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+
+            <!-- CAMPO 6: CONFIRMAR CONTRASEÑA (COLUMNA 3 DE 3) -->
+            <div class="col-span-12 md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+              <input
+                type="password"
+                id="confirmarClaveUsuario"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Repita la contraseña"
+              />
+            </div>
+          </div>
+          <!-- Checkbox de Habilitación de Función Docente Simultánea -->
+          <div class="contenedor-multirrol-check" style="display: grid; grid-template-columns: 1fr; gap: 10px">
+            <!-- Opción Docente (Existente) -->
+            <label class="checkbox-label-personalizado" style="display: flex; align-items: center; margin: 0">
+              <input type="checkbox" id="checkEsProfesor" />
+              <span style="margin-left: 8px"
+                >¿Este usuario también dicta materias frente a curso como Profesor / Horas Cátedra?</span
+              >
+            </label>
+
+            <!-- Nueva Opción: Permiso Global de Notas -->
+            <label
+              class="checkbox-label-personalizado"
+              style="display: flex; align-items: center; margin: 0; border-top: 1px solid #fef08a; padding-top: 6px"
+            >
+              <input type="checkbox" id="permiteCargaTotalNotasAlta" />
+              <span style="margin-left: 8px; font-weight: 700; color: #854d0e"
+                >¿Habilitar carga total de calificaciones de forma global para este usuario?</span
+              >
+            </label>
+            <label
+              class="checkbox-label-personalizado"
+              style="display: flex; align-items: center; margin: 0; border-top: 1px solid #fef08a; padding-top: 6px"
+            >
+              <input type="checkbox" id="checkGestionPeriodos" />
+              <span style="margin-left: 8px; font-weight: 700; color: #1b4d82"
+                >¿Habilitar el botón de apertura y cierre de notas (Control Períodos)?</span
+              >
+            </label>
+          </div>
+          <div
+            id="grupoCursosPreceptor"
+            style="
+              display: none;
+              grid-column: 1 / -1;
+              background: #f8fafc;
+              padding: 15px;
+              border-radius: 6px;
+              border: 1px solid #e2e8f0;
+              margin-top: 5px;
+            "
+          >
+            <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 8px"
+              >Asignación de Responsabilidad (Cursos Estructurales)</label
+            >
+
+            <div
+              style="
+                background: #f1f5f9;
+                padding: 6px 12px;
+                border-radius: 4px;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                border: 1px solid #cbd5e1;
+              "
+            >
+              <input
+                type="checkbox"
+                id="checkSeleccionarTodosLosCursos"
+                style="margin: 0; cursor: pointer; transform: scale(1.1)"
+              />
+              <label
+                for="checkSeleccionarTodosLosCursos"
+                style="font-size: 12px; font-weight: bold; color: #334155; cursor: pointer; user-select: none"
+                >--- SELECCIONAR TODOS LOS CURSOS DE LA INSTITUCIÓN ---</label
+              >
+            </div>
+
+            <div
+              id="contenedorCursosCheckboxes"
+              style="
+                background: white;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 12px;
+                max-height: 250px;
+                overflow-y: auto;
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                gap: 12px;
+              "
+            >
+              <span style="color: #94a3b8; font-size: 12px; grid-column: 1 / -1"
+                >Cargando organigrama escolar de divisiones...</span
+              >
+            </div>
+          </div>
+
+          <!-- Campos Dinámicos para Profesores con Escalafón Jerárquico -->
+          <div
+            id="grupoAsignacionProfesor"
+            style="
+              display: none;
+              grid-column: 1 / -1;
+              background: #f8fafc;
+              padding: 15px;
+              border-radius: 6px;
+              border: 1px solid #e2e8f0;
+              margin-top: 5px;
+            "
+          >
+            <label style="font-weight: bold; color: #1a73e8; display: block; margin-bottom: 10px"
+              >Asignación de Cátedras Múltiples (Bolsa de Horas Docente)</label
+            >
+            <div class="grid-profesor-catedras">
+              <div>
+                <label for="anioProfesor" style="font-size: 13px; margin-bottom: 3px; display: block"
+                  >Curso Estructural Destino</label
+                >
+                <select
+                  id="anioProfesor"
+                  style="
+                    width: 100%;
+                    padding: 8px;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 6px;
+                    background: white;
+                    height: 42px;
+                  "
+                ></select>
+              </div>
+              <div>
+                <label for="materiaProfesor" style="font-size: 13px; margin-bottom: 3px; display: block"
+                  >Materia Asignada</label
+                >
+                <select
+                  id="materiaProfesor"
+                  style="
+                    width: 100%;
+                    padding: 8px;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 6px;
+                    background: white;
+                    height: 42px;
+                  "
+                >
+                  <option value="" disabled selected>Seleccione primero un curso...</option>
+                </select>
+              </div>
+              <div>
+                <label for="revistaProfesor" style="font-size: 13px; margin-bottom: 3px; display: block"
+                  >Situación de Revista</label
+                >
+                <select
+                  id="revistaProfesor"
+                  style="
+                    width: 100%;
+                    padding: 8px;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 6px;
+                    background: white;
+                    height: 42px;
+                  "
+                >
+                  <option value="TITULAR">Titular</option>
+                  <option value="SUPLENTE">Suplente</option>
+                  <option value="SUPL_SUPL">Suplente de Suplente</option>
+                </select>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  id="btnAgregarCatedra"
+                  style="
+                    width: 100%;
+                    height: 42px;
+                    background-color: #28a745;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    padding: 0 20px;
+                  "
+                >
+                  + Agregar Cátedra
+                </button>
+              </div>
+            </div>
+            <div
+              id="listaCatedrasProfesor"
+              style="
+                margin-top: 15px;
+                background: white;
+                border: 1px dashed #cbd5e1;
+                padding: 10px;
+                border-radius: 6px;
+                min-height: 45px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+              "
+            >
+              <span style="color: #94a3b8; font-size: 13px" id="sinCatedrasMensaje"
+                >No hay cátedras asignadas aún.</span
+              >
+            </div>
+          </div>
+          <button
+            type="submit"
+            id="btnGuardarUsuario"
+            class="btn-principal"
+            style="max-width: 220px; margin-top: 10px; height: 44px; font-weight: bold"
+          >
+            Guardar Usuario
+          </button>
+        </form>
+      </div>
+      <!-- Sección 2: Tabla de Datos con Barra de Auditoría Masiva -->
+      <div
+        class="tabla-usuarios-contenedor"
+        style="
+          margin-top: 2px;
+          background: white;
+          padding: 5px 20px 20px 20px !important;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          width: 100%;
+          box-sizing: border-box;
+        "
+      >
+        <h3
+          class="text-lg font-bold text-gray-800 mb-2 text-center"
+          style="
+            text-align: center !important;
+            width: 100% !important;
+            color: #1e293b;
+            font-size: 20px;
+            margin-top: 0 !important;
+          "
+        >
+          Usuarios Registrados
+        </h3>
+        <p style="font-size: 12px; color: #64748b; margin-top: 2px !important; margin-bottom: 5px !important">
+          💡 Utilice la barra de controles inferiores para auditar superpoblaciones o buscar perfiles.
+        </p>
+
+        <!-- CONTENEDOR PRINCIPAL: BARRA DE FILTROS UNIFICADA SIMÉTRICA -->
+        <div
+          class="grid-barra-auditoria"
+          style="
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+          "
+        >
+          <!-- 1. BUSCAR USUARIO -->
+          <div>
+            <label for="filtroBusquedaRapida" style="font-size: 11px; font-weight: 700; text-transform: uppercase"
+              >Buscar Usuario</label
+            >
+            <input
+              type="text"
+              id="filtroBusquedaRapida"
+              placeholder="Nombre, DNI o Email..."
+              style="width: 100%; height: 32px; font-size: 13px"
+            />
+          </div>
+          <!-- 2. ROL BASE -->
+          <div>
+            <label for="filtroRolBase" style="font-size: 11px; font-weight: 700; text-transform: uppercase"
+              >Cargo / Rol Base</label
+            >
+            <select
+              id="filtroRolBase"
+              style="
+                width: 100%;
+                height: 26px !important;
+                font-size: 12px !important;
+                padding: 0px 8px !important;
+                line-height: 26px !important;
+                background-color: #ffffff !important;
+                color: #1e293b !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+              "
+            >
+              <option value="">Todos los cargos / roles</option>
+            </select>
+          </div>
+          <!-- 3. CURSO / DIVISIÓN -->
+          <div>
+            <label for="filtroCursoDivision" style="font-size: 11px; font-weight: 700; text-transform: uppercase"
+              >Curso / División</label
+            >
+            <select
+              id="filtroCursoDivision"
+              style="
+                width: 100%;
+                height: 26px !important;
+                font-size: 12px !important;
+                padding: 0px 8px !important;
+                line-height: 26px !important;
+                background-color: #ffffff !important;
+                color: #1e293b !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+              "
+            >
+              <option value="">Todos los cursos</option>
+            </select>
+          </div>
+
+          <style>
+            @media (min-width: 768px) {
+              .grid-barra-auditoria {
+                grid-template-columns: repeat(3, 1fr) !important;
+              }
+            }
+          </style>
+        </div>
+
+        <div style="width: 100%; overflow-x: auto">
+          <table
+            class="tabla-usuarios"
+            style="width: 100%; border-collapse: collapse; text-align: left; min-width: 850px"
+          >
+            <thead>
+              <tr style="border-bottom: 2px solid #1a73e8; color: #1e293b; background: #f8fafc">
+                <th style="width: 20%">Nombre y Apellido</th>
+                <th style="width: 12%">Usuario (DNI)</th>
+                <th style="width: 18%">Email</th>
+                <th style="width: 15%">Rol Personal Base</th>
+                <th style="width: 20%">Cursos / Materias Asignadas</th>
+                <th style="text-align: center; width: 15%; min-width: 140px">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaUsuariosBody"></tbody>
+          </table>
+        </div>
+        <!-- Cierre del div de overflow-x -->
+
         <!-- CONTENEDOR PARA LOS BOTONES DE PAGINACIÓN -->
-        <div id="paginacion-controles" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #e2e8f0; width: 100%;"></div>
+        <div
+          id="paginacion-controles"
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            width: 100%;
+          "
+        ></div>
+      </div>
+      <!-- Cierre del div .tabla-usuarios-contenedor -->
+    </div>
 
-    </div> <!-- Cierre del div .tabla-usuarios-contenedor -->
+    <script type="module" src="usuarios.js"></script>
 
-<script type="module" src="usuarios.js"></script>
+    <!-- Script local para el control estético de despliegue del formulario -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const btnToggle = document.getElementById("btn-toggle-formulario");
+        const contenedorForm = document.getElementById("contenedorFormularioUsuario");
+        const iconoToggle = document.getElementById("icono-toggle-form");
+        const btnCancelar = document.getElementById("btnCancelarEdicion");
 
-<!-- Script local para el control estético de despliegue del formulario -->
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const btnToggle = document.getElementById('btn-toggle-formulario');
-    const contenedorForm = document.getElementById('contenedorFormularioUsuario');
-    const iconoToggle = document.getElementById('icono-toggle-form');
-    const btnCancelar = document.getElementById('btnCancelarEdicion');
+        if (btnToggle && contenedorForm) {
+          btnToggle.addEventListener("click", function () {
+            if (contenedorForm.style.display === "none") {
+              contenedorForm.style.display = "block";
+              if (iconoToggle) iconoToggle.textContent = "➖";
+              contenedorForm.scrollIntoView({ behavior: "smooth" });
+            } else {
+              contenedorForm.style.display = "none";
+              if (iconoToggle) iconoToggle.textContent = "➕";
+            }
+          });
+        }
 
-    if (btnToggle && contenedorForm) {
-      btnToggle.addEventListener('click', function() {
-        if (contenedorForm.style.display === 'none') {
-          contenedorForm.style.display = 'block';
-          if (iconoToggle) iconoToggle.textContent = '➖';
-          contenedorForm.scrollIntoView({ behavior: 'smooth' });
-        } else {
-          contenedorForm.style.display = 'none';
-          if (iconoToggle) iconoToggle.textContent = '➕';
+        // Forzar apertura automática si el usuario hace clic en "Editar" en la tabla
+        document.addEventListener("click", function (e) {
+          const filaEditar = e.target.closest("table button");
+          if (
+            filaEditar &&
+            (filaEditar.textContent.includes("Editar") || filaEditar.classList.contains("btn-editar"))
+          ) {
+            setTimeout(() => {
+              if (contenedorForm && contenedorForm.style.display === "none") {
+                contenedorForm.style.display = "block";
+                if (iconoToggle) iconoToggle.textContent = "➖";
+                contenedorForm.scrollIntoView({ behavior: "smooth" });
+              }
+            }, 100);
+          }
+        });
+
+        // Asegurar el cierre si se cancela la edición
+        if (btnCancelar) {
+          btnCancelar.addEventListener("click", function () {
+            if (contenedorForm) contenedorForm.style.display = "none";
+            if (iconoToggle) iconoToggle.textContent = "➕";
+          });
         }
       });
-    }
-
-    // Forzar apertura automática si el usuario hace clic en "Editar" en la tabla
-    document.addEventListener('click', function(e) {
-      const filaEditar = e.target.closest('table button');
-      if (filaEditar && (filaEditar.textContent.includes('Editar') || filaEditar.classList.contains('btn-editar'))) {
-        setTimeout(() => {
-          if (contenedorForm && contenedorForm.style.display === 'none') {
-            contenedorForm.style.display = 'block';
-            if (iconoToggle) iconoToggle.textContent = '➖';
-            contenedorForm.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      }
-    });
-
-    // Asegurar el cierre si se cancela la edición
-    if (btnCancelar) {
-      btnCancelar.addEventListener('click', function() {
-        if (contenedorForm) contenedorForm.style.display = 'none';
-        if (iconoToggle) iconoToggle.textContent = '➕';
-      });
-    }
-  });
-</script>
-</body>
-
+    </script>
+  </body>
 </html>

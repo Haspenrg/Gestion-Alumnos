@@ -329,7 +329,20 @@
   // --- INICIALIZACIÓN DE SELECTORES DE CURSOS ---
 
   async function inicializarSelectoresCursos() {
-    const cursos = JSON.parse(localStorage.getItem("cursosColegio")) || [];
+    let cursos = JSON.parse(localStorage.getItem("cursosColegio")) || [];
+
+    if (cursos.length === 0) {
+      try {
+        const querySnapshot = await getDocs(collection(db, "cursos"));
+        querySnapshot.forEach((docu) => {
+          cursos.push({ id: docu.id, ...docu.data() });
+        });
+        localStorage.setItem("cursosColegio", JSON.stringify(cursos));
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     const contenedorCheckboxes = document.getElementById("contenedorCursosCheckboxes");
     const selectProf = document.getElementById("anioProfesor");
     const selectFiltro = document.getElementById("filtroCursoDivision");
@@ -768,7 +781,8 @@
           }
         }
       }
-      const bolsaFinal = rol === "profesor" || esProfesor ? [...catedrasTemporales] : [];
+      const bolsaFinal =
+        rol.includes("profesor") || rol.includes("docente") || esProfesor ? [...catedrasTemporales] : [];
       const payloadUsuario = {
         dni: dni,
         nombre: nombreCompleto,
