@@ -171,6 +171,19 @@
           font-size: 1.4rem !important;
         }
       }
+      /* Soporte nativo para pantallas de PC/Notebook (Simula el comportamiento md: de Tailwind) */
+      @media (min-width: 768px) {
+        .roles-columnas-wrapper {
+          display: flex !important;
+          flex-direction: row !important;
+        }
+        .columna-formulario {
+          width: 20% !important;
+        }
+        .columna-tabla-roles {
+          width: 78% !important;
+        }
+      }
     </style>
   </head>
   <body>
