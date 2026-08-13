@@ -127,7 +127,7 @@
             inclusionPpi: "escritura",
             promocionAcademica: "escritura",
             comunicacionInstitucional: "escritura",
-            soporteTecnico: "escritura"
+            soporteTecnico: "administrador"
           }
         };
         await setDoc(doc(db, "roles", administradorRaiz.id), administradorRaiz);
@@ -236,20 +236,23 @@
   function crearBadgeVisual(nombreModulo, nivelPermiso) {
     let claseBadge = "badge-ninguno";
     let textoNivel = "Ninguno";
-    const estadoNormalizado = String(nivelPermiso || "ninguno")
+    // Normaliza el permiso actual para comparar
+    const estado = String(nivelPermiso || "ninguno")
       .toLowerCase()
       .trim();
 
-    if (estadoNormalizado === "escritura" || estadoNormalizado === "acceso") {
-      claseBadge = "badge-escritura";
-      textoNivel = "Escritura";
-    } else if (estadoNormalizado === "lectura" || estadoNormalizado === "solo-vista-filtrado") {
-      claseBadge = "badge-lectura";
-      textoNivel = "Lectura";
+    // Mapeo directo a los estilos CSS existentes que me comentaste
+    if (estado === "administrador") {
+      claseBadge = "badge-escritura"; // Usa el estilo de "Escritura"
+      textoNivel = "Administrador";
+    } else if (estado === "usuario") {
+      claseBadge = "badge-lectura"; // Usa el estilo de "Lectura"
+      textoNivel = "Usuario";
     } else {
-      claseBadge = "badge-ninguno";
+      claseBadge = "badge-ninguno"; // Por defecto, gris/ninguno
       textoNivel = "Ninguno";
     }
+
     return `<span class="badge-permiso-sistema ${claseBadge}"><strong>${nombreModulo}:</strong> ${textoNivel}</span>`;
   }
 

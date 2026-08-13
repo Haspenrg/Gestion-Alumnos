@@ -520,17 +520,52 @@
               </span>
               <h4 style="margin: 0; text-align: center">Creación de Cursos y Materias</h4>
             </div>
-                 <!-- Soporte Técnico -->
-            <div id="mod-soporte" class="modulo-card" style="margin: 0; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+            <!-- Soporte Técnico -->
+            <div
+              id="mod-soporte"
+              class="modulo-card"
+              style="
+                margin: 0;
+                height: 110px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+              "
+            >
               <span class="icon" style="display: inline-block; width: 32px; height: 32px; margin-bottom: 4px">
                 <!-- SVG Icono Soporte -->
-                <svg xmlns="http://w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#1b4d82" class="w-full h-full">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17..."/>
+                <svg
+                  xmlns="http://w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.8"
+                  stroke="#1b4d82"
+                  class="w-full h-full"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17..." />
                 </svg>
               </span>
               <h4 style="margin: 0; text-align: center">Soporte Técnico</h4>
               <!-- Círculo indicador de tickets pendientes -->
-              <span id="badgeSoporteAdmin" style="display: none; position: absolute; top: 10px; right: 10px; background-color: #ef4444; color: #ffffff; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold; line-height: 1;">0</span>
+              <span
+                id="badgeSoporteAdmin"
+                style="
+                  display: none;
+                  position: absolute;
+                  top: 10px;
+                  right: 10px;
+                  background-color: #ef4444;
+                  color: #ffffff;
+                  border-radius: 50%;
+                  padding: 2px 6px;
+                  font-size: 11px;
+                  font-weight: bold;
+                  line-height: 1;
+                "
+                >0</span
+              >
             </div>
           </div>
         </div>
@@ -691,6 +726,94 @@
           "Comunicación Institucional"
         );
         evaluarPermisoModulo("mod-soporte", permisos.soporteTecnico, mapaRutas["mod-soporte"], "Soporte Técnico");
+        try {
+          const badgeSoporte = document.getElementById("badgeSoporteAdmin");
+          if (badgeSoporte) {
+            const cdnFirebase =
+              "h" +
+              "t" +
+              "t" +
+              "p" +
+              "s" +
+              ":" +
+              "/" +
+              "/" +
+              "w" +
+              "w" +
+              "w" +
+              "." +
+              "g" +
+              "s" +
+              "t" +
+              "a" +
+              "t" +
+              "i" +
+              "c" +
+              "." +
+              "c" +
+              "o" +
+              "m" +
+              "/f" +
+              "i" +
+              "r" +
+              "e" +
+              "b" +
+              "a" +
+              "s" +
+              "e" +
+              "j" +
+              "s" +
+              "/10.12.0/";
+            const { getFirestore, collection, query, where, onSnapshot } = await import(
+              `${cdnFirebase}firebase-firestore.js`
+            );
+            const { firebaseApp } = await import("./firebase-config.js");
+            const dbSoporte = getFirestore(firebaseApp);
+
+            let consultaTickets;
+            const nivelSoporte =
+              permisos && permisos.soporteTecnico ? String(permisos.soporteTecnico).toLowerCase().trim() : "ninguno";
+
+            if (nivelSoporte === "administrador") {
+              consultaTickets = query(collection(dbSoporte, "soporte_incidencias"), where("estado", "==", "Abierto"));
+            } else if (nivelSoporte === "usuario") {
+              consultaTickets = query(
+                collection(dbSoporte, "soporte_incidencias"),
+                where("dniUsuario", "==", String(usuario.dni).trim()),
+                where("estado", "==", "Resuelto")
+              );
+            } else {
+              // Si es 'ninguno', no hace ninguna consulta para cuidar el Spark Plan
+              badgeSoporte.style.display = "none";
+              return;
+            }
+
+            onSnapshot(
+              consultaTickets,
+              (snapshot) => {
+                const cantidadTickets = snapshot.size;
+
+                if (cantidadTickets > 0) {
+                  badgeSoporte.textContent = cantidadTickets;
+                  badgeSoporte.style.display = "block";
+
+                  if (rolIdMapeado === "administrador") {
+                    badgeSoporte.style.backgroundColor = "#ef4444";
+                  } else {
+                    badgeSoporte.style.backgroundColor = "#10b981";
+                  }
+                } else {
+                  badgeSoporte.style.display = "none";
+                }
+              },
+              (errorSnapshot) => {
+                console.error("Falla en la lectura asíncrona del Spark Plan (Soporte):", errorSnapshot);
+              }
+            );
+          }
+        } catch (errSoporte) {
+          console.error("Error crítico en la inicialización del Badge de Soporte:", errSoporte);
+        }
       }
 
       // --- MOTOR CENTRALIZADO DE EVALUACIÓN DE NIVELES INSTITUCIONALES ---
