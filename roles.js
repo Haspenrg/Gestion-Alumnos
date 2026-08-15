@@ -110,31 +110,40 @@
   // --- SEMILLA DE INICIALIZACIÓN PURGADA CON FILTRO OPTIMIZADO CONTRA CONSUMO ---
   async function inicializarSemillaRoles() {
     try {
-      const querySnapshot = await getDocs(collection(db, "roles"));
-      console.log(`Auditoría Firestore: Se detectaron ${querySnapshot.size} perfiles activos.`);
-      if (querySnapshot.empty) {
-        console.log("Base de datos limpia detectada. Procediendo a inyectar el resguardo raíz del Administrador...");
-        const administradorRaiz = {
+      const adminRef = doc(db, "roles", "administrador");
+      const adminSnap = await getDoc(adminRef);
+
+      // Si el rol administrador ya existe, forzamos la actualización de su nivel de soporte
+      if (adminSnap.exists()) {
+        const datosActuales = adminSnap.data();
+        if (!datosActuales.permisos || datosActuales.permisos.soporteTecnico !== "administrador") {
+          const permisosActualizados = datosActuales.permisos || {};
+          permisosActualizados.soporteTecnico = "administrador";
+          await updateDoc(adminRef, { permisos: permisosActualizados });
+          console.log("Matriz de Administrador actualizada con éxito a la nueva jerarquía.");
+        }
+      } else {
+        // Si no existe (primera vez), creamos la semilla desde cero
+        const adminRaiz = {
           id: "administrador",
           nombre: "Administrador General",
           permisos: {
-            configuracionUsuarios: "escritura",
-            planesEstudio: "escritura",
-            legajoDigital: "escritura",
-            libroCalificaciones: "escritura",
-            controlPrevias: "escritura",
-            reportesEstadisticas: "escritura",
-            inclusionPpi: "escritura",
-            promocionAcademica: "escritura",
-            comunicacionInstitucional: "escritura",
+            usuarios: "escritura",
+            planes: "escritura",
+            alumnos: "escritura",
+            notas: "escritura",
+            previas: "escritura",
+            estadisticas: "escritura",
+            inclusion: "escritura",
+            promocion: "escritura",
+            comunicacion: "escritura",
             soporteTecnico: "administrador"
           }
         };
-        await setDoc(doc(db, "roles", administradorRaiz.id), administradorRaiz);
-        console.log("Sincronización inicial exitosa: Perfil [administrador] resguardado.");
+        await setDoc(adminRef, adminRaiz);
       }
     } catch (error) {
-      console.error("Error crítico al inyectar la semilla inicial en Firestore:", error);
+      console.error("Error al sincronizar la semilla de roles:", error);
     }
   }
 
@@ -236,20 +245,19 @@
   function crearBadgeVisual(nombreModulo, nivelPermiso) {
     let claseBadge = "badge-ninguno";
     let textoNivel = "Ninguno";
-    // Normaliza el permiso actual para comparar
     const estado = String(nivelPermiso || "ninguno")
       .toLowerCase()
       .trim();
 
-    // Mapeo directo a los estilos CSS existentes que me comentaste
-    if (estado === "administrador") {
-      claseBadge = "badge-escritura"; // Usa el estilo de "Escritura"
+    // Si encuentra el dato viejo "escritura" o el nuevo "administrador", lo pinta bien
+    if (estado === "administrador" || estado === "escritura") {
+      claseBadge = "badge-escritura"; // Usa tu estilo CSS verde/azul existente
       textoNivel = "Administrador";
-    } else if (estado === "usuario") {
-      claseBadge = "badge-lectura"; // Usa el estilo de "Lectura"
+    } else if (estado === "usuario" || estado === "lectura") {
+      claseBadge = "badge-lectura"; // Usa tu estilo CSS amarillo existente
       textoNivel = "Usuario";
     } else {
-      claseBadge = "badge-ninguno"; // Por defecto, gris/ninguno
+      claseBadge = "badge-ninguno";
       textoNivel = "Ninguno";
     }
 
