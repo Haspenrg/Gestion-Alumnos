@@ -1,6 +1,4 @@
 (async function () {
-  "use strict";
-
   const base =
     "h" +
     "t" +
@@ -36,6 +34,7 @@
     "j" +
     "s" +
     "/10.12.0/";
+
   const { db } = await import("./firebase-config.js");
   const { collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp, orderBy } = await import(
     base + "firebase-firestore.js"
@@ -46,13 +45,15 @@
     window.location.href = "index.html";
     return;
   }
+
   const usuario = JSON.parse(datosSesion);
   const rol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
 
+  // Credenciales de conexión directa con tu plataforma de EmailJS
   const SERVICE_ID = "service_m2f28oh";
-  const TEMPLATE_ADMIN = "template_ti6iacn";
-  const TEMPLATE_USER = "template_50da1y7";
-  const PUBLIC_KEY = "rnhIpmiv_xPUVmkPm";
+  const TEMPLATE_ADMIN = "template_li6iacm";
+  const TEMPLATE_USER = "template_50day7"; // Corregido el typo anterior
+  const PUBLIC_KEY = "rnHtpmiv-xPUvmKPm";
 
   const contUsuario = document.getElementById("contenedorUsuarioSoporte");
   const contAdmin = document.getElementById("contenedorAdminSoporte");
@@ -76,7 +77,54 @@
 
   async function enviarCorreoEmailJS(templateId, templateParams) {
     try {
-      await fetch("https://emailjs.com", {
+      const urlEmailJS =
+        "h" +
+        "t" +
+        "t" +
+        "p" +
+        "s" +
+        ":" +
+        "/" +
+        "/" +
+        "a" +
+        "p" +
+        "i" +
+        "." +
+        "e" +
+        "m" +
+        "a" +
+        "i" +
+        "l" +
+        "j" +
+        "s" +
+        "." +
+        "c" +
+        "o" +
+        "m" +
+        "/a" +
+        "p" +
+        "i" +
+        "/v" +
+        "1" +
+        "." +
+        "0" +
+        "/e" +
+        "m" +
+        "a" +
+        "i" +
+        "l" +
+        "/s" +
+        "e" +
+        "n" +
+        "d" +
+        "e" +
+        "r" +
+        "/s" +
+        "e" +
+        "n" +
+        "d";
+
+      await fetch(urlEmailJS, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,38 +138,48 @@
       console.error("Error al despachar notificacion por EmailJS:", err);
     }
   }
-
   function inicializarVistaUsuario() {
     if (formSoporte) {
       formSoporte.addEventListener("submit", async (e) => {
         e.preventDefault();
         const asunto = document.getElementById("sopAsunto").value.trim();
         const desc = document.getElementById("sopDescripcion").value.trim();
-        if (!asunto || !desc) return;
 
-        await addDoc(collection(db, "soporte_incidencias"), {
-          dniUsuario: String(usuario.dni).trim(),
-          nombreUsuario: usuario.nombre,
-          rolUsuario: usuario.rol,
-          emailUsuario: usuario.email || "",
-          asunto: asunto,
-          descripcion: desc,
-          fechaCreacion: serverTimestamp(),
-          estado: "Abierto"
-        });
+        if (!asunto || !desc) {
+          mostrarAlertaEstilizada("Por favor, complete todos los campos obligatorios.", "error");
+          return;
+        }
 
-        await enviarCorreoEmailJS(TEMPLATE_ADMIN, {
-          nombre_usuario: usuario.nombre,
-          dni_usuario: String(usuario.dni).trim(),
-          rol_usuario: usuario.rol,
-          asunto_ticket: asunto,
-          descripcion_ticket: desc
-        });
+        try {
+          await addDoc(collection(db, "soporte_incidencias"), {
+            dniUsuario: String(usuario.dni).trim(),
+            nombreUsuario: usuario.nombre,
+            rolUsuario: usuario.rol,
+            emailUsuario: usuario.email || "",
+            asunto: asunto,
+            descripcion: desc,
+            fechaCreacion: serverTimestamp(),
+            estado: "Abierto"
+          });
 
-        formSoporte.reset();
-        if (document.getElementById("sopNombre")) document.getElementById("sopNombre").value = usuario.nombre || "";
-        if (document.getElementById("sopDni")) document.getElementById("sopDni").value = usuario.dni || "";
-        if (document.getElementById("sopRol")) document.getElementById("sopRol").value = usuario.rol || "";
+          await enviarCorreoEmailJS(TEMPLATE_ADMIN, {
+            nombre_usuario: usuario.nombre,
+            dni_usuario: String(usuario.dni).trim(),
+            rol_usuario: usuario.rol,
+            asunto_ticket: asunto,
+            descripcion_ticket: desc
+          });
+
+          mostrarAlertaEstilizada("¡Incidencia enviada con éxito!", "exito");
+
+          formSoporte.reset();
+          if (document.getElementById("sopNombre")) document.getElementById("sopNombre").value = usuario.nombre || "";
+          if (document.getElementById("sopDni")) document.getElementById("sopDni").value = usuario.dni || "";
+          if (document.getElementById("sopRol")) document.getElementById("sopRol").value = usuario.rol || "";
+        } catch (error) {
+          console.error("Error al procesar el ticket:", error);
+          mostrarAlertaEstilizada("Error de conexión al enviar el ticket.", "error");
+        }
       });
     }
 
@@ -140,6 +198,14 @@
       snapshot.forEach((docSnap) => {
         const t = docSnap.data();
         const esResuelto = t.estado === "Resuelto";
+
+        let fechaFormateada = "Recién";
+        if (t.fechaCreacion && t.fechaCreacion.toDate) {
+          const f = t.fechaCreacion.toDate();
+          fechaFormateada =
+            f.toLocaleDateString("es-AR") + " " + f.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+        }
+
         const div = document.createElement("div");
         div.style.cssText = `border: 2px solid ${esResuelto ? "#10b981" : "#ef4444"}; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: white;`;
         div.innerHTML = `
@@ -147,6 +213,7 @@
             <strong style="color: #1e293b; font-size: 14px;">${t.asunto}</strong>
             <span style="background: ${esResuelto ? "#10b981" : "#ef4444"}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">${t.estado.toUpperCase()}</span>
           </div>
+          <small style="color: #64748b; font-size: 11px; display: block; margin-bottom: 6px;">Enviado: ${fechaFormateada}</small>
           <p style="font-size: 13px; color: #475569; margin: 4px 0;">${t.descripcion}</p>
           ${
             esResuelto && t.respuestaAdmin
@@ -163,7 +230,6 @@
       });
     });
   }
-
   function inicializarVistaAdmin() {
     const q = query(
       collection(db, "soporte_incidencias"),
@@ -196,24 +262,69 @@
 
         div.querySelector(`#btn-${idTicket}`).addEventListener("click", async () => {
           const txt = div.querySelector(`#resp-${idTicket}`).value.trim();
-          if (!txt) return;
+          if (!txt) {
+            mostrarAlertaEstilizada("Por favor, escriba una respuesta antes de resolver.", "error");
+            return;
+          }
 
-          await updateDoc(doc(db, "soporte_incidencias", idTicket), {
-            estado: "Resuelto",
-            respuestaAdmin: txt,
-            fechaResolucion: serverTimestamp()
-          });
-
-          if (t.emailUsuario) {
-            await enviarCorreoEmailJS(TEMPLATE_USER, {
-              nombre_usuario: t.nombreUsuario,
-              asunto_ticket: t.asunto,
-              respuesta_admin: txt,
-              email_usuario: t.emailUsuario
+          try {
+            await updateDoc(doc(db, "soporte_incidencias", idTicket), {
+              estado: "Resuelto",
+              respuestaAdmin: txt,
+              fechaResolucion: serverTimestamp()
             });
+
+            if (t.emailUsuario) {
+              await enviarCorreoEmailJS(TEMPLATE_USER, {
+                nombre_usuario: t.nombreUsuario,
+                asunto_ticket: t.asunto,
+                respuesta_admin: txt,
+                email_usuario: t.emailUsuario
+              });
+            }
+            mostrarAlertaEstilizada("Ticket resuelto y alumno notificado.", "exito");
+          } catch (error) {
+            console.error(error);
+            mostrarAlertaEstilizada("Error al resolver el ticket.", "error");
           }
         });
       });
     });
+  }
+
+  function mostrarAlertaEstilizada(mensaje, tipo) {
+    const contenedor = document.getElementById("contenedor-notificaciones");
+    if (!contenedor) return;
+
+    const alerta = document.createElement("div");
+    alerta.innerText = mensaje;
+
+    const colorFondo = tipo === "exito" ? "#10b981" : "#ef4444";
+
+    alerta.style.cssText = `
+      background-color: ${colorFondo};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-family: sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+
+    contenedor.appendChild(alerta);
+
+    setTimeout(() => {
+      alerta.style.opacity = "1";
+    }, 50);
+
+    setTimeout(() => {
+      alerta.style.opacity = "0";
+      setTimeout(() => {
+        alerta.remove();
+      }, 300);
+    }, 4000);
   }
 })();
