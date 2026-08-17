@@ -93,7 +93,7 @@
       </div>
 
       <!-- Cuadrícula Principal Adaptable -->
-      <div class="seccion-soporte-layout">
+      <div class="seccion-soporte-layout" style="margin-bottom: 30px">
         <!-- CONTENEDOR EXCLUSIVO: VISTA USUARIO COMÚN (FORMULARIO) -->
         <div id="contenedorUsuarioSoporte" style="display: block; width: 100%">
           <div style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: white">
@@ -202,7 +202,17 @@
           <p style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 12px">
             Muestra solicitudes activas y soluciones de los últimos 30 días.
           </p>
-          <div id="listaTicketsUsuario" style="display: flex; flex-direction: column; gap: 10px">
+          <div
+            id="listaTicketsUsuario"
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+              max-height: 380px;
+              overflow-y: auto;
+              padding-right: 4px;
+            "
+          >
             <p id="ticketMensajeVacio" style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px">
               No posee incidencias registradas en este período.
             </p>

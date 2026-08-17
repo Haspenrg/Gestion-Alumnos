@@ -68,10 +68,14 @@
   if (rol === "administrador") {
     if (contUsuario) contUsuario.style.display = "none";
     if (contAdmin) contAdmin.style.display = "block";
+    // Ocultar el historial de tickets de usuario para que no rompa la grilla del admin
+    if (listaUser && listaUser.parentElement) listaUser.parentElement.style.display = "none";
     inicializarVistaAdmin();
   } else {
     if (contUsuario) contUsuario.style.display = "block";
     if (contAdmin) contAdmin.style.display = "none";
+    // Volver a mostrar el historial si es un usuario común
+    if (listaUser && listaUser.parentElement) listaUser.parentElement.style.display = "block";
     inicializarVistaUsuario();
   }
 
@@ -230,15 +234,18 @@
         // El ticket es considerado exitoso si está Resuelto o ya fue Leído
         const esResueltoOLeido = t.estado === "Resuelto" || t.estado === "Leído";
 
-        // ACCIÓN AUTOMÁTICA: Si el profesor entra y ve un ticket "Resuelto", se marca como "Leído" silenciosamente
+        // ACCIÓN SEGURA: Cambia a "Leído" de forma diferida (1.2s) para no generar bucles en onSnapshot
         if (t.estado === "Resuelto") {
-          try {
-            updateDoc(doc(db, "soporte_incidencias", idTicket), {
-              estado: "Leído"
-            });
-          } catch (errLeido) {
-            console.error("Error al marcar ticket como leído:", errLeido);
-          }
+          setTimeout(async () => {
+            try {
+              const { doc, updateDoc } = await import(base + "firebase-firestore.js");
+              await updateDoc(doc(db, "soporte_incidencias", idTicket), {
+                estado: "Leído"
+              });
+            } catch (errLeido) {
+              console.error("Error al marcar como leído:", errLeido);
+            }
+          }, 1200);
         }
 
         let fechaFormateada = "Recién";
