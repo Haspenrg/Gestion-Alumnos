@@ -52,8 +52,8 @@
   // Credenciales de conexión directa con tu plataforma de EmailJS
   const SERVICE_ID = "service_m2f28oh";
   const TEMPLATE_ADMIN = "template_li6iacm";
-  const TEMPLATE_USER = "template_50day7"; // Corregido el typo anterior
-  const PUBLIC_KEY = "rnHtpmiv-xPUvmKPm";
+  const TEMPLATE_USER = "template_50da1y7"; // Corregido el typo anterior
+  const PUBLIC_KEY = "rnhIpmiv_xPUVmkPm";
 
   const contUsuario = document.getElementById("contenedorUsuarioSoporte");
   const contAdmin = document.getElementById("contenedorAdminSoporte");
@@ -131,6 +131,7 @@
           service_id: SERVICE_ID,
           template_id: templateId,
           user_id: PUBLIC_KEY,
+          publicKey: PUBLIC_KEY, // Añadido para compatibilidad absoluta con la nueva API de EmailJS
           template_params: templateParams
         })
       });
@@ -138,6 +139,7 @@
       console.error("Error al despachar notificacion por EmailJS:", err);
     }
   }
+
   function inicializarVistaUsuario() {
     if (formSoporte) {
       formSoporte.addEventListener("submit", async (e) => {
@@ -151,11 +153,26 @@
         }
 
         try {
+          // Buscamos el correo electrónico real del usuario directamente desde Firestore para asegurar el envío
+          let correoReal = usuario.email || "";
+
+          if (!correoReal) {
+            try {
+              const { getDoc } = await import(base + "firebase-firestore.js");
+              const userSnap = await getDoc(doc(db, "usuarios", String(usuario.dni).trim()));
+              if (userSnap.exists()) {
+                correoReal = userSnap.data().email || "";
+              }
+            } catch (errMail) {
+              console.error("No se pudo rescatar el mail desde Firestore:", errMail);
+            }
+          }
+
           await addDoc(collection(db, "soporte_incidencias"), {
             dniUsuario: String(usuario.dni).trim(),
             nombreUsuario: usuario.nombre,
             rolUsuario: usuario.rol,
-            emailUsuario: usuario.email || "",
+            emailUsuario: correoReal, // Guardamos el correo real recuperado
             asunto: asunto,
             descripcion: desc,
             fechaCreacion: serverTimestamp(),
@@ -183,11 +200,10 @@
       });
     }
 
-    const q = query(
-      collection(db, "soporte_incidencias"),
-      where("dniUsuario", "==", String(usuario.dni).trim()),
-      orderBy("fechaCreacion", "desc")
-    );
+    const dniLimpio = usuario.dni ? String(usuario.dni).replace(/\s+/g, "") : "";
+
+    const q = query(collection(db, "soporte_incidencias"), where("dniUsuario", "==", dniLimpio));
+
     onSnapshot(q, (snapshot) => {
       if (!listaUser) return;
       listaUser.innerHTML = "";
@@ -195,9 +211,35 @@
         listaUser.innerHTML = `<p id="ticketMensajeVacio" style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px">No posee incidencias registradas en este período.</p>`;
         return;
       }
+
+      // Ordenamiento manual en la computadora para evitar tildes en Firebase
+      const documentosOrdenados = [];
       snapshot.forEach((docSnap) => {
+        documentosOrdenados.push(docSnap);
+      });
+      documentosOrdenados.sort((a, b) => {
+        const fechaA = a.data().fechaCreacion ? a.data().fechaCreacion.toMillis() : 0;
+        const fechaB = b.data().fechaCreacion ? b.data().fechaCreacion.toMillis() : 0;
+        return fechaB - fechaA;
+      });
+
+      documentosOrdenados.forEach((docSnap) => {
+        const idTicket = docSnap.id;
         const t = docSnap.data();
-        const esResuelto = t.estado === "Resuelto";
+
+        // El ticket es considerado exitoso si está Resuelto o ya fue Leído
+        const esResueltoOLeido = t.estado === "Resuelto" || t.estado === "Leído";
+
+        // ACCIÓN AUTOMÁTICA: Si el profesor entra y ve un ticket "Resuelto", se marca como "Leído" silenciosamente
+        if (t.estado === "Resuelto") {
+          try {
+            updateDoc(doc(db, "soporte_incidencias", idTicket), {
+              estado: "Leído"
+            });
+          } catch (errLeido) {
+            console.error("Error al marcar ticket como leído:", errLeido);
+          }
+        }
 
         let fechaFormateada = "Recién";
         if (t.fechaCreacion && t.fechaCreacion.toDate) {
@@ -207,16 +249,18 @@
         }
 
         const div = document.createElement("div");
-        div.style.cssText = `border: 2px solid ${esResuelto ? "#10b981" : "#ef4444"}; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: white;`;
+        div.style.cssText = `border: 2px solid ${esResueltoOLeido ? "#10b981" : "#ef4444"}; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: white;`;
         div.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <strong style="color: #1e293b; font-size: 14px;">${t.asunto}</strong>
-            <span style="background: ${esResuelto ? "#10b981" : "#ef4444"}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">${t.estado.toUpperCase()}</span>
+            <span style="background: ${esResueltoOLeido ? "#10b981" : "#ef4444"}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+              ${t.estado === "Abierto" ? "ABIERTO" : "RESUELTO"}
+            </span>
           </div>
           <small style="color: #64748b; font-size: 11px; display: block; margin-bottom: 6px;">Enviado: ${fechaFormateada}</small>
           <p style="font-size: 13px; color: #475569; margin: 4px 0;">${t.descripcion}</p>
           ${
-            esResuelto && t.respuestaAdmin
+            esResueltoOLeido && t.respuestaAdmin
               ? `
             <div style="margin-top: 8px; background: #f0fdf4; border-left: 4px solid #10b981; padding: 6px 10px; font-size: 13px; border-radius: 0 4px 4px 0;">
               <strong style="color: #0d9488;">Respuesta del Administrador:</strong>
@@ -230,12 +274,9 @@
       });
     });
   }
+
   function inicializarVistaAdmin() {
-    const q = query(
-      collection(db, "soporte_incidencias"),
-      where("estado", "==", "Abierto"),
-      orderBy("fechaCreacion", "asc")
-    );
+    const q = query(collection(db, "soporte_incidencias"), where("estado", "==", "Abierto"));
     onSnapshot(q, (snapshot) => {
       if (!listaAdmin) return;
       listaAdmin.innerHTML = "";
@@ -243,7 +284,19 @@
         listaAdmin.innerHTML = `<p style="text-align: center; color: #94a3b8; font-size: 13px; font-style: italic; padding: 20px;">No hay incidencias pendientes de resolución.</p>`;
         return;
       }
+
+      // Truco de ordenamiento manual en la computadora para el Administrador
+      const documentosOrdenados = [];
       snapshot.forEach((docSnap) => {
+        documentosOrdenados.push(docSnap);
+      });
+      documentosOrdenados.sort((a, b) => {
+        const fechaA = a.data().fechaCreacion ? a.data().fechaCreacion.toMillis() : 0;
+        const fechaB = b.data().fechaCreacion ? b.data().fechaCreacion.toMillis() : 0;
+        return fechaA - fechaB; // Orden ascendente (los más viejos y urgentes primero)
+      });
+
+      documentosOrdenados.forEach((docSnap) => {
         const idTicket = docSnap.id;
         const t = docSnap.data();
         const div = document.createElement("div");
@@ -282,7 +335,7 @@
                 email_usuario: t.emailUsuario
               });
             }
-            mostrarAlertaEstilizada("Ticket resuelto y alumno notificado.", "exito");
+            mostrarAlertaEstilizada("Ticket resuelto y usuario notificado.", "exito");
           } catch (error) {
             console.error(error);
             mostrarAlertaEstilizada("Error al resolver el ticket.", "error");

@@ -564,15 +564,20 @@
                 style="
                   display: none;
                   position: absolute;
-                  top: 10px;
-                  right: 10px;
+                  top: 8px;
+                  right: 8px;
                   background-color: #ef4444;
                   color: #ffffff;
-                  border-radius: 50%;
-                  padding: 2px 6px;
+                  border-radius: 9999px;
+                  min-width: 18px;
+                  height: 18px;
                   font-size: 11px;
                   font-weight: bold;
-                  line-height: 1;
+                  display: none;
+                  align-items: center;
+                  justify-content: center;
+                  z-index: 10;
+                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                 "
                 >0</span
               >
@@ -676,6 +681,71 @@
 
         if (rolIdMapeado === "administrador") {
           Object.keys(mapaRutas).forEach((id) => configurarEnlaceModulo(id, mapaRutas[id]));
+          // CONEXIÓN AUTÓNOMA EN TIEMPO REAL PARA EL GLOBO ROJO DEL ADMINISTRADOR
+          (async function () {
+            try {
+              const cdnF =
+                "h" +
+                "t" +
+                "t" +
+                "p" +
+                "s" +
+                ":" +
+                "/" +
+                "/" +
+                "w" +
+                "w" +
+                "w" +
+                "." +
+                "g" +
+                "s" +
+                "t" +
+                "a" +
+                "t" +
+                "i" +
+                "c" +
+                "." +
+                "c" +
+                "o" +
+                "m" +
+                "/f" +
+                "i" +
+                "r" +
+                "e" +
+                "b" +
+                "a" +
+                "s" +
+                "e" +
+                "j" +
+                "s" +
+                "/10.12.0/";
+              const { getFirestore, collection, onSnapshot } = await import(`${cdnF}firebase-firestore.js`);
+              const { firebaseApp } = await import("./firebase-config.js");
+              const dbAdminBadge = getFirestore(firebaseApp);
+
+              onSnapshot(collection(dbAdminBadge, "soporte_incidencias"), (snapshot) => {
+                const badgeVisual = document.getElementById("badgeSoporteAdmin");
+                if (badgeVisual) {
+                  let ticketsAbiertos = 0;
+                  snapshot.forEach((docSnap) => {
+                    if (docSnap.data().estado === "Abierto") {
+                      ticketsAbiertos++;
+                    }
+                  });
+
+                  if (ticketsAbiertos > 0) {
+                    badgeVisual.textContent = ticketsAbiertos;
+                    badgeVisual.style.setProperty("display", "flex", "important"); // Fuerza el encendido
+                  } else {
+                    badgeVisual.style.setProperty("display", "none", "important");
+                  }
+                }
+              });
+            } catch (errBadge) {
+              console.error("Error en el encendido autónomo del globo:", errBadge);
+            }
+          })();
+
           return;
         }
 
@@ -1122,36 +1192,6 @@
             };
           }
         };
-      }
-
-      // ESCUCHA EN TIEMPO REAL PARA ENCENDER LA BURBUJA ROJA DE SOPORTE (ADMIN)
-      if (typeof db !== "undefined" && typeof query !== "undefined") {
-        try {
-          const datosSesionCheck = localStorage.getItem("usuarioActivo");
-          if (datosSesionCheck) {
-            const usuarioCheck = JSON.parse(datosSesionCheck);
-            const rolCheck = usuarioCheck.rol ? usuarioCheck.rol.toLowerCase().trim() : "";
-
-            if (rolCheck === "administrador") {
-              const qSoporteBadge = query(collection(db, "soporte_incidencias"), where("estado", "==", "Abierto"));
-
-              onSnapshot(qSoporteBadge, (snapshot) => {
-                const badge = document.getElementById("badgeSoporteAdmin");
-                if (badge) {
-                  const totalPendientes = snapshot.size;
-                  if (totalPendientes > 0) {
-                    badge.innerText = totalPendientes;
-                    badge.style.display = "block"; // Cambiado a block para que Tailwind lo dibuje correcto
-                  } else {
-                    badge.style.display = "none";
-                  }
-                }
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Error en el contador de soporte:", err);
-        }
       }
 
       // Remoción matemática de sesión local
