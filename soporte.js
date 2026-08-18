@@ -81,6 +81,7 @@
 
   async function enviarCorreoEmailJS(templateId, templateParams) {
     try {
+      // URL Mandatoria HASPEN perfectamente concatenada para el bypass de red institucional
       const urlEmailJS =
         "h" +
         "t" +
@@ -120,27 +121,39 @@
         "/s" +
         "e" +
         "n" +
-        "d" +
-        "e" +
-        "r" +
-        "/s" +
-        "e" +
-        "n" +
         "d";
 
-      await fetch(urlEmailJS, {
+      // Sanitización Estricta: Forzamos a String plano cada campo para cumplir el estándar de EmailJS
+      const parametrosLimpios = {};
+      for (const clave in templateParams) {
+        if (templateParams.hasOwnProperty(clave)) {
+          parametrosLimpios[clave] = String(templateParams[clave]).trim();
+        }
+      }
+
+      const payload = {
+        service_id: String(SERVICE_ID).trim(),
+        template_id: String(templateId).trim(),
+        user_id: String(PUBLIC_KEY).trim(),
+        template_params: parametrosLimpios
+      };
+
+      const respuesta = await fetch(urlEmailJS, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service_id: SERVICE_ID,
-          template_id: templateId,
-          user_id: PUBLIC_KEY,
-          publicKey: PUBLIC_KEY, // Añadido para compatibilidad absoluta con la nueva API de EmailJS
-          template_params: templateParams
-        })
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
       });
+
+      if (!respuesta.ok) {
+        const textoError = await respuesta.text();
+        console.error("Respuesta de error de EmailJS:", respuesta.status, textoError);
+      } else {
+        console.log("¡Notificación despachada con éxito por EmailJS!");
+      }
     } catch (err) {
-      console.error("Error al despachar notificacion por EmailJS:", err);
+      console.error("Error crítico de red en EmailJS:", err);
     }
   }
 
@@ -183,15 +196,37 @@
             estado: "Abierto"
           });
 
-          await enviarCorreoEmailJS(TEMPLATE_ADMIN, {
-            nombre_usuario: usuario.nombre,
-            dni_usuario: String(usuario.dni).trim(),
-            rol_usuario: usuario.rol,
-            asunto_ticket: asunto,
-            descripcion_ticket: desc
-          });
+          // Filtro Inteligente: Evaluamos el asunto para determinar si es crítico
+          const asuntoMinuscula = asunto.toLowerCase();
 
-          mostrarAlertaEstilizada("¡Incidencia enviada con éxito!", "exito");
+          // Palabras clave expandidas para cubrir Docentes, Preceptores y Prosecretarios
+          const esCritico =
+            asuntoMinuscula.includes("soporte") ||
+            asuntoMinuscula.includes("tecnico") ||
+            asuntoMinuscula.includes("error") ||
+            asuntoMinuscula.includes("curso") ||
+            asuntoMinuscula.includes("materia") ||
+            asuntoMinuscula.includes("inscripcion") ||
+            asuntoMinuscula.includes("alumno") ||
+            asuntoMinuscula.includes("usuario") ||
+            asuntoMinuscula.includes("nota");
+
+          if (esCritico) {
+            enviarCorreoEmailJS(TEMPLATE_ADMIN, {
+              nombre_usuario: usuario.nombre,
+              dni_usuario: String(usuario.dni).trim(),
+              rol_usuario: usuario.rol,
+              asunto_ticket: asunto,
+              descripcion_ticket: desc
+            });
+            mostrarAlertaEstilizada("¡Incidencia crítica reportada con éxito y notificada al Administrador!", "exito");
+          } else {
+            // Consultas o sugerencias simples: se guardan en Firebase sin consumir EmailJS
+            mostrarAlertaEstilizada(
+              "¡Incidencia registrada con éxito! El Administrador la revisará en su panel.",
+              "exito"
+            );
+          }
 
           formSoporte.reset();
           if (document.getElementById("sopNombre")) document.getElementById("sopNombre").value = usuario.nombre || "";
@@ -316,12 +351,22 @@
           <div style="font-size: 14px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">Asunto: ${t.asunto}</div>
           <p style="font-size: 13px; color: #334155; margin: 4px 0 10px 0; background: white; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">${t.descripcion}</p>
           <textarea id="resp-${idTicket}" placeholder="Escriba la solución institucional aquí..." style="width: 100%; height: 60px; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box; resize: none; margin-bottom: 8px;"></textarea>
+          
+          <!-- PASO B: Checkbox de control de cuota para decidir si se envía correo al docente -->
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: #334155;">
+            <input type="checkbox" id="chk-mail-${idTicket}" style="cursor: pointer; width: 15px; height: 15px;">
+            <label for="chk-mail-${idTicket}" style="cursor: pointer; user-select: none;">¿Notificar respuesta por correo electrónico al docente?</label>
+          </div>
+
           <button id="btn-${idTicket}" style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; width: 100%;">Marcar como Resuelto</button>
         `;
         listaAdmin.appendChild(div);
 
         div.querySelector(`#btn-${idTicket}`).addEventListener("click", async () => {
           const txt = div.querySelector(`#resp-${idTicket}`).value.trim();
+          // PASO C: Evaluamos si el administrador tildó la opción de enviar correo
+          const debeEnviarCorreo = div.querySelector(`#chk-mail-${idTicket}`).checked;
+
           if (!txt) {
             mostrarAlertaEstilizada("Por favor, escriba una respuesta antes de resolver.", "error");
             return;
@@ -334,15 +379,19 @@
               fechaResolucion: serverTimestamp()
             });
 
-            if (t.emailUsuario) {
+            // Si el admin tildó la casilla y el usuario tiene mail válido, se gasta la cuota de EmailJS
+            if (debeEnviarCorreo && t.emailUsuario) {
               await enviarCorreoEmailJS(TEMPLATE_USER, {
                 nombre_usuario: t.nombreUsuario,
                 asunto_ticket: t.asunto,
                 respuesta_admin: txt,
                 email_usuario: t.emailUsuario
               });
+              mostrarAlertaEstilizada("Ticket resuelto y notificación enviada por correo.", "exito");
+            } else {
+              // Si no se tildó, el docente igual lo verá en su historial interno la próxima vez que entre
+              mostrarAlertaEstilizada("Ticket resuelto con éxito en la plataforma web.", "exito");
             }
-            mostrarAlertaEstilizada("Ticket resuelto y usuario notificado.", "exito");
           } catch (error) {
             console.error(error);
             mostrarAlertaEstilizada("Error al resolver el ticket.", "error");
