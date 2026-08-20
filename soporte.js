@@ -70,7 +70,7 @@
     if (contUsuario) contUsuario.style.display = "none";
     if (contAdmin) contAdmin.style.display = "block";
 
-    // Oculta el contenedor completo del historial y muestra las estadísticas
+    // Apaga el historial de usuario y enciende las estadísticas de forma vertical limpia
     const histCompleto = document.getElementById("contenedorHistorialCompleto");
     if (histCompleto) histCompleto.style.display = "none";
     if (contAdminEstadisticas) contAdminEstadisticas.style.display = "block";
@@ -80,7 +80,7 @@
     if (contUsuario) contUsuario.style.display = "block";
     if (contAdmin) contAdmin.style.display = "none";
 
-    // Vuelve a mostrar el historial si es un usuario común y oculta las estadísticas
+    // Revierte los paneles para el usuario común
     const histCompleto = document.getElementById("contenedorHistorialCompleto");
     if (histCompleto) histCompleto.style.display = "block";
     if (contAdminEstadisticas) contAdminEstadisticas.style.display = "none";
@@ -326,98 +326,51 @@
     });
   }
 
-  function inicializarVistaAdmin() {
+  async function inicializarVistaAdmin() {
+    // 1. Cargamos el mapa de nombres reales desde el módulo de roles de Firestore
+    let nombresDeRoles = {};
+    try {
+      const rolesSnapshot = await getDocs(collection(db, "roles"));
+      rolesSnapshot.forEach((rDoc) => {
+        const rData = rDoc.data();
+        if (rData.id && rData.nombre) {
+          nombresDeRoles[rData.id.toLowerCase().trim()] = rData.nombre;
+        }
+      });
+    } catch (err) {
+      console.error("Error cargando diccionario de roles:", err);
+    }
+
     const q = query(collection(db, "soporte_incidencias"));
     onSnapshot(q, (snapshot) => {
-      // Contadores para el panel de estadísticas en tiempo real
+      if (!listaAdmin) return;
+      listaAdmin.innerHTML = "";
+
+      if (snapshot.empty) {
+        listaAdmin.innerHTML = `<p style="text-align: center; color: #94a3b8; font-size: 13px; font-style: italic; padding: 20px;">No hay incidencias pendientes de resolución.</p>`;
+        if (document.getElementById("cantAbiertos")) document.getElementById("cantAbiertos").innerText = 0;
+        if (document.getElementById("cantResueltos")) document.getElementById("cantResueltos").innerText = 0;
+        if (document.getElementById("cantLeidos")) document.getElementById("cantLeidos").innerText = 0;
+        if (document.getElementById("metricaNotas")) document.getElementById("metricaNotas").innerText = 0;
+        if (document.getElementById("metricaUsuarios")) document.getElementById("metricaUsuarios").innerText = 0;
+        if (document.getElementById("metricaOtrosTemas")) document.getElementById("metricaOtrosTemas").innerText = 0;
+        return;
+      }
+
       let abiertos = 0;
       let resueltos = 0;
       let leidos = 0;
-
-      // Diccionario dinámico para agrupar cualquier rol que aparezca en la base de datos
       let conteoRoles = {};
-
       let notas = 0;
       let usuarios = 0;
-
-      snapshot.forEach((docSnap) => {
-        const datos = docSnap.data();
-        const estado = datos.estado;
-
-        // 1. Conteo de estados principales
-        if (estado === "Abierto") abiertos++;
-        if (estado === "Resuelto") resueltos++;
-        if (estado === "Leído") leidos++;
-
-        // 2. Conteo Dinámico de Roles (Detecta cualquier rol y lo suma)
-        if (datos.sopRol) {
-          // Pasamos a mayúsculas la primera letra para que quede prolijo en pantalla
-          const rolLimpio = datos.sopRol.trim();
-          const rolFormateado = rolLimpio.charAt(0).toUpperCase() + rolLimpio.slice(1).toLowerCase();
-
-          // Si el rol no existía en nuestra lista temporaria, lo creamos empezando en 1, sino le sumamos 1
-          if (!conteoRoles[rolFormateado]) {
-            conteoRoles[rolFormateado] = 1;
-          } else {
-            conteoRoles[rolFormateado]++;
-          }
-        }
-
-        // 3. Análisis de Temas Críticos por Palabras Clave en el asunto
-        if (datos.asunto) {
-          const asuntoMinuscula = datos.asunto.toLowerCase();
-          if (
-            asuntoMinuscula.includes("nota") ||
-            asuntoMinuscula.includes("calificacion") ||
-            asuntoMinuscula.includes("calificación")
-          )
-            notas++;
-          if (
-            asuntoMinuscula.includes("usuario") ||
-            asuntoMinuscula.includes("contraseña") ||
-            asuntoMinuscula.includes("clave") ||
-            asuntoMinuscula.includes("ingresar") ||
-            asuntoMinuscula.includes("acceder")
-          )
-            usuarios++;
-        }
-      });
-
-      // Inyección de los contadores en las tarjetas principales
-      if (document.getElementById("cantAbiertos")) document.getElementById("cantAbiertos").innerText = abiertos;
-      if (document.getElementById("cantResueltos")) document.getElementById("cantResueltos").innerText = resueltos;
-      if (document.getElementById("cantLeidos")) document.getElementById("cantLeidos").innerText = leidos;
-
-      // Inyección DINÁMICA de Roles en el HTML
-      const contenedorRoles = document.getElementById("contenedorRolesDinamicos");
-      if (contenedorRoles) {
-        contenedorRoles.innerHTML = ""; // Limpiamos la caja para volver a dibujar con datos frescos
-
-        // Recorremos todos los roles encontrados en este período y creamos su renglón sobre la marcha
-        Object.keys(conteoRoles).forEach((unRol) => {
-          const parrafoRol = document.createElement("p");
-          parrafoRol.style.margin = "0";
-          parrafoRol.innerHTML = `${unRol}: <strong style="color: #1e293b;">${conteoRoles[unRol]}</strong>`;
-          contenedorRoles.appendChild(parrafoRol);
-        });
-      }
-
-      // Inyección de los temas críticos
-      if (document.getElementById("metricaNotas")) document.getElementById("metricaNotas").innerText = notas;
-      if (document.getElementById("metricaUsuarios")) document.getElementById("metricaUsuarios").innerText = usuarios;
-
-      if (!listaAdmin) return;
-      listaAdmin.innerHTML = "";
-      if (snapshot.empty) {
-        listaAdmin.innerHTML = `<p style="text-align: center; color: #94a3b8; font-size: 13px; font-style: italic; padding: 20px;">No hay incidencias pendientes de resolución.</p>`;
-        return;
-      }
+      let otrosTemas = 0;
 
       // Truco de ordenamiento manual en la computadora para el Administrador
       const documentosOrdenados = [];
       snapshot.forEach((docSnap) => {
         documentosOrdenados.push(docSnap);
       });
+
       documentosOrdenados.sort((a, b) => {
         const fechaA = a.data().fechaCreacion ? a.data().fechaCreacion.toMillis() : 0;
         const fechaB = b.data().fechaCreacion ? b.data().fechaCreacion.toMillis() : 0;
@@ -427,10 +380,63 @@
       documentosOrdenados.forEach((docSnap) => {
         const idTicket = docSnap.id;
         const t = docSnap.data();
-        const div = document.createElement("div");
-        div.style.cssText =
-          "border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 12px; background: #f8fafc; border-radius: 6px;";
-        div.innerHTML = `
+        const estado = t.estado;
+
+        // 2. Conteo de estados principales para el panel derecho
+        if (estado === "Abierto") abiertos++;
+        if (estado === "Resuelto") resueltos++;
+        if (estado === "Leído") leidos++;
+
+        // 3. Extracción del rol usando las variables de tu ticket (t.rolUsuario)
+        let rolIdTicket = t.rolUsuario ? t.rolUsuario.toLowerCase().trim() : "";
+
+        if (rolIdTicket) {
+          const nombreMostrar =
+            nombresDeRoles[rolIdTicket] || rolIdTicket.charAt(0).toUpperCase() + rolIdTicket.slice(1);
+          if (!conteoRoles[nombreMostrar]) {
+            conteoRoles[nombreMostrar] = 1;
+          } else {
+            conteoRoles[nombreMostrar]++;
+          }
+        }
+
+        // 4. Análisis de Temas Críticos por Palabras Clave y cálculo de sobrantes
+        if (t.asunto) {
+          const asuntoMinuscula = t.asunto.toLowerCase();
+          let clasificado = false;
+
+          if (
+            asuntoMinuscula.includes("nota") ||
+            asuntoMinuscula.includes("calificacion") ||
+            asuntoMinuscula.includes("calificación")
+          ) {
+            notas++;
+            clasificado = true;
+          }
+          if (
+            asuntoMinuscula.includes("usuario") ||
+            asuntoMinuscula.includes("contraseña") ||
+            asuntoMinuscula.includes("clave") ||
+            asuntoMinuscula.includes("ingresar") ||
+            asuntoMinuscula.includes("acceder")
+          ) {
+            usuarios++;
+            clasificado = true;
+          }
+
+          if (!clasificado) {
+            otrosTemas++;
+          }
+        } else {
+          otrosTemas++;
+        }
+
+        // 5. Renderizar el ticket en la lista de gestión de la izquierda si corresponde
+        if (estado === "Abierto" || estado === "Resuelto") {
+          const div = document.createElement("div");
+          div.style.cssText =
+            "border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 12px; background: #f8fafc; border-radius: 6px;";
+          div.innerHTML = `
           <div style="font-size: 13px; color: #475569; margin-bottom: 6px;">
             <strong style="color: #1e293b;">${t.nombreUsuario}</strong> (${t.rolUsuario.toUpperCase()} - DNI: ${t.dniUsuario})
           </div>
@@ -438,7 +444,6 @@
           <p style="font-size: 13px; color: #334155; margin: 4px 0 10px 0; background: white; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">${t.descripcion}</p>
           <textarea id="resp-${idTicket}" placeholder="Escriba la solución institucional aquí..." style="width: 100%; height: 60px; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box; resize: none; margin-bottom: 8px;"></textarea>
           
-          <!-- PASO B: Checkbox de control de cuota para decidir si se envía correo al docente -->
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: #334155;">
             <input type="checkbox" id="chk-mail-${idTicket}" style="cursor: pointer; width: 15px; height: 15px;">
             <label for="chk-mail-${idTicket}" style="cursor: pointer; user-select: none;">¿Notificar respuesta por correo electrónico al docente?</label>
@@ -446,44 +451,63 @@
 
           <button id="btn-${idTicket}" style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; width: 100%;">Marcar como Resuelto</button>
         `;
-        listaAdmin.appendChild(div);
+          listaAdmin.appendChild(div);
 
-        div.querySelector(`#btn-${idTicket}`).addEventListener("click", async () => {
-          const txt = div.querySelector(`#resp-${idTicket}`).value.trim();
-          // PASO C: Evaluamos si el administrador tildó la opción de enviar correo
-          const debeEnviarCorreo = div.querySelector(`#chk-mail-${idTicket}`).checked;
+          div.querySelector(`#btn-${idTicket}`).addEventListener("click", async () => {
+            const txt = div.querySelector(`#resp-${idTicket}`).value.trim();
+            const debeEnviarCorreo = div.querySelector(`#chk-mail-${idTicket}`).checked;
 
-          if (!txt) {
-            mostrarAlertaEstilizada("Por favor, escriba una respuesta antes de resolver.", "error");
-            return;
-          }
-
-          try {
-            await updateDoc(doc(db, "soporte_incidencias", idTicket), {
-              estado: "Resuelto",
-              respuestaAdmin: txt,
-              fechaResolucion: serverTimestamp()
-            });
-
-            // Si el admin tildó la casilla y el usuario tiene mail válido, se gasta la cuota de EmailJS
-            if (debeEnviarCorreo && t.emailUsuario) {
-              await enviarCorreoEmailJS(TEMPLATE_USER, {
-                nombre_usuario: t.nombreUsuario,
-                asunto_ticket: t.asunto,
-                respuesta_admin: txt,
-                email_usuario: t.emailUsuario
-              });
-              mostrarAlertaEstilizada("Ticket resuelto y notificación enviada por correo.", "exito");
-            } else {
-              // Si no se tildó, el docente igual lo verá en su historial interno la próxima vez que entre
-              mostrarAlertaEstilizada("Ticket resuelto con éxito en la plataforma web.", "exito");
+            if (!txt) {
+              mostrarAlertaEstilizada("Por favor, escriba una respuesta antes de resolver.", "error");
+              return;
             }
-          } catch (error) {
-            console.error(error);
-            mostrarAlertaEstilizada("Error al resolver el ticket.", "error");
-          }
-        });
+
+            try {
+              await updateDoc(doc(db, "soporte_incidencias", idTicket), {
+                estado: "Resuelto",
+                respuestaAdmin: txt,
+                fechaResolucion: serverTimestamp()
+              });
+
+              if (debeEnviarCorreo && t.emailUsuario) {
+                await enviarCorreoEmailJS(TEMPLATE_USER, {
+                  nombre_usuario: t.nombreUsuario,
+                  asunto_ticket: t.asunto,
+                  respuesta_admin: txt,
+                  email_usuario: t.emailUsuario
+                });
+                mostrarAlertaEstilizada("Ticket resuelto y notificación enviada por correo.", "exito");
+              } else {
+                mostrarAlertaEstilizada("Ticket resuelto con éxito en la plataforma web.", "exito");
+              }
+            } catch (error) {
+              console.error(error);
+              mostrarAlertaEstilizada("Error al resolver el ticket.", "error");
+            }
+          });
+        }
       });
+
+      // 6. Inyección final de contadores en los elementos HTML del panel derecho
+      if (document.getElementById("cantAbiertos")) document.getElementById("cantAbiertos").innerText = abiertos;
+      if (document.getElementById("cantResueltos")) document.getElementById("cantResueltos").innerText = resueltos;
+      if (document.getElementById("cantLeidos")) document.getElementById("cantLeidos").innerText = leidos;
+
+      const contenedorRoles = document.getElementById("contenedorRolesDinamicos");
+      if (contenedorRoles) {
+        contenedorRoles.innerHTML = "";
+        Object.keys(conteoRoles).forEach((unRol) => {
+          const p = document.createElement("p");
+          p.style.margin = "0";
+          p.innerHTML = `${unRol}: <strong style="color: #1e293b;">${conteoRoles[unRol]}</strong>`;
+          contenedorRoles.appendChild(p);
+        });
+      }
+
+      if (document.getElementById("metricaNotas")) document.getElementById("metricaNotas").innerText = notas;
+      if (document.getElementById("metricaUsuarios")) document.getElementById("metricaUsuarios").innerText = usuarios;
+      if (document.getElementById("metricaOtrosTemas"))
+        document.getElementById("metricaOtrosTemas").innerText = otrosTemas;
     });
   }
 

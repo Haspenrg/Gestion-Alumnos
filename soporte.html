@@ -231,14 +231,23 @@
             padding: 15px;
             border-radius: 8px;
             background: white;
-            height: 500px !important;
-            min-height: 500px !important;
-            max-height: 500px !important;
-            overflow-y: auto;
-            box-sizing: border-box;
+            box-sizing: border-box !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100%;
           "
         >
-          <h3 style="text-align: center; margin-bottom: 15px; color: #1b4d82; font-weight: bold; font-size: 20px">
+          <h3
+            style="
+              text-align: center;
+              margin-bottom: 15px;
+              color: #1b4d82;
+              font-weight: bold;
+              font-size: 20px;
+              margin-top: 0;
+            "
+          >
             Estadísticas de Soporte
           </h3>
 
@@ -285,7 +294,7 @@
             <strong id="cantLeidos" style="font-size: 24px; color: #2563eb">0</strong>
           </div>
 
-          <!-- Nuevas Métricas Analíticas -->
+          <!-- Nuevas Métricas Analíticas Dinámicas -->
           <h4
             style="
               color: #1e293b;
@@ -294,6 +303,7 @@
               border-bottom: 1px solid #e2e8f0;
               padding-bottom: 4px;
               font-size: 14px;
+              margin-top: 0;
             "
           >
             Distribución por Rol
@@ -309,7 +319,7 @@
               margin-bottom: 15px;
             "
           >
-            <!-- El código JS inyectará los roles acá adentro -->
+            <!-- El código JS inyectará cualquier rol automáticamente acá -->
           </div>
 
           <h4
@@ -330,6 +340,9 @@
           </p>
           <p style="font-size: 13px; margin: 4px 0; color: #475569">
             Problemas de Usuario: <strong id="metricaUsuarios" style="color: #b91c1c">0</strong>
+          </p>
+          <p style="font-size: 13px; margin: 4px 0; color: #475569">
+            Otros Asuntos: <strong id="metricaOtrosTemas" style="color: #475569">0</strong>
           </p>
         </div>
       </div>
