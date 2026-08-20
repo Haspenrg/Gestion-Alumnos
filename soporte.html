@@ -196,8 +196,11 @@
           </div>
         </div>
 
-        <!-- HISTORIAL DE TICKETS RECIENTES -->
-        <div style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: white">
+        <!-- PANEL DE HISTORIAL PARA EL USUARIO -->
+        <div
+          id="contenedorHistorialCompleto"
+          style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: white"
+        >
           <h3 style="text-align: center; margin-bottom: 2px">Mis Tickets Recientes</h3>
           <p style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 12px">
             Muestra solicitudes activas y soluciones de los últimos 30 días.
@@ -217,6 +220,117 @@
               No posee incidencias registradas en este período.
             </p>
           </div>
+        </div>
+
+        <!-- NUEVO PANEL DE ESTADÍSTICAS PARA EL ADMINISTRADOR -->
+        <div
+          id="contenedorAdminEstadisticas"
+          style="
+            display: none;
+            border: 2px solid #1a73e8;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            height: 500px !important;
+            min-height: 500px !important;
+            max-height: 500px !important;
+            overflow-y: auto;
+            box-sizing: border-box;
+          "
+        >
+          <h3 style="text-align: center; margin-bottom: 15px; color: #1b4d82; font-weight: bold; font-size: 20px">
+            Estadísticas de Soporte
+          </h3>
+
+          <!-- Contadores principales -->
+          <div
+            style="
+              background: #fee2e2;
+              border: 1px solid #fca5a5;
+              padding: 10px;
+              border-radius: 6px;
+              margin-bottom: 10px;
+              text-align: center;
+            "
+          >
+            <span style="color: #991b1b; font-weight: bold; display: block">Tickets Abiertos</span>
+            <strong id="cantAbiertos" style="font-size: 24px; color: #dc2626">0</strong>
+          </div>
+
+          <div
+            style="
+              background: #d1fae5;
+              border: 1px solid #6ee7b7;
+              padding: 10px;
+              border-radius: 6px;
+              margin-bottom: 10px;
+              text-align: center;
+            "
+          >
+            <span style="color: #065f46; font-weight: bold; display: block">Tickets Resueltos</span>
+            <strong id="cantResueltos" style="font-size: 24px; color: #059669">0</strong>
+          </div>
+
+          <div
+            style="
+              background: #dbeafe;
+              border: 1px solid #93c5fd;
+              padding: 10px;
+              border-radius: 6px;
+              margin-bottom: 20px;
+              text-align: center;
+            "
+          >
+            <span style="color: #1e40af; font-weight: bold; display: block">Tickets Leídos</span>
+            <strong id="cantLeidos" style="font-size: 24px; color: #2563eb">0</strong>
+          </div>
+
+          <!-- Nuevas Métricas Analíticas -->
+          <h4
+            style="
+              color: #1e293b;
+              font-weight: bold;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 4px;
+              font-size: 14px;
+            "
+          >
+            Distribución por Rol
+          </h4>
+          <div
+            id="contenedorRolesDinamicos"
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 6px;
+              font-size: 13px;
+              color: #475569;
+              margin-bottom: 15px;
+            "
+          >
+            <!-- El código JS inyectará los roles acá adentro -->
+          </div>
+
+          <h4
+            style="
+              color: #1e293b;
+              font-weight: bold;
+              margin-top: 15px;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 4px;
+              font-size: 14px;
+            "
+          >
+            Temas más Críticos
+          </h4>
+          <p style="font-size: 13px; margin: 4px 0; color: #475569">
+            Calificaciones / Notas: <strong id="metricaNotas" style="color: #b91c1c">0</strong>
+          </p>
+          <p style="font-size: 13px; margin: 4px 0; color: #475569">
+            Problemas de Usuario: <strong id="metricaUsuarios" style="color: #b91c1c">0</strong>
+          </p>
         </div>
       </div>
     </div>

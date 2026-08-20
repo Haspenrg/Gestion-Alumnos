@@ -59,6 +59,7 @@
   const contAdmin = document.getElementById("contenedorAdminSoporte");
   const listaUser = document.getElementById("listaTicketsUsuario");
   const listaAdmin = document.getElementById("listaTicketsAdmin");
+  const contAdminEstadisticas = document.getElementById("contenedorAdminEstadisticas");
   const formSoporte = document.getElementById("formSoporte");
 
   if (document.getElementById("sopNombre")) document.getElementById("sopNombre").value = usuario.nombre || "";
@@ -68,14 +69,22 @@
   if (rol === "administrador") {
     if (contUsuario) contUsuario.style.display = "none";
     if (contAdmin) contAdmin.style.display = "block";
-    // Ocultar el historial de tickets de usuario para que no rompa la grilla del admin
-    if (listaUser && listaUser.parentElement) listaUser.parentElement.style.display = "none";
+
+    // Oculta el contenedor completo del historial y muestra las estadísticas
+    const histCompleto = document.getElementById("contenedorHistorialCompleto");
+    if (histCompleto) histCompleto.style.display = "none";
+    if (contAdminEstadisticas) contAdminEstadisticas.style.display = "block";
+
     inicializarVistaAdmin();
   } else {
     if (contUsuario) contUsuario.style.display = "block";
     if (contAdmin) contAdmin.style.display = "none";
-    // Volver a mostrar el historial si es un usuario común
-    if (listaUser && listaUser.parentElement) listaUser.parentElement.style.display = "block";
+
+    // Vuelve a mostrar el historial si es un usuario común y oculta las estadísticas
+    const histCompleto = document.getElementById("contenedorHistorialCompleto");
+    if (histCompleto) histCompleto.style.display = "block";
+    if (contAdminEstadisticas) contAdminEstadisticas.style.display = "none";
+
     inicializarVistaUsuario();
   }
 
@@ -318,8 +327,85 @@
   }
 
   function inicializarVistaAdmin() {
-    const q = query(collection(db, "soporte_incidencias"), where("estado", "==", "Abierto"));
+    const q = query(collection(db, "soporte_incidencias"));
     onSnapshot(q, (snapshot) => {
+      // Contadores para el panel de estadísticas en tiempo real
+      let abiertos = 0;
+      let resueltos = 0;
+      let leidos = 0;
+
+      // Diccionario dinámico para agrupar cualquier rol que aparezca en la base de datos
+      let conteoRoles = {};
+
+      let notas = 0;
+      let usuarios = 0;
+
+      snapshot.forEach((docSnap) => {
+        const datos = docSnap.data();
+        const estado = datos.estado;
+
+        // 1. Conteo de estados principales
+        if (estado === "Abierto") abiertos++;
+        if (estado === "Resuelto") resueltos++;
+        if (estado === "Leído") leidos++;
+
+        // 2. Conteo Dinámico de Roles (Detecta cualquier rol y lo suma)
+        if (datos.sopRol) {
+          // Pasamos a mayúsculas la primera letra para que quede prolijo en pantalla
+          const rolLimpio = datos.sopRol.trim();
+          const rolFormateado = rolLimpio.charAt(0).toUpperCase() + rolLimpio.slice(1).toLowerCase();
+
+          // Si el rol no existía en nuestra lista temporaria, lo creamos empezando en 1, sino le sumamos 1
+          if (!conteoRoles[rolFormateado]) {
+            conteoRoles[rolFormateado] = 1;
+          } else {
+            conteoRoles[rolFormateado]++;
+          }
+        }
+
+        // 3. Análisis de Temas Críticos por Palabras Clave en el asunto
+        if (datos.asunto) {
+          const asuntoMinuscula = datos.asunto.toLowerCase();
+          if (
+            asuntoMinuscula.includes("nota") ||
+            asuntoMinuscula.includes("calificacion") ||
+            asuntoMinuscula.includes("calificación")
+          )
+            notas++;
+          if (
+            asuntoMinuscula.includes("usuario") ||
+            asuntoMinuscula.includes("contraseña") ||
+            asuntoMinuscula.includes("clave") ||
+            asuntoMinuscula.includes("ingresar") ||
+            asuntoMinuscula.includes("acceder")
+          )
+            usuarios++;
+        }
+      });
+
+      // Inyección de los contadores en las tarjetas principales
+      if (document.getElementById("cantAbiertos")) document.getElementById("cantAbiertos").innerText = abiertos;
+      if (document.getElementById("cantResueltos")) document.getElementById("cantResueltos").innerText = resueltos;
+      if (document.getElementById("cantLeidos")) document.getElementById("cantLeidos").innerText = leidos;
+
+      // Inyección DINÁMICA de Roles en el HTML
+      const contenedorRoles = document.getElementById("contenedorRolesDinamicos");
+      if (contenedorRoles) {
+        contenedorRoles.innerHTML = ""; // Limpiamos la caja para volver a dibujar con datos frescos
+
+        // Recorremos todos los roles encontrados en este período y creamos su renglón sobre la marcha
+        Object.keys(conteoRoles).forEach((unRol) => {
+          const parrafoRol = document.createElement("p");
+          parrafoRol.style.margin = "0";
+          parrafoRol.innerHTML = `${unRol}: <strong style="color: #1e293b;">${conteoRoles[unRol]}</strong>`;
+          contenedorRoles.appendChild(parrafoRol);
+        });
+      }
+
+      // Inyección de los temas críticos
+      if (document.getElementById("metricaNotas")) document.getElementById("metricaNotas").innerText = notas;
+      if (document.getElementById("metricaUsuarios")) document.getElementById("metricaUsuarios").innerText = usuarios;
+
       if (!listaAdmin) return;
       listaAdmin.innerHTML = "";
       if (snapshot.empty) {
