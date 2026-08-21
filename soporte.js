@@ -36,9 +36,8 @@
     "/10.12.0/";
 
   const { db } = await import("./firebase-config.js");
-  const { collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp, orderBy } = await import(
-    base + "firebase-firestore.js"
-  );
+  const { collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp, orderBy, getDocs } =
+    await import(base + "firebase-firestore.js");
 
   const datosSesion = localStorage.getItem("usuarioActivo");
   if (!datosSesion) {
@@ -51,7 +50,7 @@
 
   // Credenciales de conexión directa con tu plataforma de EmailJS
   const SERVICE_ID = "service_m2f28oh";
-  const TEMPLATE_ADMIN = "template_li6iacm";
+  const TEMPLATE_ADMIN = "template_ti6iacn";
   const TEMPLATE_USER = "template_50da1y7"; // Corregido el typo anterior
   const PUBLIC_KEY = "rnhIpmiv_xPUVmkPm";
 
@@ -144,6 +143,7 @@
         service_id: String(SERVICE_ID).trim(),
         template_id: String(templateId).trim(),
         user_id: String(PUBLIC_KEY).trim(),
+        accessToken: String(PUBLIC_KEY).trim(),
         template_params: parametrosLimpios
       };
 
@@ -205,28 +205,44 @@
             estado: "Abierto"
           });
 
-          // Filtro Inteligente: Evaluamos el asunto para determinar si es crítico
-          const asuntoMinuscula = asunto.toLowerCase();
-
-          // Palabras clave expandidas para cubrir Docentes, Preceptores y Prosecretarios
+          const textoCompleto = (asunto + " " + desc).toLowerCase();
           const esCritico =
-            asuntoMinuscula.includes("soporte") ||
-            asuntoMinuscula.includes("tecnico") ||
-            asuntoMinuscula.includes("error") ||
-            asuntoMinuscula.includes("curso") ||
-            asuntoMinuscula.includes("materia") ||
-            asuntoMinuscula.includes("inscripcion") ||
-            asuntoMinuscula.includes("alumno") ||
-            asuntoMinuscula.includes("usuario") ||
-            asuntoMinuscula.includes("nota");
+            textoCompleto.includes("soporte") ||
+            textoCompleto.includes("tecnico") ||
+            textoCompleto.includes("error") ||
+            textoCompleto.includes("curso") ||
+            textoCompleto.includes("materia") ||
+            textoCompleto.includes("inscripcion") ||
+            textoCompleto.includes("alumno") ||
+            textoCompleto.includes("usuario") ||
+            textoCompleto.includes("nota") ||
+            textoCompleto.includes("falla") ||
+            textoCompleto.includes("problema");
 
           if (esCritico) {
-            enviarCorreoEmailJS(TEMPLATE_ADMIN, {
+            // Buscamos el correo real en la base de datos de usuarios de manera segura
+            let emailReal = usuario.email || "";
+            if (!emailReal && usuario.dni) {
+              try {
+                const qU = query(collection(db, "usuarios"), where("dni", "==", String(usuario.dni).trim()));
+                const snapU = await getDocs(qU);
+                if (!snapU.empty) {
+                  emailReal = snapU.docs[0].data().email || "";
+                }
+              } catch (errU) {
+                console.warn("Fallo al consultar la colección de usuarios:", errU);
+              }
+            }
+            const correoRemitenteReal = emailReal || usuario.email || "";
+
+            // Agregamos el AWAIT obligatorio adelante del envío
+            await enviarCorreoEmailJS(TEMPLATE_ADMIN, {
               nombre_usuario: usuario.nombre,
               dni_usuario: String(usuario.dni).trim(),
               rol_usuario: usuario.rol,
               asunto_ticket: asunto,
-              descripcion_ticket: desc
+              descripcion_ticket: desc,
+              email_usuario: correoRemitenteReal
             });
             mostrarAlertaEstilizada("¡Incidencia crítica reportada con éxito y notificada al Administrador!", "exito");
           } else {
@@ -435,21 +451,39 @@
         if (estado === "Abierto" || estado === "Resuelto") {
           const div = document.createElement("div");
           div.style.cssText =
-            "border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 12px; background: #f8fafc; border-radius: 6px;";
+            "border: 2px solid #cbd5e1; padding: 14px; background: white; border-radius: 12px; height: 320px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);";
           div.innerHTML = `
-          <div style="font-size: 13px; color: #475569; margin-bottom: 6px;">
-            <strong style="color: #1e293b;">${t.nombreUsuario}</strong> (${t.rolUsuario.toUpperCase()} - DNI: ${t.dniUsuario})
+          <div>
+            <div style="display: flex; justify-content: space-between; items-start: flex-start; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
+              <div style="font-size: 12px; font-weight: bold; color: #334155; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${t.nombreUsuario}
+                <span style="font-size: 10px; font-weight: normal; color: #64748b; display: block;">${t.rolUsuario.toUpperCase()} - DNI: ${t.dniUsuario}</span>
+              </div>
+              <span style="padding: 2px 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; bg: #fee2e2; border-radius: 4px; color: #b91c1c; border: 1px solid #fca5a5; white-space: nowrap;">Abierto</span>
+            </div>
+            
+            <div style="margin-bottom: 6px;">
+              <h4 style="font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin: 0; tracking: 0.05em;">Asunto</h4>
+              <p style="font-size: 13px; font-weight: 600; color: #1e293b; margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.asunto}</p>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 8px; rounded-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px;">
+              <p style="font-size: 12px; color: #475569; margin: 0; height: 50px; overflow-y: auto; white-space: pre-wrap;">${t.descripcion}</p>
+            </div>
           </div>
-          <div style="font-size: 14px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">Asunto: ${t.asunto}</div>
-          <p style="font-size: 13px; color: #334155; margin: 4px 0 10px 0; background: white; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0;">${t.descripcion}</p>
-          <textarea id="resp-${idTicket}" placeholder="Escriba la solución institucional aquí..." style="width: 100%; height: 60px; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box; resize: none; margin-bottom: 8px;"></textarea>
           
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: #334155;">
-            <input type="checkbox" id="chk-mail-${idTicket}" style="cursor: pointer; width: 15px; height: 15px;">
-            <label for="chk-mail-${idTicket}" style="cursor: pointer; user-select: none;">¿Notificar respuesta por correo electrónico al docente?</label>
+          <div style="margin-top: auto;">
+            <textarea id="resp-${idTicket}" placeholder="Escriba la solución institucional aquí..." style="width: 100%; height: 45px; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; box-sizing: border-box; resize: none; margin-bottom: 6px;"></textarea>
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 10px; font-weight: 500; color: #475569; user-select: none;">
+                <input type="checkbox" id="chk-mail-${idTicket}" style="cursor: pointer; width: 14px; height: 14px; accent-color: #10b981;">
+                <span>¿Notificar mail?</span>
+              </label>
+              
+              <button id="btn-${idTicket}" style="background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; font-size: 11px; white-space: nowrap;">Resolver</button>
+            </div>
           </div>
-
-          <button id="btn-${idTicket}" style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; width: 100%;">Marcar como Resuelto</button>
         `;
           listaAdmin.appendChild(div);
 
@@ -469,12 +503,13 @@
                 fechaResolucion: serverTimestamp()
               });
 
-              if (debeEnviarCorreo && t.emailUsuario) {
+              const correoDestino = t.emailUsuario || usuario.email || "soporte.haspen@gmail.com";
+              if (debeEnviarCorreo && correoDestino) {
                 await enviarCorreoEmailJS(TEMPLATE_USER, {
                   nombre_usuario: t.nombreUsuario,
                   asunto_ticket: t.asunto,
                   respuesta_admin: txt,
-                  email_usuario: t.emailUsuario
+                  email_usuario: correoDestino
                 });
                 mostrarAlertaEstilizada("Ticket resuelto y notificación enviada por correo.", "exito");
               } else {

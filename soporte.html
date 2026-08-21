@@ -234,7 +234,7 @@
             box-sizing: border-box !important;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
             min-height: 100%;
           "
         >
@@ -251,47 +251,136 @@
             Estadísticas de Soporte
           </h3>
 
-          <!-- Contadores principales -->
+          <!-- Contadores principales ultra compactos con fuerza bruta !important -->
           <div
             style="
-              background: #fee2e2;
-              border: 1px solid #fca5a5;
-              padding: 10px;
-              border-radius: 6px;
-              margin-bottom: 10px;
-              text-align: center;
+              display: grid !important;
+              grid-template-columns: repeat(3, 85px) !important;
+              gap: 10px !important;
+              margin-bottom: 20px !important;
+              width: 100% !important;
+              justify-content: center !important;
             "
           >
-            <span style="color: #991b1b; font-weight: bold; display: block">Tickets Abiertos</span>
-            <strong id="cantAbiertos" style="font-size: 24px; color: #dc2626">0</strong>
-          </div>
+            <!-- Abiertos -->
+            <div
+              style="
+                background: #fee2e2 !important;
+                border: 2px solid #fca5a5 !important;
+                padding: 6px 2px !important;
+                border-radius: 8px !important;
+                text-align: center !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                width: 85px !important;
+                height: 85px !important;
+                box-sizing: border-box !important;
+              "
+            >
+              <span
+                style="
+                  color: #991b1b !important;
+                  font-weight: 800 !important;
+                  font-size: 10px !important;
+                  display: block !important;
+                  text-transform: uppercase !important;
+                  line-height: 1.1 !important;
+                "
+                >Abiertos</span
+              >
+              <strong
+                id="cantAbiertos"
+                style="
+                  font-size: 18px !important;
+                  color: #dc2626 !important;
+                  font-weight: 900 !important;
+                  margin-top: 2px !important;
+                "
+                >0</strong
+              >
+            </div>
 
-          <div
-            style="
-              background: #d1fae5;
-              border: 1px solid #6ee7b7;
-              padding: 10px;
-              border-radius: 6px;
-              margin-bottom: 10px;
-              text-align: center;
-            "
-          >
-            <span style="color: #065f46; font-weight: bold; display: block">Tickets Resueltos</span>
-            <strong id="cantResueltos" style="font-size: 24px; color: #059669">0</strong>
-          </div>
+            <!-- Resueltos -->
+            <div
+              style="
+                background: #d1fae5 !important;
+                border: 2px solid #6ee7b7 !important;
+                padding: 6px 2px !important;
+                border-radius: 8px !important;
+                text-align: center !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                width: 85px !important;
+                height: 85px !important;
+                box-sizing: border-box !important;
+              "
+            >
+              <span
+                style="
+                  color: #065f46 !important;
+                  font-weight: 800 !important;
+                  font-size: 10px !important;
+                  display: block !important;
+                  text-transform: uppercase !important;
+                  line-height: 1.1 !important;
+                "
+                >Resueltos</span
+              >
+              <strong
+                id="cantResueltos"
+                style="
+                  font-size: 18px !important;
+                  color: #059669 !important;
+                  font-weight: 900 !important;
+                  margin-top: 2px !important;
+                "
+                >0</strong
+              >
+            </div>
 
-          <div
-            style="
-              background: #dbeafe;
-              border: 1px solid #93c5fd;
-              padding: 10px;
-              border-radius: 6px;
-              margin-bottom: 20px;
-              text-align: center;
-            "
-          >
-            <span style="color: #1e40af; font-weight: bold; display: block">Tickets Leídos</span>
-            <strong id="cantLeidos" style="font-size: 24px; color: #2563eb">0</strong>
+            <!-- Leídos -->
+            <div
+              style="
+                background: #dbeafe !important;
+                border: 2px solid #93c5fd !important;
+                padding: 6px 2px !important;
+                border-radius: 8px !important;
+                text-align: center !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                width: 85px !important;
+                height: 85px !important;
+                box-sizing: border-box !important;
+              "
+            >
+              <span
+                style="
+                  color: #1e40af !important;
+                  font-weight: 800 !important;
+                  font-size: 10px !important;
+                  display: block !important;
+                  text-transform: uppercase !important;
+                  line-height: 1.1 !important;
+                "
+                >Leídos</span
+              >
+              <strong
+                id="cantLeidos"
+                style="
+                  font-size: 18px !important;
+                  color: #2563eb !important;
+                  font-weight: 900 !important;
+                  margin-top: 2px !important;
+                "
+                >0</strong
+              >
+            </div>
           </div>
 
           <!-- Nuevas Métricas Analíticas Dinámicas -->
