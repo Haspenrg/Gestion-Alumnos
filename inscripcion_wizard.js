@@ -182,6 +182,141 @@
     confirmBtnAceptar: document.getElementById("haspen-confirm-btn-aceptar")
   };
 
+  async function renderTable() {
+    if (!domElements.tablaAlumnos) return;
+
+    // Forzar limpieza del mensaje estático "Sincronizando..." del HTML
+    if (paginaActual === 1 && (!domElements.filtroCurso || domElements.filtroCurso.value === "todos")) {
+      domElements.tablaAlumnos.innerHTML = "";
+    }
+
+    const queryCurso = document.getElementById("filtroCursoEstructural")?.value || "todos";
+
+    if (queryCurso === "todos") {
+      domElements.tablaAlumnos.innerHTML = "";
+      const tr = document.createElement("tr");
+      const mensaje =
+        rolNormalizado === "admin"
+          ? "Use los filtros para buscar la nómina deseada."
+          : "Seleccione un curso para ver la nómina.";
+
+      tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">${mensaje}</td>`;
+      domElements.tablaAlumnos.appendChild(tr);
+      if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
+      return;
+    }
+
+    try {
+      let q = query(collection(db, "alumnos"), where("curso", "==", queryCurso));
+      const snapshot = await getDocs(q);
+
+      domElements.tablaAlumnos.innerHTML = "";
+      let listaAlumnos = [];
+
+      snapshot.forEach((docSnap) => {
+        listaAlumnos.push({ id: docSnap.id, ...docSnap.data() });
+      });
+
+      const queryEstado = domElements.filtroEstado?.value || "todos";
+      const queryPpi = domElements.filtroPPI?.value || "todos";
+      const querySearch = domElements.filtroBusqueda?.value.toLowerCase().trim() || "";
+
+      let filtrados = listaAlumnos.filter((al) => {
+        if (queryEstado !== "todos" && al.estado_matricula !== queryEstado) return false;
+
+        if (queryPpi !== "todos") {
+          if (queryPpi === "con-ppi" && !al.ppi) return false;
+          if (queryPpi === "sin-ppi" && al.ppi) return false;
+        }
+
+        if (querySearch !== "") {
+          const nom = (al.nombre || "").toLowerCase();
+          const dni = (al.dni || "").toString();
+          if (!nom.includes(querySearch) && !dni.includes(querySearch)) return false;
+        }
+        return true;
+      });
+
+      const inicio = (paginaActual - 1) * 25;
+      const fin = inicio + 25;
+      const paginados = filtrados.slice(inicio, fin);
+
+      if (paginados.length === 0) {
+        domElements.tablaAlumnos.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">No se encontraron alumnos para los criterios seleccionados.</td></tr>`;
+        if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
+        return;
+      }
+
+      paginados.forEach((al) => {
+        const tr = document.createElement("tr");
+
+        let badgesHtml = "";
+        const docs = al.documentos_entregados || {};
+        for (const [key, value] of Object.entries(docs)) {
+          const clase = value ? "badge-verde" : "badge-rojo";
+          badgesHtml += `<span class="badge-documento ${clase}">${key.replace("_", " ")}</span> `;
+        }
+
+        tr.innerHTML = `
+                <td>${al.nombre || ""}</td>
+                <td>${al.dni || ""}</td>
+                <td>${al.curso || ""}</td>
+                <td>${al.estado_matricula || ""}</td>
+                <td>${badgesHtml}</td>
+                <td>
+                    <button class="btn-editar-alumno" data-id="${al.id}" style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px;">Editar</button>
+                    <button class="btn-eliminar-alumno" data-id="${al.id}" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Eliminar</button>
+                </td>
+            `;
+
+        tr.querySelector(".btn-editar-alumno").addEventListener("click", () => editarAlumno(al.id));
+        tr.querySelector(".btn-eliminar-alumno").addEventListener("click", () => eliminarAlumno(al.id));
+
+        domElements.tablaAlumnos.appendChild(tr);
+      });
+
+      if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = paginados.length;
+      if (domElements.contadorTotal) domElements.contadorTotal.textContent = filtrados.length;
+    } catch (error) {
+      console.error("Error al cargar alumnos:", error);
+    }
+  }
+
+  async function cargarCursosEnSelectores() {
+    const selectorFiltro = document.getElementById("filtroCursoEstructural");
+    const selectorFormulario = domElements.selectCursoAsignado;
+
+    try {
+      const cursosRef = collection(db, "cursos");
+      const q = query(cursosRef, where("activo", "==", true));
+      const snapshot = await getDocs(q);
+
+      let opcionesHtml = '<option value="todos">Todos los Cursos</option>';
+      let opcionesFormHtml = '<option value="">Seleccione curso...</option>';
+      let cursosLista = [];
+
+      snapshot.forEach((docSnap) => {
+        const c = docSnap.data();
+        // Formatear el texto visible ej: "1° Año - División A (Mañana)"
+        const textoMapeado = `${c.ciclo} - Div: ${c.division} (${c.turno})`;
+        cursosLista.push({ id: docSnap.id, texto: textoMapeado });
+      });
+
+      // Ordenar alfabéticamente por año y división
+      cursosLista.sort((a, b) => a.texto.localeCompare(b.texto));
+
+      cursosLista.forEach((c) => {
+        opcionesHtml += `<option value="${c.id}">${c.texto}</option>`;
+        opcionesFormHtml += `<option value="${c.id}">${c.texto}</option>`;
+      });
+
+      if (selectorFiltro) selectorFiltro.innerHTML = opcionesHtml;
+      if (selectorFormulario) selectorFormulario.innerHTML = opcionesFormHtml;
+    } catch (error) {
+      console.error("Error al poblar selectores de cursos:", error);
+    }
+  }
+
   function inicializarEventos() {
     // Apertura y Cierre Formulario
     if (domElements.btnAbrirMatricula)
@@ -229,6 +364,16 @@
     domElements.archivosOcultos.forEach((input) => {
       input.addEventListener("change", procesarDocumentoDigital);
     });
+    if (domElements.filtroCurso)
+      domElements.filtroCurso.addEventListener("change", () => {
+        paginaActual = 1;
+        renderTable();
+      });
+    if (domElements.filtroEstado) domElements.filtroEstado.addEventListener("change", renderTable);
+    if (domElements.filtroPPI) domElements.filtroPPI.addEventListener("change", renderTable);
+    if (domElements.filtroBusqueda) domElements.filtroBusqueda.addEventListener("input", renderTable);
+
+    renderTable();
   }
   function abrirFormularioInscripcion() {
     if (domElements.modalFormulario) domElements.modalFormulario.style.display = "block";
@@ -474,8 +619,14 @@
     // ... (Inicialización de botones)
     inicializarEventos();
 
-    // 1. LEER SESIÓN REAL
-    const sesionLocal = localStorage.getItem("usuarioActivo");
+    // 1. LEER SESIÓN REAL O CREAR SIMULACIÓN DE LOGUEO EN LIVE SERVER
+    let sesionLocal = localStorage.getItem("usuarioActivo");
+    if (!sesionLocal && (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost")) {
+      const usuarioPruebaLocal = { email: "admin@haspen.edu.ar", role: "admin", nombre: "Desarrollador Local" };
+      localStorage.setItem("usuarioActivo", JSON.stringify(usuarioPruebaLocal));
+      sesionLocal = localStorage.getItem("usuarioActivo");
+    }
+
     if (!sesionLocal) {
       window.location.href = "index.html";
       return;
@@ -503,8 +654,17 @@
       if (domElements.csvSection) {
         domElements.csvSection.style.display = rolNormalizado === "admin" ? "flex" : "none";
       }
+
+      // Setear Ciclo Lectivo Actual de forma automática perpetua
+      if (domElements.filtroCiclo) {
+        const anioActualInviolable = new Date().getFullYear().toString();
+        domElements.filtroCiclo.value = anioActualInviolable;
+      }
+
+      // Cargar los cursos dinámicos reales
+      await cargarCursosEnSelectores();
     } catch (err) {
-      console.error("Error al validar sesión:", err);
+      console.error("Error en la inicialización:", err);
     }
   });
 })();
