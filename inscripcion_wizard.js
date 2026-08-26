@@ -100,38 +100,47 @@
     batchReportsBtn: document.getElementById("btnEmitirLoteInforme"),
     batchBulletinsBtn: document.getElementById("btnEmitirLoteBoletin"),
 
-    // Paginación del Listado Principal
+    // Paginación del Listado Principal (CORREGIDO)
     btnPrevPagina: document.getElementById("btnPrevDesktop"),
     btnNextPagina: document.getElementById("btnNextDesktop"),
     lblPaginaActual: document.getElementById("lblPaginaActual"),
-    btnResetVista: document.getElementById("btnResetPagina"),
+    btnResetVista:
+      document.getElementById("btnResetVista") ||
+      document.getElementById("btnResetPagina") ||
+      document.querySelector(".btn-paginacion-reset"),
 
-    // Modal Principal de Inscripción
-    modalFormulario: document.getElementById("contenedorFormularioAltaModal"),
+    // Modal Principal de Inscripción (CORREGIDO)
+    modalFormulario:
+      document.getElementById("contenedorFormularioAltaModal") || document.querySelector(".wizard-modal-externo"),
     btnAbrirMatricula: document.getElementById("btnAbrirFormularioAlta"),
-    btnCerrarModalX: document.getElementById("btnCerrarWizardX"),
-    formInscripcion: document.getElementById("formInscripcion"),
+    btnCerrarModalX: document.getElementById("btnCerrarWizardX") || document.querySelector(".wizard-cabecera button"),
+    formInscripcion: document.getElementById("formInscripcion") || document.querySelector(".form-contenedor-wizard"),
 
-    // Botones de Navegación del Formulario
-    btnAtrasForm: document.getElementById("btnAtrasWizard"),
-    btnSiguienteForm: document.getElementById("btnSiguienteWizard"),
-    btnGuardarForm: document.getElementById("btnGuardar"),
+    // Botones de Navegación del Formulario (CORREGIDO)
+    btnAtrasForm: document.getElementById("btnAtrasWizard") || document.querySelector(".btn-nav-volver"),
+    btnSiguienteForm: document.getElementById("btnSiguienteWizard") || document.querySelector(".btn-nav-siguiente"),
+    btnGuardarForm: document.getElementById("btnGuardar") || document.querySelector(".btn-nav-guardar"),
 
-    // Pantallas y Pestañas del Formulario (CORREGIDO: Ahora incluye los 5 pasos)
-    pasosBloques: [
-      document.getElementById("bloque-paso1"),
-      document.getElementById("bloque-paso2"),
-      document.getElementById("bloque-paso3"),
-      document.getElementById("bloque-paso4"),
-      document.getElementById("bloque-paso5")
-    ],
-    pasosTabs: [
-      document.getElementById("tab-paso1"),
-      document.getElementById("tab-paso2"),
-      document.getElementById("tab-paso3"),
-      document.getElementById("tab-paso4"),
-      document.getElementById("tab-paso5")
-    ],
+    // Pantallas y Pestañas del Formulario (CORREGIDO: Soporte fallback para clases dinámicas)
+    pasosBloques: document.getElementById("bloque-paso1")
+      ? [
+          document.getElementById("bloque-paso1"),
+          document.getElementById("bloque-paso2"),
+          document.getElementById("bloque-paso3"),
+          document.getElementById("bloque-paso4"),
+          document.getElementById("bloque-paso5")
+        ]
+      : document.querySelectorAll(".bloque-paso-contenido"),
+
+    pasosTabs: document.getElementById("tab-paso1")
+      ? [
+          document.getElementById("tab-paso1"),
+          document.getElementById("tab-paso2"),
+          document.getElementById("tab-paso3"),
+          document.getElementById("tab-paso4"),
+          document.getElementById("tab-paso5")
+        ]
+      : document.querySelectorAll(".pestaña-paso"),
 
     // Campos del Estudiante (Paso 1)
     inputNombre: document.getElementById("nombreAlumno"),
@@ -152,27 +161,28 @@
     selectGeneroTutor: document.getElementById("generoTutor"),
     inputCuilTutor: document.getElementById("cuilTutor"),
     inputEmailTutor: document.getElementById("emailTutor"),
-    selectEstadoMatricula: document.getElementById("estadoAlumno"),
-    selectCursoAsignado: document.getElementById("selectCursoAlumno"),
+    selectEstadoMatricula: document.getElementById("estadoAlumno") || document.getElementById("filtroEstadoMatricula"),
+    selectCursoAsignado:
+      document.getElementById("selectCursoAlumno") || document.getElementById("filtroCursoEstructural"),
     chkTrayectorias: document.getElementById("chkTrayectoriasFlexibles"),
 
     // Paneles Condicionales PPI y CUD (Paso 2)
-    panelPase: document.getElementById("panelCamposPase"),
-    chkPPI: document.getElementById("chkHabilitarPPI"),
-    panelPPI: document.getElementById("panelCamposPPI"),
+    panelPase: document.getElementById("panelCamposPase") || document.getElementById("panelPase"),
+    chkPPI: document.getElementById("chkHabilitarPPI") || document.getElementById("alumnoPpi"),
+    panelPPI: document.getElementById("panelCamposPPI") || document.getElementById("panelPpi"),
     inputPpiResolucion: document.getElementById("ppiResolucion"),
     btnAbrirObsPPI: document.getElementById("btnAbrirObsPPI"),
     modalObservacionesPPI: document.getElementById("modalObservacionesPPI"),
     btnCerrarObsPPI: document.getElementById("btnCerrarObsPPI"),
     btnGuardarObsPPI: document.getElementById("btnGuardarObsPPI"),
     observacionesPPI: document.getElementById("observacionesPPI"),
-    chkCUD: document.getElementById("chkHabilitarCUD"), // 👈 Declarado
-    panelCUD: document.getElementById("panelCamposCUD"), // 👈 Declarado
+    chkCUD: document.getElementById("chkHabilitarCUD") || document.getElementById("alumnoCud"),
+    panelCUD: document.getElementById("panelCamposCUD") || document.getElementById("panelCud"),
 
     // Gestión Documental (Paso 4)
     archivosOcultos: document.querySelectorAll(".input-archivo-oculto"),
     filaDocPPI: document.getElementById("filaDocumentoPPI"),
-    filaDocCUD: document.getElementById("filaDocumentoCUD"), // 👈 Declarado
+    filaDocCUD: document.getElementById("filaDocumentoCUD"),
 
     // Observaciones (Paso 5)
     txtObservaciones: document.getElementById("txtObservacionesLegajo"),
@@ -710,12 +720,10 @@
       console.error("Error crítico durante la carga inicial:", err);
     }
 
-    // Forzado absoluto directo al ID del HTML sin intermediarios
-    const cuerpoTablaHtml = document.getElementById("alumnosTableBody");
-    if (cuerpoTablaHtml) {
-      cuerpoTablaHtml.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Use los filtros para buscar la nómina deseada.</td></tr>`;
-    } else {
-      console.log("Rastreador Crítico: No se encontró ningún elemento con el ID alumnosTableBody en el HTML.");
+    // Forzado absoluto directo para limpiar la interfaz en Live Server
+    const cuerpoTablaHtml = document.getElementById("tablaAlumnosBody");
+    if (cuerpoTablaHtml && cuerpoTablaHtml.innerHTML.includes("Sincronizando")) {
+      cuerpoTablaHtml.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Use los filtros para buscar la nómina deseada.</td></tr>`;
     }
   });
 })();
