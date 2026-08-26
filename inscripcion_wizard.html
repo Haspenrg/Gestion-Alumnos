@@ -1,0 +1,2118 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <!-- Parche para el Icono de la Pestaña (Favicon) -->
+    <link rel="icon" type="image/png" href="logo1.png" />
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Legajo Digital (Wizard) - Colegio HASPEN</title>
+    <link rel="stylesheet" href="estilos.css" />
+    <style>
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100vw;
+        background-color: #f8fafc;
+      }
+      .panel-container {
+        position: relative !important;
+        top: -54px !important; /* 👈 MODIFICADO: Ajusta este valor a -54px o -60px para elevar toda la estructura al techo */
+        max-width: 98% !important;
+        width: 98%;
+        margin: 0 auto !important;
+        padding: 0 10px !important;
+      }
+
+      .panel-container > header {
+        margin-top: 5px !important; /* Mantiene la cabecera en su punto ideal */
+        top: 0 !important;
+      }
+
+      /* NUEVA ARQUITECTURA WIDESCREEN: La tabla toma todo el ancho */
+      .workspace-layout-wizard {
+        width: 100%;
+        margin-top: -15px !important;
+      }
+
+      .tabla-seccion-widescreen {
+        background: #ffffff !important;
+        padding: 16px !important;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* ARREGLO DE RAÍZ PARA LA BARRA INFERIOR UNIFICADA */
+      .paginacion-contenedor {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        background: #ffffff !important;
+        padding: 8px 16px !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        margin-top: 15px !important;
+        flex-wrap: nowrap !important;
+      }
+
+      /* ANCLA_LISTADO_COMPACTO: Reducción de celdas generales y cabeceras */
+      th,
+      td {
+        padding: 6px 8px !important;
+        text-align: left;
+        font-size: 13px;
+      }
+      th {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        font-size: 12px !important;
+      }
+
+      .fila-alumno {
+        transition: background-color 0.2s;
+      }
+      .fila-alumno td {
+        padding-top: 3px !important;
+        padding-bottom: 3px !important;
+        vertical-align: middle;
+      }
+      .fila-alumno:hover {
+        background: #f1f5f9 !important;
+      }
+      .fila-seleccionada {
+        background-color: #e0f2fe !important;
+        border-left: 4px solid #1b4d82 !important;
+      }
+      .banner-lectura {
+        display: none;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #bae6fd;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 15px;
+        text-align: left;
+      }
+      .badge-curso {
+        background: #e2e8f0;
+        color: #1e293b;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        border: 1px solid #cbd5e1;
+        white-space: nowrap;
+      }
+      .badge-pase {
+        background: #fef3c7;
+        color: #d97706;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+      }
+      .badge-baja {
+        background: #fee2e2;
+        color: #ef4444;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+      }
+
+      /* SECCIÓN DE FILTROS COMPLETA HORIZONTAL WIDESCREEN */
+      .seccion-filtros-wizard {
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 15px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        width: 100%;
+        box-sizing: border-box;
+        align-items: center;
+      }
+      @media (min-width: 992px) {
+        .seccion-filtros-wizard {
+          grid-template-columns: 2.5fr 1fr 1.3fr 1.3fr 1.3fr 1.3fr;
+        }
+      }
+
+      /* NORMALIZACIÓN TÉCNICA DE CONTROLES A 30PX */
+      select,
+      textarea,
+      input {
+        width: 100%;
+        padding: 4px 8px !important;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 13px;
+        background: white;
+        font-family: inherit;
+        box-sizing: border-box;
+        height: 30px !important;
+      }
+      textarea {
+        height: auto !important;
+      }
+      .selector-ciclo-principal {
+        background: #fff8e1;
+        border: 1px solid #ffe082;
+        font-weight: bold;
+        color: #b78103;
+      }
+
+      .tabla-seccion-widescreen {
+        background: #ffffff;
+        padding: 16px !important;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .tabla-usuarios-contenedor {
+        max-height: 520px !important;
+        overflow-y: auto !important;
+        overflow-x: auto;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+      }
+
+      /* BOTONES DE ACCIÓN DE FILA */
+      .btn-accion-fila {
+        border: 1px solid #13365b !important;
+        background-color: #1b4d82 !important;
+        color: white !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 34px !important;
+        height: 32px !important;
+        margin: 2px !important;
+        font-size: 15px !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      }
+      .btn-accion-fila:hover {
+        background-color: #13365b !important;
+      }
+      .btn-fila-borrar {
+        background-color: #fee2e2 !important;
+        color: #ef4444 !important;
+        border: 1px solid #fca5a5 !important;
+      }
+      .btn-fila-borrar:hover {
+        background-color: #fca5a5 !important;
+        color: #b91c1c !important;
+      }
+
+      /* NUEVA BARRA DE HERRAMIENTAS HORIZONTAL HABILITADA */
+      .barra-herramientas-wizard {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        background: #f8fafc;
+        padding: 10px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+      .bloque-acciones-izq {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .contenedor-emision-lote-wizard {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        height: 34px;
+        box-sizing: border-box;
+      }
+      .btn-emision-masiva {
+        width: 42px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        border: 1px solid #13365b;
+        border-radius: 6px;
+        background-color: #1b4d82;
+        color: white;
+      }
+      .btn-emision-masiva:disabled {
+        background: #cbd5e1 !important;
+        color: #94a3b8 !important;
+        border-color: #cbd5e1 !important;
+        cursor: not-allowed !important;
+      }
+
+      /* NUEVO BOTÓN PARA ACTIVAR EL WIZARD MODAL */
+      .btn-abrir-wizard {
+        background-color: #16a34a !important;
+        color: white !important;
+        font-weight: bold;
+        padding: 0 16px;
+        height: 34px;
+        border: 1px solid #15803d;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .btn-abrir-wizard:hover {
+        background-color: #15803d !important;
+      }
+
+      /* CONFIGURACIÓN DEL CONTENEDOR IMPORTACIÓN CSV */
+      .contenedor-emision-lote {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        height: 34px;
+        box-sizing: border-box;
+      }
+      /* ==========================================================================
+         ARQUITECTURA DEL ASISTENTE FLOTANTE POR PASOS (WIZARD MODAL MODERNO)
+         ========================================================================== */
+      .wizard-modal-externo {
+        display: none; /* Inicia oculto en la grilla principal */
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 8000;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .form-contenedor-wizard {
+        background: #ffffff;
+        padding: 0;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        width: 100%;
+        max-width: 550px; /* Ancho óptimo para lectura sin fatiga ocular */
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
+        animation: animacionDespliegue 0.2s ease-out;
+      }
+      @keyframes animacionDespliegue {
+        from {
+          transform: scale(0.96);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .wizard-cabecera {
+        background: #1e293b;
+        color: white;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .wizard-cuerpo-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #ffffff;
+      }
+      .wizard-pie-navegacion {
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      /* INDICADORES DE PESTAÑAS DEL ASISTENTE */
+      .wizard-navegador-pasos {
+        display: flex;
+        justify-content: space-between;
+        background: #f1f5f9;
+        padding: 8px 12px;
+        border-bottom: 1px solid #cbd5e1;
+      }
+      .pestaña-paso {
+        flex: 1;
+        text-align: center;
+        font-size: 11px;
+        font-weight: bold;
+        color: #94a3b8;
+        padding: 6px 2px;
+        border-radius: 4px;
+        cursor: not-allowed;
+      }
+      .pestaña-paso.activo {
+        color: #1b4d82;
+        background: #e0f2fe;
+      }
+      .pestaña-paso.completado {
+        color: #16a34a;
+        cursor: pointer;
+      }
+
+      /* BLOQUES SECCIONALES DEL FORMULARIO WIZARD */
+      .bloque-paso-contenido {
+        display: none; /* Mantiene ocultas las secciones inactivas */
+      }
+      .bloque-paso-contenido.activo {
+        display: block; /* Muestra solo el paso operativo actual */
+      }
+      .grid-formulario {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        text-align: left;
+      }
+      .input-group label {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      /* GRUPO AUDITORÍA DOCUMENTAL DIGITALIZADA */
+      .grupo-documentacion {
+        background: #f8fafc;
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .linea-documento-digital {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        align-items: center;
+        gap: 4px;
+        background: #ffffff;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+      }
+      .linea-documento-digital span {
+        font-size: 12px;
+        color: #334155;
+        font-weight: 500;
+      }
+      .input-archivo-oculto {
+        display: none !important;
+      }
+      .btn-accion-digital {
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        transition: background 0.2s;
+      }
+      .btn-subir-doc {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+      .btn-ver-doc {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      .btn-ver-doc:disabled {
+        background: #f1f5f9 !important;
+        color: #cbd5e1 !important;
+        cursor: not-allowed !important;
+      }
+      .check-digital-bloqueado {
+        width: 18px;
+        height: 18px;
+        accent-color: #16a34a;
+        pointer-events: none;
+      }
+      .alerta-documentos {
+        color: #dc2626;
+        font-size: 11px;
+        font-weight: bold;
+      }
+      .documentos-completos {
+        color: #16a34a;
+        font-size: 11px;
+        font-weight: bold;
+      }
+
+      .indicador-edicion {
+        display: none;
+        background: #fef3c7;
+        color: #d97706;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #fcd34d;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 12px;
+      }
+
+      /* CONFIGURACIÓN NAVEGACIÓN FORMULARIO INTERNO */
+      .btn-nav-wizard {
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: bold;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        height: 34px;
+      }
+      .btn-nav-volver {
+        background: #e2e8f0;
+        color: #475569;
+      }
+      .btn-nav-siguiente {
+        background: #1b4d82;
+        color: white;
+      }
+      .btn-nav-guardar {
+        background: #16a34a;
+        color: white;
+        display: none;
+      }
+
+      /* MODALES GENERALES DE IMPRESIÓN EXTERNA */
+      .modal-impresion-externo {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-impresion-interno {
+        background: white;
+        width: 95vw;
+        height: 90vh;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+      .modal-cabecera-acciones {
+        background: #1e293b;
+        color: white;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+      }
+      .modal-cuerpo-scrollable {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8fafc;
+        box-sizing: border-box;
+      }
+
+      .contenedor-media-hoja-pdf {
+        background: white;
+        padding: 15px 25px;
+        margin: 0 auto;
+        width: 210mm;
+        height: 138mm;
+        max-height: 138mm;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        border-bottom: 1px dashed #000000;
+        box-sizing: border-box;
+        overflow: hidden;
+        position: relative;
+        page-break-inside: avoid;
+      }
+      .contenedor-media-hoja-pdf:nth-child(even) {
+        page-break-after: always;
+        border-bottom: none;
+      }
+      .tabla-hoja-documento {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      .tabla-hoja-documento th,
+      .tabla-hoja-documento td {
+        border: 1px solid #000000 !important;
+        padding: 4px 6px;
+        font-size: 10px;
+        text-align: center;
+        color: #000000;
+      }
+      .tabla-hoja-documento th {
+        background: #f1f5f9 !important;
+        font-weight: bold;
+        font-size: 9px;
+      }
+
+      .contador-registros {
+        font-size: 13px;
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 8px;
+        text-align: right;
+      }
+
+      /* ELEMENTOS ESTABLES DE LA PAGINACIÓN INFERIOR */
+      .paginacion-contenedor {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        background: white;
+        padding: 10px 16px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+      }
+      .paginacion-botones {
+        display: flex;
+        gap: 8px;
+      }
+      .btn-paginacion-nav,
+      .btn-paginacion-reset,
+      .btn-salir {
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        cursor: pointer;
+        background: white;
+      }
+      .btn-paginacion-nav:hover {
+        background: #f1f5f9;
+      }
+      .btn-paginacion-reset {
+        background: #fff1f2;
+        color: #e11d48;
+        border-color: #fecdd3;
+      }
+      .btn-salir {
+        background: #f1f5f9;
+        color: #334155;
+      }
+      .btn-salir:hover {
+        background: #e2e8f0;
+      }
+
+      @media print {
+        .panel-container,
+        .workspace-layout-wizard,
+        .tabla-seccion-widescreen,
+        #contenedorFormularioAltaModal {
+          display: none !important;
+        }
+        body {
+          background: white !important;
+          overflow: visible !important;
+        }
+        .modal-impresion-externo {
+          position: absolute !important;
+          display: block !important;
+          background: white !important;
+          top: 0;
+          left: 0;
+          width: 100% !important;
+          height: auto !important;
+        }
+        .modal-impresion-interno {
+          box-shadow: none !important;
+          width: 100% !important;
+          height: auto !important;
+        }
+        .modal-cabecera-acciones {
+          display: none !important;
+        }
+        .modal-cuerpo-scrollable {
+          padding: 0 !important;
+          background: white !important;
+          overflow: visible !important;
+        }
+        .contenedor-media-hoja-pdf {
+          box-shadow: none !important;
+          margin: 0 auto !important;
+          width: 210mm !important;
+          height: 138mm !important;
+          max-height: 138mm !important;
+          page-break-inside: avoid !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="panel-container"
+      style="position: relative !important; top: -110px !important; margin-top: 0 !important; padding-top: 0 !important"
+    >
+      <!-- ENCABEZADO INSTITUCIONAL PEGADO ARRIBA -->
+      <header
+        style="
+          margin-top: 5px !important;
+          background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%);
+          border-bottom: 4px solid #13365b;
+          padding: 20px 32px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          width: 100%;
+          box-sizing: border-box;
+          margin-bottom: 25px;
+          border-radius: 8px;
+        "
+      >
+        <div style="display: flex; flex-direction: column; align-items: flex-start">
+          <h2
+            style="
+              color: white;
+              font-size: 28px;
+              font-weight: 800;
+              text-transform: uppercase;
+              margin: 0;
+              letter-spacing: 0.5px;
+              text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+              font-family: inherit;
+            "
+          >
+            COLEGIO PROVINCIAL HASPEN
+          </h2>
+          <p
+            style="
+              color: rgba(255, 255, 255, 0.95);
+              font-size: 14px;
+              font-weight: 500;
+              margin: 5px 0 0 0;
+              text-align: left;
+              font-family: inherit;
+            "
+          >
+            Gestión de Inscripciones — Consola de matriculación con persistencia indexada por Ciclo Lectivo
+          </p>
+        </div>
+        <img
+          src="logo1.png"
+          alt="Escudo Colegio"
+          style="height: 55px; width: auto; filter: drop-shadow(1px 1px 4px rgba(0, 0, 0, 0.2))"
+        />
+      </header>
+
+      <div id="bannerPreceptor" class="banner-lectura">
+        <strong>Modo Monitor Institucional Activo:</strong> Como usuario con permisos de <strong>Solo Lectura</strong>,
+        usted opera bajo modalidad de consulta. El listado refleja la nómina de estudiantes y el estado de sus legajos
+        digitales para el Ciclo seleccionado.
+      </div>
+
+      <div class="workspace-layout-wizard">
+        <div class="tabla-seccion-widescreen">
+          <!-- FILTROS MULTIDIMENSIONALES PUROS -->
+          <div class="seccion-filtros-wizard">
+            <input type="text" id="filtroBusquedaRapida" placeholder="Buscar por Nombre o DNI..." />
+            <select id="filtroCursoEstructural">
+              <option value="">Todos los Cursos</option>
+            </select>
+            <select id="filtroEstadoMatricula">
+              <option value="">Todos los Estados</option>
+              <option value="Regular">Regular</option>
+              <option value="Entrante">Mesa de Entrada</option>
+              <option value="Pase">Pase</option>
+              <option value="Baja">Baja</option>
+            </select>
+            <select id="filtroAuditoriaDocs">
+              <option value="">Todos (Auditoría...)</option>
+              <option value="Completo">Legajo Completo (6/6)</option>
+              <option value="Incompleto">Faltan Documentos</option>
+            </select>
+            <select id="filtroPPI">
+              <option value="todos">Todos</option>
+              <option value="ConPPI">Alumnos con PPI</option>
+              <option value="SinPPI">Alumnos sin PPI</option>
+            </select>
+            <select id="filtroCicloLectivo" class="selector-ciclo-principal"></select>
+          </div>
+
+          <!-- BARRA DE ACCIONES DE MATRICULACIÓN DIARIA Y CONFIGURACIÓN MIGRATORIA -->
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+              width: 100%;
+              box-sizing: border-box;
+            "
+          >
+            <div id="contenedorBotonAltaAdmin">
+              <button type="button" id="btnAbrirFormularioAlta" class="btn-abrir-wizard">
+                <span>➕ Matricular Nuevo Estudiante</span>
+              </button>
+            </div>
+            <div
+              id="contenedorCargaMasiva"
+              style="
+                display: none;
+                align-items: center;
+                gap: 8px;
+                background: #f1f5f9;
+                padding: 4px 10px;
+                border-radius: 6px;
+                border: 1px solid #cbd5e1;
+              "
+            >
+              <label for="selectCursoCarga" style="font-size: 11px; font-weight: bold; color: #475569"
+                >Importar Sección Histórica:</label
+              >
+              <select id="selectCursoCarga" style="height: 30px; width: 130px; font-size: 12px"></select>
+              <input type="file" id="csvCargaMasiva" accept=".csv" style="display: none !important" />
+              <button
+                type="button"
+                id="btnCargaMasiva"
+                style="
+                  background: #1e293b;
+                  color: white;
+                  height: 30px;
+                  padding: 0 12px;
+                  font-size: 12px;
+                  border-radius: 4px;
+                  border: none;
+                  font-weight: bold;
+                  cursor: pointer;
+                "
+              >
+                <span>⚡ Cargar CSV</span>
+              </button>
+            </div>
+          </div>
+          <!-- BARRA ANALÍTICA E IMPRESIONES POR LOTE -->
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              background: #f8fafc;
+              padding: 8px 12px;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              margin-bottom: 8px;
+              flex-wrap: wrap;
+              gap: 10px;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 10px">
+              <span style="font-size: 12px; font-weight: bold; color: #475569">Acciones de Sección por Lote:</span>
+              <button
+                type="button"
+                id="btnEmitirLoteInforme"
+                class="btn-emision-masiva"
+                disabled
+                style="
+                  width: auto;
+                  height: 30px;
+                  padding: 0 10px;
+                  font-size: 12px;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 4px;
+                  border: 1px solid #13365b;
+                "
+                title="Emitir Informes"
+              >
+                <span>🖨 Emitir Informes Pedagógicos</span>
+              </button>
+              <button
+                type="button"
+                id="btnEmitirLoteBoletin"
+                class="btn-emision-masiva"
+                disabled
+                style="
+                  width: auto;
+                  height: 30px;
+                  padding: 0 10px;
+                  font-size: 12px;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 4px;
+                  border: 1px solid #13365b;
+                "
+                title="Emitir Boletines"
+              >
+                <span>📋 Emitir Boletines Oficiales</span>
+              </button>
+            </div>
+            <div style="font-size: 13px; color: #475569; font-weight: 600">
+              <span id="contadorEstudiantes" style="color: #1b4d82">Matrículas Visualizadas: 0</span>
+              <span id="contadorTotalEstudiantes" style="margin-left: 20px; color: #1e293b; font-weight: bold"
+                >Total Matrículas: 0</span
+              >
+            </div>
+          </div>
+
+          <!-- CONTENEDOR MASIVO DE TABLA EXTENDIDO -->
+          <div class="tabla-usuarios-contenedor">
+            <table style="width: 100%; border-collapse: collapse">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1">
+                  <th style="width: 45%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">
+                    Estudiante / Identificación
+                  </th>
+                  <th style="width: 15%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Sección</th>
+                  <th style="width: 15%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Auditoria</th>
+                  <th style="width: 15%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Inclusión</th>
+                  <th style="width: 10%; text-align: center; position: sticky; top: 0; background: #f1f5f9; z-index: 5">
+                    Acciones Curriculares
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="tablaAlumnosBody">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 20px; color: #1a73e8">
+                    Sincronizando con Cloud Firestore...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BARRA DE NAVEGACIÓN INFERIOR INTEGRADA, SIMÉTRICA Y COMPACTA -->
+      <div
+        class="paginacion-contenedor"
+        style="
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          background: #ffffff !important;
+          padding: 10px 20px !important;
+          border: 1px solid #cbd5e1 !important;
+          border-radius: 8px !important;
+          margin-top: 15px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          flex-wrap: nowrap !important;
+        "
+      >
+        <div style="flex: 1; display: flex; justify-content: flex-start">
+          <button
+            type="button"
+            class="btn-salir"
+            onclick="window.location.href = 'panel.html'"
+            style="
+              background-color: #1b4d82 !important;
+              color: white !important;
+              border: 1px solid #13365b !important;
+              font-weight: bold;
+              height: 34px;
+              padding: 0 16px !important;
+              border-radius: 6px;
+              cursor: pointer;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0;
+              width: auto !important;
+              white-space: nowrap !important;
+            "
+          >
+            ⬅ Volver al Panel
+          </button>
+        </div>
+        <div style="flex: 1; display: flex; justify-content: center">
+          <div
+            style="
+              font-size: 13px;
+              color: #334155;
+              font-weight: bold;
+              background: #f1f5f9;
+              padding: 6px 16px;
+              border-radius: 20px;
+              border: 1px solid #cbd5e1;
+              height: 34px;
+              box-sizing: border-box;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0;
+              white-space: nowrap;
+            "
+          >
+            Página Actual: &nbsp;<span id="lblPaginaActual" style="color: #1b4d82">1</span>
+          </div>
+        </div>
+        <div style="flex: 1; display: flex; justify-content: flex-end; gap: 8px; margin: 0; padding: 0">
+          <button
+            id="btnPrevDesktop"
+            type="button"
+            class="btn-paginacion-nav"
+            style="
+              height: 34px;
+              padding: 0 14px;
+              font-weight: 600;
+              border: 1px solid #cbd5e1;
+              border-radius: 6px;
+              background: white;
+              cursor: pointer;
+              margin: 0;
+              white-space: nowrap;
+            "
+          >
+            &lt; Anterior
+          </button>
+          <button
+            id="btnNextDesktop"
+            type="button"
+            class="btn-paginacion-nav"
+            style="
+              height: 34px;
+              padding: 0 14px;
+              font-weight: 600;
+              border: 1px solid #cbd5e1;
+              border-radius: 6px;
+              background: white;
+              cursor: pointer;
+              margin: 0;
+              white-space: nowrap;
+            "
+          >
+            Siguiente &gt;
+          </button>
+          <button
+            id="btnResetPagina"
+            type="button"
+            class="btn-paginacion-reset"
+            style="
+              height: 34px;
+              padding: 0 14px;
+              font-weight: 600;
+              color: #e11d48;
+              background: #fff1f2;
+              border: 1px solid #fecdd3;
+              border-radius: 6px;
+              cursor: pointer;
+              margin: 0;
+              white-space: nowrap;
+            "
+          >
+            Reiniciar Vista
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Fin de .panel-container -->
+    <!-- CONTENEDOR GLOBAL DEL ASISTENTE FLOTANTE MODAL WIZARD -->
+    <div
+      id="contenedorFormularioAltaModal"
+      class="wizard-modal-externo"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 5000;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div class="form-contenedor-wizard" style="margin: auto !important; position: relative !important">
+        <div class="wizard-cabecera">
+          <h3 id="formTitulo" style="margin: 0; font-size: 15px; font-weight: bold; color: white !important">
+            Matricular Estudiante
+          </h3>
+          <button
+            type="button"
+            id="btnCerrarWizardX"
+            style="
+              background: transparent;
+              border: none;
+              color: white;
+              font-size: 20px;
+              cursor: pointer;
+              font-weight: bold;
+            "
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="wizard-navegador-pasos">
+          <div id="tab-paso1" class="pestaña-paso activo">1. Estudiante</div>
+          <div id="tab-paso2" class="pestaña-paso">2. Matriculación</div>
+          <div id="tab-paso3" class="pestaña-paso">3. Responsable</div>
+          <div id="tab-paso4" class="pestaña-paso">4. Documentos</div>
+          <div id="tab-paso5" class="pestaña-paso">5. Guardado</div>
+        </div>
+
+        <form id="formInscripcion" class="wizard-cuerpo-scroll">
+          <input type="hidden" id="idOriginalEdicion" value="" />
+          <div id="bannerEdicion" class="indicador-edicion"><strong>Modo Edición Activo</strong></div>
+
+          <!-- PASO 1: DATOS PERSONALES -->
+          <div id="bloque-paso1" class="bloque-paso-contenido activo">
+            <div class="grid-formulario">
+              <div class="input-group">
+                <label for="nombreAlumno">Nombre y Apellido completo</label>
+                <input type="text" id="nombreAlumno" placeholder="Ej: Sofía Benítez" required />
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px">
+                <div class="input-group">
+                  <label for="dniAlumno">DNI (Identificador)</label>
+                  <input
+                    type="text"
+                    id="dniAlumno"
+                    placeholder="Ej: 48123456"
+                    required
+                    pattern="[0-9]+"
+                    inputmode="numeric"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="generoAlumno">Género del Alumno</label>
+                  <select id="generoAlumno" style="height: 30px !important">
+                    <option value="Masculino" selected>Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label for="cuilAlumno">CUIL Estudiante</label>
+                  <input type="text" id="cuilAlumno" placeholder="Sin guiones" />
+                </div>
+              </div>
+              <!-- Fila 1: Fecha de Nacimiento, Edad y Lugar de Nacimiento -->
+              <div style="display: grid; grid-template-columns: 1.5fr 1fr 2fr; gap: 8px; margin-bottom: 10px">
+                <div class="input-group">
+                  <label for="fechaNacimiento">Fecha de Nacimiento</label>
+                  <input type="date" id="fechaNacimiento" required style="width: 100%; box-sizing: border-box" />
+                </div>
+                <div class="input-group">
+                  <label for="edadAlumno">Edad</label>
+                  <input
+                    type="text"
+                    id="edadAlumno"
+                    placeholder="Años"
+                    readonly
+                    style="
+                      background: #f1f5f9;
+                      font-weight: bold;
+                      text-align: center;
+                      color: #1e293b;
+                      width: 100%;
+                      box-sizing: border-box;
+                    "
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="lugarNacimiento">Lugar de Nacimiento</label>
+                  <input
+                    type="text"
+                    id="lugarNacimiento"
+                    placeholder="Ej: Río Grande"
+                    required
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+              </div>
+
+              <!-- Fila 2: Nacionalidad y Dirección de Residencia -->
+              <div style="display: grid; grid-template-columns: 1.5fr 3fr; gap: 8px; margin-bottom: 10px">
+                <div class="input-group">
+                  <label for="nacionalidad">Nacionalidad</label>
+                  <input
+                    type="text"
+                    id="nacionalidad"
+                    placeholder="Ej: Argentina"
+                    value="Argentina"
+                    required
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="direccionAlumno">Dirección de Residencia</label>
+                  <input
+                    type="text"
+                    id="direccionAlumno"
+                    placeholder="Ej: Av. Belgrano 1234"
+                    required
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                <div class="input-group">
+                  <label for="telefono1">Teléfono de Contacto 1</label>
+                  <input type="tel" id="telefono1" placeholder="Ej: 2964456789" inputmode="tel" />
+                </div>
+                <div class="input-group">
+                  <label for="telefono2">Teléfono Alternativo 2</label>
+                  <input type="tel" id="telefono2" placeholder="Opcional" inputmode="tel" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 2: MATRICULACIÓN Y CONFIGURACIONES PEDAGÓGICAS -->
+          <div id="bloque-paso2" class="bloque-paso-contenido" style="display: none">
+            <div class="grid-formulario">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                <div class="input-group">
+                  <label for="estadoAlumno">Estado de la Matrícula</label>
+                  <select id="estadoAlumno" required>
+                    <option value="Regular" selected>Regular</option>
+                    <option value="Entrante">Mesa de Entrada (Sin Curso)</option>
+                    <option value="Pase">Pase Activo</option>
+                    <option value="Baja">Baja Definitiva</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label for="selectCursoAlumno">Curso / Sección Asignada</label>
+                  <select id="selectCursoAlumno" required></select>
+                </div>
+              </div>
+
+              <!-- Panel de Pase Condicional -->
+              <div
+                id="panelCamposPase"
+                style="
+                  display: none;
+                  flex-direction: column;
+                  gap: 8px;
+                  background: #eff6ff;
+                  padding: 12px;
+                  border-radius: 6px;
+                  border: 1px dashed #2563eb;
+                  width: 100%;
+                  box-sizing: border-box;
+                "
+              >
+                <div class="input-group">
+                  <label for="paseFecha" style="color: #1d4ed8">Fecha del Trámite:</label
+                  ><input type="date" id="paseFecha" />
+                </div>
+                <div class="input-group">
+                  <label for="paseTipoTramite" style="color: #1d4ed8">Tipo de Movimiento:</label>
+                  <select id="paseTipoTramite">
+                    <option value="Entrante">Pase Entrante (Viene al Colegio)</option>
+                    <option value="Saliente">Pase Saliente (Se va del Colegio)</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label for="paseInstitucion" style="color: #1d4ed8">Establecimiento Educativo:</label
+                  ><input type="text" id="paseInstitucion" placeholder="Nombre de la escuela" />
+                </div>
+                <div class="input-group">
+                  <label for="paseProvincia" style="color: #1d4ed8">Provincia / Jurisdicción:</label
+                  ><input type="text" id="paseProvincia" placeholder="Ej: Tierra del Fuego" />
+                </div>
+              </div>
+
+              <!-- Panel de PPI Condicional -->
+              <div class="input-group" style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
+                <input
+                  type="checkbox"
+                  id="chkHabilitarPPI"
+                  style="width: 18px; height: 18px; cursor: pointer; margin: 0"
+                />
+                <label for="chkHabilitarPPI" style="margin: 0; font-weight: bold; cursor: pointer"
+                  >¿Presenta Proyecto Pedagógico para la Inclusión (PPI)?</label
+                >
+              </div>
+              <div
+                id="panelCamposPPI"
+                style="
+                  display: none;
+                  flex-direction: column;
+                  gap: 8px;
+                  background: #fff7ed;
+                  padding: 12px;
+                  border-radius: 6px;
+                  border: 1px dashed #f97316;
+                  width: 100%;
+                  box-sizing: border-box;
+                "
+              >
+                <div class="input-group">
+                  <label for="ppiResolucion" style="color: #c2410c">Número de Disposición / Resolución:</label
+                  ><input type="text" id="ppiResolucion" placeholder="Ej: Disp. N° 124/2026" />
+                </div>
+                <div class="input-group" style="margin-top: 15px">
+                  <label>Observaciones del Trayecto (PPI):</label>
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <button
+                      type="button"
+                      id="btnAbrirObsPPI"
+                      style="
+                        background-color: #0f172a;
+                        color: #ffffff;
+                        border: 1px solid #0f172a;
+                        padding: 10px 16px;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                      "
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      <span>Agregar / Editar Observación</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="input-group" style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
+                <input
+                  type="checkbox"
+                  id="chkTrayectoriasFlexibles"
+                  style="width: 18px; height: 18px; cursor: pointer; margin: 0"
+                />
+                <label for="chkTrayectoriasFlexibles" style="margin: 0; font-weight: bold; cursor: pointer"
+                  >¿Presenta proyecto de Trayectorias flexibles?</label
+                >
+              </div>
+
+              <!-- NUEVO MÓDULO: CERTIFICADO ÚNICO DE DISCAPACIDAD (CUD) -->
+              <div
+                class="input-group"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  padding-top: 4px;
+                  border-top: 1px solid #e2e8f0;
+                  margin-top: 10px;
+                  padding-top: 10px;
+                "
+              >
+                <input
+                  type="checkbox"
+                  id="chkHabilitarCUD"
+                  style="width: 18px; height: 18px; cursor: pointer; margin: 0"
+                />
+                <label for="chkHabilitarCUD" style="margin: 0; font-weight: bold; cursor: pointer; color: #047857"
+                  >¿Posee Certificado Único de Discapacidad (CUD)?</label
+                >
+              </div>
+              <div
+                id="panelCamposCUD"
+                style="
+                  display: none;
+                  flex-direction: column;
+                  gap: 8px;
+                  background: #ecfdf5;
+                  padding: 12px;
+                  border-radius: 6px;
+                  border: 1px dashed #10b981;
+                  width: 100%;
+                  box-sizing: border-box;
+                "
+              >
+                <div class="input-group">
+                  <label for="cudNumero" style="color: #047857">Número de CUD / Código de barras:</label>
+                  <input type="text" id="cudNumero" placeholder="Ej: 13-12345678-1" />
+                </div>
+                <div
+                  class="input-group"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    background: white;
+                    padding: 8px;
+                    border-radius: 4px;
+                    border: 1px solid #cbd5e1;
+                  "
+                >
+                  <span style="font-size: 13px; color: #047857; font-weight: 500"
+                    >El documento se adjuntará en el Paso 4 (Documentos).</span
+                  >
+                  <span style="font-size: 13px; color: #047857; font-weight: 500"
+                    >El documento se adjuntará en el Paso 4 (Documentos).</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- PASO 3: ADULTO RESPONSABLE -->
+          <div id="bloque-paso3" class="bloque-paso-contenido" style="display: none">
+            <div class="grid-formulario">
+              <div class="input-group">
+                <label for="nombreTutor">Nombre Completo del Adulto Responsable / Tutor</label>
+                <input
+                  type="text"
+                  id="nombreTutor"
+                  placeholder="Ej: Carlos Benítez"
+                  style="width: 100%; box-sizing: border-box"
+                />
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px">
+                <div class="input-group">
+                  <label for="dniTutor">DNI del Adulto Responsable / Tutor</label>
+                  <input
+                    type="text"
+                    id="dniTutor"
+                    placeholder="Ej: 25123456"
+                    pattern="[0-9]+"
+                    inputmode="numeric"
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="generoTutor">Género del Tutor</label>
+                  <select id="generoTutor" style="height: 30px !important; width: 100%; box-sizing: border-box">
+                    <option value="Masculino" selected>Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px">
+                <div class="input-group">
+                  <label for="cuilTutor">CUIL del Tutor</label>
+                  <input
+                    type="text"
+                    id="cuilTutor"
+                    placeholder="Ej: 20481234567"
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="emailTutor">Correo Electrónico del Tutor</label>
+                  <input
+                    type="email"
+                    id="emailTutor"
+                    placeholder="Ej: tutor@ejemplo.com"
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+              </div>
+              <!-- NUEVA FILA COMPACTA: Nacionalidad y Dirección de Residencia del Tutor -->
+              <div style="display: grid; grid-template-columns: 1.5fr 3fr; gap: 8px; margin-bottom: 10px">
+                <div class="input-group">
+                  <label for="nacionalidadTutor">Nacionalidad del Tutor</label>
+                  <input
+                    type="text"
+                    id="nacionalidadTutor"
+                    placeholder="Ej: Argentina"
+                    value="Argentina"
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="direccionTutor">Dirección de Residencia del Tutor</label>
+                  <input
+                    type="text"
+                    id="direccionTutor"
+                    placeholder="Ej: Av. San Martín 789"
+                    style="width: 100%; box-sizing: border-box"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 4: AUDITORÍA DOCUMENTAL DIGITALIZADA -->
+          <div id="bloque-paso4" class="bloque-paso-contenido" style="display: none">
+            <div class="grupo-documentacion">
+              <label style="font-weight: bold; font-size: 13px; color: #1e293b; margin-bottom: 2px; display: block"
+                >Auditoría Documental Digitalizada</label
+              >
+
+              <div class="linea-documento-digital">
+                <input type="checkbox" id="chk-dni_alumno" class="check-digital-bloqueado" />
+                <span>Fotocopia DNI Alumno</span>
+                <button
+                  type="button"
+                  class="btn-accion-digital btn-subir-doc"
+                  onclick="document.getElementById('file-dni_alumno').click()"
+                >
+                  📁
+                </button>
+                <button type="button" id="view-dni_alumno" class="btn-accion-digital btn-ver-doc" disabled>👁</button>
+                <input
+                  type="file"
+                  id="file-dni_alumno"
+                  class="input-archivo-oculto"
+                  data-key="dni_alumno"
+                  accept="image/*,application/pdf"
+                />
+              </div>
+
+              <div class="linea-documento-digital">
+                <input type="checkbox" id="chk-partida_nac" class="check-digital-bloqueado" />
+                <span>Acta o Partida de Nacimiento</span>
+                <button
+                  type="button"
+                  class="btn-accion-digital btn-subir-doc"
+                  onclick="document.getElementById('file-partida_nac').click()"
+                >
+                  📁
+                </button>
+                <button type="button" id="view-partida_nac" class="btn-accion-digital btn-ver-doc" disabled>👁</button>
+                <input
+                  type="file"
+                  id="file-partida_nac"
+                  class="input-archivo-oculto"
+                  data-key="partida_nac"
+                  accept="image/*,application/pdf"
+                />
+              </div>
+
+              <div class="linea-documento-digital">
+                <input type="checkbox" id="chk-cert_primaria" class="check-digital-bloqueado" />
+                <span>Certificado de Nivel Primario</span>
+                <button
+                  type="button"
+                  class="btn-accion-digital btn-subir-doc"
+                  onclick="document.getElementById('file-cert_primaria').click()"
+                >
+                  📁
+                </button>
+                <button type="button" id="view-cert_primaria" class="btn-accion-digital btn-ver-doc" disabled>
+                  👁
+                </button>
+                <input
+                  type="file"
+                  id="file-cert_primaria"
+                  class="input-archivo-oculto"
+                  data-key="cert_primaria"
+                  accept="image/*,application/pdf"
+                />
+              </div>
+
+              <div class="linea-documento-digital">
+                <input type="checkbox" id="chk-buena_salud" class="check-digital-bloqueado" />
+                <span>Certificado de Buena Salud</span>
+                <button
+                  type="button"
+                  class="btn-accion-digital btn-subir-doc"
+                  onclick="document.getElementById('file-buena_salud').click()"
+                >
+                  📁
+                </button>
+                <button type="button" id="view-buena_salud" class="btn-accion-digital btn-ver-doc" disabled>👁</button>
+                <input
+                  type="file"
+                  id="file-buena_salud"
+                  class="input-archivo-oculto"
+                  data-key="buena_salud"
+                  accept="image/*,application/pdf"
+                />
+              </div>
+
+              <div class="linea-documento-digital">
+                <input type="checkbox" id="chk-carnet_vacunas" class="check-digital-bloqueado" />
+                <span>Carnet de Vacunación Oficial</span>
+                <button
+                  type="button"
+                  class="btn-accion-digital btn-subir-doc"
+                  onclick="document.getElementById('file-carnet_vacunas').click()"
+                >
+                  📁
+                </button>
+                <button type="button" id="view-carnet_vacunas" class="btn-accion-digital btn-ver-doc" disabled>
+                  👁
+                </button>
+                <input
+                  type="file"
+                  id="file-carnet_vacunas"
+                  class="input-archivo-oculto"
+                  data-key="carnet_vacunas"
+                  accept="image/*,application/pdf"
+                />
+              </div>
+
+              <div class="linea-documento-digital">
+                <input type="checkbox" id="chk-dni_tutor" class="check-digital-bloqueado" />
+                <span>Fotocopia DNI Adulto Responsable</span>
+                <button
+                  type="button"
+                  class="btn-accion-digital btn-subir-doc"
+                  onclick="document.getElementById('file-dni_tutor').click()"
+                >
+                  📁
+                </button>
+                <button type="button" id="view-dni_tutor" class="btn-accion-digital btn-ver-doc" disabled>👁</button>
+                <input
+                  type="file"
+                  id="file-dni_tutor"
+                  class="input-archivo-oculto"
+                  data-key="dni_tutor"
+                  accept="image/*,application/pdf"
+                />
+              </div>
+
+              <!-- FILA CORREGIDA Y ALINEADA: Disposición / Acta PPI Adjunta -->
+              <div
+                id="filaDocumentoPPI"
+                class="linea-documento-digital"
+                style="display: none; border-color: #f97316 !important"
+              >
+                <input type="checkbox" id="chk-acta_ppi" class="check-digital-bloqueado" />
+                <span style="flex-grow: 1">Disposición / Acta PPI Adjunta</span>
+                <div style="display: flex; gap: 4px; justify-content: flex-end">
+                  <button
+                    type="button"
+                    class="btn-accion-digital btn-subir-doc"
+                    onclick="document.getElementById('file-acta_ppi').click()"
+                  >
+                    📁
+                  </button>
+                  <button type="button" id="view-acta_ppi" class="btn-accion-digital btn-ver-doc" disabled>👁</button>
+                </div>
+                <input
+                  type="file"
+                  id="file-acta_ppi"
+                  class="input-archivo-oculto"
+                  data-key="acta_ppi"
+                  accept="image/*,application/pdf"
+                  style="display: none !important"
+                />
+              </div>
+
+              <!-- NUEVA FILA SIMÉTRICA: Certificado Único de Discapacidad (CUD) -->
+              <div
+                id="filaDocumentoCUD"
+                class="linea-documento-digital"
+                style="display: none; border-color: #10b981 !important"
+              >
+                <input type="checkbox" id="chk-cud_digital" class="check-digital-bloqueado" />
+                <span style="flex-grow: 1">Certificado Oficial CUD Adjunto</span>
+                <div style="display: flex; gap: 4px; justify-content: flex-end">
+                  <button
+                    type="button"
+                    class="btn-accion-digital btn-subir-doc"
+                    onclick="document.getElementById('file-cud_digital').click()"
+                  >
+                    📁
+                  </button>
+                  <button type="button" id="view-cud_digital" class="btn-accion-digital btn-ver-doc" disabled>
+                    👁
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  id="file-cud_digital"
+                  class="input-archivo-oculto"
+                  data-key="cud_digital"
+                  accept="image/*,application/pdf"
+                  style="display: none !important"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 5: OBSERVACIONES GENERALES -->
+          <div id="bloque-paso5" class="bloque-paso-contenido">
+            <div class="input-group" style="margin-top: 10px; margin-bottom: 15px; width: 100%">
+              <label
+                for="txtObservacionesLegajo"
+                style="display: block; font-size: 13px; font-weight: bold; color: #1b4d82; margin-bottom: 6px"
+                >Observaciones Generales del Alumno:</label
+              >
+              <textarea
+                id="txtObservacionesLegajo"
+                style="
+                  width: 100% !important;
+                  height: 140px !important;
+                  padding: 10px !important;
+                  font-size: 14px !important;
+                  line-height: 1.5 !important;
+                  border: 2px solid #1b4d82 !important;
+                  border-radius: 6px !important;
+                  background-color: #ffffff !important;
+                  color: #334155 !important;
+                  resize: none !important;
+                  box-sizing: border-box !important;
+                "
+                placeholder="Escriba aquí notas médicas, conducta o datos generales del legajo..."
+              ></textarea>
+            </div>
+          </div>
+        </form>
+        <!-- Fin de #formInscripcion -->
+
+        <div class="wizard-pie-navegacion">
+          <button type="button" id="btnAtrasWizard" class="btn-nav-wizard btn-nav-volver" disabled>Anterior</button>
+          <div>
+            <button type="button" id="btnSiguienteWizard" class="btn-nav-wizard btn-nav-siguiente">Siguiente</button>
+            <button type="submit" form="formInscripcion" id="btnGuardar" class="btn-nav-wizard btn-nav-guardar">
+              Resguardar Legajo Digital
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- MODAL DE OBSERVACIONES PPI -->
+    <div
+      id="modalObservacionesPPI"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        justify-content: center;
+        align-items: center;
+      "
+      onclick="if (event.target === this) this.style.display = 'none';"
+    >
+      <div
+        style="
+          background-color: #ffffff;
+          border-radius: 16px;
+          width: 100%;
+          max-width: 672px;
+          margin: 0 16px;
+          padding: 24px;
+          position: relative;
+          z-index: 100000;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          box-sizing: border-box;
+        "
+      >
+        <!-- Header del Modal -->
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span
+              style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                background-color: #eff6ff;
+                border-radius: 8px;
+                color: #2563eb;
+              "
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </span>
+            <h3 style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0">
+              Observaciones del Trayecto (PPI)
+            </h3>
+          </div>
+          <button
+            type="button"
+            onclick="document.getElementById('modalObservacionesPPI').style.display = 'none'"
+            style="
+              background: none;
+              border: none;
+              color: #94a3b8;
+              cursor: pointer;
+              padding: 4px;
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+            onmouseover="this.style.color = '#0f172a'"
+            onmouseout="this.style.color = '#94a3b8'"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Cuerpo del Modal -->
+        <div style="margin-bottom: 20px">
+          <label
+            for="observacionesPPI"
+            style="display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 8px"
+          >
+            Referencia del Equipo de Orientación Escolar:
+          </label>
+          <textarea
+            id="observacionesPPI"
+            rows="5"
+            placeholder="Ingrese detalles de configuraciones de acceso, pautas de trabajo y recomendaciones del EOE..."
+            style="
+              width: 100%;
+              padding: 12px;
+              border: 1px solid #cbd5e1;
+              border-radius: 8px;
+              font-size: 0.875rem;
+              color: #1e293b;
+              box-sizing: border-box;
+              resize: vertical;
+              outline: none;
+              font-family: inherit;
+            "
+            onfocus="
+              this.style.borderColor = '#2563eb';
+              this.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
+            "
+            onblur="
+              this.style.borderColor = '#cbd5e1';
+              this.style.boxShadow = 'none';
+            "
+          ></textarea>
+        </div>
+
+        <!-- Footer / Acciones -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <button
+            type="button"
+            onclick="
+              if (typeof guardarModalObsPPI === 'function') {
+                guardarModalObsPPI();
+              } else {
+                document.getElementById('modalObservacionesPPI').style.display = 'none';
+              }
+            "
+            style="
+              background-color: #f1f5f9;
+              color: #0f172a;
+              border: 1px solid #cbd5e1;
+              padding: 10px 18px;
+              border-radius: 8px;
+              font-weight: 600;
+              font-size: 0.875rem;
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+            onmouseover="this.style.backgroundColor = '#e2e8f0'"
+            onmouseout="this.style.backgroundColor = '#f1f5f9'"
+          >
+            Guardar Observación
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- MODAL DE PREVISUALIZACIÓN DE CARGA MASIVA CONTROLADA -->
+    <div
+      id="modalSimulacionCarga"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          background: white;
+          width: 100%;
+          max-width: 900px;
+          max-height: 85vh;
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            background: #1e293b;
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: bold">📊 Simulación de Carga Masiva Controlada</h3>
+            <p id="resumenSimulacion" style="margin: 4px 0 0 0; font-size: 12px; color: #cbd5e1"></p>
+          </div>
+          <button
+            type="button"
+            id="btnCerrarSimulacionX"
+            style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer"
+          >
+            &times;
+          </button>
+        </div>
+        <div style="padding: 16px; overflow-y: auto; flex: 1; background: #f1f5f9">
+          <div style="background: white; border-radius: 6px; border: 1px solid #e2e8f0; overflow: hidden">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px">
+              <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: bold">
+                <tr>
+                  <th style="padding: 10px">DNI</th>
+                  <th style="padding: 10px">Alumno (Apellido y Nombre)</th>
+                  <th style="padding: 10px">CUIL Calculado</th>
+                  <th style="padding: 10px">Contacto / Tutor Extraído</th>
+                  <th style="padding: 10px; text-align: center">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tablaSimulacionBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div
+          style="
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+          "
+        >
+          <button
+            type="button"
+            id="btnCancelarCarga"
+            style="
+              background: #64748b;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              font-size: 13px;
+              font-weight: 500;
+              cursor: pointer;
+            "
+          >
+            ❌ Cancelar
+          </button>
+          <button
+            type="button"
+            id="btnConfirmarCarga"
+            style="
+              background: #16a34a;
+              color: white;
+              border: none;
+              padding: 8px 20px;
+              border-radius: 4px;
+              font-size: 13px;
+              font-weight: bold;
+              cursor: pointer;
+            "
+          >
+            💾 Confirmar e Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSOLA DE DOCUMENTACIÓN ESCOLAR OFICIAL PARA REPORTES -->
+    <div id="modalImpresionContenedor" class="modal-impresion-externo">
+      <div class="modal-impresion-interno">
+        <div class="modal-cabecera-acciones">
+          <h3 id="modalImpresionTitulo" style="margin: 0; font-size: 16px">Consola de Documentación Escolar Oficial</h3>
+          <div style="display: flex; gap: 10px">
+            <button
+              type="button"
+              onclick="window.print()"
+              style="
+                background: #16a34a;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+                cursor: pointer;
+              "
+            >
+              🖨 Ejecutar Impresión / Guardar PDF
+            </button>
+            <button
+              type="button"
+              id="btnCerrarModalImpresion"
+              style="
+                background: #ef4444;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-weight: bold;
+                cursor: pointer;
+              "
+            >
+              Cerrar Ventana
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENTANA EMERGENTE DE CONFIRMACIÓN ESTILIZADA (REEMPLAZO CONFIRM) -->
+    <div
+      id="haspen-modal-confirm"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 24px;
+          border-radius: 12px;
+          max-width: 400px;
+          width: 100%;
+          box-shadow:
+            0 20px 25px -5px rgba(0, 0, 0, 0.1),
+            0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          border: 1px solid #e2e8f0;
+          transform: scale(0.95);
+          transition: transform 0.2s ease;
+        "
+      >
+        <div style="display: flex; align-items: flex-start; gap: 12px">
+          <div id="haspen-confirm-icono" style="font-size: 24px; line-height: 1">⚠️</div>
+          <div>
+            <h3 id="haspen-confirm-titulo" style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700; color: #0f172a">
+              Confirmar Acción
+            </h3>
+            <p id="haspen-confirm-mensaje" style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5"></p>
+          </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px">
+          <button
+            id="haspen-confirm-btn-cancelar"
+            type="button"
+            style="
+              padding: 8px 16px;
+              font-size: 14px;
+              font-weight: 500;
+              color: #475569;
+              background: #f1f5f9;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+            "
+          >
+            Cancelar
+          </button>
+          <button
+            id="haspen-confirm-btn-aceptar"
+            type="button"
+            style="
+              padding: 8px 16px;
+              font-size: 14px;
+              font-weight: 500;
+              color: white;
+              background: #dc2626;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+            "
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VINCULACIÓN DE LOGICA ESTRUCTURAL MODULAR -->
+    <script type="module" src="historial.js"></script>
+    <script src="carga-masiva.js"></script>
+    <script src="inscripcion_wizard.js"></script>
+  </body>
+</html>
