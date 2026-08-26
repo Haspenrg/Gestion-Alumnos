@@ -2113,6 +2113,14 @@
     <!-- VINCULACIÓN DE LOGICA ESTRUCTURAL MODULAR -->
     <script type="module" src="historial.js"></script>
     <script src="carga-masiva.js"></script>
-    <script src="inscripcion_wizard.js"></script>
+    <script type="module">
+      import("./inscripcion_wizard.js")
+        .then(() => console.log("¡Archivo JS cargado de forma exitosa estructuralmente!"))
+        .catch((err) => {
+          console.error("--- ERROR ESTRUCTURAL DETECTADO ---");
+          console.error("Mensaje del error:", err.message);
+          console.error("Detalle completo:", err);
+        });
+    </script>
   </body>
 </html>
