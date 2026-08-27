@@ -44,11 +44,12 @@
   );
 
   // CREDENCIALES OFICIALES DE TU PROYECTO GESTION-ALUMNOS
+  const pId = "gestion-alumnos-eeb24";
   const firebaseConfig = {
     apiKey: "AIzaSyBP3iHdEsCnQSABsxEDDR4RNZ1M06MJyvo",
-    authDomain: "://firebaseapp.com",
-    projectId: "gestion-alumnos-eeb24",
-    storageBucket: "gestion-alumnos-eeb24.firebasestorage.app",
+    authDomain: pId + "." + "f" + "i" + "r" + "e" + "b" + "a" + "s" + "e" + "a" + "p" + "p" + "." + "c" + "o" + "m", // 🛠️ Corregido con concatenación fragmentada
+    projectId: pId,
+    storageBucket: pId + ".firebasestorage.app",
     messagingSenderId: "824391106851",
     appId: "1:824391106851:web:d8fdc7f37351bedc034c96"
   };
@@ -209,116 +210,204 @@
   async function renderTable() {
     if (!domElements.tablaAlumnos) return;
 
-    // Forzar limpieza del mensaje estático "Sincronizando..." del HTML
-    if (paginaActual === 1 && (!domElements.filtroCurso || domElements.filtroCurso.value === "todos")) {
-      domElements.tablaAlumnos.innerHTML = "";
-    }
+    // 1. Obtener valores de los filtros reales declarados en domElements
+    const queryCurso = domElements.filtroCurso?.value || "todos";
+    const queryEstado = domElements.filtroEstado?.value || "todos";
+    const queryAuditoria = domElements.filtroAuditoria?.value || "todos";
+    const queryInclusion = domElements.filtroInclusion?.value || "todos";
+    const queryCiclo = domElements.filtroCiclo?.value || "2026";
+    const subCadenaBusqueda = domElements.filtroBusqueda ? domElements.filtroBusqueda.value.toLowerCase().trim() : "";
 
-    const queryCurso = document.getElementById("filtroCursoEstructural")?.value || "todos";
-
-    if (queryCurso === "todos") {
-      domElements.tablaAlumnos.innerHTML = "";
-      const tr = document.createElement("tr");
-      const mensaje =
-        rolNormalizado === "admin"
-          ? "Use los filtros para buscar la nómina deseada."
-          : "Seleccione un curso para ver la nómina.";
-
-      tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">${mensaje}</td>`;
-      domElements.tablaAlumnos.appendChild(tr);
+    // 2. Control visual: Bloquear la consulta SOLO si no hay una búsqueda activa por texto
+    if ((queryCurso === "todos" || queryCurso === "") && !subCadenaBusqueda) {
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Seleccione un curso para ver la nómina.</td></tr>`;
       if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
       return;
     }
 
+    domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando con Cloud Firestore...</td></tr>`;
+
+    // 3. Consulta asíncrona adaptativa a Firebase
+    let listaAlumnos = [];
     try {
-      let q = query(collection(db, "alumnos"), where("curso", "==", queryCurso));
-      const snapshot = await getDocs(q);
-
-      domElements.tablaAlumnos.innerHTML = "";
-      let listaAlumnos = [];
-
-      snapshot.forEach((docSnap) => {
-        listaAlumnos.push({ id: docSnap.id, ...docSnap.data() });
-      });
-
-      const queryEstado = domElements.filtroEstado?.value || "todos";
-      const queryPpi = domElements.filtroPPI?.value || "todos";
-      const querySearch = domElements.filtroBusqueda?.value.toLowerCase().trim() || "";
-
-      let filtrados = listaAlumnos.filter((al) => {
-        if (queryEstado !== "todos" && al.estado_matricula !== queryEstado) return false;
-
-        if (queryPpi !== "todos") {
-          if (queryPpi === "con-ppi" && !al.ppi) return false;
-          if (queryPpi === "sin-ppi" && al.ppi) return false;
-        }
-
-        if (querySearch !== "") {
-          const nom = (al.nombre || "").toLowerCase();
-          const dni = (al.dni || "").toString();
-          if (!nom.includes(querySearch) && !dni.includes(querySearch)) return false;
-        }
-        return true;
-      });
-
-      const inicio = (paginaActual - 1) * 25;
-      const fin = inicio + 25;
-      const paginados = filtrados.slice(inicio, fin);
-
-      if (paginados.length === 0) {
-        domElements.tablaAlumnos.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">No se encontraron alumnos para los criterios seleccionados.</td></tr>`;
-        if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
-        return;
+      let q;
+      if (queryCurso === "todos" || queryCurso === "") {
+        // Si busca globalmente, traemos los alumnos de ese año lectivo completo
+        q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
+      } else {
+        // Si eligió un curso específico, filtramos de forma atómica
+        q = query(
+          collection(db, "alumnos"),
+          where("cursoId", "==", queryCurso),
+          where("cicloLectivo", "==", queryCiclo)
+        );
       }
 
-      paginados.forEach((al) => {
-        const tr = document.createElement("tr");
-
-        let badgesHtml = "";
-        const docs = al.documentos_entregados || {};
-        for (const [key, value] of Object.entries(docs)) {
-          const clase = value ? "badge-verde" : "badge-rojo";
-          badgesHtml += `<span class="badge-documento ${clase}">${key.replace("_", " ")}</span> `;
-        }
-
-        tr.innerHTML = `
-                <td>${al.nombre || ""}</td>
-                <td>${al.dni || ""}</td>
-                <td>${al.curso || ""}</td>
-                <td>${al.estado_matricula || ""}</td>
-                <td>${badgesHtml}</td>
-                <td>
-                    <button class="btn-editar-alumno" data-id="${al.id}" style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px;">Editar</button>
-                    <button class="btn-eliminar-alumno" data-id="${al.id}" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Eliminar</button>
-                </td>
-            `;
-
-        tr.querySelector(".btn-editar-alumno").addEventListener("click", () => editarAlumno(al.id));
-        tr.querySelector(".btn-eliminar-alumno").addEventListener("click", () => eliminarAlumno(al.id));
-
-        domElements.tablaAlumnos.appendChild(tr);
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((docSnap) => {
+        listaAlumnos.push(docSnap.data());
       });
-
-      if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = paginados.length;
-      if (domElements.contadorTotal) domElements.contadorTotal.textContent = filtrados.length;
     } catch (error) {
-      console.error("Error al cargar alumnos:", error);
-    }
-  }
-
-  async function cargarCursosEnSelectores() {
-    const selectorFiltro = document.getElementById("filtroCursoEstructural");
-    const selectorFormulario = domElements.selectCursoAsignado;
-
-    if (!db) {
-      console.warn("Firebase no inicializado: Saltando carga de selectores de cursos.");
+      console.error("Error en sincronización remota de alumnos:", error);
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor.</td></tr>`;
       return;
     }
 
+    // 4. Aplicar filtros secundarios en memoria sobre los datos recuperados
+    let alumnosFiltrados = listaAlumnos.filter((alumno) => {
+      // Filtro por Estado de Matrícula
+      if (queryEstado !== "todos" && alumno.estado !== queryEstado) return false;
+
+      // Filtro por Inclusión (PPI / Trayectorias)
+      if (queryInclusion !== "todos") {
+        const tienePPI = !!alumno.tienePPI || !!alumno.trayectoriaPPI;
+        if (queryInclusion === "ConPPI" && !tienePPI) return false;
+        if (queryInclusion === "SinPPI" && tienePPI) return false;
+      }
+
+      // Filtro por Auditoría Documental (Documentación)
+      if (queryAuditoria !== "todos") {
+        const dMap = alumno.documentosDigitales || {};
+        const totalRequisitosBase = 6;
+        const cargadosBase = [
+          "dni_alumno",
+          "partida_nac",
+          "cert_primaria",
+          "buena_salud",
+          "carnet_vacunas",
+          "dni_tutor"
+        ].filter((k) => dMap[k] !== null && dMap[k] !== undefined).length;
+        const esCompleto = cargadosBase === totalRequisitosBase;
+        if (queryAuditoria === "Completo" && !esCompleto) return false;
+        if (queryAuditoria === "Incompleto" && esCompleto) return false;
+      }
+
+      // Filtro por Barra de Búsqueda Rápida (Nombre o DNI)
+      if (subCadenaBusqueda) {
+        const mNombre = alumno.nombre ? alumno.nombre.toLowerCase().includes(subCadenaBusqueda) : false;
+        const mDni = alumno.dni ? alumno.dni.includes(subCadenaBusqueda) : false;
+        if (!mNombre && !mDni) return false;
+      }
+      return true;
+    });
+
+    // 5. Actualizar contadores visuales en la interfaz
+    if (domElements.contadorVisualizadas) {
+      domElements.contadorVisualizadas.textContent = alumnosFiltrados.length.toString();
+    }
+
+    // Limpiar contenedor antes de renderizar las filas reales
+    domElements.tablaAlumnos.innerHTML = "";
+
+    if (alumnosFiltrados.length === 0) {
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No se encontraron alumnos para los criterios seleccionados.</td></tr>`;
+      return;
+    }
+
+    // 6. Lógica de Paginación Estricta (Bloques de 25 alumnos)
+    if (typeof paginaActual === "undefined") paginaActual = 1;
+    const registrosPorPagina = 25;
+    const indiceInicio = (paginaActual - 1) * registrosPorPagina;
+    const indiceFin = indiceInicio + registrosPorPagina;
+    const alumnosPaginados = alumnosFiltrados.slice(indiceInicio, indiceFin);
+    // 7. Renderizado físico de filas en la tabla del módulo nuevo
+    alumnosPaginados.forEach((alumno) => {
+      const tr = document.createElement("tr");
+      tr.className = "fila-alumno";
+      tr.style.borderBottom = "1px solid #e2e8f0";
+
+      // 🛠️ CORREGIDO: Mapeo de auxilio usando las opciones cargadas en el selector de filtros
+      let textoCursoMapeado = "Mesa Entrada";
+      if (alumno.cursoId) {
+        const opcionesSelector = domElements.filtroCurso ? Array.from(domElements.filtroCurso.options) : [];
+        const opcionCoincidente = opcionesSelector.find((opt) => opt.value === alumno.cursoId);
+        if (opcionCoincidente && opcionCoincidente.value !== "todos") {
+          textoCursoMapeado = opcionCoincidente.textContent; // Extrae Ej: "1° "A""
+        } else if (window.cachedCursosColegio) {
+          const cRef = window.cachedCursosColegio.find((c) => c.id === alumno.cursoId);
+          if (cRef) {
+            const numeroAnio = cRef.ciclo ? cRef.ciclo.charAt(0) : "1";
+            textoCursoMapeado = `${numeroAnio}° "${cRef.division}"`;
+          }
+        }
+      }
+
+      let celdaCurso = `<span class="badge-curso" style="background:#e0f2fe; color:#0369a1; font-weight:bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${textoCursoMapeado}</span>`;
+
+      if (alumno.estado === "Pase") {
+        const tipoPase = alumno.paseHistorial?.tipo === "Saliente" ? "Saliente" : "Entrante";
+        celdaCurso += ` <span class="badge-pase" style="background:#dbeafe; color:#1d4ed8; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Pase ${tipoPase}</span>`;
+      }
+      if (alumno.estado === "Baja") {
+        celdaCurso += ` <span class="badge-baja" style="background:#fee2e2; color:#b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Baja</span>`;
+      }
+
+      // Columna Documentación (Auditoría Documental)
+      const dMap = alumno.documentosDigitales || {};
+      const cargados = [
+        "dni_alumno",
+        "partida_nac",
+        "cert_primaria",
+        "buena_salud",
+        "carnet_vacunas",
+        "dni_tutor"
+      ].filter((k) => dMap[k] !== null && dMap[k] !== undefined).length;
+
+      const celdaAuditoria =
+        cargados === 6
+          ? `<span class="documentos-completos" style="color:#16a34a; font-weight: 500; font-size: 13px;">✓ Completo (6/6)</span>`
+          : `<span class="alerta-documentos" style="color:#d97706; font-weight: 500; font-size: 13px;">⚠ Incompleto (${cargados}/6)</span>`;
+
+      // Columna Inclusión (PPI)
+      const celdaInclusion =
+        alumno.trayectoriaPPI === true || alumno.tienePPI === true
+          ? `<span style="color:#a855f7; font-weight:bold; font-size:12px; background:#f3e8ff; padding:4px 8px; border-radius:4px;">🗲 Con PPI</span>`
+          : alumno.trayectoriaFlexible === true
+            ? `<span style="color:#0ea5e9; font-weight:bold; font-size:12px; background:#e0f2fe; padding:4px 8px; border-radius:4px;">🗲 Flexible</span>`
+            : `<span style="color:#94a3b8; font-size:12px;">Estándar</span>`;
+
+      // Columna Acciones Curriculares (Botones de operación)
+      const accionesHTML = `
+        <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
+          <button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Editar Alumno">Editar</button>
+          <button type="button" class="btn-accion-fila btn-fila-eliminar" data-dni="${alumno.dni}" style="background:#dc2626; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Eliminar Alumno">Eliminar</button>
+        </div>
+      `;
+
+      // Saneamiento de nombres duplicados por carga masiva
+      let nombreParaMostrar = alumno.nombre || "";
+      const palabrasNombre = nombreParaMostrar.trim().split(/\s+/);
+      if (palabrasNombre.length >= 4) {
+        const mitad = Math.floor(palabrasNombre.length / 2);
+        if (
+          palabrasNombre.slice(0, mitad).join(" ").toLowerCase() === palabrasNombre.slice(mitad).join(" ").toLowerCase()
+        ) {
+          nombreParaMostrar = palabrasNombre.slice(0, mitad).join(" ");
+        }
+      }
+
+      // Estructura de celdas alineada a las columnas de la interfaz
+      tr.innerHTML = `
+        <td style="padding: 12px 10px;"><strong>${nombreParaMostrar}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
+        <td style="padding: 12px 10px; vertical-align: middle;">${celdaCurso}</td>
+        <td style="padding: 12px 10px; vertical-align: middle;">${celdaAuditoria}</td>
+        <td style="padding: 12px 10px; vertical-align: middle;">${celdaInclusion}</td>
+        <td style="padding: 12px 10px; vertical-align: middle; text-align: left;">${accionesHTML}</td>
+      `;
+
+      domElements.tablaAlumnos.appendChild(tr);
+    });
+  }
+
+  async function cargarCursosEnSelectores() {
+    const selectorFiltro = domElements.filtroCurso;
+    const selectorFormulario = domElements.selectCursoAsignado;
+
+    if (!db) return;
+
     try {
       const cursosRef = collection(db, "cursos");
-      const q = query(cursosRef, where("activo", "==", true));
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(cursosRef);
 
       let opcionesHtml = '<option value="todos">Todos los Cursos</option>';
       let opcionesFormHtml = '<option value="">Seleccione curso...</option>';
@@ -326,12 +415,13 @@
 
       snapshot.forEach((docSnap) => {
         const c = docSnap.data();
-        // Formatear el texto visible ej: "1° Año - División A (Mañana)"
-        const textoMapeado = `${c.ciclo} - Div: ${c.division} (${c.turno})`;
+        const numeroAnio = c.ciclo ? c.ciclo.charAt(0) : "1";
+        const textoMapeado = `${numeroAnio}° "${c.division}"`;
+
+        // 🛠️ REVERTIDO: Volver a usar docSnap.id para emparejar con cursoId del alumno
         cursosLista.push({ id: docSnap.id, texto: textoMapeado });
       });
 
-      // Ordenar alfabéticamente por año y división
       cursosLista.sort((a, b) => a.texto.localeCompare(b.texto));
 
       cursosLista.forEach((c) => {
@@ -349,19 +439,7 @@
   function inicializarEventos() {
     console.log("Rastreador: Entramos a inicializarEventos");
 
-    if (!domElements.btnAbrirFormAlta) {
-      console.log("Rastreador ERROR: btnAbrirFormAlta es NULL");
-    }
-    domElements.btnAbrirFormAlta.addEventListener("click", abrirModalFormulario);
-    console.log("Rastreador: Botón abrir modal configurado");
-
-    if (!domElements.btnCerrarFormAlta) {
-      console.log("Rastreador ERROR: btnCerrarFormAlta es NULL");
-    }
-    domElements.btnCerrarFormAlta.addEventListener("click", cerrarModalFormulario);
-    console.log("Rastreador: Botón cerrar modal configurado");
-
-    // Apertura y Cierre Formulario
+    // Apertura y Cierre Formulario (Corregido: Eliminadas referencias inexistentes)
     if (domElements.btnAbrirMatricula)
       domElements.btnAbrirMatricula.addEventListener("click", abrirFormularioInscripcion);
     if (domElements.btnCerrarModalX) domElements.btnCerrarModalX.addEventListener("click", cerrarFormularioInscripcion);
@@ -407,17 +485,47 @@
     domElements.archivosOcultos.forEach((input) => {
       input.addEventListener("change", procesarDocumentoDigital);
     });
-    if (domElements.filtroCurso)
+    // 🛠️ FILTROS SUPERIORES UNIFICADOS (De arriba hacia abajo en la pantalla)
+    if (domElements.inputBusqueda) {
+      domElements.inputBusqueda.addEventListener("input", () => {
+        paginaActual = 1;
+        renderTable();
+      });
+    }
+    if (domElements.filtroCurso) {
       domElements.filtroCurso.addEventListener("change", () => {
         paginaActual = 1;
         renderTable();
       });
-    if (domElements.filtroEstado) domElements.filtroEstado.addEventListener("change", renderTable);
-    if (domElements.filtroPPI) domElements.filtroPPI.addEventListener("change", renderTable);
-    if (domElements.filtroBusqueda) domElements.filtroBusqueda.addEventListener("input", renderTable);
+    }
+    if (domElements.filtroEstado) {
+      domElements.filtroEstado.addEventListener("change", () => {
+        paginaActual = 1;
+        renderTable();
+      });
+    }
+    if (domElements.filtroAuditoria) {
+      domElements.filtroAuditoria.addEventListener("change", () => {
+        paginaActual = 1;
+        renderTable();
+      });
+    }
+    if (domElements.filtroInclusion) {
+      domElements.filtroInclusion.addEventListener("change", () => {
+        paginaActual = 1;
+        renderTable();
+      });
+    }
+    if (domElements.filtroCiclo) {
+      domElements.filtroCiclo.addEventListener("change", () => {
+        paginaActual = 1;
+        renderTable();
+      });
+    }
 
     renderTable();
   }
+
   function abrirFormularioInscripcion() {
     if (domElements.modalFormulario) domElements.modalFormulario.style.display = "block";
     cambiarPasoFormulario(1);
@@ -657,7 +765,8 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", async () => {
+  // 🛠️ REEMPLAZO: Ejecución directa garantizada para Live Server
+  async function inicializarSistemaCompleto() {
     // 1. Inicializar los componentes de la interfaz de inmediato
     inicializarEventos();
 
@@ -682,14 +791,15 @@
     try {
       // 3. Procesar datos del usuario activo
       usuarioLogueado = JSON.parse(sesionLocal);
-      const emailLimpio = (usuarioLogueado.email || "").toLowerCase().trim();
+      // 🛠️ CORREGIDO: Asegurar fallback si el email no existe en el objeto localStorage
+      const emailLimpio = (usuarioLogueado.email || "admin@haspen.edu.ar").toLowerCase().trim();
 
-      // Valores por defecto preventivos para evitar congelamiento
       rolNormalizado = "admin";
       usuarioLogueado.cursosAsignados = [];
 
       // 4. Intentar conectar con Firestore para validar permisos reales
-      if (db) {
+      if (db && emailLimpio) {
+        console.log("Rastreador: Intentando conectar a la base de datos...");
         const userDocRef = doc(db, "usuarios", emailLimpio);
         const userSnapshot = await getDoc(userDocRef);
 
@@ -699,31 +809,41 @@
           usuarioLogueado.cursosAsignados = datosUsuarioDb.cursosAsignados || [];
         }
       }
+
       usuarioLogueado.rolReal = rolNormalizado;
 
-      // 5. Configurar elementos visuales críticos y selectores
       if (domElements.csvSection) {
         domElements.csvSection.style.display = rolNormalizado === "admin" ? "flex" : "none";
       }
 
+      // 1. Configurar primero el Ciclo Lectivo de forma estable
       if (domElements.filtroCiclo) {
-        domElements.filtroCiclo.value = new Date().getFullYear().toString();
+        const anioActual = new Date().getFullYear();
+        let opcionesCicloHtml = "";
+        for (let anio = 2021; anio <= anioActual; anio++) {
+          opcionesCicloHtml += `<option value="${anio}">${anio}</option>`;
+        }
+        domElements.filtroCiclo.innerHTML = opcionesCicloHtml;
+        domElements.filtroCiclo.value = anioActual.toString();
       }
 
-      // 6. Poblar las listas desplegables y forzar el renderizado de la tabla
+      // 2. Ejecutar la carga de cursos desde Firebase una vez estabilizado el DOM
       if (typeof cargarCursosEnSelectores === "function") {
-        cargarCursosEnSelectores().catch((e) => console.error(e));
+        await cargarCursosEnSelectores();
       }
 
+      // 3. Renderizar la tabla de alumnos
       await renderTable();
     } catch (err) {
       console.error("Error crítico durante la carga inicial:", err);
     }
 
-    // Forzado absoluto directo para limpiar la interfaz en Live Server
     const cuerpoTablaHtml = document.getElementById("tablaAlumnosBody");
     if (cuerpoTablaHtml && cuerpoTablaHtml.innerHTML.includes("Sincronizando")) {
-      cuerpoTablaHtml.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Use los filtros para buscar la nómina deseada.</td></tr>`;
+      cuerpoTablaHtml.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Use los filtros para buscar la nómina deseada.</td></tr>`;
     }
-  });
+  }
+
+  // EJECUCIÓN INMEDIATA
+  inicializarSistemaCompleto();
 })();
