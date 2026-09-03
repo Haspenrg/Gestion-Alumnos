@@ -10,39 +10,46 @@
     <link rel="stylesheet" href="estilos.css" />
     <style>
       body {
-        margin: 0 !important;
-        padding: 0 !important;
+        margin-top: 30px !important; /* 💡 Incrementado para empujar TODO el bloque negro hacia abajo */
+        padding: 4px 0 !important;
         max-width: 100% !important;
         width: 100vw;
-        background-color: #f8fafc;
+        background-color: transparent !important; /* 💡 Forzamos transparencia para que se vea el degradado de fondo en el techo */
+        display: block !important;
+        min-height: auto !important;
       }
+
+      /* 💡 Parche exacto para devolver el milímetro de aire al inicio de la cabecera */
+
       .panel-container {
+        background: #ffffff !important; /* 💡 Esto pinta TODO el contenedor exterior de negro */
+        padding-top: 12px !important;
         position: relative !important;
-        top: -54px !important; /* 👈 MODIFICADO: Ajusta este valor a -54px o -60px para elevar toda la estructura al techo */
+        top: 6px !important;
         max-width: 98% !important;
         width: 98%;
         margin: 0 auto !important;
-        padding: 0 10px !important;
+        padding: 0 10px 16px 10px !important;
       }
 
       .panel-container > header {
-        margin-top: 5px !important; /* Mantiene la cabecera en su punto ideal */
+        margin-top: 20px !important;
         top: 0 !important;
       }
 
       /* NUEVA ARQUITECTURA WIDESCREEN: La tabla toma todo el ancho */
       .workspace-layout-wizard {
         width: 100%;
-        margin-top: -15px !important;
       }
 
       .tabla-seccion-widescreen {
         background: #ffffff !important;
         padding: 16px !important;
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
+        border: 2px solid #1b4d82 !important;
         width: 100%;
         box-sizing: border-box;
+        margin-top: 1px !important;
       }
 
       /* ARREGLO DE RAÍZ PARA LA BARRA INFERIOR UNIFICADA */
@@ -54,8 +61,8 @@
         max-width: 100% !important;
         box-sizing: border-box !important;
         background: #ffffff !important;
-        padding: 8px 16px !important;
-        border: 1px solid #cbd5e1 !important;
+        padding: 4px 16px !important; /* 💡 Reducido de 8px a 4px para hacerla más fina */
+        border: 2px solid #1b4d82 !important; /* 💡 Borde azul institucional de 2px */
         border-radius: 8px !important;
         margin-top: 15px !important;
         flex-wrap: nowrap !important;
@@ -78,8 +85,8 @@
         transition: background-color 0.2s;
       }
       .fila-alumno td {
-        padding-top: 3px !important;
-        padding-bottom: 3px !important;
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
         vertical-align: middle;
       }
       .fila-alumno:hover {
@@ -133,8 +140,9 @@
         background: #f8fafc;
         padding: 12px;
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        margin-bottom: 15px;
+        border: 1px solid #1b4d82 !important;
+        margin-top: -8px !important; /* 💡 Forzamos la sección hacia arriba un milímetro */
+        margin-bottom: 6px;
         display: grid;
         grid-template-columns: 1fr;
         gap: 10px;
@@ -142,6 +150,7 @@
         box-sizing: border-box;
         align-items: center;
       }
+
       @media (min-width: 992px) {
         .seccion-filtros-wizard {
           grid-template-columns: 2.5fr 1fr 1.3fr 1.3fr 1.3fr 1.3fr;
@@ -176,10 +185,12 @@
         background: #ffffff;
         padding: 16px !important;
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
+        border: 2px solid #1b4d82 !important; /* Mantenemos tu borde azul */
         width: 100%;
         box-sizing: border-box;
+        margin-top: -12px !important; /* 💡 ¡Esto lo va a destrabar y obligar a subir! */
       }
+
       .tabla-usuarios-contenedor {
         max-height: 520px !important;
         overflow-y: auto !important;
@@ -694,12 +705,18 @@
   <body>
     <div
       class="panel-container"
-      style="position: relative !important; top: -110px !important; margin-top: 0 !important; padding-top: 0 !important"
+      style="
+        position: relative !important;
+        top: 0px !important;
+        margin-top: -28px !important;
+        padding-top: 12px !important;
+        padding-bottom: 16px !important;
+      "
     >
       <!-- ENCABEZADO INSTITUCIONAL PEGADO ARRIBA -->
       <header
         style="
-          margin-top: 5px !important;
+          margin-top: 1px !important;
           background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%);
           border-bottom: 4px solid #13365b;
           padding: 20px 32px;
@@ -709,7 +726,7 @@
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
           width: 100%;
           box-sizing: border-box;
-          margin-bottom: 25px;
+          margin-bottom: 2px !important;
           border-radius: 8px;
         "
       >
@@ -754,8 +771,8 @@
         digitales para el Ciclo seleccionado.
       </div>
 
-      <div class="workspace-layout-wizard">
-        <div class="tabla-seccion-widescreen">
+      <div class="workspace-layout-wizard" style="margin-top: -16px !important">
+        <div class="tabla-seccion-widescreen" style="margin-top: 20px !important">
           <!-- FILTROS MULTIDIMENSIONALES PUROS -->
           <div class="seccion-filtros-wizard">
             <input type="text" id="filtroBusquedaRapida" placeholder="Buscar por Nombre o DNI..." />
@@ -793,7 +810,7 @@
               box-sizing: border-box;
             "
           >
-            <div id="contenedorBotonAltaAdmin">
+            <div id="contenedorBotonAltaAdmin" style="margin-top: -8px !important">
               <button type="button" id="btnAbrirFormularioAlta" class="btn-abrir-wizard">
                 <span>➕ Matricular Nuevo Estudiante</span>
               </button>
@@ -841,9 +858,10 @@
               justify-content: space-between;
               align-items: center;
               background: #f8fafc;
-              padding: 8px 12px;
+              padding: 4px 12px !important; /* 💡 Cambiado de 8px a 4px arriba/abajo para hacer la barra más fina */
               border: 1px solid #e2e8f0;
               border-radius: 6px;
+              margin-top: -8px !important;
               margin-bottom: 8px;
               flex-wrap: wrap;
               gap: 10px;
@@ -891,7 +909,9 @@
               </button>
             </div>
             <div style="font-size: 13px; color: #475569; font-weight: 600">
-              <span id="contadorEstudiantes" style="color: #1b4d82">Matrículas Visualizadas: 0</span>
+              <span style="color: #1b4d82; font-weight: bold"
+                >Matrículas Seleccionadas: <span id="contadorEstudiantes">0</span></span
+              >
               <span id="contadorTotalEstudiantes" style="margin-left: 20px; color: #1e293b; font-weight: bold"
                 >Total Matrículas: 0</span
               >
@@ -899,7 +919,7 @@
           </div>
 
           <!-- CONTENEDOR MASIVO DE TABLA EXTENDIDO -->
-          <div class="tabla-usuarios-contenedor">
+          <div class="tabla-usuarios-contenedor" style="max-height: 500px; overflow-y: auto">
             <table style="width: 100%; border-collapse: collapse">
               <thead>
                 <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1">
@@ -934,8 +954,8 @@
           justify-content: space-between !important;
           align-items: center !important;
           background: #ffffff !important;
-          padding: 10px 20px !important;
-          border: 1px solid #cbd5e1 !important;
+          padding: 4px 20px !important; /* 💡 Reducido a 4px arriba/abajo */
+          border: 2px solid #1b4d82 !important; /* 💡 Borde azul institucional */
           border-radius: 8px !important;
           margin-top: 15px !important;
           width: 100% !important;

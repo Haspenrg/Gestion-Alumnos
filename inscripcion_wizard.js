@@ -64,6 +64,11 @@
   let confirmacionCallback = null;
   let usuarioLogueado = { email: "admin@haspen.edu.ar", role: "admin", nombre: "Desarrollador Local" };
   let rolNormalizado = "admin";
+  let cacheAlumnosPorCurso = {};
+  let cacheAlumnosPorDni = {};
+  let cursoIdOriginalLegajo = "";
+  let dniDestacadoSesion = "";
+  let listaIngresosNuevosSesion = [];
 
   // Objeto de persistencia digital para los archivos adjuntos
   let base64DocumentosTemporales = {
@@ -218,35 +223,144 @@
     const queryCiclo = domElements.filtroCiclo?.value || "2026";
     const subCadenaBusqueda = domElements.filtroBusqueda ? domElements.filtroBusqueda.value.toLowerCase().trim() : "";
 
-    // 2. Control visual: Bloquear la consulta SOLO si no hay una búsqueda activa por texto
-    if ((queryCurso === "todos" || queryCurso === "") && !subCadenaBusqueda) {
-      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Seleccione un curso para ver la nómina.</td></tr>`;
+    if ((queryCurso === "todos" || queryCurso === "") && queryEstado === "todos" && !subCadenaBusqueda) {
+      if (listaIngresosNuevosSesion.length > 0) {
+        let alumnosFiltrados = [...listaIngresosNuevosSesion];
+        domElements.tablaAlumnos.innerHTML = "";
+        if (domElements.contadorVisualizadas)
+          domElements.contadorVisualizadas.textContent = alumnosFiltrados.length.toString();
+
+        alumnosFiltrados.forEach((alumno) => {
+          const tr = document.createElement("tr");
+          tr.className = "fila-alumno";
+          tr.style.borderBottom = "1px solid #e2e8f0";
+          tr.style.transition = "all 0.3s ease";
+
+          const dniAlumnoLimpio = String(alumno.dni || "").replace(/[^0-9]/g, "");
+          const dniDestacadoLimpio = String(dniDestacadoSesion || "").replace(/[^0-9]/g, "");
+          const esDestacado = !!(dniDestacadoLimpio && dniAlumnoLimpio === dniDestacadoLimpio);
+
+          let textoCursoMapeado = "Mesa Entrada";
+          if (alumno.cursoId) {
+            const opcionesSelector = domElements.filtroCurso ? Array.from(domElements.filtroCurso.options) : [];
+            const opcionCoincidente = opcionesSelector.find((opt) => opt.value === alumno.cursoId);
+            if (opcionCoincidente && opcionCoincidente.value !== "todos") {
+              textoCursoMapeado = opcionCoincidente.textContent;
+            }
+          }
+
+          let celdaCurso = `<span class="badge-curso" style="background:#e0f2fe; color:#0369a1; font-weight:bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${textoCursoMapeado}</span>`;
+          if (alumno.estado === "Pase")
+            celdaCurso += ` <span class="badge-pase" style="background:#dbeafe; color:#1d4ed8; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Pase</span>`;
+          if (alumno.estado === "Baja")
+            celdaCurso += ` <span class="badge-baja" style="background:#fee2e2; color:#b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Baja</span>`;
+
+          const dMap = alumno.documentosDigitales || {};
+          const cargados = [
+            "dni_alumno",
+            "partida_nac",
+            "cert_primaria",
+            "buena_salud",
+            "carnet_vacunas",
+            "dni_tutor"
+          ].filter((k) => dMap[k] !== null && dMap[k] !== undefined).length;
+          const celdaAuditoria =
+            cargados === 6
+              ? `<span class="documentos-completos" style="color:#16a34a; font-weight: 500; font-size: 13px;">✓ Completo (6/6)</span>`
+              : `<span class="alerta-documentos" style="color:#d97706; font-weight: 500; font-size: 13px;">⚠ Incompleto (${cargados}/6)</span>`;
+
+          let celdaInclusion = `<span style="color:#94a3b8; font-size:12px;">Estándar</span>`;
+          if (alumno.trayectoriasFlexibles)
+            celdaInclusion = `<span style="color:#0ea5e9; font-weight:bold; font-size:12px; background:#e0f2fe; padding:4px 8px; border-radius:4px;">🗲 Flexible</span>`;
+          if (alumno.tienePPI)
+            celdaInclusion = `<span style="color:#a855f7; font-weight:bold; font-size:12px; background:#f3e8ff; padding:4px 8px; border-radius:4px;">🗲 Con PPI</span>`;
+          if (alumno.tieneCUD)
+            celdaInclusion = `<span style="color:#10b981; font-weight:bold; font-size:12px; background:#d1fae5; padding:4px 8px; border-radius:4px;">♿ Con CUD</span>`;
+
+          const accionesHTML = `
+            <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
+              <button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" data-curso-origen="${alumno.cursoId || ""}" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">Editar</button>
+              <button type="button" class="btn-accion-fila btn-fila-eliminar" data-dni="${alumno.dni}" style="background:#dc2626; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">Eliminar</button>
+            </div>
+          `;
+
+          let nombreParaMostrar = alumno.nombre || "";
+          tr.innerHTML = `
+            <td style="padding: 12px 10px; ${esDestacado ? "background-color: #fff7ed; border-left: 6px solid #104179; padding-left: 12px;" : ""}"><strong>${nombreParaMostrar}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
+            <td style="padding: 12px 10px; vertical-align: middle; ${esDestacado ? "background-color: #fff7ed;" : ""}">${celdaCurso}</td>
+            <td style="padding: 12px 10px; vertical-align: middle; ${esDestacado ? "background-color: #fff7ed;" : ""}">${celdaAuditoria}</td>
+            <td style="padding: 12px 10px; vertical-align: middle; ${esDestacado ? "background-color: #fff7ed;" : ""}">${celdaInclusion}</td>
+            <td style="padding: 12px 10px; vertical-align: middle; text-align: left; ${esDestacado ? "background-color: #fff7ed;" : ""}">${accionesHTML}</td>
+          `;
+
+          if (esDestacado) {
+            setTimeout(() => {
+              tr.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 150);
+          }
+
+          domElements.tablaAlumnos.appendChild(tr);
+        });
+        return;
+      }
+
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Seleccione un curso o un estado para ver la nómina.</td></tr>`;
       if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
       return;
     }
 
-    domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #1a73e8; font-weight: 500;">🔄 Sincronizando con Cloud Firestore...</td></tr>`;
-
-    // 3. Consulta asíncrona adaptativa a Firebase
+    // 3. Consulta asíncrona con Motor de Caché Acumulativa bajo demanda
     let listaAlumnos = [];
     try {
-      let q;
-      if (queryCurso === "todos" || queryCurso === "") {
-        // Si busca globalmente, traemos los alumnos de ese año lectivo completo
-        q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
-      } else {
-        // Si eligió un curso específico, filtramos de forma atómica
-        q = query(
-          collection(db, "alumnos"),
-          where("cursoId", "==", queryCurso),
-          where("cicloLectivo", "==", queryCiclo)
-        );
-      }
+      // CASO A: Bypass por Búsqueda Rápida activa -> Forzar red directa para evitar falsos negativos globales
+      if (subCadenaBusqueda) {
+        let q =
+          queryCurso === "todos" || queryCurso === ""
+            ? query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo))
+            : query(
+                collection(db, "alumnos"),
+                where("cursoId", "==", queryCurso),
+                where("cicloLectivo", "==", queryCiclo)
+              );
 
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((docSnap) => {
-        listaAlumnos.push(docSnap.data());
-      });
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((docSnap) => {
+          listaAlumnos.push(docSnap.data());
+        });
+      }
+      // CASO B: Consulta por División/Curso Específico -> Estrategia de Ahorro y Alojamiento Local
+      else if (queryCurso !== "todos" && queryCurso !== "") {
+        if (cacheAlumnosPorCurso[queryCurso]) {
+          // Hit de Caché: Recuperación instantánea con gasto cero lecturas
+          listaAlumnos = [...cacheAlumnosPorCurso[queryCurso]];
+        } else {
+          // Miss de Caché: Carga remota inicial y alimentación del contenedor indexado
+          const q = query(
+            collection(db, "alumnos"),
+            where("cursoId", "==", queryCurso),
+            where("cicloLectivo", "==", queryCiclo)
+          );
+          const querySnapshot = await getDocs(q);
+
+          let alumnosCurso = [];
+          querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            alumnosCurso.push(data);
+            cacheAlumnosPorDni[data.dni] = data; // Indexación cruzada por DNI para futuras búsquedas atómicas
+          });
+
+          cacheAlumnosPorCurso[queryCurso] = alumnosCurso;
+          listaAlumnos = [...alumnosCurso];
+        }
+      }
+      // CASO C: Consulta de Filtro Amplio sin Curso Asignado -> Extracción directa vía red
+      else {
+        const q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((docSnap) => {
+          listaAlumnos.push(docSnap.data());
+        });
+      }
     } catch (error) {
       console.error("Error en sincronización remota de alumnos:", error);
       domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor.</td></tr>`;
@@ -255,8 +369,15 @@
 
     // 4. Aplicar filtros secundarios en memoria sobre los datos recuperados
     let alumnosFiltrados = listaAlumnos.filter((alumno) => {
-      // Filtro por Estado de Matrícula
-      if (queryEstado !== "todos" && alumno.estado !== queryEstado) return false;
+      // 🛠️ CORREGIDO: Equivalencia exacta entre el value "Entrante" del HTML y el estado de Firestore
+      if (queryEstado !== "todos" && queryEstado !== "") {
+        if (queryEstado === "Entrante") {
+          if (alumno.estado !== "Mesa Entrada" && alumno.estado !== "Mesa de Entrada" && alumno.estado !== "Entrante")
+            return false;
+        } else {
+          if (alumno.estado !== queryEstado) return false;
+        }
+      }
 
       // Filtro por Inclusión (PPI / Trayectorias)
       if (queryInclusion !== "todos") {
@@ -291,6 +412,31 @@
       return true;
     });
 
+    // =========================================================================
+    // RASTREADOR UX: DETERMINACIÓN DE PAGINACIÓN AUTOMÁTICA POR ALUMNO DESTACADO
+    // =========================================================================
+    if (dniDestacadoSesion) {
+      // Buscamos la posición física del alumno recién modificado/creado en la lista final ordenada
+      const indiceAlumnoDestacado = alumnosFiltrados.findIndex((al) => al.dni === dniDestacadoSesion);
+
+      if (indiceAlumnoDestacado !== -1) {
+        const registrosPorPaginaBase = 25;
+        // Calculamos la página exacta (Base 1) dividiendo el índice por el tamaño de página
+        const paginaCalculada = Math.floor(indiceAlumnoDestacado / registrosPorPaginaBase) + 1;
+
+        paginaActual = paginaCalculada;
+
+        // Sincronizar el indicador de página del escritorio (Desktop) de inmediato
+        if (domElements.lblPaginaActual) {
+          domElements.lblPaginaActual.textContent = paginaActual;
+        }
+        console.log(
+          `[Paginador UX] Alumno localizado en índice ${indiceAlumnoDestacado}. Forzando visualización en Página: ${paginaActual}`
+        );
+      }
+    }
+    // =========================================================================
+
     // 5. Actualizar contadores visuales en la interfaz
     if (domElements.contadorVisualizadas) {
       domElements.contadorVisualizadas.textContent = alumnosFiltrados.length.toString();
@@ -315,8 +461,34 @@
       const tr = document.createElement("tr");
       tr.className = "fila-alumno";
       tr.style.borderBottom = "1px solid #e2e8f0";
+      tr.style.transition = "all 0.3s ease"; // Suaviza la aparición visual
+
+      // =========================================================================
+      // DISEÑO PREMIUM UX: DETECCIÓN Y ANCLAJE VISUAL DEL ALUMNO DESTACADO
+      // =========================================================================
+      const dniAlumnoLimpio = String(alumno.dni || "").replace(/[^0-9]/g, "");
+      const dniDestacadoLimpio = String(dniDestacadoSesion || "").replace(/[^0-9]/g, "");
+
+      let esDestacado = dniDestacadoLimpio && dniAlumnoLimpio === dniDestacadoLimpio;
+
+      if (dniDestacadoLimpio && dniAlumnoLimpio === dniDestacadoLimpio) {
+        tr.style.backgroundColor = "#f0f7ff";
+        tr.style.boxShadow = "inset 0 0 0 1px rgba(59, 130, 246, 0.05)";
+        setTimeout(() => {
+          const primeraCelda = tr.querySelector("td");
+          if (primeraCelda) {
+            primeraCelda.style.borderLeft = "6px solid transparent";
+            primeraCelda.style.borderImage = "linear-gradient(to bottom, #104179, #0284c7) 1";
+            primeraCelda.style.paddingLeft = "12px";
+          }
+          tr.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 150);
+      }
+
+      // =========================================================================
 
       // 🛠️ CORREGIDO: Mapeo de auxilio usando las opciones cargadas en el selector de filtros
+
       let textoCursoMapeado = "Mesa Entrada";
       if (alumno.cursoId) {
         const opcionesSelector = domElements.filtroCurso ? Array.from(domElements.filtroCurso.options) : [];
@@ -358,18 +530,21 @@
           ? `<span class="documentos-completos" style="color:#16a34a; font-weight: 500; font-size: 13px;">✓ Completo (6/6)</span>`
           : `<span class="alerta-documentos" style="color:#d97706; font-weight: 500; font-size: 13px;">⚠ Incompleto (${cargados}/6)</span>`;
 
-      // Columna Inclusión (PPI)
-      const celdaInclusion =
-        alumno.trayectoriaPPI === true || alumno.tienePPI === true
-          ? `<span style="color:#a855f7; font-weight:bold; font-size:12px; background:#f3e8ff; padding:4px 8px; border-radius:4px;">🗲 Con PPI</span>`
-          : alumno.trayectoriaFlexible === true
-            ? `<span style="color:#0ea5e9; font-weight:bold; font-size:12px; background:#e0f2fe; padding:4px 8px; border-radius:4px;">🗲 Flexible</span>`
-            : `<span style="color:#94a3b8; font-size:12px;">Estándar</span>`;
+      // Columna Inclusión (PPI / Trayectorias Flexibles / CUD)
+      let celdaInclusion = `<span style="color:#94a3b8; font-size:12px;">Estándar</span>`;
+
+      if (alumno.trayectoriaPPI === true || alumno.tienePPI === true) {
+        celdaInclusion = `<span style="color:#a855f7; font-weight:bold; font-size:12px; background:#f3e8ff; padding:4px 8px; border-radius:4px;">🗲 Con PPI</span>`;
+      } else if (alumno.trayectoriasFlexibles === true) {
+        celdaInclusion = `<span style="color:#0ea5e9; font-weight:bold; font-size:12px; background:#e0f2fe; padding:4px 8px; border-radius:4px;">🗲 Flexible</span>`;
+      } else if (alumno.tieneCUD === true) {
+        celdaInclusion = `<span style="color:#10b981; font-weight:bold; font-size:12px; background:#d1fae5; padding:4px 8px; border-radius:4px;">♿ Con CUD</span>`;
+      }
 
       // Columna Acciones Curriculares (Botones de operación)
       const accionesHTML = `
         <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
-          <button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Editar Alumno">Editar</button>
+          <button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" data-curso-origen="${alumno.cursoId || ""}" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Editar Alumno">Editar</button>
           <button type="button" class="btn-accion-fila btn-fila-eliminar" data-dni="${alumno.dni}" style="background:#dc2626; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Eliminar Alumno">Eliminar</button>
         </div>
       `;
@@ -437,9 +612,7 @@
   }
 
   function inicializarEventos() {
-    console.log("Rastreador: Entramos a inicializarEventos");
-
-    // Apertura y Cierre Formulario (Corregido: Eliminadas referencias inexistentes)
+    // Apertura y Cierre Formulario
     if (domElements.btnAbrirMatricula)
       domElements.btnAbrirMatricula.addEventListener("click", abrirFormularioInscripcion);
     if (domElements.btnCerrarModalX) domElements.btnCerrarModalX.addEventListener("click", cerrarFormularioInscripcion);
@@ -451,8 +624,19 @@
 
     // Navegación Interna Formulario
     if (domElements.btnAtrasForm) domElements.btnAtrasForm.addEventListener("click", pasoAnteriorFormulario);
-    if (domElements.btnSiguienteForm) domElements.btnSiguienteForm.addEventListener("click", pasoSiguienteFormulario);
-    if (domElements.formInscripcion) domElements.formInscripcion.addEventListener("submit", guardarLegajoDigital);
+    if (domElements.btnSiguienteForm) {
+      domElements.btnSiguienteForm.addEventListener("click", (e) => {
+        if (pasoActual === 1) {
+          validarPaso1YAvanzar();
+        } else if (pasoActual === 2) {
+          validarPaso2YAvanzar();
+        } else {
+          pasoSiguienteFormulario();
+        }
+      });
+    }
+
+    if (domElements.btnGuardarForm) domElements.btnGuardarForm.addEventListener("click", guardarLegajoDigital); // 👈 PEGAR ESTA LÍNEA ACÁ
 
     // Modales de Carga Masiva e Impresión
     if (domElements.csvFileInput) domElements.csvFileInput.addEventListener("change", seleccionarCSV);
@@ -473,11 +657,19 @@
       domElements.confirmBtnAceptar.addEventListener("click", aceptarConfirmacionHaspen);
 
     // Automatizaciones en tiempo real
-    if (domElements.inputFechaNac) domElements.inputFechaNac.addEventListener("change", calcularEdadAutomatica);
-    if (domElements.selectEstadoMatricula)
-      domElements.selectEstadoMatricula.addEventListener("change", alternarPanelPase);
+    if (domElements.inputFechaNac) domElements.inputFechaNac.addEventListener("change", calcularEdadAutomatica); // 👈 Escucha cambio de fecha
+    const selectorEstadoHTML = document.getElementById("estadoAlumno");
+    if (selectorEstadoHTML) {
+      selectorEstadoHTML.addEventListener("change", alternarPanelPase);
+    }
+
+    const selectorPaseHTML = document.getElementById("paseTipoTramite");
+    if (selectorPaseHTML) {
+      selectorPaseHTML.addEventListener("change", alternarPanelPase);
+    }
+
     if (domElements.chkPPI) domElements.chkPPI.addEventListener("change", alternarPanelPPI);
-    if (domElements.chkCUD) domElements.chkCUD.addEventListener("change", alternarPanelCUD); // 👈 Agregado
+    if (domElements.chkCUD) domElements.chkCUD.addEventListener("change", alternarPanelCUD);
     if (domElements.btnAbrirObsPPI) domElements.btnAbrirObsPPI.addEventListener("click", abrirModalObsPPI);
     if (domElements.btnCerrarObsPPI) domElements.btnCerrarObsPPI.addEventListener("click", cerrarModalObsPPI);
     if (domElements.btnGuardarObsPPI) domElements.btnGuardarObsPPI.addEventListener("click", guardarModalObsPPI);
@@ -485,49 +677,146 @@
     domElements.archivosOcultos.forEach((input) => {
       input.addEventListener("change", procesarDocumentoDigital);
     });
-    // 🛠️ FILTROS SUPERIORES UNIFICADOS (De arriba hacia abajo en la pantalla)
-    if (domElements.inputBusqueda) {
-      domElements.inputBusqueda.addEventListener("input", () => {
+
+    // Interceptor dinámico para acciones de la grilla de alumnos
+    if (domElements.tablaAlumnos) {
+      domElements.tablaAlumnos.addEventListener("click", async (e) => {
+        const botonEditar = e.target.closest(".btn-fila-editar");
+        if (botonEditar) {
+          const dniAlumno = botonEditar.getAttribute("data-dni");
+          const cursoOrigen = botonEditar.getAttribute("data-curso-origen") || "";
+
+          // 1. Sincronizar las variables globales de control de edición
+          window.esEdicion = true;
+          cursoIdOriginalLegajo = cursoOrigen;
+
+          console.log(`[Modo Edición] Activado para DNI: ${dniAlumno}. Curso origen: ${cursoOrigen}`);
+
+          // Nota técnica: Aquí el sistema llamará posteriormente a la carga de datos en el Wizard
+          // Por ahora, dejamos el puente de control de caché listo.
+        }
+      });
+    }
+
+    if (domElements.filtroBusqueda) {
+      domElements.filtroBusqueda.addEventListener("input", () => {
+        listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
     if (domElements.filtroCurso) {
       domElements.filtroCurso.addEventListener("change", () => {
+        listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
     if (domElements.filtroEstado) {
       domElements.filtroEstado.addEventListener("change", () => {
+        listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
     if (domElements.filtroAuditoria) {
       domElements.filtroAuditoria.addEventListener("change", () => {
+        listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
     if (domElements.filtroInclusion) {
       domElements.filtroInclusion.addEventListener("change", () => {
+        listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
+
     if (domElements.filtroCiclo) {
       domElements.filtroCiclo.addEventListener("change", () => {
+        listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
+        calcularEdadAutomatica();
       });
     }
 
     renderTable();
   }
 
+  // Asegurar que la variable de persistencia temporal esté al alcance global del archivo
+  base64DocumentosTemporales = {
+    dni_alumno: null,
+    partida_nac: null,
+    cert_primaria: null,
+    buena_salud: null,
+    carnet_vacunas: null,
+    dni_tutor: null,
+    acta_ppi: null,
+    acta_cud: null
+  };
+
+  // Variable global de contexto para el validador de Firebase
+  window.esEdicion = false;
+
   function abrirFormularioInscripcion() {
-    if (domElements.modalFormulario) domElements.modalFormulario.style.display = "block";
+    // 1. Establecer contexto de alta nueva (crítico para control de duplicados)
+    window.esEdicion = false;
+    dniDestacadoSesion = "";
+
+    // 2. Reseteo estructural del formulario HTML
+    if (domElements.formInscripcion) {
+      domElements.formInscripcion.reset();
+    }
+
+    // 3. Forzar el ocultamiento de paneles condicionales
+    if (domElements.panelPase) domElements.panelPase.style.display = "none";
+    if (domElements.panelPPI) domElements.panelPPI.style.display = "none";
+    if (domElements.panelCUD) domElements.panelCUD.style.display = "none";
+    if (domElements.filaDocPPI) domElements.filaDocPPI.style.display = "none";
+    if (domElements.filaDocCUD) domElements.filaDocCUD.style.display = "none";
+
+    // 4. Vaciar la matriz de almacenamiento de archivos en base64
+    Object.keys(base64DocumentosTemporales).forEach((key) => {
+      base64DocumentosTemporales[key] = null;
+
+      // Limpiar los elementos de la interfaz de auditoría vinculados
+      const casilleroCheck = document.getElementById(`chk-${key}`);
+      const botonOjo = document.getElementById(`view-${key}`);
+
+      if (casilleroCheck) casilleroCheck.checked = false;
+      if (botonOjo) {
+        botonOjo.disabled = true;
+        botonOjo.onclick = null; // Quita antiguos disparadores de previsualización
+      }
+    });
+
+    // 5. Restablecer el botón de Observaciones PPI a su estado inicial oscuro
+    if (domElements.btnAbrirObsPPI) {
+      domElements.btnAbrirObsPPI.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+      <span>Agregar / Editar Observación</span>
+    `;
+      domElements.btnAbrirObsPPI.style.backgroundColor = "#0f172a";
+      domElements.btnAbrirObsPPI.style.borderColor = "#0f172a";
+      domElements.btnAbrirObsPPI.style.color = "#ffffff";
+    }
+    if (domElements.observacionesPPI) domElements.observacionesPPI.value = "";
+
+    const selectorCursoForm = document.getElementById("selectCursoAlumno");
+    if (selectorCursoForm) {
+      selectorCursoForm.disabled = false;
+      selectorCursoForm.style.opacity = "1";
+    }
+
+    if (domElements.modalFormulario) {
+      domElements.modalFormulario.style.display = "block";
+    }
     cambiarPasoFormulario(1);
   }
 
@@ -592,26 +881,220 @@
     if (pasoActual < 5) cambiarPasoFormulario(pasoActual + 1); // 👈 CORREGIDO: Cambiado de 4 a 5
   }
 
-  function guardarLegajoDigital(e) {
-    e.preventDefault();
-    console.log("Legajo resguardado con éxito en Firestore.");
-    if (domElements.modalFormulario) domElements.modalFormulario.style.display = "none";
-    if (domElements.formInscripcion) domElements.formInscripcion.reset();
+  async function guardarLegajoDigital(e) {
+    if (e) e.preventDefault();
+
+    const nombreVal = domElements.inputNombre ? domElements.inputNombre.value.trim() : "";
+    const dniVal = domElements.inputDni ? domElements.inputDni.value.trim() : "";
+
+    const elBtnGuardar = domElements.btnGuardarForm;
+    let textoOriginalBtn = "Guardar Legajo";
+    if (elBtnGuardar) {
+      textoOriginalBtn = elBtnGuardar.textContent;
+      elBtnGuardar.disabled = true;
+      elBtnGuardar.textContent = "⏳ Guardando legajo...";
+      elBtnGuardar.style.opacity = "0.7";
+    }
+
+    // FILTRO 3: Control de duplicados en Firebase (Bloqueante)
+    try {
+      const alumnoRef = doc(db, "alumnos", dniVal);
+      const alumnoSnap = await getDoc(alumnoRef);
+
+      if (alumnoSnap.exists() && !window.esEdicion) {
+        await window.haspenConfirm(
+          `El DNI/Documento "${dniVal}" ya pertenece a un estudiante registrado en el sistema. Verifique los datos ingresados.`,
+          "Estudiante Duplicado",
+          "⚠️"
+        );
+        cambiarPasoFormulario(1);
+
+        if (elBtnGuardar) {
+          elBtnGuardar.disabled = false;
+          elBtnGuardar.textContent = textoOriginalBtn;
+          elBtnGuardar.style.opacity = "1";
+        }
+        return;
+      }
+
+      // 2. Componer el objeto JSON final para la base de datos
+      const nuevoLegajo = {
+        dni: dniVal,
+        nombre: nombreVal,
+        genero: domElements.selectGenero ? domElements.selectGenero.value : "Masculino",
+        cuil: domElements.inputCuil ? domElements.inputCuil.value.trim() : "",
+        fechaNacimiento: domElements.inputFechaNac ? domElements.inputFechaNac.value : "",
+        edad: domElements.inputEdad ? domElements.inputEdad.value : "",
+        lugarNacimiento: domElements.inputLugarNac ? domElements.inputLugarNac.value.trim() : "",
+        nacionalidad: domElements.inputNacionalidad ? domElements.inputNacionalidad.value.trim() : "Argentina",
+        direccion: domElements.inputDireccion ? domElements.inputDireccion.value.trim() : "",
+        telefono1: domElements.inputTelefono1 ? domElements.inputTelefono1.value.trim() : "",
+        telefono2: domElements.inputTelefono2 ? domElements.inputTelefono2.value.trim() : "",
+
+        // Datos del Adulto Responsable (Paso 3)
+        nombreTutor: domElements.inputNombreTutor ? domElements.inputNombreTutor.value.trim() : "",
+        dniTutor: domElements.inputDniTutor ? domElements.inputDniTutor.value.trim() : "",
+        generoTutor: domElements.selectGeneroTutor ? domElements.selectGeneroTutor.value : "Masculino",
+        cuilTutor: domElements.inputCuilTutor ? domElements.inputCuilTutor.value.trim() : "",
+        emailTutor: domElements.inputEmailTutor ? domElements.inputEmailTutor.value.trim() : "",
+
+        // Configuración Institucional e Inclusiones (Paso 2)
+        estado: domElements.selectEstadoMatricula ? domElements.selectEstadoMatricula.value : "Regular",
+        cursoId: domElements.selectCursoAsignado ? domElements.selectCursoAsignado.value : "",
+        cicloLectivo: domElements.filtroCiclo ? domElements.filtroCiclo.value : "2026",
+
+        // Integración de Inclusiones y Trayectorias
+        trayectoriasFlexibles: domElements.chkTrayectorias ? domElements.chkTrayectorias.checked : false,
+        tienePPI: domElements.chkPPI ? domElements.chkPPI.checked : false,
+        ppiResolucion: domElements.inputPpiResolucion ? domElements.inputPpiResolucion.value.trim() : "",
+        observacionesPPI: domElements.observacionesPPI ? domElements.observacionesPPI.value.trim() : "",
+        tieneCUD: domElements.chkCUD ? domElements.chkCUD.checked : false,
+
+        // Observaciones Generales (Paso 5)
+        observacionesGenerales: domElements.txtObservaciones ? domElements.txtObservaciones.value.trim() : "",
+
+        // Auditoría Documental Comprimida (Paso 4)
+        documentosDigitales: { ...base64DocumentosTemporales },
+        fechaUltimoResguardo: new Date().toISOString()
+      };
+
+      if (window.esEdicion && cursoIdOriginalLegajo) {
+        delete cacheAlumnosPorCurso[cursoIdOriginalLegajo];
+        await setDoc(
+          doc(db, "control_cambios", cursoIdOriginalLegajo),
+          { ultimaModificacion: new Date().toISOString() },
+          { merge: true }
+        );
+      }
+
+      if (nuevoLegajo.cursoId && nuevoLegajo.estado !== "Baja") {
+        delete cacheAlumnosPorCurso[nuevoLegajo.cursoId];
+        await setDoc(
+          doc(db, "control_cambios", nuevoLegajo.cursoId),
+          { ultimaModificacion: new Date().toISOString() },
+          { merge: true }
+        );
+      }
+
+      dniDestacadoSesion = dniVal;
+      listaIngresosNuevosSesion = listaIngresosNuevosSesion.filter((al) => al.dni !== nuevoLegajo.dni);
+      listaIngresosNuevosSesion.unshift(nuevoLegajo);
+
+      if (domElements.filtroCurso) domElements.filtroCurso.value = "todos";
+      if (domElements.filtroEstado) domElements.filtroEstado.value = "todos";
+      if (domElements.filtroAuditoria) domElements.filtroAuditoria.value = "todos";
+      if (domElements.filtroInclusion) domElements.filtroInclusion.value = "todos";
+      if (domElements.filtroBusqueda) domElements.filtroBusqueda.value = "";
+
+      cursoIdOriginalLegajo = "";
+      paginaActual = 1;
+
+      // 4. Crear e inyectar el cartel verde estilizado en el centro de la pantalla
+
+      const avisoExito = document.createElement("div");
+      avisoExito.style.position = "fixed";
+      avisoExito.style.top = "30%";
+      avisoExito.style.left = "50%";
+      avisoExito.style.transform = "translate(-50%, -50%)";
+      avisoExito.style.backgroundColor = "#10b981"; // Verde esmeralda institucional
+      avisoExito.style.color = "#ffffff"; // Letras blancas
+      avisoExito.style.padding = "16px 32px";
+      avisoExito.style.borderRadius = "8px";
+      avisoExito.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.3)";
+      avisoExito.style.zIndex = "100000";
+      avisoExito.style.fontSize = "16px";
+      avisoExito.style.fontWeight = "bold";
+      avisoExito.style.textAlign = "center";
+      avisoExito.innerHTML = "✅ ¡Legajo Guardado con Éxito!";
+      document.body.appendChild(avisoExito);
+
+      // 5. Temporizador de 2 segundos para la lectura, el cierre y la limpieza automática
+      setTimeout(() => {
+        // Remover el cartel verde de la pantalla
+        avisoExito.remove();
+
+        // Cerrar el modal del asistente
+        if (domElements.modalFormulario) {
+          domElements.modalFormulario.style.display = "none";
+        }
+
+        // Limpiar los campos para la próxima carga
+        if (domElements.formInscripcion) {
+          domElements.formInscripcion.reset();
+        }
+
+        // Refrescar la grilla de alumnos con los datos nuevos
+        renderTable();
+      }, 2000); // 2000 milisegundos equivalen a 2 segundos exactos
+    } catch (error) {
+      console.error("Error crítico al interactuar con Firestore:", error);
+      await window.haspenConfirm(
+        "Ocurrió un error en la conexión al intentar resguardar los datos en la nube. Intente nuevamente.",
+        "Error de Servidor",
+        "❌"
+      );
+    } finally {
+      // Devolver los controles a su estado inicial activo
+      if (elBtnGuardar) {
+        elBtnGuardar.disabled = false;
+        elBtnGuardar.textContent = textoOriginalBtn;
+        elBtnGuardar.style.opacity = "1";
+      }
+    }
   }
 
   function calcularEdadAutomatica() {
-    if (!domElements.inputFechaNac.value) return;
+    if (!domElements.inputFechaNac || !domElements.inputFechaNac.value) {
+      if (domElements.inputEdad) domElements.inputEdad.value = "";
+      return;
+    }
+
+    // 1. Obtener el año del ciclo lectivo elegido en la pantalla (Ej: "2021", "2026")
+    const anioCiclo =
+      domElements.filtroCiclo && domElements.filtroCiclo.value ? parseInt(domElements.filtroCiclo.value, 10) : 2026; // As de agosto de 2026 como fallback estándar del sistema
+
+    // 2. Establecer la fecha de corte normativa escolar (30 de Junio de ese año elegido)
+    const fechaCorteEscolar = new Date(anioCiclo, 5, 30); // Mes 5 es Junio en JavaScript
     const fechaNac = new Date(domElements.inputFechaNac.value);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - fechaNac.getFullYear();
-    const mes = hoy.getMonth() - fechaNac.getMonth();
-    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
-    if (domElements.inputEdad) domElements.inputEdad.value = edad >= 0 ? edad : 0;
+
+    // 3. Calcular la edad que el estudiante tenía en ese momento histórico
+    let edad = fechaCorteEscolar.getFullYear() - fechaNac.getFullYear();
+    const mesDiferencia = fechaCorteEscolar.getMonth() - fechaNac.getMonth();
+
+    if (mesDiferencia < 0 || (mesDiferencia === 0 && fechaCorteEscolar.getDate() < fechaNac.getDate())) {
+      edad--;
+    }
+
+    // 4. Mostrar el resultado estilizado en el casillero correspondiente
+    if (domElements.inputEdad) {
+      domElements.inputEdad.value = edad >= 0 ? `${edad} años` : "0 años";
+    }
   }
 
   function alternarPanelPase() {
-    if (!domElements.selectEstadoMatricula || !domElements.panelPase) return;
-    domElements.panelPase.style.display = domElements.selectEstadoMatricula.value === "Pase" ? "flex" : "none";
+    const selectorEstado = document.getElementById("estadoAlumno");
+    const selectorCurso = document.getElementById("selectCursoAlumno");
+    const selectorPase = document.getElementById("paseTipoTramite");
+
+    if (!selectorEstado) return;
+
+    const estado = selectorEstado.value;
+    const tipoPase = selectorPase ? selectorPase.value : "";
+
+    if (domElements.panelPase) {
+      domElements.panelPase.style.display = estado === "Pase" ? "flex" : "none";
+    }
+
+    if (selectorCurso) {
+      if (estado === "Entrante" || estado === "Baja" || (estado === "Pase" && tipoPase === "Saliente")) {
+        selectorCurso.disabled = true;
+        selectorCurso.value = "";
+        selectorCurso.style.opacity = "0.5";
+      } else {
+        selectorCurso.disabled = false;
+        selectorCurso.style.opacity = "1";
+      }
+    }
   }
 
   function alternarPanelPPI() {
@@ -623,21 +1106,103 @@
   function alternarPanelCUD() {
     if (!domElements.chkCUD || !domElements.panelCUD || !domElements.filaDocCUD) return;
     const tieneCUD = domElements.chkCUD.checked;
+
+    // Muestra u oculta tanto el bloque de campos como la fila de auditoría documental (Paso 4)
     domElements.panelCUD.style.display = tieneCUD ? "flex" : "none";
     domElements.filaDocCUD.style.display = tieneCUD ? "flex" : "none";
+
+    // Si el usuario desmarca el CUD, limpiamos los datos residuales que haya escrito
+    if (!tieneCUD) {
+      const inputNroCUD = document.getElementById("ppiResolucion"); // Reemplazar por el ID de tu campo de CUD si difiere
+      if (inputNroCUD) inputNroCUD.value = "";
+    }
   }
 
-  function procesarDocumentoDigital(e) {
+  // Función interna de alta fidelidad para comprimir imágenes mediante Canvas
+  function optimizarImagenHD(base64Original) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Original;
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const MAX_WIDTH = 1600; // Resolución optimizada para lectura de textos escolares finos
+
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Exporta como JPEG al 75% de fidelidad (equilibrio perfecto nitidez/peso)
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.onerror = function () {
+        resolve(base64Original); // PDFs o archivos no gráficos pasan sin alteración
+      };
+    });
+  }
+
+  // Interceptor reactivo de carga documental
+  async function procesarDocumentoDigital(e) {
     const input = e.target;
     const key = input.getAttribute("data-key");
     const casilleroCheck = document.getElementById(`chk-${key}`);
     const botonOjo = document.getElementById(`view-${key}`);
+    const archivo = input.files[0];
 
-    if (input.files.length > 0) {
+    if (!archivo) return;
+
+    const lectorBinario = new FileReader();
+    lectorBinario.onload = async function (evt) {
+      let stringBase64Final = evt.target.result;
+      const umbralSeguroBytes = 300 * 1024; // 300 KB
+
+      // Intercepta e inicia compresión HD solo si supera el umbral y es formato gráfico
+      if (archivo.size > umbralSeguroBytes && archivo.type.startsWith("image/")) {
+        console.log(`[Compresor HD] Optimizando imagen de ${(archivo.size / 1024).toFixed(1)} KB.`);
+        stringBase64Final = await optimizarImagenHD(stringBase64Final);
+      }
+
+      // Persistencia en la memoria volátil antes del guardado definitivo
+      base64DocumentosTemporales[key] = stringBase64Final;
+
+      // Actualización reactiva de la interfaz de auditoría
       if (casilleroCheck) casilleroCheck.checked = true;
-      if (botonOjo) botonOjo.disabled = false;
-      console.log(`Documento subido: ${key}`);
-    }
+      if (botonOjo) {
+        botonOjo.disabled = false;
+        botonOjo.onclick = function () {
+          const ventanaEmergente = window.open();
+          if (!ventanaEmergente) {
+            window.haspenAlert("Autorice los pop-ups en el navegador para visualizar documentos.", "alerta");
+            return;
+          }
+          ventanaEmergente.document.write(`
+            <html>
+            <head><title>Previsualización: ${key}</title></head>
+            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+            ${
+              stringBase64Final.startsWith("data:application/pdf")
+                ? `<iframe src="${stringBase64Final}" style="width:100vw; height:100vh; border:none;"></iframe>`
+                : `<img src="${stringBase64Final}" style="max-width:95%; max-height:95vh; object-fit:contain;">`
+            }
+            </body>
+            </html>
+          `);
+          ventanaEmergente.document.close();
+        };
+      }
+      console.log(`Documento subido y optimizado con éxito: ${key}`);
+    };
+
+    lectorBinario.readAsDataURL(archivo);
+    input.value = ""; // Limpieza de control del input para permitir cargas sucesivas del mismo archivo
   }
 
   function paginaAnterior() {
@@ -657,9 +1222,16 @@
   }
 
   function reiniciarVistaListado() {
+    // Vaciado absoluto de los contenedores locales para forzar descarga limpia desde Firebase
+    cacheAlumnosPorCurso = {};
+    cacheAlumnosPorDni = {};
+
     paginaActual = 1;
     actualizarEtiquetaPagina();
     if (domElements.filtroBusqueda) domElements.filtroBusqueda.value = "";
+
+    // Volver a renderizar: al estar la caché vacía, el Caso B hará un "Miss" e irá a la red
+    renderTable();
   }
 
   function seleccionarCSV(e) {
@@ -834,6 +1406,92 @@
 
       // 3. Renderizar la tabla de alumnos
       await renderTable();
+      // =========================================================================
+      // 📡 MOTOR SEMÁFORO: HILO EN SEGUNDO PLANO PARA ACTUALIZACIÓN COOPERATIVA
+      // =========================================================================
+      if (db && usuarioLogueado && Array.isArray(usuarioLogueado.cursosAsignados)) {
+        // Variable interna para evitar falsas alarmas durante el microsegundo de conexión inicial
+        let conexionesEstabilizadas = false;
+        setTimeout(() => {
+          conexionesEstabilizadas = true;
+        }, 1500);
+
+        usuarioLogueado.cursosAsignados.forEach((idCursoEscucha) => {
+          if (!idCursoEscucha) return;
+
+          // Escucha selectiva de 1 lectura por curso asignado para el blindaje de la cuota Spark
+          onSnapshot(doc(db, "control_cambios", idCursoEscucha), (snapshotCambio) => {
+            if (!conexionesEstabilizadas) return; // Evita el disparo inicial espurio
+
+            console.log(`[Semáforo] ⚠️ Modificación detectada externamente en el curso: ${idCursoEscucha}`);
+
+            // Diseñar e Inyectar la Alerta UX Estilizada Oficial de Haspen
+            const idAlertaEstilizada = `alerta-haspen-sync-${idCursoEscucha}`;
+            if (document.getElementById(idAlertaEstilizada)) return; // Evita duplicar el cartel visual
+
+            const contenedorAlerta = document.createElement("div");
+            contenedorAlerta.id = idAlertaEstilizada;
+
+            // Estilos CSS Inline premium adaptados a la paleta institucional
+            Object.assign(contenedorAlerta.style, {
+              position: "fixed",
+              bottom: "24px",
+              right: "24px",
+              backgroundColor: "#1e293b", // Slate oscuro industrial
+              color: "#ffffff",
+              padding: "16px 20px",
+              borderRadius: "10px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2)",
+              zIndex: "999999",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              maxWidth: "340px",
+              borderLeft: "5px solid #3b82f6", // Borde azul reactivo brillante
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              animation: "slideInHaspen 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+            });
+
+            // Animación de entrada fluida por código dinámico
+            if (!document.getElementById("style-haspen-animations")) {
+              const styleTag = document.createElement("style");
+              styleTag.id = "style-haspen-animations";
+              styleTag.textContent = `@keyframes slideInHaspen { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
+              document.head.appendChild(styleTag);
+            }
+
+            contenedorAlerta.innerHTML = `
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">🔔</span>
+                <div>
+                  <h4 style="margin:0; font-size:14px; font-weight:600; color:#f8fafc;">Nómina Desactualizada</h4>
+                  <p style="margin:2px 0 0 0; font-size:12px; color:#94a3b8; line-height:1.4;">Un operador modificó datos o registros del curso asignado a su preceptoría.</p>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+                <button id="btn-ignorar-${idCursoEscucha}" style="background:transparent; border:none; color:#64748b; font-size:12px; font-weight:500; cursor:pointer; padding:6px 10px; border-radius:4px;">Ignorar</button>
+                <button id="btn-sync-${idCursoEscucha}" style="background:#3b82f6; border:none; color:white; font-size:12px; font-weight:600; cursor:pointer; padding:6px 12px; border-radius:4px; box-shadow:0 2px 4px rgba(59,130,246,0.3);">Sincronizar</button>
+              </div>
+            `;
+
+            document.body.appendChild(contenedorAlerta);
+
+            // Manejadores de los botones del cartel estilizado
+            document.getElementById(`btn-ignorar-${idCursoEscucha}`).addEventListener("click", () => {
+              contenedorAlerta.remove();
+            });
+
+            document.getElementById(`btn-sync-${idCursoEscucha}`).addEventListener("click", () => {
+              // Acción reactiva: Invalidar la caché vieja y re-renderizar de inmediato
+              delete cacheAlumnosPorCurso[idCursoEscucha];
+              console.log(`[Semáforo UX] 🔄 Sincronizando curso ${idCursoEscucha} a petición del preceptor.`);
+              contenedorAlerta.remove();
+              renderTable();
+            });
+          });
+        });
+      }
+      // =========================================================================
     } catch (err) {
       console.error("Error crítico durante la carga inicial:", err);
     }
@@ -842,6 +1500,51 @@
     if (cuerpoTablaHtml && cuerpoTablaHtml.innerHTML.includes("Sincronizando")) {
       cuerpoTablaHtml.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Use los filtros para buscar la nómina deseada.</td></tr>`;
     }
+  }
+  function validarPaso2YAvanzar() {
+    const selectorEstado = document.getElementById("estadoAlumno");
+    const selectorCurso = document.getElementById("selectCursoAlumno");
+
+    if (selectorEstado && selectorCurso) {
+      if (selectorEstado.value === "Regular" && !selectorCurso.value) {
+        mostrarConfirmacionHaspen(
+          "Curso Obligatorio",
+          "Todo estudiante con estado Regular debe tener un Curso / Sección asignada para poder continuar.",
+          () => {}
+        );
+        if (selectorCurso) selectorCurso.focus();
+        return; // Frena el avance al Paso 3
+      }
+    }
+
+    pasoSiguienteFormulario();
+  }
+
+  function validarPaso1YAvanzar() {
+    const nombreVal = domElements.inputNombre ? domElements.inputNombre.value.trim() : "";
+    const dniVal = domElements.inputDni ? domElements.inputDni.value.replace(/\s+/g, "") : "";
+
+    if (!nombreVal || !dniVal) {
+      mostrarConfirmacionHaspen(
+        "Faltan Campos Obligatorios",
+        "Los campos Nombre Completo y Documento (DNI) son requeridos para poder continuar.",
+        () => {}
+      );
+      return;
+    }
+
+    if (/^\d+$/.test(dniVal) && (dniVal.length < 7 || dniVal.length > 8)) {
+      mostrarConfirmacionHaspen(
+        "Formato de DNI Inusual",
+        `El DNI ingresado ("${dniVal}") tiene ${dniVal.length} dígitos. Lo habitual para un documento argentino son 7 u 8 dígitos. ¿Desea continuar de todas formas?`,
+        () => {
+          pasoSiguienteFormulario();
+        }
+      );
+      return;
+    }
+
+    pasoSiguienteFormulario();
   }
 
   // EJECUCIÓN INMEDIATA
