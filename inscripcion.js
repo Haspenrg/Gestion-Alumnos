@@ -223,88 +223,9 @@
     const queryCiclo = domElements.filtroCiclo?.value || "2026";
     const subCadenaBusqueda = domElements.filtroBusqueda ? domElements.filtroBusqueda.value.toLowerCase().trim() : "";
 
+    // 2. REGLA ESCOLAR: Al arrancar o si los filtros están por defecto, la grilla permanece limpia y en cero
     if ((queryCurso === "todos" || queryCurso === "") && queryEstado === "todos" && !subCadenaBusqueda) {
-      if (listaIngresosNuevosSesion.length > 0) {
-        let alumnosFiltrados = [...listaIngresosNuevosSesion];
-        domElements.tablaAlumnos.innerHTML = "";
-        if (domElements.contadorVisualizadas)
-          domElements.contadorVisualizadas.textContent = alumnosFiltrados.length.toString();
-
-        alumnosFiltrados.forEach((alumno) => {
-          const tr = document.createElement("tr");
-          tr.className = "fila-alumno";
-          tr.style.borderBottom = "1px solid #e2e8f0";
-          tr.style.transition = "all 0.3s ease";
-
-          const dniAlumnoLimpio = String(alumno.dni || "").replace(/[^0-9]/g, "");
-          const dniDestacadoLimpio = String(dniDestacadoSesion || "").replace(/[^0-9]/g, "");
-          const esDestacado = !!(dniDestacadoLimpio && dniAlumnoLimpio === dniDestacadoLimpio);
-
-          let textoCursoMapeado = "Mesa Entrada";
-          if (alumno.cursoId) {
-            const opcionesSelector = domElements.filtroCurso ? Array.from(domElements.filtroCurso.options) : [];
-            const opcionCoincidente = opcionesSelector.find((opt) => opt.value === alumno.cursoId);
-            if (opcionCoincidente && opcionCoincidente.value !== "todos") {
-              textoCursoMapeado = opcionCoincidente.textContent;
-            }
-          }
-
-          let celdaCurso = `<span class="badge-curso" style="background:#e0f2fe; color:#0369a1; font-weight:bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${textoCursoMapeado}</span>`;
-          if (alumno.estado === "Pase")
-            celdaCurso += ` <span class="badge-pase" style="background:#dbeafe; color:#1d4ed8; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Pase</span>`;
-          if (alumno.estado === "Baja")
-            celdaCurso += ` <span class="badge-baja" style="background:#fee2e2; color:#b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Baja</span>`;
-
-          const dMap = alumno.documentosDigitales || {};
-          const cargados = [
-            "dni_alumno",
-            "partida_nac",
-            "cert_primaria",
-            "buena_salud",
-            "carnet_vacunas",
-            "dni_tutor"
-          ].filter((k) => dMap[k] !== null && dMap[k] !== undefined).length;
-          const celdaAuditoria =
-            cargados === 6
-              ? `<span class="documentos-completos" style="color:#16a34a; font-weight: 500; font-size: 13px;">✓ Completo (6/6)</span>`
-              : `<span class="alerta-documentos" style="color:#d97706; font-weight: 500; font-size: 13px;">⚠ Incompleto (${cargados}/6)</span>`;
-
-          let celdaInclusion = `<span style="color:#94a3b8; font-size:12px;">Estándar</span>`;
-          if (alumno.trayectoriasFlexibles)
-            celdaInclusion = `<span style="color:#0ea5e9; font-weight:bold; font-size:12px; background:#e0f2fe; padding:4px 8px; border-radius:4px;">🗲 Flexible</span>`;
-          if (alumno.tienePPI)
-            celdaInclusion = `<span style="color:#a855f7; font-weight:bold; font-size:12px; background:#f3e8ff; padding:4px 8px; border-radius:4px;">🗲 Con PPI</span>`;
-          if (alumno.tieneCUD)
-            celdaInclusion = `<span style="color:#10b981; font-weight:bold; font-size:12px; background:#d1fae5; padding:4px 8px; border-radius:4px;">♿ Con CUD</span>`;
-
-          const accionesHTML = `
-            <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
-              <button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" data-curso-origen="${alumno.cursoId || ""}" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">Editar</button>
-              <button type="button" class="btn-accion-fila btn-fila-eliminar" data-dni="${alumno.dni}" style="background:#dc2626; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">Eliminar</button>
-            </div>
-          `;
-
-          let nombreParaMostrar = alumno.nombre || "";
-          tr.innerHTML = `
-            <td style="padding: 12px 10px; ${esDestacado ? "background-color: #fff7ed; border-left: 6px solid #104179; padding-left: 12px;" : ""}"><strong>${nombreParaMostrar}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
-            <td style="padding: 12px 10px; vertical-align: middle; ${esDestacado ? "background-color: #fff7ed;" : ""}">${celdaCurso}</td>
-            <td style="padding: 12px 10px; vertical-align: middle; ${esDestacado ? "background-color: #fff7ed;" : ""}">${celdaAuditoria}</td>
-            <td style="padding: 12px 10px; vertical-align: middle; ${esDestacado ? "background-color: #fff7ed;" : ""}">${celdaInclusion}</td>
-            <td style="padding: 12px 10px; vertical-align: middle; text-align: left; ${esDestacado ? "background-color: #fff7ed;" : ""}">${accionesHTML}</td>
-          `;
-
-          if (esDestacado) {
-            setTimeout(() => {
-              tr.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 150);
-          }
-
-          domElements.tablaAlumnos.appendChild(tr);
-        });
-        return;
-      }
-
-      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Seleccione un curso o un estado para ver la nómina.</td></tr>`;
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Establezca un criterio de búsqueda o seleccione un curso para visualizar la nómina.</td></tr>`;
       if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
       return;
     }
@@ -312,16 +233,37 @@
     // 3. Consulta asíncrona con Motor de Caché Acumulativa bajo demanda
     let listaAlumnos = [];
     try {
+      const esAdmin = rolNormalizado === "administrador" || rolNormalizado === "admin";
+      const cursosPermitidos = usuarioLogueado.cursosAsignados || [];
+
       // CASO A: Bypass por Búsqueda Rápida activa -> Forzar red directa para evitar falsos negativos globales
       if (subCadenaBusqueda) {
-        let q =
-          queryCurso === "todos" || queryCurso === ""
-            ? query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo))
-            : query(
-                collection(db, "alumnos"),
-                where("cursoId", "==", queryCurso),
-                where("cicloLectivo", "==", queryCiclo)
-              );
+        let q;
+        if (queryCurso === "todos" || queryCurso === "") {
+          if (esAdmin) {
+            // El administrador ve todo el colegio
+            q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
+          } else {
+            // El preceptor solo busca en sus cursos asignados (si tiene)
+            if (cursosPermitidos.length === 0) {
+              domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
+              if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
+              return;
+            }
+            q = query(
+              collection(db, "alumnos"),
+              where("cicloLectivo", "==", queryCiclo),
+              where("cursoId", "in", cursosPermitidos)
+            );
+          }
+        } else {
+          // Filtro de curso específico seleccionado en el HTML
+          q = query(
+            collection(db, "alumnos"),
+            where("cursoId", "==", queryCurso),
+            where("cicloLectivo", "==", queryCiclo)
+          );
+        }
 
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((docSnap) => {
@@ -353,9 +295,26 @@
           listaAlumnos = [...alumnosCurso];
         }
       }
-      // CASO C: Consulta de Filtro Amplio sin Curso Asignado -> Extracción directa vía red
+      // CASO C: Consulta de Filtro Amplio sin Curso Asignado ("Todos los Cursos") -> Extracción directa vía red
       else {
-        const q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
+        let q;
+        if (esAdmin) {
+          // El administrador extrae todo de la red
+          q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
+        } else {
+          // El preceptor ve resumidos solo sus cursos asignados para proteger la cuota remota
+          if (cursosPermitidos.length === 0) {
+            domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
+            if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
+            return;
+          }
+          q = query(
+            collection(db, "alumnos"),
+            where("cicloLectivo", "==", queryCiclo),
+            where("cursoId", "in", cursosPermitidos)
+          );
+        }
+
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((docSnap) => {
           listaAlumnos.push(docSnap.data());
