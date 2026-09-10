@@ -183,12 +183,6 @@
   }
 
   try {
-    await inicializarSemillaUsuarios();
-  } catch (e) {
-    console.error("Fallo crítico al inicializar usuarios semilla:", e);
-  }
-
-  try {
     await cargarRolesEnSelector();
   } catch (e) {
     console.error("Fallo no bloqueante al cargar roles en selector:", e);
@@ -232,55 +226,6 @@
     if (!usuarioLogueado.rol || !usuarioLogueado.rol.toLowerCase().trim().includes("admin")) {
       alert("Acceso denegado: Su rol no posee permisos de administración de cuentas.");
       window.location.href = "panel.html";
-    }
-  }
-
-  // --- SEMILLA DE PERSONAL ESCOLAR PARA CLOUD FIRESTORE ---
-  async function inicializarSemillaUsuarios() {
-    try {
-      const querySnapshot = await getDocs(collection(db, "usuarios"));
-      if (querySnapshot.empty) {
-        console.log("Colección 'usuarios' vacía. Inyectando personal base del Colegio HASPEN...");
-        const usuariosSemilla = [
-          {
-            dni: "11111111",
-            nombre: "Administrador General",
-            email: "admin@haspen.edu.ar",
-            clave: "1234",
-            rol: "administrador",
-            esProfesor: false,
-            cursosAsignados: [],
-            bolsaHoras: []
-          },
-          {
-            dni: "22222222",
-            nombre: "Carlos Rodríguez",
-            email: "carlos.r@haspen.edu.ar",
-            clave: "22222222",
-            rol: "preceptor",
-            esProfesor: false,
-            cursosAsignados: [],
-            bolsaHoras: []
-          },
-          {
-            dni: "33333333",
-            nombre: "Ana Martínez",
-            email: "ana.m@haspen.edu.ar",
-            clave: "33333333",
-            rol: "directivo",
-            esProfesor: false,
-            cursosAsignados: [],
-            bolsaHoras: []
-          }
-        ];
-        for (const usuario of usuariosSemilla) {
-          await setDoc(doc(db, "usuarios", usuario.dni), usuario);
-          console.log(`Usuario Semilla sincronizado con Firebase: [${usuario.nombre}]`);
-        }
-      }
-    } catch (error) {
-      console.error("Error al inyectar personal base en Firestore:", error);
-      throw error;
     }
   }
 

@@ -1,19 +1,3 @@
-// 1. Inicializamos la base de datos local si no existe aún (Semillas con soporte Multirrol)
-// 1. Inicializamos la base de datos local si no existe aún (Solo Administrador de Resguardo)
-const usuariosSemilla = [
-  { dni: "11111111", nombre: "Administrador General", clave: "1234", rol: "Administrador", esProfesor: false }
-];
-
-if (!localStorage.getItem('usuariosColegio')) {
-  localStorage.setItem('usuariosColegio', JSON.stringify(usuariosSemilla));
-}
-
-
-// Obtener los usuarios actualizados de la memoria local simbiótica asíncrona
-async function obtenerUsuarios() {
-    const datos = localStorage.getItem('usuariosColegio');
-    return datos ? JSON.parse(datos) : [];
-}
 
 const formulario = document.getElementById('loginForm');
 const contenedorMensaje = document.getElementById('mensaje');
