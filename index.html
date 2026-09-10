@@ -440,6 +440,7 @@
           }
 
           // Disparamos el restablecimiento directo al correo real obtenido de la consulta
+          auth.languageCode = 'es';
           await sendPasswordResetEmail(auth, emailReal);
 
           // MENSAJE GENÉRICO SEGURO: Protege la privacidad evitando la enumeración del email
