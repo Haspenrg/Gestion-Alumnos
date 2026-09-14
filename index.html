@@ -220,7 +220,7 @@
       // Procesa el inicio de sesión buscando el Email Real asociado al DNI en Firestore
       async function procesarAutenticacion(e) {
         e.preventDefault();
-        localStorage.removeItem("usuarioActivo");
+        sessionStorage.removeItem("usuarioActivo");
         const txtMensaje = document.getElementById("mensaje");
         if (!txtMensaje) return;
         txtMensaje.textContent = "";
@@ -354,7 +354,7 @@
             permisosDelRol: matrizPermisosRol
           };
 
-          localStorage.setItem("usuarioActivo", JSON.stringify(perfilUsuario));
+          sessionStorage.setItem("usuarioActivo", JSON.stringify(perfilUsuario));
 
           mostrarAlertaUI(txtMensaje, "Acceso concedido. Redireccionando...", "#0d9488");
           setTimeout(() => {
@@ -440,6 +440,7 @@
           }
 
           // Disparamos el restablecimiento directo al correo real obtenido de la consulta
+          auth.languageCode = 'es';
           await sendPasswordResetEmail(auth, emailReal);
 
           // MENSAJE GENÉRICO SEGURO: Protege la privacidad evitando la enumeración del email
@@ -553,5 +554,6 @@
         }
       });
     </script>
+   <!--<script src="seguridad.js"></script> -->
   </body>
 </html>

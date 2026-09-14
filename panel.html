@@ -597,7 +597,7 @@
 
       async function obtenerSesionLocal() {
         try {
-          const datosSesion = localStorage.getItem("usuarioActivo");
+          const datosSesion = sessionStorage.getItem("usuarioActivo");
           if (!datosSesion) return null;
           const usuario = JSON.parse(datosSesion);
           const cdn =
@@ -644,7 +644,7 @@
               if (user) {
                 resolve(usuario);
               } else {
-                localStorage.removeItem("usuarioActivo");
+                sessionStorage.removeItem("usuarioActivo");
                 resolve(null);
               }
             });
@@ -1196,9 +1196,10 @@
 
       // Remoción matemática de sesión local
       function cerrarSesion() {
-        localStorage.removeItem("usuarioActivo");
+        sessionStorage.removeItem("usuarioActivo");
         window.location.href = "index.html";
       }
     </script>
+    <script src="seguridad.js"></script>
   </body>
 </html>

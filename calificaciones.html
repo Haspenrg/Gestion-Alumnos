@@ -1,303 +1,620 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
+  <head>
     <!-- Parche para el Icono de la Pestaña (Favicon) -->
-<link rel="icon" type="image/png" href="logo1.png">
+    <link rel="icon" type="image/png" href="logo1.png" />
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Libro de Calificaciones y Boletín - Colegio HASPEN</title>
-    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="estilos.css" />
     <style>
-        /* Optimización Híbrida: Fluid Widescreen al 98% para emular Google Sheets */
-        body {
-            margin: 0;
-            padding: 0;
-            max-width: 100% !important;
-            width: 100vw;
-            min-height: 100vh;
+      /* Optimización Híbrida: Fluid Widescreen al 98% para emular Google Sheets */
+      body {
+        margin: 0;
+        padding: 0;
+        max-width: 100% !important;
+        width: 100vw;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      .panel-container {
+        max-width: 98% !important;
+        width: 98%;
+        margin: 15px auto;
+        padding: 15px;
+        text-align: left;
+      }
+
+      /* Cabecera compacta de metadatos */
+      .cabecera-planilla {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        background: #f8fafc;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 12px;
+      }
+
+      @media (min-width: 768px) {
+        .cabecera-planilla {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+      }
+
+      /* Estructura contenedora del Google Sheet Interactivo */
+      .contenedor-sheet-interactivo {
+        width: 100%;
+        overflow-x: auto; /* Scroll horizontal elástico para PC */
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        margin-top: 15px;
+      }
+
+      .tabla-calificaciones {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 1100px; /* Asegura el ancho mínimo de las 13 columnas */
+      }
+
+      /* Doble cabecera para agrupar Cuatrimestres */
+      .tabla-calificaciones th {
+        background: #f1f5f9;
+        color: #1e293b;
+        font-weight: 600;
+        border: 1px solid #cbd5e1;
+        padding: 3px 6px; /* Reduce el grosor vertical manteniendo el centrado */
+        text-align: center;
+        line-height: 1.1; /* Compacta el espaciado de texto en caso de quiebre de línea */
+      }
+
+      .tabla-calificaciones td {
+        border: 1px solid #e2e8f0;
+        padding: 2px 6px; /* Reduce el relleno vertical a 2px para achicar las filas */
+        vertical-align: middle;
+      }
+
+      /* Inputs ultra-compactos para notas numéricas rápidas */
+      .input-nota {
+        width: 45px;
+        height: 28px;
+        padding: 2px;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+      }
+
+      /* Bloqueo visual para columnas calculadas automáticas */
+      .col-calculada {
+        background-color: #f8fafc;
+        font-weight: bold;
+        text-align: center;
+        color: #1e293b;
+        width: 50px;
+      }
+
+      /* Estilos reactivos pedagógicos (Aprobación >= 6, Desaprobación <= 5) */
+      .nota-aprobada {
+        color: #16a34a !important; /* Verde */
+      }
+
+      .nota-desaprobada {
+        color: #dc2626 !important; /* Rojo */
+        background-color: #fef2f2;
+      }
+
+      .tag-ppi {
+        background: #f59e0b;
+        color: white;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel-container">
+      <header
+        style="
+          background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%);
+          border-bottom: 4px solid #13365b;
+          padding: 20px 32px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          width: 100%;
+          box-sizing: border-box;
+          margin-bottom: 12px;
+          border-radius: 8px;
+        "
+      >
+        <div style="display: flex; flex-direction: column; align-items: flex-start">
+          <h2
+            style="
+              color: white;
+              font-size: 28px;
+              font-weight: 800;
+              text-transform: uppercase;
+              margin: 0;
+              letter-spacing: 0.5px;
+              text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+              font-family: inherit;
+            "
+          >
+            COLEGIO PROVINCIAL HASPEN
+          </h2>
+
+          <p
+            style="
+              color: rgba(255, 255, 255, 0.95);
+              font-size: 14px;
+              font-weight: 500;
+              margin: 5px 0 0 0;
+              text-align: left;
+              font-family: inherit;
+            "
+          >
+            Libro de Calificaciones Digital — Carga horizontal de registros académicos por cuatrimestres e instancias de
+            recuperación
+          </p>
+        </div>
+        <img
+          src="logo1.png"
+          alt="Escudo Colegio"
+          style="height: 55px; width: auto; filter: drop-shadow(1px 1px 4px rgba(0, 0, 0, 0.2))"
+        />
+      </header>
+
+      <!-- Sección 1: Selectores en cascada e Información de Cátedra unificados -->
+      <div
+        class="cabecera-planilla"
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 15px;
+          align-items: flex-end;
+          justify-content: flex-start;
+          flex-wrap: nowrap;
+          width: 100%;
+        "
+      >
+        <!-- Selector Ciclo Lectivo -->
+        <div
+          id="grupoCicloLectivoPlanilla"
+          class="input-group"
+          style="margin: 0; display: none; flex: 0 0 130px; max-width: 130px"
+        >
+          <label for="filtroCicloLectivo" style="font-size: 12px; color: #475569; white-space: nowrap"
+            >Ciclo Lectivo:</label
+          >
+          <select id="filtroCicloLectivo" style="height: 32px; font-size: 13px; padding: 4px; width: 100%" required>
+            <!-- Hidratado dinámicamente desde JavaScript -->
+          </select>
+        </div>
+
+        <!-- Selector Curso / División -->
+        <div class="input-group" style="margin: 0; flex: 0 0 200px; max-width: 200px">
+          <label for="selectCursoNotas" style="font-size: 12px; color: #475569; white-space: nowrap"
+            >Curso / División Destino:</label
+          >
+          <select id="selectCursoNotas" style="height: 32px; font-size: 13px; padding: 4px; width: 100%" required>
+            <option value="" disabled selected>Seleccione estructura...</option>
+          </select>
+        </div>
+
+        <!-- Selector Asignatura / Espacio Curricular -->
+        <div class="input-group" style="margin: 0; flex: 1; max-width: 320px">
+          <label for="selectMateriaNotas" style="font-size: 12px; color: #475569; white-space: nowrap"
+            >Asignatura / Espacio Curricular:</label
+          >
+          <select id="selectMateriaNotas" style="height: 32px; font-size: 13px; padding: 4px; width: 100%" required>
+            <option value="" disabled selected>Seleccione curso...</option>
+          </select>
+        </div>
+
+        <!-- Parche Senior: Panel Informativo Compactado a la Derecha -->
+        <div
+          id="infocatedraDocente"
+          style="
+            margin-left: auto;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-        }
+            gap: 2px;
+            font-size: 11px;
+            color: #475569;
+            padding-bottom: 2px;
+          "
+        >
+          <span style="white-space: nowrap">👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
+          <span style="white-space: nowrap"
+            >📍 <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span
+          >
+        </div>
 
-        .panel-container {
-            max-width: 98% !important;
-            width: 98%;
-            margin: 15px auto;
-            padding: 15px;
-            text-align: left;
-        }
-
-        /* Cabecera compacta de metadatos */
-        .cabecera-planilla {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-            background: #f8fafc;
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 12px;
-        }
-
-        @media (min-width: 768px) {
-            .cabecera-planilla {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-        }
-
-        /* Estructura contenedora del Google Sheet Interactivo */
-        .contenedor-sheet-interactivo {
-            width: 100%;
-            overflow-x: auto; /* Scroll horizontal elástico para PC */
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
-            margin-top: 15px;
-        }
-
-        .tabla-calificaciones {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            min-width: 1100px; /* Asegura el ancho mínimo de las 13 columnas */
-        }
-
-        /* Doble cabecera para agrupar Cuatrimestres */
-        .tabla-calificaciones th {
-            background: #f1f5f9;
-            color: #1e293b;
-            font-weight: 600;
-            border: 1px solid #cbd5e1;
-            padding: 3px 6px; /* Reduce el grosor vertical manteniendo el centrado */
-            text-align: center;
-            line-height: 1.1;  /* Compacta el espaciado de texto en caso de quiebre de línea */
-            }
-
-        .tabla-calificaciones td {
-            border: 1px solid #e2e8f0;
-            padding: 2px 6px; /* Reduce el relleno vertical a 2px para achicar las filas */
-            vertical-align: middle;
-        }
-
-        /* Inputs ultra-compactos para notas numéricas rápidas */
-        .input-nota {
-            width: 45px;
-            height: 28px;
-            padding: 2px;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-        }
-
-        /* Bloqueo visual para columnas calculadas automáticas */
-        .col-calculada {
-            background-color: #f8fafc;
-            font-weight: bold;
-            text-align: center;
-            color: #1e293b;
-            width: 50px;
-        }
-
-        /* Estilos reactivos pedagógicos (Aprobación >= 6, Desaprobación <= 5) */
-        .nota-aprobada {
-            color: #16a34a !important; /* Verde */
-        }
-
-        .nota-desaprobada {
-            color: #dc2626 !important; /* Rojo */
-            background-color: #fef2f2;
-        }
-
-        .tag-ppi {
-            background: #f59e0b;
+        <!-- Botón de Control Periodos integrado al final -->
+        <button
+          type="button"
+          id="btnAbrirModalPeriodos"
+          style="
+            display: none;
+            background: #1b4d82;
             color: white;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="panel-container">
-        <header style="background: linear-gradient(90deg, #1b4d82 0%, #f48120 100%); border-bottom: 4px solid #13365b; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); width: 100%; box-sizing: border-box; margin-bottom: 12px; border-radius: 8px;">
+            border: none;
+            height: 32px;
+            padding: 0 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            align-items: center;
+            gap: 5px;
+          "
+        >
+          ⚙️ Control Periodos
+        </button>
+      </div>
 
-            <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                <h2 style="color: white; font-size: 28px; font-weight: 800; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); font-family: inherit;">COLEGIO PROVINCIAL HASPEN</h2>
+      <!-- Banner de advertencia de solo lectura para Preceptores/Directivos -->
+      <div
+        id="bannerModoLecturaCalificaciones"
+        class="indicador-edicion"
+        style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; margin-bottom: 15px; display: none"
+      >
+        <strong>Modo Monitor Activo:</strong> Usted posee permisos de solo vista filtrada. Los cambios introducidos en
+        la planilla no se guardarán en la persistencia.
+      </div>
 
-                <p style="color: rgba(255, 255, 255, 0.95); font-size: 14px; font-weight: 500; margin: 5px 0 0 0; text-align: left; font-family: inherit;">Libro de Calificaciones Digital — Carga horizontal de registros académicos por cuatrimestres e instancias de recuperación</p>
-            </div>
-            <img src="logo1.png" alt="Escudo Colegio" style="height: 55px; width: auto; filter: drop-shadow(1px 1px 4px rgba(0,0,0,0.2));">
+      <!-- Sección 2: Matriz Google Sheet Interactivo (13 Columnas Operativas) -->
+      <div class="contenedor-sheet-interactivo">
+        <form id="formPlanillaNotas">
+          <table class="tabla-calificaciones">
+            <thead>
+              <!-- Fila de Cabecera Superior: Agrupamiento de Periodos -->
+              <tr>
+                <th rowspan="2" style="width: 4%">Orden</th>
+                <th rowspan="2" style="width: 24%; text-align: left">Apellido y Nombre</th>
+                <th colspan="4" style="background: #e8f0fe">1ER CUATRIMESTRE</th>
+                <th colspan="4" style="background: #fef8e7">2DO CUATRIMESTRE</th>
+                <th rowspan="2" style="width: 5%; background: #f1f5f9">Anual</th>
+                <th rowspan="2" style="width: 5%; background: #fee2e2">Dic.</th>
+                <th rowspan="2" style="width: 5%; background: #fee2e2">Feb.</th>
+                <th rowspan="2" style="width: 6%; background: #e2f0d9">Def.</th>
+              </tr>
+              <!-- Fila de Cabecera Inferior: Instancias específicas de examen -->
+              <tr>
+                <th style="width: 5%">1° Inf</th>
+                <th style="width: 5%">2° Inf</th>
+                <th style="width: 5%">E.Fort</th>
+                <th style="width: 5%; background: #dbeafe">1°Cua</th>
+                <th style="width: 5%">1° Inf</th>
+                <th style="width: 5%">2° Inf</th>
+                <th style="width: 5%">E.Fort</th>
+                <th style="width: 5%; background: #fef3c7">2°Cua</th>
+              </tr>
+            </thead>
+            <tbody id="tablaNotasBody">
+              <tr>
+                <td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px; font-weight: 500">
+                  Seleccione un Curso y una Asignatura para cargar la nómina de estudiantes regulares.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- ====== PARCHE PASO 1: CONTENEDOR ELÁSTICO CON NOTIFICACIÓN INTEGRADA ====== -->
+          <div
+            id="bloqueGuardarNotas"
+            style="
+              padding: 12px 0;
+              background: #f8fafc;
+              border-top: 1px solid #cbd5e1;
+              display: none;
+              width: 100%;
+              box-sizing: border-box;
+            "
+          >
+            <span
+              id="notificacionGuardadoNotas"
+              style="float: left; font-size: 16px; font-weight: 700; font-family: inherit; line-height: 38px"
+            ></span>
+            <button
+              type="submit"
+              class="btn-principal"
+              style="
+                float: right;
+                width: auto;
+                min-width: 160px;
+                height: 38px;
+                padding: 0 20px;
+                font-size: 14px;
+                margin: 0;
+                white-space: nowrap;
+              "
+            >
+              Guardar Planilla
+            </button>
+            <div style="clear: both"></div>
+          </div>
+        </form>
+      </div>
+
+      <button
+        class="btn-salir"
+        onclick="window.location.href = 'panel.html'"
+        style="
+          margin-top: 25px;
+          background-color: #5f6368;
+          max-width: 200px;
+          font-weight: bold;
+          border-radius: 6px;
+          height: 40px;
+          padding: 0 15px;
+        "
+      >
+        Volver al Panel
+      </button>
+    </div>
+
+    <!-- INICIO PERMANENTE DEL CONTROL DE PERÍODOS -->
+    <div
+      id="modalGestionPeriodos"
+      style="
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background-color: #ffffff;
+          margin: auto;
+          padding: 20px;
+          border: 2px solid #1b4d82;
+          width: 90%;
+          max-width: 1000px;
+          border-radius: 8px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+          box-sizing: border-box;
+        "
+      >
+        <header
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+          "
+        >
+          <h3 style="color: #1b4d82; font-size: 16px; font-weight: 700; margin: 0; text-transform: uppercase">
+            ⚙️ Control de Apertura y Cierre de Períodos Académicos
+          </h3>
+          <button
+            type="button"
+            id="btnCerrarModalPeriodos"
+            style="
+              background: none;
+              border: none;
+              color: #dc2626;
+              cursor: pointer;
+              font-size: 20px;
+              font-weight: bold;
+              padding: 0 5px;
+            "
+          >
+            &times;
+          </button>
         </header>
 
+        <p style="font-size: 12px; color: #475569; margin-top: 0; margin-bottom: 15px">
+          Marque como <strong>Habilitado</strong> el casillero correspondiente al período que desea abrir para la
+          escritura de notas por parte de los docentes. Los períodos desmarcados se bloquearán de forma coercitiva.
+        </p>
 
-<!-- Sección 1: Selectores en cascada e Información de Cátedra unificados -->
-<div class="cabecera-planilla" style="display: flex; flex-direction: row; gap: 15px; align-items: flex-end; justify-content: flex-start; flex-wrap: nowrap; width: 100%;">
-    
-    <!-- Selector Ciclo Lectivo -->
-    <div id="grupoCicloLectivoPlanilla" class="input-group" style="margin: 0; display: none; flex: 0 0 130px; max-width: 130px;">
-        <label for="filtroCicloLectivo" style="font-size: 12px; color: #475569; white-space: nowrap;">Ciclo Lectivo:</label>
-        <select id="filtroCicloLectivo" style="height: 32px; font-size: 13px; padding: 4px; width: 100%;" required>
-            <!-- Hidratado dinámicamente desde JavaScript -->
-        </select>
-    </div>
+        <div
+          style="
+            width: 100%;
+            overflow-x: auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 15px;
+          "
+        >
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; min-width: 800px">
+            <thead>
+              <tr>
+                <th
+                  colspan="4"
+                  style="background: #e8f0fe; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px"
+                >
+                  1ER CUATRIMESTRE
+                </th>
+                <th
+                  colspan="4"
+                  style="background: #fef8e7; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px"
+                >
+                  2DO CUATRIMESTRE
+                </th>
+                <th
+                  rowspan="2"
+                  style="background: #f1f5f9; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px"
+                >
+                  Anual
+                </th>
+                <th
+                  rowspan="2"
+                  style="background: #fee2e2; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px"
+                >
+                  Dic.
+                </th>
+                <th
+                  rowspan="2"
+                  style="background: #fee2e2; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px"
+                >
+                  Feb.
+                </th>
+                <th
+                  rowspan="2"
+                  style="background: #e2f0d9; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px"
+                >
+                  Def.
+                </th>
+              </tr>
+              <tr>
+                <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">1° Inf</th>
+                <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">2° Inf</th>
+                <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">E.Fort</th>
+                <th style="background: #dbeafe; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">1°Cua</th>
+                <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">1° Inf</th>
+                <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">2° Inf</th>
+                <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">E.Fort</th>
+                <th style="background: #fef3c7; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px">2°Cua</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_c1-n1" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_c1-n2" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_c1-ef" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td
+                  style="
+                    border: 1px solid #cbd5e1;
+                    padding: 4px;
+                    background: #f1f5f9;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: bold;
+                    text-align: center;
+                    vertical-align: middle;
+                  "
+                >
+                  🔒 Calc.
+                </td>
 
-    <!-- Selector Curso / División -->
-    <div class="input-group" style="margin: 0; flex: 0 0 200px; max-width: 200px;">
-        <label for="selectCursoNotas" style="font-size: 12px; color: #475569; white-space: nowrap;">Curso / División Destino:</label>
-        <select id="selectCursoNotas" style="height: 32px; font-size: 13px; padding: 4px; width: 100%;" required>
-            <option value="" disabled selected>Seleccione estructura...</option>
-        </select>
-    </div>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_c2-n1" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_c2-n2" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_c2-ef" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td
+                  style="
+                    border: 1px solid #cbd5e1;
+                    padding: 4px;
+                    background: #f1f5f9;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: bold;
+                    text-align: center;
+                    vertical-align: middle;
+                  "
+                >
+                  🔒 Calc.
+                </td>
 
-    <!-- Selector Asignatura / Espacio Curricular -->
-    <div class="input-group" style="margin: 0; flex: 1; max-width: 320px;">
-        <label for="selectMateriaNotas" style="font-size: 12px; color: #475569; white-space: nowrap;">Asignatura / Espacio Curricular:</label>
-        <select id="selectMateriaNotas" style="height: 32px; font-size: 13px; padding: 4px; width: 100%;" required>
-            <option value="" disabled selected>Seleccione curso...</option>
-        </select>
-    </div>
-
-    <!-- Parche Senior: Panel Informativo Compactado a la Derecha -->
-    <div id="infocatedraDocente" style="margin-left: auto; display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #475569; padding-bottom: 2px;">
-        <span style="white-space: nowrap;">👤 <strong>Docente:</strong> <span id="txtDocentePlanilla">-</span></span>
-        <span style="white-space: nowrap;">📍 <strong>Preceptor:</strong> <span id="txtPreceptorPlanilla">-</span></span>
-    </div>
-
-    <!-- Botón de Control Periodos integrado al final -->
-    <button type="button" id="btnAbrirModalPeriodos" style="display: none; background: #1b4d82; color: white; border: none; height: 32px; padding: 0 12px; font-size: 12px; border-radius: 4px; cursor: pointer; white-space: nowrap; align-items: center; gap: 5px;">
-        ⚙️ Control Periodos
-    </button>
-
-</div>
-
-
-        <!-- Banner de advertencia de solo lectura para Preceptores/Directivos -->
-        <div id="bannerModoLecturaCalificaciones" class="indicador-edicion" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; margin-bottom: 15px; display: none;">
-            <strong>Modo Monitor Activo:</strong> Usted posee permisos de solo vista filtrada. Los cambios introducidos en la planilla no se guardarán en la persistencia.
+                <td
+                  style="
+                    border: 1px solid #cbd5e1;
+                    padding: 4px;
+                    background: #f1f5f9;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: bold;
+                    text-align: center;
+                    vertical-align: middle;
+                  "
+                >
+                  🔒 Calc.
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_dic" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td style="border: 1px solid #cbd5e1; padding: 4px">
+                  <label style="display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px"
+                    ><input type="checkbox" id="p_feb" style="width: 14px; height: 14px" />Habilitado</label
+                  >
+                </td>
+                <td
+                  style="
+                    border: 1px solid #cbd5e1;
+                    padding: 4px;
+                    background: #edf7ed;
+                    color: #2e7d32;
+                    font-size: 11px;
+                    font-weight: bold;
+                    text-align: center;
+                    vertical-align: middle;
+                  "
+                >
+                  🔒 Calc.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <!-- Sección 2: Matriz Google Sheet Interactivo (13 Columnas Operativas) -->
-        <div class="contenedor-sheet-interactivo">
-            <form id="formPlanillaNotas">
-                <table class="tabla-calificaciones">
-                    <thead>
-                        <!-- Fila de Cabecera Superior: Agrupamiento de Periodos -->
-                        <tr>
-                            <th rowspan="2" style="width: 4%;">Orden</th>
-                            <th rowspan="2" style="width: 24%; text-align: left;">Apellido y Nombre</th>
-                            <th colspan="4" style="background: #e8f0fe;">1ER CUATRIMESTRE</th>
-                            <th colspan="4" style="background: #fef8e7;">2DO CUATRIMESTRE</th>
-                            <th rowspan="2" style="width: 5%; background: #f1f5f9;">Anual</th>
-                            <th rowspan="2" style="width: 5%; background: #fee2e2;">Dic.</th>
-                            <th rowspan="2" style="width: 5%; background: #fee2e2;">Feb.</th>
-                            <th rowspan="2" style="width: 6%; background: #e2f0d9;">Def.</th>
-                        </tr>
-                        <!-- Fila de Cabecera Inferior: Instancias específicas de examen -->
-                        <tr>
-                            <th style="width: 5%;">1° Inf</th>
-                            <th style="width: 5%;">2° Inf</th>
-                            <th style="width: 5%;">E.Fort</th>
-                            <th style="width: 5%; background: #dbeafe;">1°Cua</th>
-                            <th style="width: 5%;">1° Inf</th>
-                            <th style="width: 5%;">2° Inf</th>
-                            <th style="width: 5%;">E.Fort</th>
-                            <th style="width: 5%; background: #fef3c7;">2°Cua</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaNotasBody">
-                        <tr>
-                            <td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px; font-weight: 500;">
-                                Seleccione un Curso y una Asignatura para cargar la nómina de estudiantes regulares.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <!-- ====== PARCHE PASO 1: CONTENEDOR ELÁSTICO CON NOTIFICACIÓN INTEGRADA ====== -->
-                <div id="bloqueGuardarNotas" style="padding: 12px 0; background: #f8fafc; border-top: 1px solid #cbd5e1; display: none; width: 100%; box-sizing: border-box;">
-                <span id="notificacionGuardadoNotas" style="float: left; font-size: 16px; font-weight: 700; font-family: inherit; line-height: 38px;"></span>
-                <button type="submit" class="btn-principal" style="float: right; width: auto; min-width: 160px; height: 38px; padding: 0 20px; font-size: 14px; margin: 0; white-space: nowrap;">Guardar Planilla</button>
-                <div style="clear: both;"></div>
-                </div>
-
-
-
-            </form>
+        <div style="text-align: right; border-top: 1px solid #e2e8f0; padding-top: 12px">
+          <button
+            type="button"
+            id="btnGuardarPeriodosConfig"
+            class="btn-principal"
+            style="max-width: 220px; height: 36px; padding: 0 15px; font-size: 13px"
+          >
+            Guardar Habilitaciones
+          </button>
         </div>
-
-        <button class="btn-salir" onclick="window.location.href='panel.html'" style="margin-top: 25px; background-color: #5f6368; max-width: 200px; font-weight: bold; border-radius: 6px; height: 40px; padding: 0 15px;">Volver al Panel</button>
-    </div>
-    
-      <!-- INICIO PERMANENTE DEL CONTROL DE PERÍODOS -->
-  <div id="modalGestionPeriodos" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
-    <div style="background-color: #ffffff; margin: auto; padding: 20px; border: 2px solid #1b4d82; width: 90%; max-width: 1000px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box;">
-      
-      <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-        <h3 style="color: #1b4d82; font-size: 16px; font-weight: 700; margin: 0; text-transform: uppercase;">⚙️ Control de Apertura y Cierre de Períodos Académicos</h3>
-        <button type="button" id="btnCerrarModalPeriodos" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 20px; font-weight: bold; padding: 0 5px;">&times;</button>
-      </header>
-      
-      <p style="font-size: 12px; color: #475569; margin-top: 0; margin-bottom: 15px;">Marque como <strong>Habilitado</strong> el casillero correspondiente al período que desea abrir para la escritura de notas por parte de los docentes. Los períodos desmarcados se bloquearán de forma coercitiva.</p>
-      
-      <div style="width: 100%; overflow-x: auto; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; min-width: 800px;">
-          <thead>
-            <tr>
-              <th colspan="4" style="background: #e8f0fe; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">1ER CUATRIMESTRE</th>
-              <th colspan="4" style="background: #fef8e7; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">2DO CUATRIMESTRE</th>
-              <th rowspan="2" style="background: #f1f5f9; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Anual</th>
-              <th rowspan="2" style="background: #fee2e2; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Dic.</th>
-              <th rowspan="2" style="background: #fee2e2; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Feb.</th>
-              <th rowspan="2" style="background: #e2f0d9; color: #1e293b; font-weight: 600; border: 1px solid #cbd5e1; padding: 6px;">Def.</th>
-            </tr>
-            <tr>
-              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">1° Inf</th>
-              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">2° Inf</th>
-              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">E.Fort</th>
-              <th style="background: #dbeafe; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">1°Cua</th>
-              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">1° Inf</th>
-              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">2° Inf</th>
-              <th style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">E.Fort</th>
-              <th style="background: #fef3c7; border: 1px solid #cbd5e1; padding: 4px; font-size: 11px;">2°Cua</th>
-            </tr>
-          </thead>
-          <tbody>
-                <tr>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_c1-n1" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_c1-n2" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_c1-ef" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px; background: #f1f5f9; color: #94a3b8; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle;">🔒 Calc.</td>
-                    
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_c2-n1" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_c2-n2" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_c2-ef" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px; background: #f1f5f9; color: #94a3b8; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle;">🔒 Calc.</td>
-                    
-                    <td style="border: 1px solid #cbd5e1; padding: 4px; background: #f1f5f9; color: #94a3b8; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle;">🔒 Calc.</td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_dic" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px;"><label style="display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px;"><input type="checkbox" id="p_feb" style="width:14px; height:14px;">Habilitado</label></td>
-                    <td style="border: 1px solid #cbd5e1; padding: 4px; background: #edf7ed; color: #2e7d32; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle;">🔒 Calc.</td>
-                </tr>
-
-          </tbody>
-        </table>
-      </div>
-      
-      <div style="text-align: right; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-        <button type="button" id="btnGuardarPeriodosConfig" class="btn-principal" style="max-width: 220px; height: 36px; padding: 0 15px; font-size: 13px;">Guardar Habilitaciones</button>
       </div>
     </div>
-  </div>
 
     <!-- Vinculación del motor de gobernación lógica cuatrimestral -->
     <script src="calificaciones.js"></script>
-</body>
+    <script src="seguridad.js"></script>
+  </body>
 </html>

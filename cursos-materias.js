@@ -129,7 +129,7 @@
   let cacheCursos = []; // Caché en memoria local
 
   // Verificación estricta de sesión RBAC
-  const datosSesion = localStorage.getItem("usuarioActivo");
+  const datosSesion = sessionStorage.getItem("usuarioActivo");
   if (!datosSesion) {
     window.location.href = "index.html";
     return;

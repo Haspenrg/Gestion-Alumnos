@@ -700,6 +700,27 @@
           page-break-inside: avoid !important;
         }
       }
+      /* Limpieza visual: Oculta los botones de acción por defecto */
+      .fila-alumno .btn-accion-fila {
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+        transform: scale(0.95);
+      }
+
+      /* Efecto Hover: Muestra los botones suavemente al pasar el mouse por la fila */
+      .fila-alumno:hover .btn-accion-fila {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1);
+      }
+
+      /* Mantiene un fondo sutil en la fila apuntada para guiar la vista del preceptor */
+      .fila-alumno:hover {
+        background-color: #f8fafc !important;
+      }
     </style>
   </head>
   <body>
@@ -926,20 +947,23 @@
             <table style="width: 100%; border-collapse: collapse">
               <thead>
                 <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1">
-                  <th style="width: 45%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">
-                    Estudiante / Identificación
+                  <th style="width: 26%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Estudiante</th>
+                  <th style="width: 10%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">DNI</th>
+                  <th style="width: 8%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Sección</th>
+                  <th style="width: 16%; position: sticky; top: 0; background: #f1f5f9; z-index: 5; text-align: center">
+                    Estado
                   </th>
-                  <th style="width: 15%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Sección</th>
-                  <th style="width: 15%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Auditoria</th>
-                  <th style="width: 15%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Inclusión</th>
-                  <th style="width: 10%; text-align: center; position: sticky; top: 0; background: #f1f5f9; z-index: 5">
+                  <th style="width: 13%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Documentación</th>
+                  <th style="width: 14%; position: sticky; top: 0; background: #f1f5f9; z-index: 5">Inclusión</th>
+                  <th style="width: 13%; text-align: center; position: sticky; top: 0; background: #f1f5f9; z-index: 5">
                     Acciones Curriculares
                   </th>
                 </tr>
               </thead>
+
               <tbody id="tablaAlumnosBody">
                 <tr>
-                  <td colspan="5" style="text-align: center; padding: 20px; color: #1a73e8">
+                  <td colspan="7" style="text-align: center; padding: 20px; color: #1a73e8">
                     Sincronizando con Cloud Firestore...
                   </td>
                 </tr>
@@ -2152,5 +2176,6 @@
           console.error("Detalle completo:", err);
         });
     </script>
+    <script src="seguridad.js"></script>
   </body>
 </html>

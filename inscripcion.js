@@ -216,7 +216,15 @@
   async function renderTable() {
     if (!domElements.tablaAlumnos) return;
 
-    // 1. Obtener valores de los filtros reales declarados en domElements
+    // Control para Solo Lectura (Minuta Punto 1)
+    if (window.permisoLegajo === "lectura" && domElements.filtroEstado) {
+      if (domElements.filtroEstado.value !== "Regular") {
+        domElements.filtroEstado.innerHTML = '<option value="Regular">Regular</option>';
+        domElements.filtroEstado.value = "Regular";
+      }
+    }
+
+    // 1. Obtener valores de los filtros reales
     const queryCurso = domElements.filtroCurso?.value || "todos";
     const queryEstado = domElements.filtroEstado?.value || "todos";
     const queryAuditoria = domElements.filtroAuditoria?.value || "todos";
@@ -224,30 +232,27 @@
     const queryCiclo = domElements.filtroCiclo?.value || "2026";
     const subCadenaBusqueda = domElements.filtroBusqueda ? domElements.filtroBusqueda.value.toLowerCase().trim() : "";
 
-    // 2. REGLA ESCOLAR: Al arrancar o si los filtros están por defecto, la grilla permanece limpia y en cero
+    // 2. REGLA ESCOLAR: Grilla inicial limpia
     if ((queryCurso === "todos" || queryCurso === "") && queryEstado === "todos" && !subCadenaBusqueda) {
-      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Establezca un criterio de búsqueda o seleccione un curso para visualizar la nómina.</td></tr>`;
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Establezca un criterio de búsqueda o seleccione un curso para visualizar la nómina.</td></tr>`;
       if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
       return;
     }
 
-    // 3. Consulta asíncrona con Motor de Caché Acumulativa bajo demanda
+    // 3. Consulta asíncrona con Motor de Caché
     let listaAlumnos = [];
     try {
       const esAdmin = rolNormalizado === "administrador" || rolNormalizado === "admin";
       const cursosPermitidos = usuarioLogueado.cursosAsignados || [];
 
-      // CASO A: Bypass por Búsqueda Rápida activa -> Forzar red directa para evitar falsos negativos globales
       if (subCadenaBusqueda) {
         let q;
         if (queryCurso === "todos" || queryCurso === "") {
           if (esAdmin) {
-            // El administrador ve todo el colegio
             q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
           } else {
-            // El preceptor solo busca en sus cursos asignados (si tiene)
             if (cursosPermitidos.length === 0) {
-              domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
+              domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
               if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
               return;
             }
@@ -258,54 +263,42 @@
             );
           }
         } else {
-          // Filtro de curso específico seleccionado en el HTML
           q = query(
             collection(db, "alumnos"),
             where("cursoId", "==", queryCurso),
             where("cicloLectivo", "==", queryCiclo)
           );
         }
-
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((docSnap) => {
           listaAlumnos.push(docSnap.data());
         });
-      }
-      // CASO B: Consulta por División/Curso Específico -> Estrategia de Ahorro y Alojamiento Local
-      else if (queryCurso !== "todos" && queryCurso !== "") {
+      } else if (queryCurso !== "todos" && queryCurso !== "") {
         if (cacheAlumnosPorCurso[queryCurso]) {
-          // Hit de Caché: Recuperación instantánea con gasto cero lecturas
           listaAlumnos = [...cacheAlumnosPorCurso[queryCurso]];
         } else {
-          // Miss de Caché: Carga remota inicial y alimentación del contenedor indexado
           const q = query(
             collection(db, "alumnos"),
             where("cursoId", "==", queryCurso),
             where("cicloLectivo", "==", queryCiclo)
           );
           const querySnapshot = await getDocs(q);
-
           let alumnosCurso = [];
           querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             alumnosCurso.push(data);
-            cacheAlumnosPorDni[data.dni] = data; // Indexación cruzada por DNI para futuras búsquedas atómicas
+            cacheAlumnosPorDni[data.dni] = data;
           });
-
           cacheAlumnosPorCurso[queryCurso] = alumnosCurso;
           listaAlumnos = [...alumnosCurso];
         }
-      }
-      // CASO C: Consulta de Filtro Amplio sin Curso Asignado ("Todos los Cursos") -> Extracción directa vía red
-      else {
+      } else {
         let q;
         if (esAdmin) {
-          // El administrador extrae todo de la red
           q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
         } else {
-          // El preceptor ve resumidos solo sus cursos asignados para proteger la cuota remota
           if (cursosPermitidos.length === 0) {
-            domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
+            domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
             if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
             return;
           }
@@ -315,7 +308,6 @@
             where("cursoId", "in", cursosPermitidos)
           );
         }
-
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((docSnap) => {
           listaAlumnos.push(docSnap.data());
@@ -323,31 +315,54 @@
       }
     } catch (error) {
       console.error("Error en sincronización remota de alumnos:", error);
-      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor.</td></tr>`;
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor.</td></tr>`;
       return;
     }
-
     // 4. Aplicar filtros secundarios en memoria sobre los datos recuperados
     let alumnosFiltrados = listaAlumnos.filter((alumno) => {
-      // 🛠️ CORREGIDO: Equivalencia exacta entre el value "Entrante" del HTML y el estado de Firestore
+      // Filtrado estricto por Estado (Corrige el error de mezcla con Mesa Entrada)
       if (queryEstado !== "todos" && queryEstado !== "") {
-        if (queryEstado === "Entrante") {
-          if (alumno.estado !== "Mesa Entrada" && alumno.estado !== "Mesa de Entrada" && alumno.estado !== "Entrante")
+        const estAlumno = String(alumno.estado || "")
+          .toLowerCase()
+          .trim();
+        const tramAlumno = String(alumno.tramiteIngreso || "")
+          .toLowerCase()
+          .trim();
+
+        if (queryEstado === "Regular") {
+          if (
+            estAlumno === "baja" ||
+            estAlumno === "entrante" ||
+            estAlumno === "mesa entrada" ||
+            estAlumno === "mesa de entrada" ||
+            tramAlumno === "mesa de entrada"
+          ) {
             return false;
+          }
+        } else if (queryEstado === "Entrante" || queryEstado === "Mesa Entrada") {
+          if (
+            estAlumno !== "mesa entrada" &&
+            estAlumno !== "mesa de entrada" &&
+            estAlumno !== "entrante" &&
+            tramAlumno !== "mesa de entrada"
+          ) {
+            return false;
+          }
         } else {
           if (alumno.estado !== queryEstado) return false;
         }
       }
 
-      // Filtro por Inclusión (PPI / Trayectorias)
-      if (queryInclusion !== "todos") {
-        const tienePPI = !!alumno.tienePPI || !!alumno.trayectoriaPPI;
-        if (queryInclusion === "ConPPI" && !tienePPI) return false;
-        if (queryInclusion === "SinPPI" && tienePPI) return false;
+      // Filtro por Inclusión (PPI / Trayectorias / CUD)
+      if (queryInclusion !== "todos" && queryInclusion !== "") {
+        const tieneInclusion =
+          !!alumno.tienePPI || !!alumno.trayectoriaPPI || !!alumno.trayectoriasFlexibles || !!alumno.tieneCUD;
+        if (queryInclusion === "ConPPI" && !tieneInclusion) return false;
+        if (queryInclusion === "SinPPI" && tieneInclusion) return false;
       }
 
-      // Filtro por Auditoría Documental (Documentación)
-      if (queryAuditoria !== "todos") {
+      // Filtro por Documentación
+      if (queryAuditoria !== "todos" && queryAuditoria !== "") {
         const dMap = alumno.documentosDigitales || {};
         const totalRequisitosBase = 6;
         const cargadosBase = [
@@ -372,41 +387,25 @@
       return true;
     });
 
-    // =========================================================================
-    // RASTREADOR UX: DETERMINACIÓN DE PAGINACIÓN AUTOMÁTICA POR ALUMNO DESTACADO
-    // =========================================================================
+    // RASTREADOR UX: Paginación automática por alumno destacado (CORREGIDO)
     if (dniDestacadoSesion) {
-      // Buscamos la posición física del alumno recién modificado/creado en la lista final ordenada
       const indiceAlumnoDestacado = alumnosFiltrados.findIndex((al) => al.dni === dniDestacadoSesion);
-
       if (indiceAlumnoDestacado !== -1) {
         const registrosPorPaginaBase = 25;
-        // Calculamos la página exacta (Base 1) dividiendo el índice por el tamaño de página
-        const paginaCalculada = Math.floor(indiceAlumnoDestacado / registrosPorPaginaBase) + 1;
-
-        paginaActual = paginaCalculada;
-
-        // Sincronizar el indicador de página del escritorio (Desktop) de inmediato
-        if (domElements.lblPaginaActual) {
-          domElements.lblPaginaActual.textContent = paginaActual;
-        }
-        console.log(
-          `[Paginador UX] Alumno localizado en índice ${indiceAlumnoDestacado}. Forzando visualización en Página: ${paginaActual}`
-        );
+        paginaActual = Math.floor(indiceAlumnoDestacado / registrosPorPaginaBase) + 1;
+        if (domElements.lblPaginaActual) domElements.lblPaginaActual.textContent = paginaActual;
       }
     }
-    // =========================================================================
 
     // 5. Actualizar contadores visuales en la interfaz
     if (domElements.contadorVisualizadas) {
       domElements.contadorVisualizadas.textContent = alumnosFiltrados.length.toString();
     }
 
-    // Limpiar contenedor antes de renderizar las filas reales
     domElements.tablaAlumnos.innerHTML = "";
 
     if (alumnosFiltrados.length === 0) {
-      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:25px;">No se encontraron alumnos para los criterios seleccionados.</td></tr>`;
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:25px;">No se encontraron alumnos para los criterios seleccionados.</td></tr>`;
       return;
     }
 
@@ -416,20 +415,17 @@
     const indiceInicio = (paginaActual - 1) * registrosPorPagina;
     const indiceFin = indiceInicio + registrosPorPagina;
     const alumnosPaginados = alumnosFiltrados.slice(indiceInicio, indiceFin);
-    // 7. Renderizado físico de filas en la tabla del módulo nuevo
+
+    // 7. Renderizado físico de filas en la tabla
     alumnosPaginados.forEach((alumno) => {
       const tr = document.createElement("tr");
       tr.className = "fila-alumno";
       tr.style.borderBottom = "1px solid #e2e8f0";
-      tr.style.transition = "all 0.3s ease"; // Suaviza la aparición visual
+      tr.style.transition = "all 0.3s ease";
 
-      // =========================================================================
-      // DISEÑO PREMIUM UX: DETECCIÓN Y ANCLAJE VISUAL DEL ALUMNO DESTACADO
-      // =========================================================================
+      // Aplicar anclaje visual del alumno destacado original (CORREGIDO)
       const dniAlumnoLimpio = String(alumno.dni || "").replace(/[^0-9]/g, "");
       const dniDestacadoLimpio = String(dniDestacadoSesion || "").replace(/[^0-9]/g, "");
-
-      let esDestacado = dniDestacadoLimpio && dniAlumnoLimpio === dniDestacadoLimpio;
 
       if (dniDestacadoLimpio && dniAlumnoLimpio === dniDestacadoLimpio) {
         tr.style.backgroundColor = "#f0f7ff";
@@ -444,37 +440,44 @@
           tr.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 150);
       }
-
-      // =========================================================================
-
-      // 🛠️ CORREGIDO: Mapeo de auxilio usando las opciones cargadas en el selector de filtros
-
+      // Mapeo de la Sección (Curso)
       let textoCursoMapeado = "Mesa Entrada";
       if (alumno.cursoId) {
         const opcionesSelector = domElements.filtroCurso ? Array.from(domElements.filtroCurso.options) : [];
         const opcionCoincidente = opcionesSelector.find((opt) => opt.value === alumno.cursoId);
         if (opcionCoincidente && opcionCoincidente.value !== "todos") {
-          textoCursoMapeado = opcionCoincidente.textContent; // Extrae Ej: "1° "A""
+          textoCursoMapeado = opcionCoincidente.textContent;
         } else if (window.cachedCursosColegio) {
           const cRef = window.cachedCursosColegio.find((c) => c.id === alumno.cursoId);
           if (cRef) {
-            const numeroAnio = cRef.ciclo ? cRef.ciclo.charAt(0) : "1";
-            textoCursoMapeado = `${numeroAnio}° "${cRef.division}"`;
+            textoCursoMapeado = `${cRef.ciclo ? cRef.ciclo.charAt(0) : "1"}° "${cRef.division}"`;
           }
         }
       }
 
-      let celdaCurso = `<span class="badge-curso" style="background:#e0f2fe; color:#0369a1; font-weight:bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${textoCursoMapeado}</span>`;
+      // Armado de la Celda de Estado (Con Pase / Regular / Baja / Mesa Entrada)
+      let celdaEstadoTexto = "";
+      const estActual = String(alumno.estado || "Regular").trim();
+      const tramIngreso = String(alumno.tramiteIngreso || "").trim();
+      const esConPase =
+        tramIngreso === "Con Pase Entrante" || tramIngreso === "Con Pase Saliente" || estActual === "Pase";
 
-      if (alumno.estado === "Pase") {
-        const tipoPase = alumno.paseHistorial?.tipo === "Saliente" ? "Saliente" : "Entrante";
-        celdaCurso += ` <span class="badge-pase" style="background:#dbeafe; color:#1d4ed8; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Pase ${tipoPase}</span>`;
-      }
-      if (alumno.estado === "Baja") {
-        celdaCurso += ` <span class="badge-baja" style="background:#fee2e2; color:#b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left:4px;">Baja</span>`;
+      if (esConPase) {
+        celdaEstadoTexto = `<span style="background:#dbeafe; color:#1d4ed8; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight:bold;">${estActual} (Con Pase)</span>`;
+      } else {
+        if (estActual === "Baja") {
+          celdaEstadoTexto = `<span style="background:#fee2e2; color:#b91c1c; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight:bold;">Baja</span>`;
+        } else if (estActual === "Mesa Entrada" || estActual === "Mesa de Entrada" || estActual === "Entrante") {
+          celdaEstadoTexto = `<span style="background:#f1f5f9; color:#475569; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight:bold;">Mesa Entrada</span>`;
+        } else {
+          celdaEstadoTexto = `<span style="background:#e2e8f0; color:#1e293b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight:500;">Regular</span>`;
+        }
       }
 
-      // Columna Documentación (Auditoría Documental)
+      // Columna Sección (Badge original intacto)
+      let celdaCursoBadge = `<span class="badge-curso" style="background:#e0f2fe; color:#0369a1; font-weight:bold; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${textoCursoMapeado}</span>`;
+
+      // Columna de Documentación (Auditoría)
       const dMap = alumno.documentosDigitales || {};
       const cargados = [
         "dni_alumno",
@@ -484,15 +487,13 @@
         "carnet_vacunas",
         "dni_tutor"
       ].filter((k) => dMap[k] !== null && dMap[k] !== undefined).length;
-
       const celdaAuditoria =
         cargados === 6
           ? `<span class="documentos-completos" style="color:#16a34a; font-weight: 500; font-size: 13px;">✓ Completo (6/6)</span>`
           : `<span class="alerta-documentos" style="color:#d97706; font-weight: 500; font-size: 13px;">⚠ Incompleto (${cargados}/6)</span>`;
 
-      // Columna Inclusión (PPI / Trayectorias Flexibles / CUD)
-      let celdaInclusion = `<span style="color:#94a3b8; font-size:12px;">Estándar</span>`;
-
+      // Columna de Inclusión ("Sin Inclusión")
+      let celdaInclusion = `<span style="color:#94a3b8; font-size:12px;">Sin Inclusión</span>`;
       if (alumno.trayectoriaPPI === true || alumno.tienePPI === true) {
         celdaInclusion = `<span style="color:#a855f7; font-weight:bold; font-size:12px; background:#f3e8ff; padding:4px 8px; border-radius:4px;">🗲 Con PPI</span>`;
       } else if (alumno.trayectoriasFlexibles === true) {
@@ -501,15 +502,25 @@
         celdaInclusion = `<span style="color:#10b981; font-weight:bold; font-size:12px; background:#d1fae5; padding:4px 8px; border-radius:4px;">♿ Con CUD</span>`;
       }
 
-      // Columna Acciones Curriculares (Botones de operación)
-      const accionesHTML = `
-        <div style="display: flex; gap: 6px; justify-content: flex-start; align-items: center;">
-          <button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" data-curso-origen="${alumno.cursoId || ""}" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Editar Alumno">Editar</button>
-          <button type="button" class="btn-accion-fila btn-fila-eliminar" data-dni="${alumno.dni}" style="background:#dc2626; color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Eliminar Alumno">Eliminar</button>
-        </div>
-      `;
+      // Botonera de 5 Acciones con control RBAC
+      const nombreEstudianteValido = alumno.nombreAlumno || alumno.nombre || "Sin registrar";
+      const direccionEstudianteValida = alumno.direccionAlumno || alumno.direccion || "No especificada";
 
-      // Saneamiento de nombres duplicados por carga masiva
+      let accionesHTML = `
+      <div style="display: flex; gap: 4px; justify-content: flex-start; align-items: center;">
+        <button type="button" class="btn-accion-fila btn-fila-ficha" data-nombre="${nombreEstudianteValido}" data-direccion="${direccionEstudianteValida}" data-tel1="${alumno.telefono1 || "No registrado"}" data-tel2="${alumno.telefono2 || "Ninguno"}" data-tutor="${alumno.nombreTutor || "No registrado"}" data-tutordni="${alumno.dniTutor || "Sin registrar"}" data-dni="${alumno.dni}" style="background:#4b5563; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer;" title="Ver Datos de Contacto">👁</button>
+        <button type="button" class="btn-accion-fila btn-fila-informe" data-dni="${alumno.dni}" style="background:#1a73e8; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer;" title="Informe Pedagógico">🖨</button>
+        <button type="button" class="btn-accion-fila btn-fila-boletin" data-dni="${alumno.dni}" style="background:#10b981; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer;" title="Boletín Escolar">📄</button>
+        <button type="button" class="btn-accion-fila" onclick="window.open('historial.html?dni=${alumno.dni}', '_blank')" style="background:#f59e0b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer;" title="Historial del Legajo">📜</button>
+    `;
+
+      if (window.permisoLegajo === "escritura") {
+        accionesHTML += `<button type="button" class="btn-accion-fila btn-fila-editar" data-dni="${alumno.dni}" data-curso-origen="${alumno.cursoId || ""}" style="background:#2563eb; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer;" title="Editar Alumno">📝</button>`;
+        accionesHTML += `<button type="button" class="btn-accion-fila btn-fila-eliminar" data-dni="${alumno.dni}" style="background:#dc2626; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer;" title="Eliminar Alumno">🗑️</button>`;
+      }
+      accionesHTML += `</div>`;
+
+      // Saneamiento de nombres duplicados
       let nombreParaMostrar = alumno.nombre || "";
       const palabrasNombre = nombreParaMostrar.trim().split(/\s+/);
       if (palabrasNombre.length >= 4) {
@@ -521,14 +532,16 @@
         }
       }
 
-      // Estructura de celdas alineada a las columnas de la interfaz
+      // Estructura física con las 7 columnas alineadas
       tr.innerHTML = `
-        <td style="padding: 12px 10px;"><strong>${nombreParaMostrar}</strong><br><span style="color:#64748b; font-size:11px;">DNI: ${alumno.dni || ""}</span></td>
-        <td style="padding: 12px 10px; vertical-align: middle;">${celdaCurso}</td>
-        <td style="padding: 12px 10px; vertical-align: middle;">${celdaAuditoria}</td>
-        <td style="padding: 12px 10px; vertical-align: middle;">${celdaInclusion}</td>
-        <td style="padding: 12px 10px; vertical-align: middle; text-align: left;">${accionesHTML}</td>
-      `;
+      <td style="padding: 12px 10px;"><strong>${nombreParaMostrar}</strong></td>
+      <td style="padding: 12px 10px; vertical-align: middle; color:#475569; font-weight:500;">${alumno.dni || ""}</td>
+      <td style="padding: 12px 10px; vertical-align: middle;">${celdaCursoBadge}</td>
+      <td style="padding: 12px 10px; vertical-align: middle; text-align: center;">${celdaEstadoTexto}</td>
+      <td style="padding: 12px 10px; vertical-align: middle;">${celdaAuditoria}</td>
+      <td style="padding: 12px 10px; vertical-align: middle;">${celdaInclusion}</td>
+      <td style="padding: 12px 10px; vertical-align: middle; text-align: left;">${accionesHTML}</td>
+    `;
 
       domElements.tablaAlumnos.appendChild(tr);
     });
@@ -648,19 +661,53 @@
     // Interceptor dinámico para acciones de la grilla de alumnos
     if (domElements.tablaAlumnos) {
       domElements.tablaAlumnos.addEventListener("click", async (e) => {
+        // =========================================================================
+        // ACCIÓN: VER DATOS DE CONTACTO (👁)
+        // =========================================================================
+        const botonFicha = e.target.closest(".btn-fila-ficha");
+        if (botonFicha) {
+          const nombre = botonFicha.getAttribute("data-nombre");
+          const dni = botonFicha.getAttribute("data-dni");
+          const direccion = botonFicha.getAttribute("data-direccion");
+          const tel1 = botonFicha.getAttribute("data-tel1");
+          const tel2 = botonFicha.getAttribute("data-tel2");
+          const tutor = botonFicha.getAttribute("data-tutor");
+          const tutorDni = botonFicha.getAttribute("data-tutordni");
+
+          const contenedorModal = domElements.modalImpresion || document.getElementById("modalImpresionContenedor");
+          const cuerpoModal = document.getElementById("modalImpresionCuerpo");
+
+          if (contenedorModal && cuerpoModal) {
+            cuerpoModal.innerHTML = `
+              <div style="padding: 20px; background: white; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; text-align: left; max-width: 550px; margin: 30px auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                  <h2 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0; font-size: 18px;">Ficha de Contacto Institucional</h2>
+                  <p style="font-size: 15px; margin: 12px 0;"><strong>Estudiante:</strong> ${nombre}</p>
+                  <p style="font-size: 13px; margin: 8px 0; color: #475569;"><strong>DNI Alumno:</strong> ${dni}</p>
+                  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                  <div style="display: flex; flex-direction: column; gap: 10px; color: #334155; font-size: 14px;">
+                      <div><strong>📍 Dirección de Residencia:</strong> ${direccion}</div>
+                      <div><strong>📞 Teléfono de Contacto 1:</strong> <span style="color: #2563eb; font-weight: bold;">${tel1}</span></div>
+                      <div><strong>📱 Teléfono Alternativo 2:</strong> ${tel2}</div>
+                      <div style="background: #f8fafc; padding: 12px; border-left: 4px solid #10b981; margin-top: 5px; border-radius: 0 4px 4px 0;">
+                          <strong style="color: #065f46;">👤 Adulto Responsable / Tutor:</strong> ${tutor}<br>
+                          <span style="font-size: 12px; color: #64748b;">DNI Tutor: ${tutorDni}</span>
+                      </div>
+                  </div>
+              </div>
+            `;
+            contenedorModal.style.display = "block";
+          }
+          return;
+        }
+
+        // Aquí abajo continúa tu código original del botón editar...
         const botonEditar = e.target.closest(".btn-fila-editar");
         if (botonEditar) {
           const dniAlumno = botonEditar.getAttribute("data-dni");
           const cursoOrigen = botonEditar.getAttribute("data-curso-origen") || "";
-
-          // 1. Sincronizar las variables globales de control de edición
           window.esEdicion = true;
           cursoIdOriginalLegajo = cursoOrigen;
-
           console.log(`[Modo Edición] Activado para DNI: ${dniAlumno}. Curso origen: ${cursoOrigen}`);
-
-          // Nota técnica: Aquí el sistema llamará posteriormente a la carga de datos en el Wizard
-          // Por ahora, dejamos el puente de control de caché listo.
         }
       });
     }
@@ -784,32 +831,21 @@
       selectorCursoForm.style.opacity = "1";
     }
 
-    // 🩺 REGULACIÓN DE PERMISOS: Módulo de Inclusión Integral (PPI / CUD / Trayectorias)
-    const tienePermisoEscrituraInc = window.permisoInclusion === "escritura";
-    const tienePermisoLecturaInc = window.permisoInclusion === "lectura" || window.permisoInclusion === "escritura";
+    // Regulación de permisos para Inclusión Integral (PPI / CUD / Trayectorias)
+    const permInc = String(window.permisoInclusion || "ninguno")
+      .toLowerCase()
+      .trim();
+    const tieneEscrituraInc = permInc === "escritura" || permInc === "administrador";
+    const tieneLecturaInc = permInc === "lectura" || permInc === "usuario" || tieneEscrituraInc;
 
-    // 1. Control del Checkbox y Panel de PPI
-    if (domElements.chkPPI) {
-      domElements.chkPPI.disabled = !tienePermisoEscrituraInc;
-    }
-    if (!tienePermisoLecturaInc && domElements.panelPPI) {
-      domElements.panelPPI.style.display = "none";
-    }
+    if (domElements.chkPPI) domElements.chkPPI.disabled = !tieneEscrituraInc;
+    if (domElements.chkTrayectorias) domElements.chkTrayectorias.disabled = !tieneEscrituraInc;
+    if (domElements.chkCUD) domElements.chkCUD.disabled = !tieneEscrituraInc;
 
-    // 2. Control del Checkbox de Trayectorias Flexibles
-    if (domElements.chkTrayectorias) {
-      domElements.chkTrayectorias.disabled = !tienePermisoEscrituraInc;
+    if (!tieneLecturaInc) {
+      if (domElements.panelPPI) domElements.panelPPI.style.display = "none";
+      if (domElements.panelCUD) domElements.panelCUD.style.display = "none";
     }
-
-    // 3. Control del Checkbox y Panel de CUD
-    if (domElements.chkCUD) {
-      domElements.chkCUD.disabled = !tienePermisoEscrituraInc;
-    }
-    if (!tienePermisoLecturaInc && domElements.panelCUD) {
-      domElements.panelCUD.style.display = "none";
-    }
-
-    // Fin de la regulación de inclusión
 
     if (domElements.modalFormulario) {
       domElements.modalFormulario.style.display = "block";
@@ -1352,7 +1388,7 @@
     inicializarEventos();
 
     // 2. Control estricto de la sesión real activa de la plataforma
-    const datosSesionRaw = localStorage.getItem("usuarioActivo");
+    const datosSesionRaw = sessionStorage.getItem("usuarioActivo");
     if (!datosSesionRaw) {
       window.location.href = "index.html";
       return;
@@ -1425,15 +1461,22 @@
           usuarioLogueado.rolReal = rolNormalizado;
           usuarioLogueado.permisoLegajoReal = window.permisoLegajo;
           usuarioLogueado.permisoInclusionReal = window.permisoInclusion; // Guardar en la sesión activa
-
-          if (domElements.csvSection) {
-            domElements.csvSection.style.display = rolNormalizado === "administrador" ? "flex" : "none";
+          if (window.permisoLegajo === "ninguno") {
+            const contenedorPrincipal = document.querySelector(".consola-matriculacion") || document.body;
+            contenedorPrincipal.innerHTML = `<div style="text-align:center; padding:50px; color:#dc2626; font-family:sans-serif;"><h2>⚠️ Acceso Denegado</h2><p>Su perfil de usuario no cuenta con autorización para visualizar el Legajo Digital de Alumnos.</p></div>`;
+            return;
           }
 
-          if (window.permisoLegajo === "lectura" && domElements.btnAbrirMatricula) {
-            domElements.btnAbrirMatricula.style.display = "none";
-          } else if (domElements.btnAbrirMatricula) {
-            domElements.btnAbrirMatricula.style.display = "inline-block";
+          if (window.permisoLegajo === "lectura") {
+            if (domElements.btnAbrirMatricula) domElements.btnAbrirMatricula.style.display = "none";
+          } else if (window.permisoLegajo === "escritura") {
+            if (domElements.btnAbrirMatricula) domElements.btnAbrirMatricula.style.display = "inline-block";
+          }
+
+          if (domElements.csvSection) {
+            const esAdmin = rolNormalizado === "administrador" || rolNormalizado === "admin";
+            const tieneEscritura = window.permisoLegajo === "escritura";
+            domElements.csvSection.style.display = esAdmin && tieneEscritura ? "flex" : "none";
           }
         }
       }

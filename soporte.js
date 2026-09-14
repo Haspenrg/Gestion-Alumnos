@@ -39,7 +39,7 @@
   const { collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp, orderBy, getDocs } =
     await import(base + "firebase-firestore.js");
 
-  const datosSesion = localStorage.getItem("usuarioActivo");
+  const datosSesion = sessionStorage.getItem("usuarioActivo");
   if (!datosSesion) {
     window.location.href = "index.html";
     return;

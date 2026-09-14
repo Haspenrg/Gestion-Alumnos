@@ -134,7 +134,7 @@
     setTimeout(inicializarModuloInscripciones, 50);
   }
   async function inicializarModuloInscripciones() {
-    const datosSesionRaw = localStorage.getItem("usuarioActivo");
+    const datosSesionRaw = sessionStorage.getItem("usuarioActivo");
     if (!datosSesionRaw) {
       window.location.href = "index.html";
       return;
@@ -176,7 +176,7 @@
     inicializarCiclosLectivosDinamicos();
     await inicializarSelectoresCursosDesdeCloud();
     // FILTRO REAL DE PRECEPTORES: Consulta a Firebase usando el DNI de la sesión activa
-    const sesionLocal = localStorage.getItem("usuarioActivo");
+    const sesionLocal = sessionStorage.getItem("usuarioActivo");
     if (window.esSoloLectura === true && selectCursoFiltro && window.cachedCursosColegio && sesionLocal) {
       const usuarioReal = JSON.parse(sesionLocal);
       // Vamos a la base de datos a buscar el documento de este usuario usando su DNI

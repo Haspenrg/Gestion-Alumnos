@@ -73,7 +73,7 @@
 
   // --- PROTECCIÓN COERCITIVA RBAC PARA LA VISTA DE ROLES ORIGINAL ---
   async function verificarAutenticacionAdmin() {
-    const datosSesion = localStorage.getItem("usuarioActivo");
+    const datosSesion = sessionStorage.getItem("usuarioActivo");
     if (!datosSesion) {
       window.location.href = "index.html";
       return;
@@ -249,16 +249,30 @@
       .toLowerCase()
       .trim();
 
-    // Si encuentra el dato viejo "escritura" o el nuevo "administrador", lo pinta bien
-    if (estado === "administrador" || estado === "escritura") {
-      claseBadge = "badge-escritura"; // Usa tu estilo CSS verde/azul existente
-      textoNivel = "Administrador";
-    } else if (estado === "usuario" || estado === "lectura") {
-      claseBadge = "badge-lectura"; // Usa tu estilo CSS amarillo existente
-      textoNivel = "Usuario";
+    // Regla especial para Soporte Técnico: usa Administrador / Usuario / Ninguno
+    if (nombreModulo.toLowerCase().trim() === "soporte") {
+      if (estado === "administrador" || estado === "escritura") {
+        claseBadge = "badge-escritura";
+        textoNivel = "Administrador";
+      } else if (estado === "usuario" || estado === "lectura") {
+        claseBadge = "badge-lectura";
+        textoNivel = "Usuario";
+      } else {
+        claseBadge = "badge-ninguno";
+        textoNivel = "Ninguno";
+      }
     } else {
-      claseBadge = "badge-ninguno";
-      textoNivel = "Ninguno";
+      // Regla general para todos los demás módulos: usa Escritura / Lectura / Ninguno
+      if (estado === "administrador" || estado === "escritura") {
+        claseBadge = "badge-escritura";
+        textoNivel = "Escritura";
+      } else if (estado === "usuario" || estado === "lectura") {
+        claseBadge = "badge-lectura";
+        textoNivel = "Lectura";
+      } else {
+        claseBadge = "badge-ninguno";
+        textoNivel = "Ninguno";
+      }
     }
 
     return `<span class="badge-permiso-sistema ${claseBadge}"><strong>${nombreModulo}:</strong> ${textoNivel}</span>`;
