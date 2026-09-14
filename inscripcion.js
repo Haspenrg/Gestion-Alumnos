@@ -69,6 +69,7 @@
   let cursoIdOriginalLegajo = "";
   let dniDestacadoSesion = "";
   let listaIngresosNuevosSesion = [];
+  let usuarioInteractuo = false;
 
   // Objeto de persistencia digital para los archivos adjuntos
   let base64DocumentosTemporales = {
@@ -90,10 +91,11 @@
 
     // Filtros de la Pantalla Principal
     filtroBusqueda: document.getElementById("filtroBusquedaRapida"),
+    btnLupaBusqueda: document.getElementById("btnLupaBusqueda"),
     filtroCurso: document.getElementById("filtroCursoEstructural"),
     filtroEstado: document.getElementById("filtroEstadoMatricula"),
     filtroAuditoria: document.getElementById("filtroAuditoriaDocs"),
-    filtroPPI: document.getElementById("filtroPPI"),
+    filtroInclusion: document.getElementById("filtroPPI"), // 🛠️ Corregido para unificar con el motor de renderTable
     filtroCiclo: document.getElementById("filtroCicloLectivo"),
 
     // Sección Carga Masiva CSV
@@ -169,8 +171,7 @@
     inputEmailTutor: document.getElementById("emailTutor"),
     selectEstadoMatricula: document.getElementById("estadoAlumno"),
     selectTramiteIngreso: document.getElementById("tramiteIngreso"),
-    selectCursoAsignado:
-      document.getElementById("selectCursoAlumno") || document.getElementById("filtroCursoEstructural"),
+    selectCursoAsignado: document.getElementById("selectCursoAlumno"),
     chkTrayectorias: document.getElementById("chkTrayectoriasFlexibles"),
 
     // Paneles Condicionales PPI y CUD (Paso 2)
@@ -216,112 +217,209 @@
   async function renderTable() {
     if (!domElements.tablaAlumnos) return;
 
-    // Control para Solo Lectura (Minuta Punto 1)
-    if (window.permisoLegajo === "lectura" && domElements.filtroEstado) {
-      if (domElements.filtroEstado.value !== "Regular") {
-        domElements.filtroEstado.innerHTML = '<option value="Regular">Regular</option>';
-        domElements.filtroEstado.value = "Regular";
-      }
-    }
-
-    // 1. Obtener valores de los filtros reales
-    const queryCurso = domElements.filtroCurso?.value || "todos";
+    // 1. Obtener valores en tiempo real de la interfaz del Colegio Haspen
+    const queryCurso = domElements.filtroCurso?.value || "";
     const queryEstado = domElements.filtroEstado?.value || "todos";
     const queryAuditoria = domElements.filtroAuditoria?.value || "todos";
     const queryInclusion = domElements.filtroInclusion?.value || "todos";
-    const queryCiclo = domElements.filtroCiclo?.value || "2026";
+    const queryCiclo = domElements.filtroCiclo?.value || new Date().getFullYear().toString();
     const subCadenaBusqueda = domElements.filtroBusqueda ? domElements.filtroBusqueda.value.toLowerCase().trim() : "";
 
-    // 2. REGLA ESCOLAR: Grilla inicial limpia
-    if ((queryCurso === "todos" || queryCurso === "") && queryEstado === "todos" && !subCadenaBusqueda) {
+    // NUEVO: Validar longitud mínima de caracteres si el usuario escribió algo
+    let criterioInvalidoPorLongitud = false;
+    if (subCadenaBusqueda !== "") {
+      const esNumero = /^\d+$/.test(subCadenaBusqueda);
+      if (esNumero && subCadenaBusqueda.length < 6) {
+        criterioInvalidoPorLongitud = true;
+      } else if (!esNumero && subCadenaBusqueda.length < 3) {
+        criterioInvalidoPorLongitud = true;
+      }
+    }
+
+    // ====== REGLA DE ORO: CANDADO DE CUOTA INICIAL (COSTO CERO) ======
+    const estadoInicial =
+      queryCurso === "" &&
+      queryEstado === "todos" &&
+      queryAuditoria === "todos" &&
+      queryInclusion === "todos" &&
+      subCadenaBusqueda === "";
+
+    // Si está en el estado inicial, no interactuó O el criterio es muy corto, se bloquea
+    if (estadoInicial || !usuarioInteractuo || criterioInvalidoPorLongitud) {
       domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Establezca un criterio de búsqueda o seleccione un curso para visualizar la nómina.</td></tr>`;
       if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
       return;
     }
 
-    // 3. Consulta asíncrona con Motor de Caché
+    // ====== LIMPIEZA ABSOLUTA DE MEMORIA RAM INTERNA (EVITA DATOS PEGADOS) ======
     let listaAlumnos = [];
-    try {
-      const esAdmin = rolNormalizado === "administrador" || rolNormalizado === "admin";
-      const cursosPermitidos = usuarioLogueado.cursosAsignados || [];
+    let alumnosCargadosDesdeCache = {};
 
-      if (subCadenaBusqueda) {
-        let q;
-        if (queryCurso === "todos" || queryCurso === "") {
-          if (esAdmin) {
-            q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
-          } else {
-            if (cursosPermitidos.length === 0) {
-              domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
-              if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
-              return;
+    // 2. Extraer y normalizar los permisos de territorio del usuario activo
+    const datosSesionActual = sessionStorage.getItem("usuarioActivo");
+    const usuarioActivoObj = datosSesionActual ? JSON.parse(datosSesionActual) : {};
+    const esEscrituraGlobal =
+      rolNormalizado === "administrador" || rolNormalizado === "admin" || window.permisoLegajo === "escritura";
+
+    const cursosPermitidos =
+      usuarioActivoObj.permisosDelRol?.legajoDigital === "escritura" || usuarioActivoObj.rol === "admin"
+        ? usuarioLogueado.cursosAsignados || []
+        : usuarioActivoObj.cursosAsignados || [];
+
+    // Traductor automático de interfaz para acoplar con la base de datos real
+    let estadoParaFirebase = queryEstado;
+    if (queryEstado === "Mesa de Entrada" || queryEstado === "Con Pase Entrante") {
+      estadoParaFirebase = "Entrante";
+    } else if (queryEstado === "Con Pase Saliente") {
+      estadoParaFirebase = "Pase";
+    }
+
+    // ====== ADUANA DEL DISCO LOCAL: RESCATE DE REGISTROS EXISTENTES (COSTO CERO) ======
+    try {
+      const claveMaestraCache = `haspen_indice_central_alumnos`;
+      const datosLocalesCifrados = localStorage.getItem(claveMaestraCache);
+      let baseDeDatosLocal = [];
+
+      if (datosLocalesCifrados) {
+        baseDeDatosLocal = descifrarDatos(datosLocalesCifrados) || [];
+      }
+
+      // 1. ADUANA DE MEMORIA LOCAL: Se activa por texto O por cambio de selectores con curso vacío
+      const seleccionoFiltroSuperior =
+        queryEstado !== "todos" || queryAuditoria !== "todos" || queryInclusion !== "todos";
+
+      if (subCadenaBusqueda !== "" || (queryCurso === "" && seleccionoFiltroSuperior)) {
+        const encontradosLocalmente = baseDeDatosLocal.filter((alumno) => {
+          if (alumno.cicloLectivo !== queryCiclo) return false;
+
+          if (subCadenaBusqueda !== "") {
+            const mNombre = alumno.nombre ? alumno.nombre.toLowerCase().includes(subCadenaBusqueda) : false;
+            const mDni = alumno.dni ? alumno.dni.includes(subCadenaBusqueda) : false;
+            if (!mNombre && !mDni) return false;
+          }
+          return true;
+        });
+
+        if (encontradosLocalmente.length > 0) {
+          let localesPermitidos = encontradosLocalmente;
+          if (queryCurso === "" && !esEscrituraGlobal) {
+            localesPermitidos = localesPermitidos.filter((al) => cursosPermitidos.includes(al.cursoId));
+          }
+
+          if (localesPermitidos.length > 0) {
+            listaAlumnos = localesPermitidos;
+            cacheAlumnosPorDni = {};
+            listaAlumnos.forEach((al) => (cacheAlumnosPorDni[al.dni] = al));
+
+            // Forzar el salto directo al filtro fino inferior sin tocar Firebase
+            alumnosCargadosDesdeCache = {};
+            listaAlumnos.forEach((al) => (alumnosCargadosDesdeCache[al.dni] = al));
+          }
+        }
+      }
+
+      // 2. CAMINO DE RED: Si la lista sigue vacía, se consulta a internet según el escenario
+      if (listaAlumnos.length === 0) {
+        if (queryCurso !== "") {
+          const claveLocal = `haspen_curso_${queryCurso}_${queryCiclo}`;
+          const localesCifrados = localStorage.getItem(claveLocal);
+
+          if (localesCifrados) {
+            const descifrados = descifrarDatos(localesCifrados);
+            if (descifrados) {
+              descifrados.forEach((al) => {
+                if (!alumnosCargadosDesdeCache[al.dni]) {
+                  alumnosCargadosDesdeCache[al.dni] = al;
+                  listaAlumnos.push(al);
+                }
+              });
             }
-            q = query(
+          }
+
+          if (listaAlumnos.length === 0) {
+            const q = query(
               collection(db, "alumnos"),
-              where("cicloLectivo", "==", queryCiclo),
-              where("cursoId", "in", cursosPermitidos)
+              where("cursoId", "==", queryCurso),
+              where("cicloLectivo", "==", queryCiclo)
             );
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((docSnap) => {
+              const alData = docSnap.data();
+              if (!alumnosCargadosDesdeCache[alData.dni]) {
+                alumnosCargadosDesdeCache[alData.dni] = alData;
+                listaAlumnos.push(alData);
+              }
+            });
           }
         } else {
-          q = query(
-            collection(db, "alumnos"),
-            where("cursoId", "==", queryCurso),
-            where("cicloLectivo", "==", queryCiclo)
-          );
-        }
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach((docSnap) => {
-          listaAlumnos.push(docSnap.data());
-        });
-      } else if (queryCurso !== "todos" && queryCurso !== "") {
-        if (cacheAlumnosPorCurso[queryCurso]) {
-          listaAlumnos = [...cacheAlumnosPorCurso[queryCurso]];
-        } else {
-          const q = query(
-            collection(db, "alumnos"),
-            where("cursoId", "==", queryCurso),
-            where("cicloLectivo", "==", queryCiclo)
-          );
-          const querySnapshot = await getDocs(q);
-          let alumnosCurso = [];
-          querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            alumnosCurso.push(data);
-            cacheAlumnosPorDni[data.dni] = data;
+          // El selector de Cursos quedó en "Todos los Cursos" (Internet + RBAC)
+          let alumnosSnapshot = [];
+
+          if (esEscrituraGlobal) {
+            let restriccionesQuery = [collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo)];
+            if (queryEstado !== "todos") {
+              restriccionesQuery.push(where("estado", "==", estadoParaFirebase));
+            }
+            const q = query(...restriccionesQuery);
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((docSnap) => alumnosSnapshot.push(docSnap.data()));
+          } else if (cursosPermitidos.length > 0) {
+            for (const idCurso of cursosPermitidos) {
+              let restriccionesQuery = [
+                collection(db, "alumnos"),
+                where("cursoId", "==", idCurso),
+                where("cicloLectivo", "==", queryCiclo)
+              ];
+              if (queryEstado !== "todos") {
+                restriccionesQuery.push(where("estado", "==", estadoParaFirebase));
+              }
+              const q = query(...restriccionesQuery);
+              const querySnapshot = await getDocs(q);
+              querySnapshot.forEach((docSnap) => alumnosSnapshot.push(docSnap.data()));
+            }
+          }
+
+          alumnosSnapshot.forEach((alData) => {
+            if (esEscrituraGlobal || cursosPermitidos.includes(alData.cursoId) || alData.cursoId === "") {
+              if (!alumnosCargadosDesdeCache[alData.dni]) {
+                alumnosCargadosDesdeCache[alData.dni] = alData;
+                listaAlumnos.push(alData);
+              }
+            }
           });
-          cacheAlumnosPorCurso[queryCurso] = alumnosCurso;
-          listaAlumnos = [...alumnosCurso];
         }
-      } else {
-        let q;
-        if (esAdmin) {
-          q = query(collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo));
-        } else {
-          if (cursosPermitidos.length === 0) {
-            domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:25px;">No posee cursos asignados a su preceptoría.</td></tr>`;
-            if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
-            return;
+      }
+
+      // 3. INYECCIÓN SILENCIOSA: Guardar en LocalStorage lo que se haya bajado nuevo de internet
+      cacheAlumnosPorDni = {};
+      listaAlumnos.forEach((al) => (cacheAlumnosPorDni[al.dni] = al));
+
+      if (listaAlumnos.length > 0) {
+        listaAlumnos.forEach((nuevoAlumno) => {
+          const indiceExistente = baseDeDatosLocal.findIndex((al) => al.dni === nuevoAlumno.dni);
+          if (indiceExistente !== -1) {
+            baseDeDatosLocal[indiceExistente] = nuevoAlumno;
+          } else {
+            baseDeDatosLocal.push(nuevoAlumno);
           }
-          q = query(
-            collection(db, "alumnos"),
-            where("cicloLectivo", "==", queryCiclo),
-            where("cursoId", "in", cursosPermitidos)
-          );
-        }
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach((docSnap) => {
-          listaAlumnos.push(docSnap.data());
         });
+
+        localStorage.setItem(claveMaestraCache, cifrarDatos(baseDeDatosLocal));
+
+        if (queryCurso !== "") {
+          localStorage.setItem(`haspen_curso_${queryCurso}_${queryCiclo}`, cifrarDatos(listaAlumnos));
+        }
       }
     } catch (error) {
-      console.error("Error en sincronización remota de alumnos:", error);
-      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor.</td></tr>`;
+      console.error("Error crítico en el embudo de consultas por registro de renderTable:", error);
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#dc2626; padding:25px;">Fallo de conexión con el servidor escolar.</td></tr>`;
       return;
     }
-    // 4. Aplicar filtros secundarios en memoria sobre los datos recuperados
+
+    // PREGUNTA 4: La Refinación Final (El rastrillo fino de memoria sobre los datos descargados)
     let alumnosFiltrados = listaAlumnos.filter((alumno) => {
-      // Filtrado estricto por Estado (Corrige el error de mezcla con Mesa Entrada)
-      if (queryEstado !== "todos" && queryEstado !== "") {
+      // Filtro fino para el Estado de Matrícula (Mesa de Entrada / Regular / Baja)
+      if (queryEstado !== "todos") {
         const estAlumno = String(alumno.estado || "")
           .toLowerCase()
           .trim();
@@ -333,38 +431,47 @@
           if (
             estAlumno === "baja" ||
             estAlumno === "entrante" ||
-            estAlumno === "mesa entrada" ||
-            estAlumno === "mesa de entrada" ||
-            tramAlumno === "mesa de entrada"
+            estAlumno.includes("mesa") ||
+            tramAlumno.includes("mesa")
           ) {
             return false;
           }
-        } else if (queryEstado === "Entrante" || queryEstado === "Mesa Entrada") {
-          if (
-            estAlumno !== "mesa entrada" &&
-            estAlumno !== "mesa de entrada" &&
-            estAlumno !== "entrante" &&
-            tramAlumno !== "mesa de entrada"
-          ) {
+        } else if (queryEstado === "Mesa de Entrada") {
+          if (!estAlumno.includes("mesa") && !tramAlumno.includes("mesa") && estAlumno !== "entrante") {
             return false;
           }
         } else {
-          if (alumno.estado !== queryEstado) return false;
+          if (estAlumno !== estadoParaFirebase.toLowerCase().trim()) return false;
         }
       }
 
-      // Filtro por Inclusión (PPI / Trayectorias / CUD)
-      if (queryInclusion !== "todos" && queryInclusion !== "") {
-        const tieneInclusion =
-          !!alumno.tienePPI || !!alumno.trayectoriaPPI || !!alumno.trayectoriasFlexibles || !!alumno.tieneCUD;
-        if (queryInclusion === "ConPPI" && !tieneInclusion) return false;
-        if (queryInclusion === "SinPPI" && tieneInclusion) return false;
+      // ====== FILTRADO FINO CONECTADO A LAS VARIABLES REALES DE FIRESTORE ======
+      const checkPPI =
+        alumno.tienePPI === true ||
+        alumno.tienePPI === "true" ||
+        alumno.trayectoriaPPI === true ||
+        alumno.trayectoriaPPI === "true" ||
+        alumno.alumnoPpi === true ||
+        alumno.alumnoPpi === "true";
+
+      const checkCUD =
+        alumno.tieneCUD === true ||
+        alumno.tieneCUD === "true" ||
+        alumno.alumnoCud === true ||
+        alumno.alumnoCud === "true";
+
+      const checkFlexible = alumno.trayectoriasFlexibles === true || alumno.trayectoriasFlexibles === "true";
+
+      if (queryInclusion !== "todos") {
+        if (queryInclusion === "ConPPI" && !checkPPI) return false;
+        if (queryInclusion === "ConCUD" && !checkCUD) return false;
+        if (queryInclusion === "Flexible" && !checkFlexible) return false;
+        if (queryInclusion === "SinPPI" && (checkPPI || checkCUD || checkFlexible)) return false;
       }
 
-      // Filtro por Documentación
-      if (queryAuditoria !== "todos" && queryAuditoria !== "") {
+      // Filtro de Auditoría de Documentación cargada
+      if (queryAuditoria !== "todos") {
         const dMap = alumno.documentosDigitales || {};
-        const totalRequisitosBase = 6;
         const cargadosBase = [
           "dni_alumno",
           "partida_nac",
@@ -373,12 +480,12 @@
           "carnet_vacunas",
           "dni_tutor"
         ].filter((k) => dMap[k] !== null && dMap[k] !== undefined).length;
-        const esCompleto = cargadosBase === totalRequisitosBase;
+        const esCompleto = cargadosBase === 6;
         if (queryAuditoria === "Completo" && !esCompleto) return false;
         if (queryAuditoria === "Incompleto" && esCompleto) return false;
       }
 
-      // Filtro por Barra de Búsqueda Rápida (Nombre o DNI)
+      // Filtro dinámico de la Barra de Búsqueda Rápida (Nombre o DNI)
       if (subCadenaBusqueda) {
         const mNombre = alumno.nombre ? alumno.nombre.toLowerCase().includes(subCadenaBusqueda) : false;
         const mDni = alumno.dni ? alumno.dni.includes(subCadenaBusqueda) : false;
@@ -387,17 +494,15 @@
       return true;
     });
 
-    // RASTREADOR UX: Paginación automática por alumno destacado (CORREGIDO)
+    // Seteo automático de paginación por alumno destacado
     if (dniDestacadoSesion) {
       const indiceAlumnoDestacado = alumnosFiltrados.findIndex((al) => al.dni === dniDestacadoSesion);
       if (indiceAlumnoDestacado !== -1) {
-        const registrosPorPaginaBase = 25;
-        paginaActual = Math.floor(indiceAlumnoDestacado / registrosPorPaginaBase) + 1;
+        paginaActual = Math.floor(indiceAlumnoDestacado / 25) + 1;
         if (domElements.lblPaginaActual) domElements.lblPaginaActual.textContent = paginaActual;
       }
     }
 
-    // 5. Actualizar contadores visuales en la interfaz
     if (domElements.contadorVisualizadas) {
       domElements.contadorVisualizadas.textContent = alumnosFiltrados.length.toString();
     }
@@ -409,12 +514,9 @@
       return;
     }
 
-    // 6. Lógica de Paginación Estricta (Bloques de 25 alumnos)
     if (typeof paginaActual === "undefined") paginaActual = 1;
-    const registrosPorPagina = 25;
-    const indiceInicio = (paginaActual - 1) * registrosPorPagina;
-    const indiceFin = indiceInicio + registrosPorPagina;
-    const alumnosPaginados = alumnosFiltrados.slice(indiceInicio, indiceFin);
+    const indiceInicio = (paginaActual - 1) * 25;
+    const alumnosPaginados = alumnosFiltrados.slice(indiceInicio, indiceInicio + 25);
 
     // 7. Renderizado físico de filas en la tabla
     alumnosPaginados.forEach((alumno) => {
@@ -616,7 +718,7 @@
       });
     }
 
-    if (domElements.btnGuardarForm) domElements.btnGuardarForm.addEventListener("click", guardarLegajoDigital); // 👈 PEGAR ESTA LÍNEA ACÁ
+    if (domElements.btnGuardarForm) domElements.btnGuardarForm.addEventListener("click", guardarLegajoDigital);
 
     // Modales de Carga Masiva e Impresión
     if (domElements.csvFileInput) domElements.csvFileInput.addEventListener("change", seleccionarCSV);
@@ -637,13 +739,10 @@
       domElements.confirmBtnAceptar.addEventListener("click", aceptarConfirmacionHaspen);
 
     // Automatizaciones en tiempo real
-    if (domElements.inputFechaNac) domElements.inputFechaNac.addEventListener("change", calcularEdadAutomatica); // 👈 Escucha cambio de fecha
-    // Escuchar cambios en la Situación Escolar Actual
+    if (domElements.inputFechaNac) domElements.inputFechaNac.addEventListener("change", calcularEdadAutomatica);
     if (domElements.selectEstadoMatricula) {
       domElements.selectEstadoMatricula.addEventListener("change", alternarPanelPase);
     }
-
-    // Escuchar cambios en el Origen / Trámite Administrativo
     if (domElements.selectTramiteIngreso) {
       domElements.selectTramiteIngreso.addEventListener("change", alternarPanelPase);
     }
@@ -661,9 +760,6 @@
     // Interceptor dinámico para acciones de la grilla de alumnos
     if (domElements.tablaAlumnos) {
       domElements.tablaAlumnos.addEventListener("click", async (e) => {
-        // =========================================================================
-        // ACCIÓN: VER DATOS DE CONTACTO (👁)
-        // =========================================================================
         const botonFicha = e.target.closest(".btn-fila-ficha");
         if (botonFicha) {
           const nombre = botonFicha.getAttribute("data-nombre");
@@ -700,7 +796,6 @@
           return;
         }
 
-        // Aquí abajo continúa tu código original del botón editar...
         const botonEditar = e.target.closest(".btn-fila-editar");
         if (botonEditar) {
           const dniAlumno = botonEditar.getAttribute("data-dni");
@@ -712,29 +807,56 @@
       });
     }
 
-    if (domElements.filtroBusqueda) {
-      domElements.filtroBusqueda.addEventListener("input", () => {
+    // VÍA A: Disparador por botón Lupa
+    if (domElements.btnLupaBusqueda) {
+      domElements.btnLupaBusqueda.addEventListener("click", () => {
+        usuarioInteractuo = true;
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
+
+    // VÍA A: Disparador por tecla Enter en el input
+    if (domElements.filtroBusqueda) {
+      domElements.filtroBusqueda.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault(); // Evita recargas o envíos nativos de formulario
+          usuarioInteractuo = true;
+          listaIngresosNuevosSesion = [];
+          paginaActual = 1;
+          renderTable();
+        }
+      });
+    }
+
     if (domElements.filtroCurso) {
       domElements.filtroCurso.addEventListener("change", () => {
+        usuarioInteractuo = true;
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
+
     if (domElements.filtroEstado) {
       domElements.filtroEstado.addEventListener("change", () => {
+        usuarioInteractuo = true;
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
+
+        // 🗲 AUTOMATIZACIÓN MESA DE ENTRADA: Blanquea el curso si se busca a los ingresantes del colegio
+        if (domElements.filtroEstado.value === "Mesa de Entrada" && domElements.filtroCurso) {
+          domElements.filtroCurso.value = "";
+        }
+
         renderTable();
       });
     }
+
     if (domElements.filtroAuditoria) {
       domElements.filtroAuditoria.addEventListener("change", () => {
+        usuarioInteractuo = true;
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
@@ -742,14 +864,15 @@
     }
     if (domElements.filtroInclusion) {
       domElements.filtroInclusion.addEventListener("change", () => {
+        usuarioInteractuo = true;
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
       });
     }
-
     if (domElements.filtroCiclo) {
       domElements.filtroCiclo.addEventListener("change", () => {
+        usuarioInteractuo = true;
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
         renderTable();
@@ -1060,6 +1183,7 @@
         }
 
         // Refrescar la grilla de alumnos con los datos nuevos
+        localStorage.removeItem(`haspen_curso_${nuevoLegajo.cursoId}_${nuevoLegajo.cicloLectivo}`);
         renderTable();
       }, 2000); // 2000 milisegundos equivalen a 2 segundos exactos
     } catch (error) {
@@ -1382,7 +1506,7 @@
     }
   }
 
-  // 🛠️ REEMPLAZO: Ejecución directa garantizada para la plataforma real del Colegio Haspen
+  // 🛠️ CONTROLADOR UNIVERSAL DE PERFILES: Inicialización y Regulación Dinámica RBAC
   async function inicializarSistemaCompleto() {
     // 1. Inicializar los componentes de la interfaz de inmediato
     inicializarEventos();
@@ -1394,32 +1518,30 @@
       return;
     }
 
-    // 3. Procesar datos del usuario activo legítimo
+    // 3. Procesar datos del usuario activo legítimo (Soporte universal multitarea)
     usuarioLogueado = JSON.parse(datosSesionRaw);
-
     try {
-      // 🛠️ REEMPLAZO: Extracción y normalización del documento para la consulta en internet por DNI
       const dniLimpio = String(usuarioLogueado.dni || "11111111").trim();
+      rolNormalizado = usuarioLogueado.rol ? String(usuarioLogueado.rol).toLowerCase().trim() : "sin-rol";
+      usuarioLogueado.cursosAsignados = usuarioLogueado.cursosAsignados || [];
 
-      rolNormalizado = "admin";
-      usuarioLogueado.cursosAsignados = [];
+      window.permisoLegajo = "lectura";
+      window.permisoInclusion = "lectura";
 
-      // 4. Intentar conectar con Firestore para validar permisos reales
+      // 4. Conectar con Firestore para validar y sincronizar los permisos reales del perfil
       if (db && dniLimpio) {
-        console.log("Rastreador: Intentando conectar a la base de datos mediante DNI...");
+        console.log("[RBAC] Sincronizando escudo de permisos dinámicos para DNI:", dniLimpio);
         const userDocRef = doc(db, "usuarios", dniLimpio);
         const userSnapshot = await getDoc(userDocRef);
+
         if (userSnapshot.exists()) {
           const datosUsuarioDb = userSnapshot.data();
           rolNormalizado = (datosUsuarioDb.rol || "").toLowerCase().trim();
           usuarioLogueado.cursosAsignados = datosUsuarioDb.cursosAsignados || [];
 
-          window.permisoLegajo = "lectura";
-          window.permisoInclusion = "lectura"; // 🌟 NUEVO: Variable de control unificado para Inclusión
-
           if (rolNormalizado === "administrador" || rolNormalizado === "admin") {
             window.permisoLegajo = "escritura";
-            window.permisoInclusion = "escritura"; // El administrador tiene acceso total
+            window.permisoInclusion = "escritura";
             rolNormalizado = "administrador";
           } else if (rolNormalizado !== "") {
             try {
@@ -1429,46 +1551,54 @@
               if (rolSnapshot.exists()) {
                 const matrizPermisos = rolSnapshot.data().permisos || {};
 
-                // 1. Validar el permiso del Legajo General
+                // Validación estricta del Legajo General
                 const capLegajo = String(matrizPermisos.legajoDigital || "ninguno")
                   .toLowerCase()
                   .trim();
+                window.permisoLegajo =
+                  capLegajo === "escritura" || capLegajo === "administrador" ? "escritura" : "lectura";
 
-                if (capLegajo === "escritura" || capLegajo === "administrador") {
-                  window.permisoLegajo = "escritura";
-                } else {
-                  window.permisoLegajo = "lectura";
-                }
-
-                // 2. 🌟 NUEVO: Validar y capturar el permiso unificado de Inclusión Integral
+                // Validación del permiso unificado de Inclusión Integral
                 const capInclusion = String(matrizPermisos.inclusionPpi || "ninguno")
                   .toLowerCase()
                   .trim();
-
                 if (capInclusion === "escritura" || capInclusion === "administrador") {
                   window.permisoInclusion = "escritura";
                 } else if (capInclusion === "lectura" || capInclusion === "usuario") {
                   window.permisoInclusion = "lectura";
                 } else {
-                  window.permisoInclusion = "ninguno"; // Bloqueado por completo
+                  window.permisoInclusion = "ninguno";
                 }
               }
             } catch (errRol) {
-              console.error("Error al interceptar el rol:", errRol);
+              console.error("Error al interceptar la matriz de roles:", errRol);
             }
           }
 
           usuarioLogueado.rolReal = rolNormalizado;
           usuarioLogueado.permisoLegajoReal = window.permisoLegajo;
-          usuarioLogueado.permisoInclusionReal = window.permisoInclusion; // Guardar en la sesión activa
+          usuarioLogueado.permisoInclusionReal = window.permisoInclusion;
+
           if (window.permisoLegajo === "ninguno") {
             const contenedorPrincipal = document.querySelector(".consola-matriculacion") || document.body;
             contenedorPrincipal.innerHTML = `<div style="text-align:center; padding:50px; color:#dc2626; font-family:sans-serif;"><h2>⚠️ Acceso Denegado</h2><p>Su perfil de usuario no cuenta con autorización para visualizar el Legajo Digital de Alumnos.</p></div>`;
             return;
           }
 
+          // ====== REGULACIÓN DINÁMICA DE INTERFAZ LECTURA VS ESCRITURA ======
           if (window.permisoLegajo === "lectura") {
+            // Ocultar botón de altas para perfiles visores
             if (domElements.btnAbrirMatricula) domElements.btnAbrirMatricula.style.display = "none";
+
+            // NORMATIVA ESCOLAR: Recortar el selector de estados para dejar solo lo permitido por reglamento
+            if (domElements.filtroEstado) {
+              domElements.filtroEstado.innerHTML = `
+                <option value="todos">Todos los Estados (Permitidos)</option>
+                <option value="Regular">Regular</option>
+                <option value="Con Pase Entrante">Con Pase Entrante</option>
+              `;
+              domElements.filtroEstado.value = "todos";
+            }
           } else if (window.permisoLegajo === "escritura") {
             if (domElements.btnAbrirMatricula) domElements.btnAbrirMatricula.style.display = "inline-block";
           }
@@ -1481,30 +1611,29 @@
         }
       }
 
-      // 1. Configurar primero el Ciclo Lectivo de forma estable
+      // 5. Configurar el Ciclo Lectivo de forma estable
       if (domElements.filtroCiclo) {
         const anioActual = new Date().getFullYear();
+        const anioLimiteProyectado = anioActual + 1;
+
         let opcionesCicloHtml = "";
-        for (let anio = 2021; anio <= anioActual; anio++) {
+        for (let anio = 2021; anio <= anioLimiteProyectado; anio++) {
           opcionesCicloHtml += `<option value="${anio}">${anio}</option>`;
         }
         domElements.filtroCiclo.innerHTML = opcionesCicloHtml;
         domElements.filtroCiclo.value = anioActual.toString();
       }
 
-      // 2. Ejecutar la carga de cursos desde Firebase una vez estabilizado el DOM
+      // 6. Cargar los selectores de cursos autorizados
       if (typeof cargarCursosEnSelectores === "function") {
         await cargarCursosEnSelectores();
       }
 
-      // 3. Renderizar la tabla de alumnos
+      // 7. Lanzar el renderizado inicial limpio (Costo Cero)
       await renderTable();
 
-      // =========================================================================
-      // 📡 MOTOR SEMÁFORO: HILO EN SEGUNDO PLANO PARA ACTUALIZACIÓN COOPERATIVA
-      // =========================================================================
+      // ====== MOTOR SEMÁFORO: ESCUCHA COOPERATIVA EN SEGUNDO PLANO ======
       if (db && usuarioLogueado && Array.isArray(usuarioLogueado.cursosAsignados)) {
-        // Variable interna para evitar falsas alarmas durante el microsegundo de conexión inicial
         let conexionesEstabilizadas = false;
         setTimeout(() => {
           conexionesEstabilizadas = true;
@@ -1513,81 +1642,65 @@
         usuarioLogueado.cursosAsignados.forEach((idCursoEscucha) => {
           if (!idCursoEscucha) return;
 
-          // Escucha selectiva de 1 lectura por curso asignado para el blindaje de la cuota Spark
           onSnapshot(doc(db, "control_cambios", idCursoEscucha), (snapshotCambio) => {
-            if (!conexionesEstabilizadas) return; // Evita el disparo inicial espurio
+            if (!conexionesEstabilizadas) return;
 
-            console.log(`[Semáforo] ⚠️ Modificación detectada externamente en el curso: ${idCursoEscucha}`);
-
-            // Diseñar e Inyectar la Alerta UX Estilizada Oficial de Haspen
+            console.log(`[Semáforo] Modificación externa detectada en: ${idCursoEscucha}`);
             const idAlertaEstilizada = `alerta-haspen-sync-${idCursoEscucha}`;
-            if (document.getElementById(idAlertaEstilizada)) return; // Evita duplicar el cartel visual
+            if (document.getElementById(idAlertaEstilizada)) return;
 
             const contenedorAlerta = document.createElement("div");
             contenedorAlerta.id = idAlertaEstilizada;
 
-            // Estilos CSS Inline premium adaptados a la paleta institucional
             Object.assign(contenedorAlerta.style, {
               position: "fixed",
               bottom: "24px",
               right: "24px",
-              backgroundColor: "#1e293b", // Slate oscuro industrial
+              backgroundColor: "#1e293b",
               color: "#ffffff",
               padding: "16px 20px",
               borderRadius: "10px",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.4)",
               zIndex: "999999",
               display: "flex",
               flexDirection: "column",
               gap: "12px",
               maxWidth: "340px",
-              borderLeft: "5px solid #3b82f6", // Borde azul reactivo brillante
-              fontFamily: "system-ui, -apple-system, sans-serif",
-              animation: "slideInHaspen 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+              borderLeft: "5px solid #3b82f6",
+              fontFamily: "system-ui, sans-serif"
             });
-
-            // Animación de entrada fluida por código dinámico
-            if (!document.getElementById("style-haspen-animations")) {
-              const styleTag = document.createElement("style");
-              styleTag.id = "style-haspen-animations";
-              styleTag.textContent = `@keyframes slideInHaspen { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
-              document.head.appendChild(styleTag);
-            }
 
             contenedorAlerta.innerHTML = `
               <div style="display:flex; align-items:center; gap:10px;">
                 <span style="font-size:20px;">🔔</span>
                 <div>
-                  <h4 style="margin:0; font-size:14px; font-weight:600; color:#f8fafc;">Nómina Desactualizada</h4>
-                  <p style="margin:2px 0 0 0; font-size:12px; color:#94a3b8; line-height:1.4;">Un operador modificó datos o registros del curso asignado a su preceptoría.</p>
+                  <h4 style="margin:0; font-size:14px; font-weight:600;">Nómina Desactualizada</h4>
+                  <p style="margin:2px 0 0 0; font-size:12px; color:#94a3b8; line-height:1.4;">Un operador modificó datos del curso asignado a su preceptoría.</p>
                 </div>
               </div>
               <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
-                <button id="btn-ignorar-${idCursoEscucha}" style="background:transparent; border:none; color:#64748b; font-size:12px; font-weight:500; cursor:pointer; padding:6px 10px; border-radius:4px;">Ignorar</button>
-                <button id="btn-sync-${idCursoEscucha}" style="background:#3b82f6; border:none; color:white; font-size:12px; font-weight:600; cursor:pointer; padding:6px 12px; border-radius:4px; box-shadow:0 2px 4px rgba(59,130,246,0.3);">Sincronizar</button>
+                <button id="btn-ignorar-${idCursoEscucha}" style="background:transparent; border:none; color:#64748b; font-size:12px; cursor:pointer; padding:6px 10px;">Ignorar</button>
+                <button id="btn-sync-${idCursoEscucha}" style="background:#3b82f6; border:none; color:white; font-size:12px; font-weight:600; cursor:pointer; padding:6px 12px; border-radius:4px;">Sincronizar</button>
               </div>
             `;
 
             document.body.appendChild(contenedorAlerta);
 
-            // Manejadores de los botones del cartel estilizado
             document.getElementById(`btn-ignorar-${idCursoEscucha}`).addEventListener("click", () => {
               contenedorAlerta.remove();
             });
 
             document.getElementById(`btn-sync-${idCursoEscucha}`).addEventListener("click", () => {
-              // Acción reactiva: Invalidar la caché vieja y re-renderizar de inmediato
               delete cacheAlumnosPorCurso[idCursoEscucha];
-              console.log(`[Semáforo UX] 🔄 Sincronizando curso ${idCursoEscucha} a petición del preceptor.`);
+              localStorage.removeItem(`haspen_curso_${idCursoEscucha}_${domElements.filtroCiclo?.value || "2026"}`);
               contenedorAlerta.remove();
               renderTable();
             });
           });
         });
       }
-      // =========================================================================
     } catch (err) {
-      console.error("Error crítico durante la carga inicial:", err);
+      console.error("Error crítico durante la inicialización del sistema:", err);
     }
 
     const cuerpoTablaHtml = document.getElementById("tablaAlumnosBody");
@@ -1595,6 +1708,7 @@
       cuerpoTablaHtml.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Use los filtros para buscar la nómina deseada.</td></tr>`;
     }
   }
+
   function validarPaso2YAvanzar() {
     const selectorEstado = document.getElementById("estadoAlumno");
     const selectorCurso = document.getElementById("selectCursoAlumno");
@@ -1639,6 +1753,21 @@
     }
 
     pasoSiguienteFormulario();
+  }
+
+  function cifrarDatos(datos) {
+    const stringData = JSON.stringify(datos);
+    return btoa(encodeURIComponent(stringData));
+  }
+
+  function descifrarDatos(stringCifrado) {
+    if (!stringCifrado) return null;
+    try {
+      return JSON.parse(decodeURIComponent(atob(stringCifrado)));
+    } catch (e) {
+      console.error("Error al descifrar datos locales:", e);
+      return null;
+    }
   }
 
   // EJECUCIÓN INMEDIATA

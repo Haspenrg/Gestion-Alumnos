@@ -138,13 +138,13 @@
       /* SECCIÓN DE FILTROS COMPLETA HORIZONTAL WIDESCREEN */
       .seccion-filtros-wizard {
         background: #f8fafc;
-        padding: 12px;
+        padding: 4px 12px;
         border-radius: 8px;
         border: 1px solid #1b4d82 !important;
         margin-top: -8px !important; /* 💡 Forzamos la sección hacia arriba un milímetro */
         margin-bottom: 6px;
-        display: grid;
-        grid-template-columns: 1fr;
+        display: inline-flex;
+
         gap: 10px;
         width: 100%;
         box-sizing: border-box;
@@ -796,11 +796,67 @@
         <div class="tabla-seccion-widescreen" style="margin-top: 20px !important">
           <!-- FILTROS MULTIDIMENSIONALES PUROS -->
           <div class="seccion-filtros-wizard">
-            <input type="text" id="filtroBusquedaRapida" placeholder="Buscar por Nombre o DNI..." />
-            <select id="filtroCursoEstructural">
+            <div
+              style="
+                display: flex;
+                flex: 1;
+                min-width: 240px;
+                height: 38px;
+                align-items: center;
+                box-sizing: border-box;
+              "
+            >
+              <input
+                type="text"
+                id="filtroBusquedaRapida"
+                placeholder="Buscar por Nombre o DNI..."
+                style="
+                  flex: 1;
+                  height: 100%;
+                  padding: 0 12px;
+                  border: 1px solid #cbd5e1;
+                  border-right: none;
+                  border-radius: 6px 0 0 6px;
+                  font-family: inherit;
+                  font-size: 13px;
+                  outline: none;
+                  box-sizing: border-box;
+                  margin: 0;
+                "
+              />
+              <button
+                type="button"
+                id="btnLupaBusqueda"
+                style="
+                  width: 34px;
+                  height: 32px;
+                  cursor: pointer;
+                  background: #104179;
+                  color: white;
+                  border: none;
+                  border-radius: 0 6px 6px 0;
+                  padding: 0;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 13px;
+                  box-sizing: border-box;
+                  margin: 0;
+                  transition: background 0.2s;
+                "
+              >
+                🔍
+              </button>
+            </div>
+
+            <select id="filtroCursoEstructural" style="max-width: 150px; min-width: 150px; box-sizing: border-box">
               <option value="">Todos los Cursos</option>
             </select>
-            <select id="filtroEstadoMatricula" class="form-control-haspen">
+            <select
+              id="filtroEstadoMatricula"
+              class="form-control-haspen"
+              style="max-width: 160px; min-width: 160px; box-sizing: border-box"
+            >
               <option value="todos">Todos los Estados</option>
               <option value="Regular">Regular</option>
               <option value="Mesa de Entrada">Mesa de Entrada</option>
@@ -810,17 +866,24 @@
               <option value="Egresado sin Título">Egresado sin Título</option>
               <option value="Baja">Baja</option>
             </select>
-            <select id="filtroAuditoriaDocs">
-              <option value="">Todos (Auditoría...)</option>
+            <select id="filtroAuditoriaDocs" style="max-width: 180px; min-width: 180px; box-sizing: border-box">
+              <option value="todos">Toda la Documentación</option>
               <option value="Completo">Legajo Completo (6/6)</option>
               <option value="Incompleto">Faltan Documentos</option>
             </select>
-            <select id="filtroPPI">
-              <option value="todos">Todos</option>
+            <select id="filtroPPI" style="max-width: 170px; min-width: 170px; box-sizing: border-box">
+              <option value="todos">Todas las Inclusiones</option>
+              <option value="ConCUD">Alumnos con CUD</option>
               <option value="ConPPI">Alumnos con PPI</option>
-              <option value="SinPPI">Alumnos sin PPI</option>
+              <option value="SinPPI">Alumnos sin Inclusión</option>
+              <option value="Flexible">Trayectorias Flexibles</option>
             </select>
-            <select id="filtroCicloLectivo" class="selector-ciclo-principal"></select>
+
+            <select
+              id="filtroCicloLectivo"
+              class="selector-ciclo-principal"
+              style="max-width: 100px !important; min-width: 80px !important"
+            ></select>
           </div>
 
           <!-- BARRA DE ACCIONES DE MATRICULACIÓN DIARIA Y CONFIGURACIÓN MIGRATORIA -->

@@ -1,13 +1,30 @@
 // seguridad.js - Guardián de Inactividad del Colegio HASPEN (10 Minutos)
 document.addEventListener("DOMContentLoaded", () => {
-  // 10 minutos expresados en milisegundos
-  const TIEMPO_INACTIVIDAD = 10 * 60 * 1000;
+  // 1. Leer el usuario activo desde el almacenamiento de sesión
+  const datosSesionRaw = sessionStorage.getItem("usuarioActivo");
+  let tiempoInactividad = 30 * 60 * 1000; // 30 minutos por defecto (Lectura / Preceptores)
+
+  if (datosSesionRaw) {
+    const usuario = JSON.parse(datosSesionRaw);
+    // Buscamos si es administrador o si tiene permisos de escritura explícitos
+    const esEscritura =
+      usuario.role === "admin" || usuario.role === "administrador" || usuario.permisoLegajoReal === "escritura";
+
+    if (esEscritura) {
+      tiempoInactividad = 60 * 60 * 1000; // 1 hora para usuarios de Escritura
+      console.log("Guardián HASPEN: Modo Escritura detectado. Tiempo fijado en 60 minutos.");
+    } else {
+      console.log("Guardián HASPEN: Modo Lectura detectado. Tiempo fijado en 30 minutos.");
+    }
+  } else {
+    console.log("Guardián HASPEN: No hay sesión activa. Tiempo preventivo de 30 minutos.");
+  }
+
   let temporizador;
 
-  // Función que estira el tiempo si el usuario está activo
   function reiniciarTemporizador() {
     clearTimeout(temporizador);
-    temporizador = setTimeout(cerrarSesionPorInactividad, TIEMPO_INACTIVIDAD);
+    temporizador = setTimeout(cerrarSesionPorInactividad, tiempoInactividad); // 👈 Cambiado a minúsculas
   }
 
   // Función que se ejecuta si pasan los 10 minutos sin tocar nada
