@@ -116,7 +116,7 @@
                 Colegio Provincial HASPEN
             </h1>
             <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #93c5fd; font-weight: 500;">
-                Sistema Integrado de Control de Materias Pendientes y Previas
+                Sistema Integrado de Control de Espacios Pendientes de Acreditacion
             </p>
         </div>
         <div>
@@ -126,30 +126,89 @@
         </div>
     </header>
 
-    <!-- CONTENEDOR DE TRABAJO PRINCIPAL (ANCHO LIBRE) -->
-    <main style="padding: 24px; box-sizing: border-box; width: 100%;">
+   <!-- CONTENEDOR DE TRABAJO PRINCIPAL (ANCHO LIBRE) -->
+       <main style="padding: 8px 24px 24px 24px; box-sizing: border-box; width: 100%;">
 
-        <!-- 🔍 2. FRANJA CENTRAL: BARRA DE BÚSQUEDA Y CONTROL -->
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; width: 100%; box-sizing: border-box; background-color: #ffffff; border: 2px solid #1b4d82; border-radius: 12px; min-height: 54px; padding: 10px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left;">
-            <!-- Cuadro de Búsqueda y Acciones Intermedio y Chato -->
-            <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 590px;">
+
+        <!-- 🔍 2. FRANJA CENTRAL UNIFICADA: BÚSQUEDA, CONTROL Y FILTROS -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; width: 100%; box-sizing: border-box; background-color: #ffffff; border: 2px solid #1b4d82; border-radius: 12px; min-height: 64px; padding: 10px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left;">
+            
+            <!-- 🔍 IZQUIERDA: Cuadro de Búsqueda y Acciones Chato -->
+            <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 420px; flex-shrink: 0;">
                 <input type="text" id="inputBuscarAlumno" placeholder="Buscar por DNI o Apellido..." style="margin: 0; flex-grow: 1; height: 34px !important; padding: 4px 12px !important; font-size: 13px !important; box-sizing: border-box;">
-                <button id="btnBuscarPrevia" class="btn-principal" style="width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <button id="btnBuscarPrevia" class="btn-principal" style="width: auto; white-space: nowrap; height: 34px !important; padding: 0 14px !important; font-size: 12px !important; box-shadow: none; margin: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                     Buscar
                 </button>
-                <button id="btnAbrirAltaManual" class="btn-principal" style="background-color: #059669; border-color: #047857; width: auto; white-space: nowrap; height: 34px !important; padding: 0 16px !important; font-size: 12px !important; box-shadow: none; margin: 0; display: block; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <button id="btnAbrirAltaManual" class="btn-principal" style="background-color: #059669; border-color: #047857; width: auto; white-space: nowrap; height: 34px !important; padding: 0 14px !important; font-size: 12px !important; box-shadow: none; margin: 0; display: block; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                     Carga Manual
                 </button>
             </div>
 
-            <!-- Ficha del Alumno Seleccionado Dinámica -->
-            <div id="fichaAlumnoActivo" style="background-color: #f8fafc; border: 1px solid #cbd5e1; height: 34px; padding: 0 16px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-grow: 1; box-sizing: border-box; font-size: 13px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-weight: bold; color: #1b4d82; text-transform: uppercase; font-size: 11px; white-space: nowrap;">Alumno Seleccionado:</span>
-                    <span id="txtNombreAlumno" style="font-weight: bold; color: #334155; white-space: nowrap;">Ningún alumno seleccionado</span>
+                       <!-- 🎛️ DERECHA: LOS 5 SELECTORES ESTIRADOS DE FORMA HOMOGÉNEA -->
+            <div id="contenedorFiltrosIntegrados" style="display: flex; gap: 10px; align-items: center; flex-grow: 1; justify-content: space-between; margin-left: 15px;">
+                
+                <!-- Curso -->
+                <div style="flex: 1; min-width: 90px;">
+                    <label style="font-size: 10px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 3px;">Curso Origen</label>
+                    <select id="filtroCurso" style="margin: 0; width: 100%; height: 30px; padding: 2px 6px; border-radius: 4px; border: 1px solid #b4cbe3; box-sizing: border-box; font-size: 11px; font-weight: 600; color: #334155;">
+                        <option value="">TODOS</option>
+                    </select>
                 </div>
-                <span id="txtDniAlumno" style="color: #64748b; font-weight: normal; white-space: nowrap;"></span>
+
+                <!-- Materia -->
+                <div style="flex: 1.5; min-width: 120px;">
+                    <label style="font-size: 10px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 3px;">Materia</label>
+                    <select id="filtroMateria" style="margin: 0; width: 100%; height: 30px; padding: 2px 6px; border-radius: 4px; border: 1px solid #b4cbe3; box-sizing: border-box; font-size: 11px; font-weight: 600; color: #334155;">
+                        <option value="">TODAS</option>
+                    </select>
+                </div>
+
+                <!-- Orientación -->
+                <div style="flex: 1.2; min-width: 100px;">
+                    <label style="font-size: 10px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 3px;">Orientación</label>
+                    <select id="filtroOrientacion" style="margin: 0; width: 100%; height: 30px; padding: 2px 6px; border-radius: 4px; border: 1px solid #b4cbe3; box-sizing: border-box; font-size: 11px; font-weight: 600; color: #334155;">
+                        <option value="">TODAS</option>
+                        <option value="CICLO BÁSICO">CICLO BÁSICO</option>
+                        <option value="ECONOMÍA">ECONOMÍA</option>
+                        <option value="INFORMÁTICA">INFORMÁTICA</option>
+                    </select>
+                </div>
+
+                <!-- Año Origen -->
+                <div style="flex: 0.8; min-width: 75px;">
+                    <label style="font-size: 10px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 3px;">Año Orig.</label>
+                    <select id="filtroAnio" style="margin: 0; width: 100%; height: 30px; padding: 2px 4px; border-radius: 4px; border: 1px solid #b4cbe3; box-sizing: border-box; font-size: 11px; font-weight: 600; color: #334155;">
+                        <option value="">TODOS</option>
+                        <option value="2021">2021</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+
+                <!-- Nota Final -->
+                <div style="flex: 0.8; min-width: 70px;">
+                    <label style="font-size: 10px; font-weight: bold; color: #1b4d82; text-transform: uppercase; display: block; margin-bottom: 3px;">Nota Fin.</label>
+                    <select id="filtroNotaFinal" style="margin: 0; width: 100%; height: 30px; padding: 2px 4px; border-radius: 4px; border: 1px solid #b4cbe3; box-sizing: border-box; font-size: 11px; font-weight: 600; color: #334155;">
+                        <option value="">TODAS</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
             </div>
+
+
+            <!-- Contenedor oculto requerido por la lógica RBAC del script existente -->
+            <div id="wrapperAccionesEscritura" style="display: none;"></div>
+        </div>
+
+
 
             <!-- Contenedor para Carga Manual -->
             <div id="wrapperAccionesEscritura" style="display: none;">
@@ -159,11 +218,12 @@
             </div>
         </div>
 
+
         <!-- 📊 3. FRANJA INFERIOR: GRAN PLANILLA CENTRAL DE PREVIAS -->
         <div class="seccion-planilla">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding: 6px 16px; background-color: #f8fafc;">
                 <h3 style="margin: 0; color: #1b4d82; font-weight: 700; text-transform: uppercase; font-size: 15px;">
-                    📋 Planilla Central de Seguimiento Académico
+                    📋 Planilla Central de Espacios Pendientes
                 </h3>
                 <span id="contadorRegistros" style="font-size: 12px; background-color: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-weight: bold;">0 registros</span>
             </div>
