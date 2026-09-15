@@ -217,15 +217,17 @@
   async function renderTable() {
     if (!domElements.tablaAlumnos) return;
 
-    // 1. Obtener valores en tiempo real de la interfaz del Colegio Haspen
-    const queryCurso = domElements.filtroCurso?.value || "";
     const queryEstado = domElements.filtroEstado?.value || "todos";
     const queryAuditoria = domElements.filtroAuditoria?.value || "todos";
     const queryInclusion = domElements.filtroInclusion?.value || "todos";
     const queryCiclo = domElements.filtroCiclo?.value || new Date().getFullYear().toString();
     const subCadenaBusqueda = domElements.filtroBusqueda ? domElements.filtroBusqueda.value.toLowerCase().trim() : "";
 
-    // NUEVO: Validar longitud mínima de caracteres si el usuario escribió algo
+    let queryCurso = domElements.filtroCurso?.value || "";
+    if (queryCurso === "" && usuarioInteractuo) {
+      queryCurso = "todos";
+    }
+
     let criterioInvalidoPorLongitud = false;
     if (subCadenaBusqueda !== "") {
       const esNumero = /^\d+$/.test(subCadenaBusqueda);
@@ -237,15 +239,21 @@
     }
 
     // ====== REGLA DE ORO: CANDADO DE CUOTA INICIAL (COSTO CERO) ======
-    const estadoInicial =
-      queryCurso === "" &&
+    const cursoEnTodos = queryCurso === "" || queryCurso === "todos";
+
+    if (
+      cursoEnTodos &&
       queryEstado === "todos" &&
       queryAuditoria === "todos" &&
       queryInclusion === "todos" &&
-      subCadenaBusqueda === "";
+      subCadenaBusqueda === ""
+    ) {
+      domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Establezca un criterio de búsqueda o seleccione un curso para visualizar la nómina.</td></tr>`;
+      if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
+      return;
+    }
 
-    // Si está en el estado inicial, no interactuó O el criterio es muy corto, se bloquea
-    if (estadoInicial || !usuarioInteractuo || criterioInvalidoPorLongitud) {
+    if (criterioInvalidoPorLongitud) {
       domElements.tablaAlumnos.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b; font-weight: 500;">Establezca un criterio de búsqueda o seleccione un curso para visualizar la nómina.</td></tr>`;
       if (domElements.contadorVisualizadas) domElements.contadorVisualizadas.textContent = "0";
       return;
@@ -261,10 +269,12 @@
     const esEscrituraGlobal =
       rolNormalizado === "administrador" || rolNormalizado === "admin" || window.permisoLegajo === "escritura";
 
-    const cursosPermitidos =
-      usuarioActivoObj.permisosDelRol?.legajoDigital === "escritura" || usuarioActivoObj.rol === "admin"
-        ? usuarioLogueado.cursosAsignados || []
-        : usuarioActivoObj.cursosAsignados || [];
+    let cursosPermitidos = [];
+    if (usuarioActivoObj.cursosAsignados && usuarioActivoObj.cursosAsignados.length > 0) {
+      cursosPermitidos = usuarioActivoObj.cursosAsignados;
+    } else if (usuarioLogueado.cursosAsignados && usuarioLogueado.cursosAsignados.length > 0) {
+      cursosPermitidos = usuarioLogueado.cursosAsignados;
+    }
 
     // Traductor automático de interfaz para acoplar con la base de datos real
     let estadoParaFirebase = queryEstado;
@@ -288,39 +298,58 @@
       const seleccionoFiltroSuperior =
         queryEstado !== "todos" || queryAuditoria !== "todos" || queryInclusion !== "todos";
 
-      if (subCadenaBusqueda !== "" || (queryCurso === "" && seleccionoFiltroSuperior)) {
-        const encontradosLocalmente = baseDeDatosLocal.filter((alumno) => {
+      if (subCadenaBusqueda !== "" || (queryCurso === "todos" && seleccionoFiltroSuperior)) {
+        let localesPermitidos = baseDeDatosLocal.filter((alumno) => {
           if (alumno.cicloLectivo !== queryCiclo) return false;
+
+          if (queryCurso !== "todos") {
+            if (alumno.cursoId !== queryCurso) return false;
+          } else if (!esEscrituraGlobal && cursosPermitidos.length > 0) {
+            if (!cursosPermitidos.includes(alumno.cursoId)) return false;
+          }
 
           if (subCadenaBusqueda !== "") {
             const mNombre = alumno.nombre ? alumno.nombre.toLowerCase().includes(subCadenaBusqueda) : false;
             const mDni = alumno.dni ? alumno.dni.includes(subCadenaBusqueda) : false;
             if (!mNombre && !mDni) return false;
           }
+
+          if (queryInclusion !== "todos") {
+            const checkPPI =
+              alumno.tienePPI === true ||
+              alumno.tienePPI === "true" ||
+              alumno.trayectoriaPPI === true ||
+              alumno.trayectoriaPPI === "true" ||
+              alumno.alumnoPpi === true ||
+              alumno.alumnoPpi === "true";
+            const checkCUD =
+              alumno.tieneCUD === true ||
+              alumno.tieneCUD === "true" ||
+              alumno.alumnoCud === true ||
+              alumno.alumnoCud === "true";
+            const checkFlexible = alumno.trayectoriasFlexibles === true || alumno.trayectoriasFlexibles === "true";
+
+            if (queryInclusion === "ConPPI" && !checkPPI) return false;
+            if (queryInclusion === "ConCUD" && !checkCUD) return false;
+            if (queryInclusion === "Flexible" && !checkFlexible) return false;
+            if (queryInclusion === "SinPPI" && (checkPPI || checkCUD || checkFlexible)) return false;
+          }
+
           return true;
         });
 
-        if (encontradosLocalmente.length > 0) {
-          let localesPermitidos = encontradosLocalmente;
-          if (queryCurso === "" && !esEscrituraGlobal) {
-            localesPermitidos = localesPermitidos.filter((al) => cursosPermitidos.includes(al.cursoId));
-          }
-
-          if (localesPermitidos.length > 0) {
-            listaAlumnos = localesPermitidos;
-            cacheAlumnosPorDni = {};
-            listaAlumnos.forEach((al) => (cacheAlumnosPorDni[al.dni] = al));
-
-            // Forzar el salto directo al filtro fino inferior sin tocar Firebase
-            alumnosCargadosDesdeCache = {};
-            listaAlumnos.forEach((al) => (alumnosCargadosDesdeCache[al.dni] = al));
-          }
+        if (localesPermitidos.length > 0) {
+          listaAlumnos = localesPermitidos;
+          cacheAlumnosPorDni = {};
+          listaAlumnos.forEach((al) => (cacheAlumnosPorDni[al.dni] = al));
+          alumnosCargadosDesdeCache = {};
+          listaAlumnos.forEach((al) => (alumnosCargadosDesdeCache[al.dni] = al));
         }
       }
 
       // 2. CAMINO DE RED: Si la lista sigue vacía, se consulta a internet según el escenario
       if (listaAlumnos.length === 0) {
-        if (queryCurso !== "") {
+        if (queryCurso !== "todos") {
           const claveLocal = `haspen_curso_${queryCurso}_${queryCiclo}`;
           const localesCifrados = localStorage.getItem(claveLocal);
 
@@ -352,39 +381,37 @@
             });
           }
         } else {
-          // El selector de Cursos quedó en "Todos los Cursos" (Internet + RBAC)
           let alumnosSnapshot = [];
+          let restriccionesQuery = [collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo)];
 
-          if (esEscrituraGlobal) {
-            let restriccionesQuery = [collection(db, "alumnos"), where("cicloLectivo", "==", queryCiclo)];
-            if (queryEstado !== "todos") {
-              restriccionesQuery.push(where("estado", "==", estadoParaFirebase));
-            }
+          if (queryEstado !== "todos") {
+            restriccionesQuery.push(where("estado", "==", estadoParaFirebase));
+          }
+          if (queryInclusion === "ConPPI") {
+            restriccionesQuery.push(where("tienePPI", "==", true));
+          } else if (queryInclusion === "ConCUD") {
+            restriccionesQuery.push(where("tieneCUD", "==", true));
+          } else if (queryInclusion === "Flexible") {
+            restriccionesQuery.push(where("trayectoriasFlexibles", "==", true));
+          }
+
+          if (esEscrituraGlobal || cursosPermitidos.length === 0) {
             const q = query(...restriccionesQuery);
             const querySnapshot = await getDocs(q);
             querySnapshot.forEach((docSnap) => alumnosSnapshot.push(docSnap.data()));
-          } else if (cursosPermitidos.length > 0) {
+          } else {
             for (const idCurso of cursosPermitidos) {
-              let restriccionesQuery = [
-                collection(db, "alumnos"),
-                where("cursoId", "==", idCurso),
-                where("cicloLectivo", "==", queryCiclo)
-              ];
-              if (queryEstado !== "todos") {
-                restriccionesQuery.push(where("estado", "==", estadoParaFirebase));
-              }
-              const q = query(...restriccionesQuery);
+              let queryPorCurso = [...restriccionesQuery, where("cursoId", "==", idCurso)];
+              const q = query(...queryPorCurso);
               const querySnapshot = await getDocs(q);
               querySnapshot.forEach((docSnap) => alumnosSnapshot.push(docSnap.data()));
             }
           }
 
           alumnosSnapshot.forEach((alData) => {
-            if (esEscrituraGlobal || cursosPermitidos.includes(alData.cursoId) || alData.cursoId === "") {
-              if (!alumnosCargadosDesdeCache[alData.dni]) {
-                alumnosCargadosDesdeCache[alData.dni] = alData;
-                listaAlumnos.push(alData);
-              }
+            if (!alumnosCargadosDesdeCache[alData.dni]) {
+              alumnosCargadosDesdeCache[alData.dni] = alData;
+              listaAlumnos.push(alData);
             }
           });
         }
@@ -741,8 +768,17 @@
     // Automatizaciones en tiempo real
     if (domElements.inputFechaNac) domElements.inputFechaNac.addEventListener("change", calcularEdadAutomatica);
     if (domElements.selectEstadoMatricula) {
-      domElements.selectEstadoMatricula.addEventListener("change", alternarPanelPase);
+      domElements.selectEstadoMatricula.addEventListener("change", () => {
+        if (domElements.selectEstadoMatricula.value === "Regular" && domElements.selectTramiteIngreso) {
+          domElements.selectTramiteIngreso.value = "Inscripción Estándar";
+          if (domElements.selectCursoAsignado) {
+            domElements.selectCursoAsignado.value = "";
+          }
+        }
+        alternarPanelPase();
+      });
     }
+
     if (domElements.selectTramiteIngreso) {
       domElements.selectTramiteIngreso.addEventListener("change", alternarPanelPase);
     }
@@ -1232,7 +1268,6 @@
   }
 
   function alternarPanelPase() {
-    // 1. Capturar los elementos reales registrados en domElements
     const selectorEstado = domElements.selectEstadoMatricula;
     const selectorTramite = domElements.selectTramiteIngreso;
     const selectorCurso = domElements.selectCursoAsignado;
@@ -1242,7 +1277,6 @@
     const estado = selectorEstado.value;
     const tramite = selectorTramite.value;
 
-    // 2. Control del Panel Visual de Pases (Muestra campos si es Pase Entrante o Saliente)
     if (domElements.panelPase) {
       if (tramite === "Con Pase Entrante" || tramite === "Con Pase Saliente") {
         domElements.panelPase.style.display = "flex";
@@ -1251,21 +1285,21 @@
       }
     }
 
-    // 3. Control Obligatorio del Curso Asignado (Reglas de bloqueo)
     if (selectorCurso) {
       if (estado === "Baja" || tramite === "Mesa de Entrada" || tramite === "Con Pase Saliente") {
-        // Bloqueo absoluto: El alumno no ocupa espacio físico en el aula
         selectorCurso.disabled = true;
         selectorCurso.value = "";
         selectorCurso.style.opacity = "0.5";
       } else {
-        // Habilitación: Estudiante Regular en condiciones de cursar
         selectorCurso.disabled = false;
         selectorCurso.style.opacity = "1";
+
+        if (selectorCurso.options.length > 0) {
+          selectorCurso.selectedIndex = 0;
+        }
       }
     }
   }
-
   function alternarPanelPPI() {
     if (!domElements.chkPPI || !domElements.panelPPI || !domElements.filaDocPPI) return;
     const tienePPI = domElements.chkPPI.checked;
