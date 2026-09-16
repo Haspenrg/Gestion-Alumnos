@@ -279,6 +279,11 @@
             const docRef = doc(db, "usuarios", dniIngresado);
             docSnapshot = await getDoc(docRef);
             exitoConexion = true; // Si llegó acá sin fallar, la conexión fue exitosa
+
+            // DISPARADOR: Registramos la lectura exitosa en Firebase
+            if (typeof window.actualizarContadoresMonitor === "function" && docSnapshot.exists()) {
+              window.actualizarContadoresMonitor("firebase", 1);
+            }
           } catch (errorConexion) {
             console.warn(`Fallo el intento de conexión ${intentoActual}:`, errorConexion.message);
             if (intentoActual >= maxIntentos) {

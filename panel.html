@@ -599,6 +599,11 @@
         try {
           const datosSesion = sessionStorage.getItem("usuarioActivo");
           if (!datosSesion) return null;
+
+          if (typeof window.actualizarContadoresMonitor === "function") {
+            window.actualizarContadoresMonitor("local", 1);
+          }
+
           const usuario = JSON.parse(datosSesion);
           const cdn =
             "h" +
@@ -724,6 +729,10 @@
               const dbAdminBadge = getFirestore(firebaseApp);
 
               onSnapshot(collection(dbAdminBadge, "soporte_incidencias"), (snapshot) => {
+                if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
+                  window.actualizarContadoresMonitor("firebase", snapshot.size);
+                }
+
                 const badgeVisual = document.getElementById("badgeSoporteAdmin");
                 if (badgeVisual) {
                   let ticketsAbiertos = 0;

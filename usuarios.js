@@ -480,33 +480,35 @@
   }
 
   // --- LECTURA DE USUARIOS DESDE FIRESTORE ---
-    // --- LECTURA HÍBRIDA DE USUARIOS (LOCALSTORAGE FIRST ➔ FIRESTORE) ---
+  // --- LECTURA HÍBRIDA DE USUARIOS (LOCALSTORAGE FIRST ➔ FIRESTORE) ---
   async function obtenerUsuariosDesdeFirestore() {
     try {
-      // 1. Intentar obtener los usuarios desde el LocalStorage primero
       const usuariosLocalesRaw = localStorage.getItem("usuariosColegioCache");
       if (usuariosLocalesRaw) {
         const listaLocales = JSON.parse(usuariosLocalesRaw);
         if (listaLocales && listaLocales.length > 0) {
-          // Retorna los datos locales sin tocar la red de Firebase
+          if (typeof window.actualizarContadoresMonitor === "function") {
+            window.actualizarContadoresMonitor("local", listaLocales.length);
+          }
           return listaLocales;
         }
       }
 
-      // 2. Si no están en LocalStorage, se consultan en Firebase Cloud Firestore
       const querySnapshot = await getDocs(collection(db, "usuarios"));
+
+      if (typeof window.actualizarContadoresMonitor === "function" && !querySnapshot.empty) {
+        window.actualizarContadoresMonitor("firebase", querySnapshot.size);
+      }
+
       const listaFirestore = [];
       querySnapshot.forEach((docu) => {
         listaFirestore.push(docu.data());
       });
 
-      // 3. Resguardar en caché local para acelerar las próximas consultas
       localStorage.setItem("usuariosColegioCache", JSON.stringify(listaFirestore));
       return listaFirestore;
-
     } catch (error) {
       console.error("Error al recuperar nómina de usuarios:", error);
-      // Fallback de seguridad: si falla Firebase, intenta devolver lo que haya localmente
       const usuariosLocalesRaw = localStorage.getItem("usuariosColegioCache");
       return usuariosLocalesRaw ? JSON.parse(usuariosLocalesRaw) : [];
     }
@@ -762,27 +764,26 @@
         payloadUsuario.clave = await generarHashSHA256(valClave);
       }
 
-         let usuariosLocales = [];
-    const cacheActual = localStorage.getItem("usuariosColegioCache");
-    if (cacheActual) {
-      usuariosLocales = JSON.parse(cacheActual);
-    }
+      let usuariosLocales = [];
+      const cacheActual = localStorage.getItem("usuariosColegioCache");
+      if (cacheActual) {
+        usuariosLocales = JSON.parse(cacheActual);
+      }
 
-    if (dniOriginal && dniOriginal !== dni) {
-      usuariosLocales = usuariosLocales.filter(u => u.dni !== dniOriginal);
-      await deleteDoc(doc(db, "usuarios", dniOriginal));
-    }
+      if (dniOriginal && dniOriginal !== dni) {
+        usuariosLocales = usuariosLocales.filter((u) => u.dni !== dniOriginal);
+        await deleteDoc(doc(db, "usuarios", dniOriginal));
+      }
 
-    const indiceExistente = usuariosLocales.findIndex(u => u.dni === dni);
-    if (indiceExistente !== -1) {
-      usuariosLocales[indiceExistente] = payloadUsuario;
-    } else {
-      usuariosLocales.push(payloadUsuario);
-    }
+      const indiceExistente = usuariosLocales.findIndex((u) => u.dni === dni);
+      if (indiceExistente !== -1) {
+        usuariosLocales[indiceExistente] = payloadUsuario;
+      } else {
+        usuariosLocales.push(payloadUsuario);
+      }
 
-    localStorage.setItem("usuariosColegioCache", JSON.stringify(usuariosLocales));
-    await setDoc(doc(db, "usuarios", dni), payloadUsuario, { merge: true });
-
+      localStorage.setItem("usuariosColegioCache", JSON.stringify(usuariosLocales));
+      await setDoc(doc(db, "usuarios", dni), payloadUsuario, { merge: true });
 
       // Mensaje institucional unificado e intuitivo para el operador de la secretaría
       mostrarToast(
@@ -1112,14 +1113,14 @@
     }
 
     // 2. Confirmación tradicional adaptada temporalmente con lenguaje amigable
-      mostrarConfirmacionEscolar(
+    mostrarConfirmacionEscolar(
       "¿Está completamente seguro de que desea remover esta cuenta de personal del sistema institucional? Esta acción no se puede deshacer.",
-      async function() {
+      async function () {
         try {
           const cacheActual = localStorage.getItem("usuariosColegioCache");
           if (cacheActual) {
             let usuariosLocales = JSON.parse(cacheActual);
-            usuariosLocales = usuariosLocales.filter(u => u.dni !== dni);
+            usuariosLocales = usuariosLocales.filter((u) => u.dni !== dni);
             localStorage.setItem("usuariosColegioCache", JSON.stringify(usuariosLocales));
           }
 
@@ -1128,7 +1129,10 @@
           await renderizarTablaUsuarios();
         } catch (e) {
           console.error("Error al remover el documento:", e);
-          mostrarToast("No se pudo completar la eliminación debido a un inconveniente de conexión con el sistema.", "error");
+          mostrarToast(
+            "No se pudo completar la eliminación debido a un inconveniente de conexión con el sistema.",
+            "error"
+          );
         }
       }
     );
@@ -1158,13 +1162,14 @@
     if (chkTodosVaciar) chkTodosVaciar.checked = false;
     gestionarPanelesFormulario();
   }
-    function mostrarConfirmacionEscolar(mensaje, alConfirmar) {
+  function mostrarConfirmacionEscolar(mensaje, alConfirmar) {
     let modal = document.getElementById("confirm-modal-escolar");
     if (!modal) {
       modal = document.createElement("div");
       modal.id = "confirm-modal-escolar";
-      modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;";
-      
+      modal.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;";
+
       modal.innerHTML = `
         <div style="background: #ffffff; border: 2px solid #f43f5e; border-radius: 12px; width: 420px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15); font-family: system-ui, -apple-system, sans-serif; text-align: center; transform: scale(0.9); transition: transform 0.2s ease;">
           <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #fff1f2; color: #e11d48; font-size: 24px; font-weight: bold; margin-bottom: 16px;">⚠</div>
@@ -1205,5 +1210,4 @@
       alConfirmar();
     };
   }
-
 })();

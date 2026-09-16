@@ -309,6 +309,9 @@
         queryEstado !== "todos" || queryAuditoria !== "todos" || queryInclusion !== "todos";
 
       if (subCadenaBusqueda !== "" || (queryCurso === "todos" && seleccionoFiltroSuperior)) {
+        if (typeof window.actualizarContadoresMonitor === "function" && baseDeDatosLocal.length > 0) {
+          window.actualizarContadoresMonitor("local", baseDeDatosLocal.length);
+        }
         let localesPermitidos = baseDeDatosLocal.filter((alumno) => {
           if (alumno.cicloLectivo !== queryCiclo) return false;
 
@@ -382,6 +385,9 @@
               where("cicloLectivo", "==", queryCiclo)
             );
             const querySnapshot = await getDocs(q);
+            if (typeof window.actualizarContadoresMonitor === "function" && !querySnapshot.empty) {
+              window.actualizarContadoresMonitor("firebase", querySnapshot.size);
+            }
             querySnapshot.forEach((docSnap) => {
               const alData = docSnap.data();
               if (!alumnosCargadosDesdeCache[alData.dni]) {
@@ -408,6 +414,9 @@
           if (esEscrituraGlobal || cursosPermitidos.length === 0) {
             const q = query(...restriccionesQuery);
             const querySnapshot = await getDocs(q);
+            if (typeof window.actualizarContadoresMonitor === "function" && !querySnapshot.empty) {
+              window.actualizarContadoresMonitor("firebase", querySnapshot.size);
+            }
             querySnapshot.forEach((docSnap) => alumnosSnapshot.push(docSnap.data()));
           } else {
             for (const idCurso of cursosPermitidos) {

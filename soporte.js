@@ -65,7 +65,7 @@
   if (document.getElementById("sopDni")) document.getElementById("sopDni").value = usuario.dni || "";
   if (document.getElementById("sopRol")) document.getElementById("sopRol").value = usuario.rol || "";
 
-   const btnConsolaAuditoria = document.getElementById("btnConsolaAuditoria");
+  const btnConsolaAuditoria = document.getElementById("btnConsolaAuditoria");
 
   if (rol === "administrador") {
     if (contUsuario) contUsuario.style.display = "none";
@@ -74,7 +74,6 @@
       btnConsolaAuditoria.style.display = "block";
       btnConsolaAuditoria.addEventListener("click", crearMonitorFlotanteMovil);
     }
-
 
     // Apaga el historial de usuario y enciende las estadísticas de forma vertical limpia
     const histCompleto = document.getElementById("contenedorHistorialCompleto");
@@ -272,54 +271,32 @@
     }
 
     const dniLimpio = usuario.dni ? String(usuario.dni).replace(/\s+/g, "") : "";
+    const cacheKey = `soporte_user_${dniLimpio}`;
 
-    const q = query(collection(db, "soporte_incidencias"), where("dniUsuario", "==", dniLimpio));
-
-    onSnapshot(q, (snapshot) => {
+    async function procesarYRenderizarTicketsUser(documentos) {
       if (!listaUser) return;
       listaUser.innerHTML = "";
-      if (snapshot.empty) {
+
+      if (documentos.length === 0) {
         listaUser.innerHTML = `<p id="ticketMensajeVacio" style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px">No posee incidencias registradas en este período.</p>`;
         return;
       }
 
-      // Ordenamiento manual en la computadora para evitar tildes en Firebase
-      const documentosOrdenados = [];
-      snapshot.forEach((docSnap) => {
-        documentosOrdenados.push(docSnap);
-      });
-      documentosOrdenados.sort((a, b) => {
-        const fechaA = a.data().fechaCreacion ? a.data().fechaCreacion.toMillis() : 0;
-        const fechaB = b.data().fechaCreacion ? b.data().fechaCreacion.toMillis() : 0;
-        return fechaB - fechaA;
-      });
+      documentos.sort((a, b) => (b.fechaCreacionMS || 0) - (a.fechaCreacionMS || 0));
 
-      documentosOrdenados.forEach((docSnap) => {
-        const idTicket = docSnap.id;
-        const t = docSnap.data();
-
-        // El ticket es considerado exitoso si está Resuelto o ya fue Leído
+      documentos.forEach((t) => {
+        const idTicket = t.id;
         const esResueltoOLeido = t.estado === "Resuelto" || t.estado === "Leído";
 
-        // ACCIÓN SEGURA: Cambia a "Leído" de forma diferida (1.2s) para no generar bucles en onSnapshot
         if (t.estado === "Resuelto") {
           setTimeout(async () => {
             try {
               const { doc, updateDoc } = await import(base + "firebase-firestore.js");
-              await updateDoc(doc(db, "soporte_incidencias", idTicket), {
-                estado: "Leído"
-              });
+              await updateDoc(doc(db, "soporte_incidencias", idTicket), { estado: "Leído" });
             } catch (errLeido) {
               console.error("Error al marcar como leído:", errLeido);
             }
           }, 1200);
-        }
-
-        let fechaFormateada = "Recién";
-        if (t.fechaCreacion && t.fechaCreacion.toDate) {
-          const f = t.fechaCreacion.toDate();
-          fechaFormateada =
-            f.toLocaleDateString("es-AR") + " " + f.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
         }
 
         const div = document.createElement("div");
@@ -331,14 +308,14 @@
               ${t.estado === "Abierto" ? "ABIERTO" : "RESUELTO"}
             </span>
           </div>
-          <small style="color: #64748b; font-size: 11px; display: block; margin-bottom: 6px;">Enviado: ${fechaFormateada}</small>
+          <small style="color: #64748b; font-size: 11px; display: block; margin-bottom: 6px;">Enviado: ${t.fechaFormateada || "Recién"}</small>
           <p style="font-size: 13px; color: #475569; margin: 4px 0;">${t.descripcion}</p>
           ${
             esResueltoOLeido && t.respuestaAdmin
               ? `
             <div style="margin-top: 8px; background: #f0fdf4; border-left: 4px solid #10b981; padding: 6px 10px; font-size: 13px; border-radius: 0 4px 4px 0;">
               <strong style="color: #0d9488;">Respuesta del Administrador:</strong>
-              <p style="margin: 2px 0; font-style: italic; color: #1e293b;">"${t.respuestaAdmin}"</p>
+              <p style="margin: 2px 0; font-style: italic; color: #1e293b;">"\${t.respuestaAdmin}"</p>
             </div>
           `
               : ""
@@ -346,11 +323,48 @@
         `;
         listaUser.appendChild(div);
       });
+    }
+
+    // 💻 INTENTAR CARGAR DE MEMORIA LOCAL (COSTO CERO)
+    const cacheLocal = localStorage.getItem(cacheKey);
+    let datosLocales = [];
+    if (cacheLocal) {
+      datosLocales = JSON.parse(cacheLocal);
+      if (typeof window.actualizarContadoresMonitor === "function") {
+        window.actualizarContadoresMonitor("local", datosLocales.length || 1);
+      }
+      procesarYRenderizarTicketsUser(datosLocales);
+    }
+
+    // 🔄 CONEXIÓN INTEGRADA POR CONTROL DE CAMBIOS DE FIRESTORE
+    const q = query(collection(db, "soporte_incidencias"), where("dniUsuario", "==", dniLimpio));
+    onSnapshot(q, (snapshot) => {
+      let datosNuevos = [];
+      snapshot.forEach((docSnap) => {
+        const t = docSnap.data();
+        let fechaFormateada = "Recién";
+        let fechaMS = 0;
+        if (t.fechaCreacion && t.fechaCreacion.toDate) {
+          const f = t.fechaCreacion.toDate();
+          fechaMS = f.getTime();
+          fechaFormateada =
+            f.toLocaleDateString("es-AR") + " " + f.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+        }
+        datosNuevos.push({ id: docSnap.id, ...t, fechaFormateada: fechaFormateada, fechaCreacionMS: fechaMS });
+      });
+
+      const cacheStringNuevo = JSON.stringify(datosNuevos);
+      if (cacheStringNuevo !== cacheLocal) {
+        if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
+          window.actualizarContadoresMonitor("firebase", snapshot.size);
+        }
+        localStorage.setItem(cacheKey, cacheStringNuevo);
+        procesarYRenderizarTicketsUser(datosNuevos);
+      }
     });
   }
 
   async function inicializarVistaAdmin() {
-    // 1. Cargamos el mapa de nombres reales desde el módulo de roles de Firestore
     let nombresDeRoles = {};
     try {
       const rolesSnapshot = await getDocs(collection(db, "roles"));
@@ -364,12 +378,13 @@
       console.error("Error cargando diccionario de roles:", err);
     }
 
-    const q = query(collection(db, "soporte_incidencias"));
-    onSnapshot(q, (snapshot) => {
+    const cacheKey = "soporte_admin_total";
+
+    function procesarYRenderizarPanelAdmin(documentos) {
       if (!listaAdmin) return;
       listaAdmin.innerHTML = "";
 
-      if (snapshot.empty) {
+      if (documentos.length === 0) {
         listaAdmin.innerHTML = `<p style="text-align: center; color: #94a3b8; font-size: 13px; font-style: italic; padding: 20px;">No hay incidencias pendientes de resolución.</p>`;
         if (document.getElementById("cantAbiertos")) document.getElementById("cantAbiertos").innerText = 0;
         if (document.getElementById("cantResueltos")) document.getElementById("cantResueltos").innerText = 0;
@@ -385,49 +400,29 @@
       let leidos = 0;
       let conteoRoles = {};
       let notas = 0;
-      let usuarios = 0;
+      let usuariosMetrica = 0;
       let otrosTemas = 0;
 
-      // Truco de ordenamiento manual en la computadora para el Administrador
-      const documentosOrdenados = [];
-      snapshot.forEach((docSnap) => {
-        documentosOrdenados.push(docSnap);
-      });
+      documentos.sort((a, b) => (a.fechaCreacionMS || 0) - (b.fechaCreacionMS || 0));
 
-      documentosOrdenados.sort((a, b) => {
-        const fechaA = a.data().fechaCreacion ? a.data().fechaCreacion.toMillis() : 0;
-        const fechaB = b.data().fechaCreacion ? b.data().fechaCreacion.toMillis() : 0;
-        return fechaA - fechaB; // Orden ascendente (los más viejos y urgentes primero)
-      });
-
-      documentosOrdenados.forEach((docSnap) => {
-        const idTicket = docSnap.id;
-        const t = docSnap.data();
+      documentos.forEach((t) => {
+        const idTicket = t.id;
         const estado = t.estado;
 
-        // 2. Conteo de estados principales para el panel derecho
         if (estado === "Abierto") abiertos++;
         if (estado === "Resuelto") resueltos++;
         if (estado === "Leído") leidos++;
 
-        // 3. Extracción del rol usando las variables de tu ticket (t.rolUsuario)
         let rolIdTicket = t.rolUsuario ? t.rolUsuario.toLowerCase().trim() : "";
-
         if (rolIdTicket) {
           const nombreMostrar =
             nombresDeRoles[rolIdTicket] || rolIdTicket.charAt(0).toUpperCase() + rolIdTicket.slice(1);
-          if (!conteoRoles[nombreMostrar]) {
-            conteoRoles[nombreMostrar] = 1;
-          } else {
-            conteoRoles[nombreMostrar]++;
-          }
+          conteoRoles[nombreMostrar] = (conteoRoles[nombreMostrar] || 0) + 1;
         }
 
-        // 4. Análisis de Temas Críticos por Palabras Clave y cálculo de sobrantes
         if (t.asunto) {
           const asuntoMinuscula = t.asunto.toLowerCase();
           let clasificado = false;
-
           if (
             asuntoMinuscula.includes("nota") ||
             asuntoMinuscula.includes("calificacion") ||
@@ -443,57 +438,47 @@
             asuntoMinuscula.includes("ingresar") ||
             asuntoMinuscula.includes("acceder")
           ) {
-            usuarios++;
+            usuariosMetrica++;
             clasificado = true;
           }
-
-          if (!clasificado) {
-            otrosTemas++;
-          }
+          if (!clasificado) otrosTemas++;
         } else {
           otrosTemas++;
         }
 
-        // 5. Renderizar el ticket en la lista de gestión de la izquierda si corresponde
         if (estado === "Abierto" || estado === "Resuelto") {
           const div = document.createElement("div");
           div.style.cssText =
             "border: 2px solid #cbd5e1; padding: 14px; background: white; border-radius: 12px; height: 320px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);";
           div.innerHTML = `
-          <div>
-            <div style="display: flex; justify-content: space-between; items-start: flex-start; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
-              <div style="font-size: 12px; font-weight: bold; color: #334155; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                ${t.nombreUsuario}
-                <span style="font-size: 10px; font-weight: normal; color: #64748b; display: block;">${t.rolUsuario.toUpperCase()} - DNI: ${t.dniUsuario}</span>
+            <div>
+              <div style="display: flex; justify-content: space-between; items-start: flex-start; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
+                <div style="font-size: 12px; font-weight: bold; color: #334155; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${t.nombreUsuario}
+                  <span style="font-size: 10px; font-weight: normal; color: #64748b; display: block;">${t.rolUsuario.toUpperCase()} - DNI: ${t.dniUsuario}</span>
+                </div>
+                <span style="padding: 2px 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; border-radius: 4px; color: #b91c1c; border: 1px solid #fca5a5; white-space: nowrap;">${estado}</span>
               </div>
-              <span style="padding: 2px 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; bg: #fee2e2; border-radius: 4px; color: #b91c1c; border: 1px solid #fca5a5; white-space: nowrap;">Abierto</span>
+              <div style="margin-bottom: 6px;">
+                <h4 style="font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin: 0; tracking: 0.05em;">Asunto</h4>
+                <p style="font-size: 13px; font-weight: 600; color: #1e293b; margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.asunto}</p>
+              </div>
+              <div style="background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px;">
+                <p style="font-size: 12px; color: #475569; margin: 0; height: 50px; overflow-y: auto; white-space: pre-wrap;">${t.descripcion}</p>
+              </div>
             </div>
-            
-            <div style="margin-bottom: 6px;">
-              <h4 style="font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin: 0; tracking: 0.05em;">Asunto</h4>
-              <p style="font-size: 13px; font-weight: 600; color: #1e293b; margin: 2px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.asunto}</p>
+            <div style="margin-top: auto;">
+              <textarea id="resp-${idTicket}" placeholder="Escriba la solución institucional aquí..." style="width: 100%; height: 45px; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; box-sizing: border-box; resize: none; margin-bottom: 6px;">${t.respuestaAdmin || ""}</textarea>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 10px; font-weight: 500; color: #475569; user-select: none;">
+                  <input type="checkbox" id="chk-mail-${idTicket}" style="cursor: pointer; width: 14px; height: 14px; accent-color: #10b981;">
+                  <span>¿Notificar mail?</span>
+                </label>
+                <button id="btn-${idTicket}" style="background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; font-size: 11px; white-space: nowrap;">Resolver</button>
+              </div>
             </div>
-            
-            <div style="background: #f8fafc; padding: 8px; rounded-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px;">
-              <p style="font-size: 12px; color: #475569; margin: 0; height: 50px; overflow-y: auto; white-space: pre-wrap;">${t.descripcion}</p>
-            </div>
-          </div>
-          
-          <div style="margin-top: auto;">
-            <textarea id="resp-${idTicket}" placeholder="Escriba la solución institucional aquí..." style="width: 100%; height: 45px; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; box-sizing: border-box; resize: none; margin-bottom: 6px;"></textarea>
-            
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 10px; font-weight: 500; color: #475569; user-select: none;">
-                <input type="checkbox" id="chk-mail-${idTicket}" style="cursor: pointer; width: 14px; height: 14px; accent-color: #10b981;">
-                <span>¿Notificar mail?</span>
-              </label>
-              
-              <button id="btn-${idTicket}" style="background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer; font-size: 11px; white-space: nowrap;">Resolver</button>
-            </div>
-          </div>
-        `;
+          `;
           listaAdmin.appendChild(div);
-
           div.querySelector(`#btn-${idTicket}`).addEventListener("click", async () => {
             const txt = div.querySelector(`#resp-${idTicket}`).value.trim();
             const debeEnviarCorreo = div.querySelector(`#chk-mail-${idTicket}`).checked;
@@ -530,7 +515,6 @@
         }
       });
 
-      // 6. Inyección final de contadores en los elementos HTML del panel derecho
       if (document.getElementById("cantAbiertos")) document.getElementById("cantAbiertos").innerText = abiertos;
       if (document.getElementById("cantResueltos")) document.getElementById("cantResueltos").innerText = resueltos;
       if (document.getElementById("cantLeidos")) document.getElementById("cantLeidos").innerText = leidos;
@@ -547,9 +531,42 @@
       }
 
       if (document.getElementById("metricaNotas")) document.getElementById("metricaNotas").innerText = notas;
-      if (document.getElementById("metricaUsuarios")) document.getElementById("metricaUsuarios").innerText = usuarios;
+      if (document.getElementById("metricaUsuarios"))
+        document.getElementById("metricaUsuarios").innerText = usuariosMetrica;
       if (document.getElementById("metricaOtrosTemas"))
         document.getElementById("metricaOtrosTemas").innerText = otrosTemas;
+    }
+
+    const cacheLocal = localStorage.getItem(cacheKey);
+    let datosLocales = [];
+    if (cacheLocal) {
+      datosLocales = JSON.parse(cacheLocal);
+      if (typeof window.actualizarContadoresMonitor === "function") {
+        window.actualizarContadoresMonitor("local", datosLocales.length || 1);
+      }
+      procesarYRenderizarPanelAdmin(datosLocales);
+    }
+
+    const q = query(collection(db, "soporte_incidencias"));
+    onSnapshot(q, (snapshot) => {
+      let datosNuevos = [];
+      snapshot.forEach((docSnap) => {
+        const t = docSnap.data();
+        let fechaMS = 0;
+        if (t.fechaCreacion && t.fechaCreacion.toDate) {
+          fechaMS = t.fechaCreacion.toDate().getTime();
+        }
+        datosNuevos.push({ id: docSnap.id, ...t, fechaCreacionMS: fechaMS });
+      });
+
+      const cacheStringNuevo = JSON.stringify(datosNuevos);
+      if (cacheStringNuevo !== cacheLocal) {
+        if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
+          window.actualizarContadoresMonitor("firebase", snapshot.size);
+        }
+        localStorage.setItem(cacheKey, cacheStringNuevo);
+        procesarYRenderizarPanelAdmin(datosNuevos);
+      }
     });
   }
 
@@ -588,7 +605,33 @@
       }, 300);
     }, 4000);
   }
-    const metricasLectura = { local: 0, firebase: 0 };
+  // ==========================================
+  // PASO 1: MOTOR DE TELEMETRÍA GLOBAL INVISIBLE
+  // ==========================================
+  const metricasLectura = { local: 0, firebase: 0 };
+  let suscriptorTelemetria = null; // Guardará el escuchador en vivo del Admin
+
+  // Función interna para reportar silenciosamente los impactos a la nube
+  async function reportarTelemetriaNube(origen, cantidad) {
+    try {
+      // Evitamos bucles: si el admin está leyendo la telemetría, no reportamos esa lectura
+      if (usuario.rol?.toLowerCase().trim() === "administrador" && origen === "firebase" && cantidad === 1) {
+        return;
+      }
+
+      const { collection, addDoc, serverTimestamp } = await import(base + "firebase-firestore.js");
+      await addDoc(collection(db, "telemetria_haspen"), {
+        dniUsuario: String(usuario.dni || "anonimo").trim(),
+        nombreUsuario: usuario.nombre || "Usuario Externo",
+        rolUsuario: usuario.rol || "Sin Rol",
+        origen: origen, // "local" o "firebase"
+        cantidad: parseInt(cantidad) || 1,
+        fechaImpacto: serverTimestamp()
+      });
+    } catch (err) {
+      console.warn("Reporte de telemetría retenido de forma segura:", err);
+    }
+  }
 
   function crearMonitorFlotanteMovil() {
     let panel = document.getElementById("monitor-lecturas-escolar");
@@ -596,26 +639,87 @@
 
     panel = document.createElement("div");
     panel.id = "monitor-lecturas-escolar";
-    panel.style.cssText = "position: fixed; top: 100px; left: 20px; background: #1e293b; color: #ffffff; padding: 0; border-radius: 10px; font-family: monospace; font-size: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 999999; border: 1px solid #334155; width: 220px; user-select: none; overflow: hidden;";
+    panel.style.cssText =
+      "position: fixed; top: 100px; left: 20px; background: #1e293b; color: #ffffff; padding: 0; border-radius: 10px; font-family: monospace; font-size: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 999999; border: 1px solid #334155; width: 240px; user-select: none; overflow: hidden;";
 
     panel.innerHTML = `
-      <div id="monitor-header-arrastrable" style="background: #0f172a; padding: 8px 12px; cursor: move; font-weight: bold; color: #38bdf8; font-size: 11px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+      <div id="monitor-header-arrastrable" style="background: #0f172a; padding: 10px 12px; cursor: move; font-weight: bold; color: #38bdf8; font-size: 11px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
         <span>📊 MONITOR DE AUDITORÍA</span>
-        <span style="font-size: 9px; color: #64748b;">[Arrastrar]</span>
+        <button id="btn-cerrar-monitor-auditoria" style="background: transparent; border: none; color: #64748b; font-size: 14px; cursor: pointer; font-weight: bold; line-height: 1; padding: 2px 6px; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">×</button>
       </div>
       <div style="padding: 12px 14px; line-height: 1.6;">
-        <div>💻 LocalStorage: <span id="monitor-val-local" style="color: #4ade80; font-weight: bold;">0</span> reg.</div>
-        <div>🔥 Firebase:   <span id="monitor-val-firebase" style="color: #f87171; font-weight: bold;">0</span> reg.</div>
-        <div id="monitor-txt-detalle" style="margin-top: 8px; font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; font-style: italic;">Esperando consultas...</div>
+        <div>💻 LocalStorage (Total): <span id="monitor-val-local" style="color: #4ade80; font-weight: bold;">${metricasLectura.local}</span> reg.</div>
+        <div>🔥 Firebase (Total):     <span id="monitor-val-firebase" style="color: #f87171; font-weight: bold;">${metricasLectura.firebase}</span> reg.</div>
+        <div id="monitor-txt-detalle" style="margin-top: 8px; font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; font-style: italic;">Conectado a la red escolar global...</div>
       </div>
     `;
 
     document.body.appendChild(panel);
     hacerElementoArrastrable(panel);
+
+    // Conectar acción de cierre real al botón X
+    document.getElementById("btn-cerrar-monitor-auditoria").addEventListener("click", () => {
+      if (suscriptorTelemetria) {
+        suscriptorTelemetria(); // Apaga el escuchador en vivo para no consumir memoria
+        suscriptorTelemetria = null;
+      }
+      panel.remove();
+    });
+
+    // ACTIVACIÓN DE CONSULTA EN VIVO EXCLUSIVA PARA EL ADMINISTRADOR
+    if (usuario.rol?.toLowerCase().trim() === "administrador") {
+      activarEscuchadorGlobalTelemetria();
+    }
+  }
+
+  async function activarEscuchadorGlobalTelemetria() {
+    try {
+      const { collection, onSnapshot, query, where } = await import(base + "firebase-firestore.js");
+
+      // Calculamos el inicio del día de hoy en hora local de Argentina
+      const ahora = new Date();
+      const inicioHoyLocal = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+
+      // Filtramos la consulta en la nube para traer solo los impactos del día corriente
+      const q = query(collection(db, "telemetria_haspen"), where("fechaImpacto", ">=", inicioHoyLocal));
+
+      suscriptorTelemetria = onSnapshot(q, (snapshot) => {
+        let totalLocal = 0;
+        let totalFirebase = 0;
+        let ultimoOrigen = "ninguno";
+        let ultimaCantidad = 0;
+
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.origen === "local") totalLocal += data.cantidad || 1;
+          if (data.origen === "firebase") totalFirebase += data.cantidad || 1;
+          ultimoOrigen = data.origen;
+          ultimaCantidad = data.cantidad || 1;
+        });
+
+        metricasLectura.local = totalLocal;
+        metricasLectura.firebase = totalFirebase;
+
+        const elLocal = document.getElementById("monitor-val-local");
+        const elFirebase = document.getElementById("monitor-val-firebase");
+        const elDetalle = document.getElementById("monitor-txt-detalle");
+
+        if (elLocal) elLocal.innerText = totalLocal;
+        if (elFirebase) elFirebase.innerText = totalFirebase;
+        if (elDetalle && ultimoOrigen !== "ninguno") {
+          elDetalle.innerText = `Red Global: +${ultimaCantidad} (${ultimoOrigen})`;
+        }
+      });
+    } catch (err) {
+      console.error("Error al conectar el monitor con el filtro diario:", err);
+    }
   }
 
   function hacerElementoArrastrable(elemento) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    let pos1 = 0,
+      pos2 = 0,
+      pos3 = 0,
+      pos4 = 0;
     const cabecera = document.getElementById("monitor-header-arrastrable");
 
     if (cabecera) {
@@ -632,14 +736,15 @@
       document.onmousemove = elementoArrastrar;
     }
 
+    // Código adaptado para no salirse de la pantalla activa de VS Code
     function elementoArrastrar(e) {
       e.preventDefault();
       pos1 = pos3 - e.clientX;
       pos2 = pos4 - e.clientY;
       pos3 = e.clientX;
       pos4 = e.clientY;
-      elemento.style.top = (elemento.offsetTop - pos2) + "px";
-      elemento.style.left = (elemento.offsetLeft - pos1) + "px";
+      elemento.style.top = elemento.offsetTop - pos2 + "px";
+      elemento.style.left = elemento.offsetLeft - pos1 + "px";
     }
 
     function cerrarArrastrarElemento() {
@@ -648,17 +753,21 @@
     }
   }
 
-  window.actualizarContadoresMonitor = function(origen, cantidad) {
-    if (origen === "local") metricasLectura.local += cantidad;
-    if (origen === "firebase") metricasLectura.firebase += cantidad;
+  // INTERCEPTOR UNIVERSAL: Trabaja en todas las máquinas de forma silenciosa
+  window.actualizarContadoresMonitor = function (origen, cantidad) {
+    const cantVal = parseInt(cantidad) || 1;
 
+    // Suma local inmediata en la memoria del navegador
+    if (origen === "local") metricasLectura.local += cantVal;
+    if (origen === "firebase") metricasLectura.firebase += cantVal;
+
+    // Si el monitor está abierto en pantalla (solo admin), actualiza la vista local al instante
     const elLocal = document.getElementById("monitor-val-local");
     const elFirebase = document.getElementById("monitor-val-firebase");
-    const elDetalle = document.getElementById("monitor-txt-detalle");
+    if (elLocal && origen === "local") elLocal.innerText = metricasLectura.local;
+    if (elFirebase && origen === "firebase") elFirebase.innerText = metricasLectura.firebase;
 
-    if (elLocal) elLocal.innerText = metricasLectura.local;
-    if (elFirebase) elFirebase.innerText = metricasLectura.firebase;
-    if (elDetalle) elDetalle.innerText = `Último impacto: +${cantidad} (${origen})`;
+    // DESPACHO INVISIBLE: Envía el impacto a la base de datos central sin que el usuario lo note
+    reportarTelemetriaNube(origen, cantVal);
   };
-
 })();
