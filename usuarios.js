@@ -480,17 +480,35 @@
   }
 
   // --- LECTURA DE USUARIOS DESDE FIRESTORE ---
+    // --- LECTURA HÍBRIDA DE USUARIOS (LOCALSTORAGE FIRST ➔ FIRESTORE) ---
   async function obtenerUsuariosDesdeFirestore() {
     try {
+      // 1. Intentar obtener los usuarios desde el LocalStorage primero
+      const usuariosLocalesRaw = localStorage.getItem("usuariosColegioCache");
+      if (usuariosLocalesRaw) {
+        const listaLocales = JSON.parse(usuariosLocalesRaw);
+        if (listaLocales && listaLocales.length > 0) {
+          // Retorna los datos locales sin tocar la red de Firebase
+          return listaLocales;
+        }
+      }
+
+      // 2. Si no están en LocalStorage, se consultan en Firebase Cloud Firestore
       const querySnapshot = await getDocs(collection(db, "usuarios"));
-      const lista = [];
+      const listaFirestore = [];
       querySnapshot.forEach((docu) => {
-        lista.push(docu.data());
+        listaFirestore.push(docu.data());
       });
-      return lista;
+
+      // 3. Resguardar en caché local para acelerar las próximas consultas
+      localStorage.setItem("usuariosColegioCache", JSON.stringify(listaFirestore));
+      return listaFirestore;
+
     } catch (error) {
       console.error("Error al recuperar nómina de usuarios:", error);
-      return [];
+      // Fallback de seguridad: si falla Firebase, intenta devolver lo que haya localmente
+      const usuariosLocalesRaw = localStorage.getItem("usuariosColegioCache");
+      return usuariosLocalesRaw ? JSON.parse(usuariosLocalesRaw) : [];
     }
   }
 
@@ -744,11 +762,27 @@
         payloadUsuario.clave = await generarHashSHA256(valClave);
       }
 
-      if (dniOriginal && dniOriginal !== dni) {
-        await deleteDoc(doc(db, "usuarios", dniOriginal));
-      }
+         let usuariosLocales = [];
+    const cacheActual = localStorage.getItem("usuariosColegioCache");
+    if (cacheActual) {
+      usuariosLocales = JSON.parse(cacheActual);
+    }
 
-      await setDoc(doc(db, "usuarios", dni), payloadUsuario, { merge: true });
+    if (dniOriginal && dniOriginal !== dni) {
+      usuariosLocales = usuariosLocales.filter(u => u.dni !== dniOriginal);
+      await deleteDoc(doc(db, "usuarios", dniOriginal));
+    }
+
+    const indiceExistente = usuariosLocales.findIndex(u => u.dni === dni);
+    if (indiceExistente !== -1) {
+      usuariosLocales[indiceExistente] = payloadUsuario;
+    } else {
+      usuariosLocales.push(payloadUsuario);
+    }
+
+    localStorage.setItem("usuariosColegioCache", JSON.stringify(usuariosLocales));
+    await setDoc(doc(db, "usuarios", dni), payloadUsuario, { merge: true });
+
 
       // Mensaje institucional unificado e intuitivo para el operador de la secretaría
       mostrarToast(
@@ -1078,24 +1112,26 @@
     }
 
     // 2. Confirmación tradicional adaptada temporalmente con lenguaje amigable
-    if (
-      !confirm(
-        "¿Está completamente seguro de que desea remover esta cuenta de personal del sistema institucional? Esta acción no se puede deshacer."
-      )
-    )
-      return;
+      mostrarConfirmacionEscolar(
+      "¿Está completamente seguro de que desea remover esta cuenta de personal del sistema institucional? Esta acción no se puede deshacer.",
+      async function() {
+        try {
+          const cacheActual = localStorage.getItem("usuariosColegioCache");
+          if (cacheActual) {
+            let usuariosLocales = JSON.parse(cacheActual);
+            usuariosLocales = usuariosLocales.filter(u => u.dni !== dni);
+            localStorage.setItem("usuariosColegioCache", JSON.stringify(usuariosLocales));
+          }
 
-    try {
-      await deleteDoc(doc(db, "usuarios", dni));
-      mostrarToast("El registro del personal fue removido de la base de datos escolar correctamente.", "exito");
-      await renderizarTablaUsuarios();
-    } catch (e) {
-      console.error("Error al remover el documento:", e);
-      mostrarToast(
-        "No se pudo completar la eliminación debido a un inconveniente de conexión con el sistema.",
-        "error"
-      );
-    }
+          await deleteDoc(doc(db, "usuarios", dni));
+          mostrarToast("El registro del personal fue removido de la base de datos escolar correctamente.", "exito");
+          await renderizarTablaUsuarios();
+        } catch (e) {
+          console.error("Error al remover el documento:", e);
+          mostrarToast("No se pudo completar la eliminación debido a un inconveniente de conexión con el sistema.", "error");
+        }
+      }
+    );
   };
 
   function desactivarModoEdicion() {
@@ -1122,4 +1158,52 @@
     if (chkTodosVaciar) chkTodosVaciar.checked = false;
     gestionarPanelesFormulario();
   }
+    function mostrarConfirmacionEscolar(mensaje, alConfirmar) {
+    let modal = document.getElementById("confirm-modal-escolar");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "confirm-modal-escolar";
+      modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;";
+      
+      modal.innerHTML = `
+        <div style="background: #ffffff; border: 2px solid #f43f5e; border-radius: 12px; width: 420px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15); font-family: system-ui, -apple-system, sans-serif; text-align: center; transform: scale(0.9); transition: transform 0.2s ease;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #fff1f2; color: #e11d48; font-size: 24px; font-weight: bold; margin-bottom: 16px;">⚠</div>
+          <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 16px; font-weight: 700;">Confirmar Acción Institucional</h4>
+          <p id="confirm-modal-mensaje" style="margin: 0 0 24px 0; color: #475569; font-size: 14px; line-height: 1.5; text-align: center;"></p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="confirm-modal-btn-cancelar" style="padding: 8px 16px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Cancelar</button>
+            <button id="confirm-modal-btn-aceptar" style="padding: 8px 16px; background: #e11d48; color: #ffffff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Remover Registro</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const textoMensaje = modal.querySelector("#confirm-modal-mensaje");
+    const btnCancelar = modal.querySelector("#confirm-modal-btn-cancelar");
+    const btnAceptar = modal.querySelector("#confirm-modal-btn-aceptar");
+    const cajaAlerta = modal.querySelector("div");
+
+    textoMensaje.textContent = mensaje;
+
+    modal.style.opacity = "1";
+    modal.style.pointerEvents = "auto";
+    cajaAlerta.style.transform = "scale(1)";
+
+    const cerrarModal = () => {
+      modal.style.opacity = "0";
+      modal.style.pointerEvents = "none";
+      cajaAlerta.style.transform = "scale(0.9)";
+    };
+
+    btnCancelar.onclick = () => {
+      cerrarModal();
+    };
+
+    btnAceptar.onclick = () => {
+      cerrarModal();
+      alConfirmar();
+    };
+  }
+
 })();

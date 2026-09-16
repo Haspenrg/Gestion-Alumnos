@@ -74,8 +74,24 @@
         />
       </header>
 
-      <!-- Barra de Botones Sin el Botón Duplicado -->
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 20px">
+            <!-- Barra de Botones Sin el Botón Duplicado -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
+        <button
+          id="btnConsolaAuditoria"
+          style="
+            display: none;
+            background: #1b4d82;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            margin-right: auto;
+          "
+        >
+          Monitor de Rendimiento
+        </button>
         <button
           onclick="window.location.href = 'panel.html'"
           style="
@@ -91,6 +107,8 @@
           Volver al Panel
         </button>
       </div>
+
+
 
       <!-- Cuadrícula Principal Adaptable -->
       <div class="seccion-soporte-layout" style="margin-bottom: 30px">

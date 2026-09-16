@@ -65,9 +65,16 @@
   if (document.getElementById("sopDni")) document.getElementById("sopDni").value = usuario.dni || "";
   if (document.getElementById("sopRol")) document.getElementById("sopRol").value = usuario.rol || "";
 
+   const btnConsolaAuditoria = document.getElementById("btnConsolaAuditoria");
+
   if (rol === "administrador") {
     if (contUsuario) contUsuario.style.display = "none";
     if (contAdmin) contAdmin.style.display = "block";
+    if (btnConsolaAuditoria) {
+      btnConsolaAuditoria.style.display = "block";
+      btnConsolaAuditoria.addEventListener("click", crearMonitorFlotanteMovil);
+    }
+
 
     // Apaga el historial de usuario y enciende las estadísticas de forma vertical limpia
     const histCompleto = document.getElementById("contenedorHistorialCompleto");
@@ -581,4 +588,77 @@
       }, 300);
     }, 4000);
   }
+    const metricasLectura = { local: 0, firebase: 0 };
+
+  function crearMonitorFlotanteMovil() {
+    let panel = document.getElementById("monitor-lecturas-escolar");
+    if (panel) return;
+
+    panel = document.createElement("div");
+    panel.id = "monitor-lecturas-escolar";
+    panel.style.cssText = "position: fixed; top: 100px; left: 20px; background: #1e293b; color: #ffffff; padding: 0; border-radius: 10px; font-family: monospace; font-size: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 999999; border: 1px solid #334155; width: 220px; user-select: none; overflow: hidden;";
+
+    panel.innerHTML = `
+      <div id="monitor-header-arrastrable" style="background: #0f172a; padding: 8px 12px; cursor: move; font-weight: bold; color: #38bdf8; font-size: 11px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+        <span>📊 MONITOR DE AUDITORÍA</span>
+        <span style="font-size: 9px; color: #64748b;">[Arrastrar]</span>
+      </div>
+      <div style="padding: 12px 14px; line-height: 1.6;">
+        <div>💻 LocalStorage: <span id="monitor-val-local" style="color: #4ade80; font-weight: bold;">0</span> reg.</div>
+        <div>🔥 Firebase:   <span id="monitor-val-firebase" style="color: #f87171; font-weight: bold;">0</span> reg.</div>
+        <div id="monitor-txt-detalle" style="margin-top: 8px; font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; font-style: italic;">Esperando consultas...</div>
+      </div>
+    `;
+
+    document.body.appendChild(panel);
+    hacerElementoArrastrable(panel);
+  }
+
+  function hacerElementoArrastrable(elemento) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    const cabecera = document.getElementById("monitor-header-arrastrable");
+
+    if (cabecera) {
+      cabecera.onmousedown = arrastrarMouseDown;
+    } else {
+      elemento.onmousedown = arrastrarMouseDown;
+    }
+
+    function arrastrarMouseDown(e) {
+      e.preventDefault();
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = cerrarArrastrarElemento;
+      document.onmousemove = elementoArrastrar;
+    }
+
+    function elementoArrastrar(e) {
+      e.preventDefault();
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      elemento.style.top = (elemento.offsetTop - pos2) + "px";
+      elemento.style.left = (elemento.offsetLeft - pos1) + "px";
+    }
+
+    function cerrarArrastrarElemento() {
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+  }
+
+  window.actualizarContadoresMonitor = function(origen, cantidad) {
+    if (origen === "local") metricasLectura.local += cantidad;
+    if (origen === "firebase") metricasLectura.firebase += cantidad;
+
+    const elLocal = document.getElementById("monitor-val-local");
+    const elFirebase = document.getElementById("monitor-val-firebase");
+    const elDetalle = document.getElementById("monitor-txt-detalle");
+
+    if (elLocal) elLocal.innerText = metricasLectura.local;
+    if (elFirebase) elFirebase.innerText = metricasLectura.firebase;
+    if (elDetalle) elDetalle.innerText = `Último impacto: +${cantidad} (${origen})`;
+  };
+
 })();
