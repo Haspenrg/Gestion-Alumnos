@@ -39,9 +39,19 @@
     "/10.12.0/";
 
   const { initializeApp } = await import(b + "firebase-app.js");
-  const { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc, onSnapshot, query, where } = await import(
-    b + "firebase-firestore.js"
-  );
+  const {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    collection,
+    getDocs,
+    deleteDoc,
+    onSnapshot,
+    query,
+    where,
+    getCountFromServer
+  } = await import(b + "firebase-firestore.js");
 
   // CREDENCIALES OFICIALES DE TU PROYECTO GESTION-ALUMNOS
   const pId = "gestion-alumnos-eeb24";
@@ -881,9 +891,14 @@
         listaIngresosNuevosSesion = [];
         paginaActual = 1;
 
-        // 🗲 AUTOMATIZACIÓN MESA DE ENTRADA: Blanquea el curso si se busca a los ingresantes del colegio
-        if (domElements.filtroEstado.value === "Mesa de Entrada" && domElements.filtroCurso) {
-          domElements.filtroCurso.value = "";
+        // CORREGIDO: Manejo inteligente de los selectores superiores de la pantalla principal
+        if (domElements.filtroEstado.value === "Mesa de Entrada") {
+          if (domElements.filtroCurso) domElements.filtroCurso.value = "";
+        } else {
+          // Si salís de Mesa de Entrada y volvés a Regular u otro estado, reestablece a "Todos los Cursos"
+          if (domElements.filtroCurso && domElements.filtroCurso.value === "") {
+            domElements.filtroCurso.value = "todos";
+          }
         }
 
         renderTable();
@@ -1291,15 +1306,18 @@
         selectorCurso.value = "";
         selectorCurso.style.opacity = "0.5";
       } else {
+        // CORREGIDO: Se reactiva el selector de forma limpia para que el usuario elija manualmente
         selectorCurso.disabled = false;
         selectorCurso.style.opacity = "1";
 
-        if (selectorCurso.options.length > 0) {
-          selectorCurso.selectedIndex = 0;
+        // Si estaba vacío por el cambio anterior, lo dejamos en la invitación a seleccionar
+        if (selectorCurso.value === "") {
+          selectorCurso.value = "";
         }
       }
     }
   }
+
   function alternarPanelPPI() {
     if (!domElements.chkPPI || !domElements.panelPPI || !domElements.filaDocPPI) return;
     const tienePPI = domElements.chkPPI.checked;
@@ -1656,6 +1674,20 @@
         }
         domElements.filtroCiclo.innerHTML = opcionesCicloHtml;
         domElements.filtroCiclo.value = anioActual.toString();
+      }
+      // ====== CONTADOR INSTANTÁNEO DE MATRÍCULA TOTAL (CORREGIDO CON ETIQUETA) ======
+      if (db && domElements.contadorTotal && domElements.filtroCiclo) {
+        try {
+          const anioSeleccionado = domElements.filtroCiclo.value;
+          const consultaConteo = query(collection(db, "alumnos"), where("cicloLectivo", "==", anioSeleccionado));
+          const respuestaConteo = await getCountFromServer(consultaConteo);
+
+          // Se concatena el texto para que no se borre de la interfaz
+          domElements.contadorTotal.innerHTML = `Total Matrículas: <strong>${respuestaConteo.data().count.toString()}</strong>`;
+        } catch (errConteo) {
+          console.error("Error al calcular el conteo rápido inicial:", errConteo);
+          domElements.contadorTotal.innerHTML = `Total Matrículas: <strong>0</strong>`;
+        }
       }
 
       // 6. Cargar los selectores de cursos autorizados
