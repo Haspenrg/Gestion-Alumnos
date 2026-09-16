@@ -20,6 +20,16 @@
       .forgot-pass:hover {
         text-decoration: underline;
       }
+      .mensaje-alerta {
+        margin: 10px 0;
+        padding: 8px 12px;
+        background-color: #fff7ed;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+      }
+
       /* PARCHE: Posicionamiento y diseño para el botón visor de contraseña */
       .password-wrapper {
         position: relative;
@@ -217,7 +227,7 @@
           .join("");
       }
 
-      // Procesa el inicio de sesión buscando el Email Real asociado al DNI en Firestore
+      // Procesa el inicio de sesión buscando el Email Real asociado al DNI en Firestore con armadura de red
       async function procesarAutenticacion(e) {
         e.preventDefault();
         sessionStorage.removeItem("usuarioActivo");
@@ -249,12 +259,40 @@
 
         mostrarAlertaUI(txtMensaje, "Revisando acceso...", "#1a73e8");
 
-        try {
-          // 1. Buscamos el documento del usuario en Firestore usando el DNI como ID
-          const docRef = doc(db, "usuarios", dniIngresado);
-          const docSnapshot = await getDoc(docRef);
+        let docSnapshot = null;
+        const maxIntentos = 3;
+        let intentoActual = 0;
+        let exitoConexion = false;
 
-          if (!docSnapshot.exists()) {
+        // Bucle de reintentos dinámicos contra microcortes o netbooks limpias
+        while (intentoActual < maxIntentos && !exitoConexion) {
+          try {
+            intentoActual++;
+            if (intentoActual > 1) {
+              mostrarAlertaUI(
+                txtMensaje,
+                `Señal inestable. Reintentando conexión (Intento ${intentoActual}/${maxIntentos})...`,
+                "#d97706"
+              );
+            }
+
+            const docRef = doc(db, "usuarios", dniIngresado);
+            docSnapshot = await getDoc(docRef);
+            exitoConexion = true; // Si llegó acá sin fallar, la conexión fue exitosa
+          } catch (errorConexion) {
+            console.warn(`Fallo el intento de conexión ${intentoActual}:`, errorConexion.message);
+            if (intentoActual >= maxIntentos) {
+              // Si ya se agotaron los intentos, lanzamos el error para que lo maneje el catch principal
+              throw errorConexion;
+            }
+            // Espera de 1.5 segundos antes de volver a intentar el puente de red
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+          }
+        }
+
+        try {
+          // Si pasó el bucle pero por alguna razón el snapshot es nulo (seguridad extra)
+          if (!docSnapshot || !docSnapshot.exists()) {
             mostrarAlertaUI(txtMensaje, "Credenciales inválidas. Verifique el DNI y la contraseña.", "#dc2626");
             if (inputUsuario) inputUsuario.disabled = false;
             if (inputClave) inputClave.disabled = false;
@@ -368,7 +406,18 @@
             btnSubmit.disabled = false;
             btnSubmit.textContent = textoOriginalBoton;
           }
-          mostrarAlertaUI(txtMensaje, "Error crítico de conexión institucional.", "#dc2626");
+
+          // Interceptador institucional amigable para errores de red crudos en netbooks
+          const msgError = error.message || "";
+          if (msgError.includes("offline") || msgError.includes("network") || msgError.includes("Failed to get")) {
+            mostrarAlertaUI(
+              txtMensaje,
+              "⚠️ No se pudo conectar con el servidor. Por favor, verifique el Wi-Fi e intente nuevamente.",
+              "#dc2626"
+            );
+          } else {
+            mostrarAlertaUI(txtMensaje, "Error al iniciar sesión: " + msgError, "#dc2626");
+          }
         }
       }
 
@@ -440,7 +489,7 @@
           }
 
           // Disparamos el restablecimiento directo al correo real obtenido de la consulta
-          auth.languageCode = 'es';
+          auth.languageCode = "es";
           await sendPasswordResetEmail(auth, emailReal);
 
           // MENSAJE GENÉRICO SEGURO: Protege la privacidad evitando la enumeración del email
@@ -534,6 +583,15 @@
     <!-- Script independiente para el visor de contraseña -->
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        var parametrosUrl = new URLSearchParams(window.location.search);
+        if (parametrosUrl.get("motivo") === "inactividad") {
+          var contenedorMensaje = document.getElementById("mensaje");
+          if (contenedorMensaje) {
+            contenedorMensaje.textContent = "Su sesión ha caducado por inactividad. Por favor, ingrese nuevamente.";
+            contenedorMensaje.style.color = "#d97706";
+          }
+        }
+
         var botonOjo = document.getElementById("togglePassword");
         var campoClave = document.getElementById("password");
 
@@ -554,6 +612,5 @@
         }
       });
     </script>
-   <!--<script src="seguridad.js"></script> -->
   </body>
 </html>
