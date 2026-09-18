@@ -1313,77 +1313,123 @@
 
           <!-- PASO 2: MATRICULACIÓN Y CONFIGURACIONES PEDAGÓGICAS -->
           <div id="bloque-paso2" class="bloque-paso-contenido" style="display: none">
-            <div class="grid-formulario">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
-                <div class="input-group">
-                  <label for="estadoAlumno">Estado de la Matrícula</label>
-                  <!-- Campo A: Situación Escolar Actual -->
-                  <div class="form-grupo-haspen">
-                    <label for="estadoAlumno" class="label-haspen">Situación Escolar Actual *</label>
-                    <select id="estadoAlumno" class="form-control-haspen" required>
-                      <option value="Regular" selected>Regular</option>
-                      <option value="Baja">Baja</option>
-                    </select>
-                  </div>
-
-                  <!-- Campo B: Origen / Trámite Administrativo -->
-                  <div class="form-grupo-haspen">
-                    <label for="tramiteIngreso" class="label-haspen">Origen / Trámite Administrativo *</label>
-                    <select id="tramiteIngreso" class="form-control-haspen" required>
-                      <option value="Inscripción Estándar" selected>Inscripción Estándar</option>
-                      <option value="Mesa de Entrada">Mesa de Entrada</option>
-                      <option value="Con Pase Entrante">Con Pase Entrante</option>
-                      <option value="Con Pase Saliente">Con Pase Saliente</option>
-                    </select>
-                  </div>
+            <div class="grid-formulario" style="display: flex; flex-direction: column; gap: 14px">
+              <!-- FILA 1: SITUACIÓN Y TRÁMITE (Dos selectores en paralelo) -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div class="form-grupo-haspen">
+                  <label for="estadoAlumno" class="label-haspen" style="font-size: 13px"
+                    >Situación Escolar Actual</label
+                  >
+                  <select id="estadoAlumno" class="form-control-haspen" style="font-size: 13px" required>
+                    <option value="Regular" selected>Regular</option>
+                    <option value="Mesa de Entrada">Mesa de Entrada</option>
+                    <option value="Baja">Baja</option>
+                  </select>
                 </div>
-                <div class="input-group">
-                  <label for="selectCursoAlumno" class="label-haspen">Curso / Sección Asignada *</label>
-                  <select id="selectCursoAlumno" required></select>
+                <div class="form-grupo-haspen">
+                  <label for="tramiteIngreso" class="label-haspen" style="font-size: 13px"
+                    >Origen / Trámite Administrativo</label
+                  >
+                  <select id="tramiteIngreso" class="form-control-haspen" style="font-size: 13px" required>
+                    <option value="Inscripción Estándar" selected>Inscripción Estándar</option>
+                    <option value="Con Pase Entrante">Con Pase Entrante</option>
+                    <option value="Con Pase Saliente">Con Pase Saliente</option>
+                    <option value="Retiro Voluntario / Abandono">Retiro Voluntario / Abandono</option>
+                  </select>
                 </div>
               </div>
 
-              <!-- Panel de Pase Condicional -->
+              <!-- FILA 2: CURSO Y FECHA DEL TRÁMITE (En paralelo, justo abajo) -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div class="form-grupo-haspen">
+                  <label for="selectCursoAlumno" class="label-haspen" style="font-size: 13px"
+                    >Curso / Sección Asignada</label
+                  >
+                  <select id="selectCursoAlumno" class="form-control-haspen" style="font-size: 13px" required></select>
+                </div>
+                <div class="form-grupo-haspen">
+                  <label for="fechaRegistracionTramite" class="label-haspen" style="font-size: 13px"
+                    >Fecha de Registración del Trámite</label
+                  >
+                  <input
+                    type="date"
+                    id="fechaRegistracionTramite"
+                    class="form-control-haspen"
+                    style="font-size: 13px"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- FILA 3: CICLO LECTIVO DE DESTINO (Ocupando la mitad izquierda - ESCALABLE) -->
               <div
-                id="panelCamposPase"
                 style="
-                  display: none;
-                  flex-direction: column;
-                  gap: 8px;
-                  background: #eff6ff;
-                  padding: 12px;
-                  border-radius: 6px;
-                  border: 1px dashed #2563eb;
-                  width: 100%;
-                  box-sizing: border-box;
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 12px;
+                  border-bottom: 1px solid #e2e8f0;
+                  padding-bottom: 14px;
+                  margin-bottom: 4px;
                 "
               >
-                <div class="input-group">
-                  <label for="paseFecha" style="color: #1d4ed8">Fecha del Trámite:</label
-                  ><input type="date" id="paseFecha" />
+                <div class="form-grupo-haspen">
+                  <label for="filtroCicloDestino" class="label-haspen" style="font-size: 13px"
+                    >Ciclo Lectivo de Destino</label
+                  >
+                  <select id="filtroCicloDestino" class="form-control-haspen" style="font-size: 13px" required>
+                    <!-- Se poblará dinámicamente mediante el script para garantizar la escalabilidad -->
+                  </select>
+                </div>
+                <div></div>
+                <!-- Espacio vacío en la derecha para mantener la simetría de 1fr 1fr -->
+              </div>
+
+              <!-- PARTE 2: CONTENEDOR UNIFICADO Y COMPACTO DE INCLUSIÓN -->
+              <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px">
+                <!-- Checkbox 1: PPI -->
+                <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin: 0">
+                  <input
+                    type="checkbox"
+                    id="chkHabilitarPPI"
+                    style="width: 18px; height: 18px; cursor: pointer; margin: 0"
+                  />
+                  <label for="chkHabilitarPPI" style="margin: 0; font-weight: normal; cursor: pointer; font-size: 13px"
+                    >¿Presenta Proyecto Pedagógico para la Inclusión (PPI)?</label
+                  >
                 </div>
 
-                <div class="input-group">
-                  <label for="paseInstitucion" style="color: #1d4ed8">Establecimiento Educativo:</label
-                  ><input type="text" id="paseInstitucion" placeholder="Nombre de la escuela" />
+                <!-- Checkbox 2: Trayectorias Flexibles -->
+                <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin: 0">
+                  <input
+                    type="checkbox"
+                    id="chkTrayectoriasFlexibles"
+                    style="width: 18px; height: 18px; cursor: pointer; margin: 0"
+                  />
+                  <label
+                    for="chkTrayectoriasFlexibles"
+                    style="margin: 0; font-weight: normal; cursor: pointer; font-size: 13px"
+                    >¿Presenta proyecto de Trayectorias flexibles?</label
+                  >
                 </div>
-                <div class="input-group">
-                  <label for="paseProvincia" style="color: #1d4ed8">Provincia / Jurisdicción:</label
-                  ><input type="text" id="paseProvincia" placeholder="Ej: Tierra del Fuego" />
+
+                <!-- Checkbox 3: CUD -->
+                <div class="input-group" style="display: flex; align-items: center; gap: 8px; margin: 0">
+                  <input
+                    type="checkbox"
+                    id="chkHabilitarCUD"
+                    style="width: 18px; height: 18px; cursor: pointer; margin: 0"
+                  />
+                  <label
+                    for="chkHabilitarCUD"
+                    style="margin: 0; font-weight: normal; cursor: pointer; color: #047857; font-size: 13px"
+                    >¿Posee Certificado Único de Discapacidad (CUD)?</label
+                  >
                 </div>
               </div>
 
-              <!-- Panel de PPI Condicional -->
-              <div class="input-group" style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
-                <input
-                  type="checkbox"
-                  id="chkHabilitarPPI"
-                  style="width: 18px; height: 18px; cursor: pointer; margin: 0"
-                />
-                <label for="chkHabilitarPPI" style="margin: 0; font-weight: bold; cursor: pointer"
-                  >¿Presenta Proyecto Pedagógico para la Inclusión (PPI)?</label
-                >
-              </div>
+              <!-- PANELES DESPLEGABLES CONDICIONALES (Se activan debajo del bloque de casillas) -->
+
+              <!-- Panel PPI -->
               <div
                 id="panelCamposPPI"
                 style="
@@ -1399,12 +1445,14 @@
                 "
               >
                 <div class="input-group">
-                  <label for="ppiResolucion" style="color: #c2410c">Número de Disposición / Resolución:</label
-                  ><input type="text" id="ppiResolucion" placeholder="Ej: Disp. N° 124/2026" />
+                  <label for="ppiResolucion" style="color: #c2410c; font-size: 13px"
+                    >Número de Disposición / Resolución:</label
+                  >
+                  <input type="text" id="ppiResolucion" placeholder="Ej: Disp. N° 124/2026" style="font-size: 13px" />
                 </div>
-                <div class="input-group" style="margin-top: 15px">
-                  <label>Observaciones del Trayecto (PPI):</label>
-                  <div style="display: flex; align-items: center; gap: 10px">
+                <div class="input-group" style="margin-top: 10px">
+                  <label style="font-size: 13px">Observaciones del Trayecto (PPI):</label>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px">
                     <button
                       type="button"
                       id="btnAbrirObsPPI"
@@ -1435,45 +1483,13 @@
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
-                      <span>Agregar / Editar Observación</span>
+                      <span style="font-size: 13px">Agregar / Editar Observación</span>
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div class="input-group" style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
-                <input
-                  type="checkbox"
-                  id="chkTrayectoriasFlexibles"
-                  style="width: 18px; height: 18px; cursor: pointer; margin: 0"
-                />
-                <label for="chkTrayectoriasFlexibles" style="margin: 0; font-weight: bold; cursor: pointer"
-                  >¿Presenta proyecto de Trayectorias flexibles?</label
-                >
-              </div>
-
-              <!-- NUEVO MÓDULO: CERTIFICADO ÚNICO DE DISCAPACIDAD (CUD) -->
-              <div
-                class="input-group"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                  padding-top: 4px;
-                  border-top: 1px solid #e2e8f0;
-                  margin-top: 10px;
-                  padding-top: 10px;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="chkHabilitarCUD"
-                  style="width: 18px; height: 18px; cursor: pointer; margin: 0"
-                />
-                <label for="chkHabilitarCUD" style="margin: 0; font-weight: bold; cursor: pointer; color: #047857"
-                  >¿Posee Certificado Único de Discapacidad (CUD)?</label
-                >
-              </div>
+              <!-- Panel CUD (Limpio de duplicados) -->
               <div
                 id="panelCamposCUD"
                 style="
@@ -1489,8 +1505,10 @@
                 "
               >
                 <div class="input-group">
-                  <label for="cudNumero" style="color: #047857">Número de CUD / Código de barras:</label>
-                  <input type="text" id="cudNumero" placeholder="Ej: 13-12345678-1" />
+                  <label for="cudNumero" style="color: #047857; font-size: 13px"
+                    >Número de CUD / Código de barras:</label
+                  >
+                  <input type="text" id="cudNumero" placeholder="Ej: 13-12345678-1" style="font-size: 13px" />
                 </div>
                 <div
                   class="input-group"
@@ -1507,13 +1525,11 @@
                   <span style="font-size: 13px; color: #047857; font-weight: 500"
                     >El documento se adjuntará en el Paso 4 (Documentos).</span
                   >
-                  <span style="font-size: 13px; color: #047857; font-weight: 500"
-                    >El documento se adjuntará en el Paso 4 (Documentos).</span
-                  >
                 </div>
               </div>
             </div>
           </div>
+
           <!-- PASO 3: ADULTO RESPONSABLE -->
           <div id="bloque-paso3" class="bloque-paso-contenido" style="display: none">
             <div class="grid-formulario">

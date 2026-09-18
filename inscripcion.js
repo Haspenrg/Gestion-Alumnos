@@ -173,6 +173,10 @@
     inputTelefono1: document.getElementById("telefono1"),
     inputTelefono2: document.getElementById("telefono2"),
 
+    // NUEVOS CAMPOS DE CONTROL (SOLAPA 2)
+    inputFechaRegistracion: document.getElementById("fechaRegistracionTramite"),
+    selectCicloDestino: document.getElementById("filtroCicloDestino"),
+
     // Campos del Tutor y Trazabilidad (Paso 2)
     inputNombreTutor: document.getElementById("nombreTutor"),
     inputDniTutor: document.getElementById("dniTutor"),
@@ -786,14 +790,26 @@
 
     // Automatizaciones en tiempo real
     if (domElements.inputFechaNac) domElements.inputFechaNac.addEventListener("change", calcularEdadAutomatica);
+
+    // CONTROL REACTIVO DE BLOQUEO DE CURSOS EN TIEMPO REAL
     if (domElements.selectEstadoMatricula) {
       domElements.selectEstadoMatricula.addEventListener("change", () => {
-        if (domElements.selectEstadoMatricula.value === "Regular" && domElements.selectTramiteIngreso) {
-          domElements.selectTramiteIngreso.value = "Inscripción Estándar";
-          if (domElements.selectCursoAsignado) {
+        const estadoActual = domElements.selectEstadoMatricula.value;
+
+        if (domElements.selectCursoAsignado) {
+          if (estadoActual === "Mesa de Entrada" || estadoActual === "Baja") {
+            // Se bloquea en gris y se vacía si es Baja o Mesa de Entrada
+            domElements.selectCursoAsignado.disabled = true;
             domElements.selectCursoAsignado.value = "";
+            domElements.selectCursoAsignado.style.opacity = "0.5";
+          } else {
+            // Se reactiva de forma limpia si el estado vuelve a ser Regular
+            domElements.selectCursoAsignado.disabled = false;
+            domElements.selectCursoAsignado.style.opacity = "1";
           }
         }
+
+        // Mantiene el control del panel de pase condicional original
         alternarPanelPase();
       });
     }
@@ -968,9 +984,47 @@
       domElements.formInscripcion.reset();
     }
 
+    // ESTABLECER FECHA DE REGISTRACIÓN Y CICLO POR DEFECTO EN EL MODAL (AÑO ACTUAL)
+    if (domElements.inputFechaRegistracion) {
+      const hoy = new Date();
+      const anio = hoy.getFullYear();
+      const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+      const dia = String(hoy.getDate()).padStart(2, "0");
+      domElements.inputFechaRegistracion.value = anio + "-" + mes + "-" + dia;
+
+      // CONFIGURACIÓN DEL SELECTOR INTERNO DEL MODAL: Se posiciona automáticamente en el año actual
+      if (domElements.selectCicloDestino) {
+        domElements.selectCicloDestino.value = anio.toString();
+      }
+    }
+
     // 3. Forzar el ocultamiento de paneles condicionales
     if (domElements.panelPase) domElements.panelPase.style.display = "none";
     if (domElements.panelPPI) domElements.panelPPI.style.display = "none";
+
+    // 2. Reseteo estructural del formulario HTML
+    if (domElements.formInscripcion) {
+      domElements.formInscripcion.reset();
+    }
+
+    // ESTABLECER FECHA DE REGISTRACIÓN Y CICLO POR DEFECTO EN EL MODAL (AÑO ACTUAL)
+    if (domElements.inputFechaRegistracion) {
+      const hoy = new Date();
+      const anio = hoy.getFullYear();
+      const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+      const dia = String(hoy.getDate()).padStart(2, "0");
+      domElements.inputFechaRegistracion.value = anio + "-" + mes + "-" + dia;
+
+      // CONFIGURACIÓN DEL SELECTOR INTERNO DEL MODAL: Se posiciona automáticamente en el año actual
+      if (domElements.selectCicloDestino) {
+        domElements.selectCicloDestino.value = anio.toString();
+      }
+    }
+
+    // 3. Forzar el ocultamiento de paneles condicionales
+    if (domElements.panelPase) domElements.panelPase.style.display = "none";
+    if (domElements.panelPPI) domElements.panelPPI.style.display = "none";
+
     if (domElements.panelCUD) domElements.panelCUD.style.display = "none";
     if (domElements.filaDocPPI) domElements.filaDocPPI.style.display = "none";
     if (domElements.filaDocCUD) domElements.filaDocCUD.style.display = "none";
@@ -1310,16 +1364,16 @@
     }
 
     if (selectorCurso) {
-      if (estado === "Baja" || tramite === "Mesa de Entrada" || tramite === "Con Pase Saliente") {
+      // CORREGIDO: Evaluamos si la Situación Escolar (estado) es Baja o Mesa de Entrada según el nuevo diseño
+      if (estado === "Baja" || estado === "Mesa de Entrada" || tramite === "Con Pase Saliente") {
         selectorCurso.disabled = true;
         selectorCurso.value = "";
         selectorCurso.style.opacity = "0.5";
       } else {
-        // CORREGIDO: Se reactiva el selector de forma limpia para que el usuario elija manualmente
+        // Se reactiva el selector de forma limpia para que el usuario elija manualmente si es Regular
         selectorCurso.disabled = false;
         selectorCurso.style.opacity = "1";
 
-        // Si estaba vacío por el cambio anterior, lo dejamos en la invitación a seleccionar
         if (selectorCurso.value === "") {
           selectorCurso.value = "";
         }
@@ -1672,18 +1726,26 @@
         }
       }
 
-      // 5. Configurar el Ciclo Lectivo de forma estable
+      // 5. Configurar el Ciclo Lectivo de forma estable (ESCALABLE DESDE 2020)
       if (domElements.filtroCiclo) {
         const anioActual = new Date().getFullYear();
         const anioLimiteProyectado = anioActual + 1;
 
         let opcionesCicloHtml = "";
-        for (let anio = 2021; anio <= anioLimiteProyectado; anio++) {
+        // CORREGIDO: Se cambia el inicio a 2020 para soportar la libertad total de registros históricos hacia atrás
+        for (let anio = 2020; anio <= anioLimiteProyectado; anio++) {
           opcionesCicloHtml += `<option value="${anio}">${anio}</option>`;
         }
         domElements.filtroCiclo.innerHTML = opcionesCicloHtml;
         domElements.filtroCiclo.value = anioActual.toString();
+
+        // INYECCIÓN EN EL NUEVO SELECTOR DE LA SOLAPA 2
+        if (domElements.selectCicloDestino) {
+          domElements.selectCicloDestino.innerHTML = opcionesCicloHtml;
+          domElements.selectCicloDestino.value = anioActual.toString();
+        }
       }
+
       // ====== CONTADOR INSTANTÁNEO DE MATRÍCULA TOTAL (CORREGIDO CON ETIQUETA) ======
       if (db && domElements.contadorTotal && domElements.filtroCiclo) {
         try {
@@ -1702,6 +1764,7 @@
       // 6. Cargar los selectores de cursos autorizados
       if (typeof cargarCursosEnSelectores === "function") {
         await cargarCursosEnSelectores();
+        await cargarCursosExclusivoModal();
       }
 
       // 7. Lanzar el renderizado inicial limpio (Costo Cero)
@@ -1785,21 +1848,66 @@
   }
 
   function validarPaso2YAvanzar() {
-    const selectorEstado = document.getElementById("estadoAlumno");
-    const selectorCurso = document.getElementById("selectCursoAlumno");
+    const selectorEstado = domElements.selectEstadoMatricula;
+    const selectorTramite = domElements.selectTramiteIngreso;
+    const selectorCurso = domElements.selectCursoAsignado;
+    const campoFechaTramite = domElements.inputFechaRegistracion;
+    const selectorCicloDestino = domElements.selectCicloDestino;
 
-    if (selectorEstado && selectorCurso) {
+    if (selectorEstado && selectorCurso && selectorTramite && campoFechaTramite && selectorCicloDestino) {
+      // 1. VALIDACIÓN GENERAL: La Fecha de Registración es obligatoria
+      if (!campoFechaTramite.value) {
+        mostrarConfirmacionHaspen(
+          "Fecha Obligatoria",
+          "Por favor, complete la Fecha de Registración del Trámite antes de continuar.",
+          () => {}
+        );
+        campoFechaTramite.focus();
+        return;
+      }
+
+      // 2. VALIDACIÓN GENERAL: El Trámite Administrativo es obligatorio
+      if (!selectorTramite.value) {
+        mostrarConfirmacionHaspen(
+          "Trámite Requerido",
+          "Por favor, seleccione el Origen / Trámite Administrativo para poder continuar.",
+          () => {}
+        );
+        selectorTramite.focus();
+        return;
+      }
+
+      // 3. CANDADO DE SEGURIDAD TEMPORAL: Control para Altas Nuevas (No aplica en Modo Edición)
+      if (!window.esEdicion && selectorCicloDestino.value) {
+        const anioActualSistema = new Date().getFullYear(); // Dinámico (Da 2026)
+        const anioElegidoDestino = parseInt(selectorCicloDestino.value, 10);
+
+        if (anioElegidoDestino < anioActualSistema) {
+          mostrarConfirmacionHaspen(
+            "Ciclo Lectivo Inválido",
+            "Para un ingreso nuevo, el Ciclo Lectivo de Destino no puede ser menor al año escolar actual (" +
+              anioActualSistema +
+              ").",
+            () => {}
+          );
+          selectorCicloDestino.focus();
+          return;
+        }
+      }
+
+      // 4. VALIDACIÓN ESPECÍFICA: Estudiantes Regulares exigen asignación de aula física
       if (selectorEstado.value === "Regular" && !selectorCurso.value) {
         mostrarConfirmacionHaspen(
           "Curso Obligatorio",
-          "Todo estudiante con estado Regular debe tener un Curso / Sección asignada para poder continuar.",
+          "Todo estudiante con situación escolar Regular debe tener un Curso / Sección asignada para poder continuar.",
           () => {}
         );
-        if (selectorCurso) selectorCurso.focus();
-        return; // Frena el avance al Paso 3
+        selectorCurso.focus();
+        return;
       }
     }
 
+    // Superados todos los escudos institucionales, avanza al Paso 3 (Responsable)
     pasoSiguienteFormulario();
   }
 
@@ -1842,6 +1950,56 @@
     } catch (e) {
       console.error("Error al descifrar datos locales:", e);
       return null;
+    }
+  }
+
+  // FUNCIÓN EXCLUSIVA Y ESCALABLE PARA EL MODAL DE INSCRIPCIONES
+  async function cargarCursosExclusivoModal() {
+    const selectorFormulario = domElements.selectCursoAsignado;
+    if (!selectorFormulario || !db) return;
+
+    try {
+      const claveCacheCursos = "haspen_cache_cursos_modal";
+      const cacheLocalCifrada = localStorage.getItem(claveCacheCursos);
+      let cursosLista = [];
+
+      if (cacheLocalCifrada) {
+        cursosLista = descifrarDatos(cacheLocalCifrada) || [];
+        if (typeof window.actualizarContadoresMonitor === "function" && cursosLista.length > 0) {
+          window.actualizarContadoresMonitor("local", cursosLista.length);
+        }
+      }
+
+      if (cursosLista.length === 0) {
+        const cursosRef = collection(db, "cursos");
+        const snapshot = await getDocs(cursosRef);
+
+        if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
+          window.actualizarContadoresMonitor("firebase", snapshot.size);
+        }
+
+        snapshot.forEach((docSnap) => {
+          const c = docSnap.data();
+          const numeroAnio = c.ciclo ? c.ciclo.charAt(0) : "1";
+          const textoMapeado = numeroAnio + '° "' + c.division + '"';
+          cursosLista.push({ id: docSnap.id, texto: textoMapeado });
+        });
+
+        cursosLista.sort((a, b) => a.texto.localeCompare(b.texto));
+
+        if (cursosLista.length > 0) {
+          localStorage.setItem(claveCacheCursos, cifrarDatos(cursosLista));
+        }
+      }
+
+      let opcionesFormHtml = '<option value="">Seleccione curso...</option>';
+      cursosLista.forEach((c) => {
+        opcionesFormHtml += '<option value="' + c.id + '">' + c.texto + "</option>";
+      });
+
+      selectorFormulario.innerHTML = opcionesFormHtml;
+    } catch (error) {
+      console.error("Error al poblar el selector de cursos del modal:", error);
     }
   }
 

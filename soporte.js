@@ -639,8 +639,9 @@
 
     panel = document.createElement("div");
     panel.id = "monitor-lecturas-escolar";
+    // SE MODIFICÓ: width de 240px a 320px para soportar cifras de 5 dígitos en una sola línea
     panel.style.cssText =
-      "position: fixed; top: 100px; left: 20px; background: #1e293b; color: #ffffff; padding: 0; border-radius: 10px; font-family: monospace; font-size: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 999999; border: 1px solid #334155; width: 240px; user-select: none; overflow: hidden;";
+      "position: fixed; top: 100px; left: 20px; background: #1e293b; color: #ffffff; padding: 0; border-radius: 10px; font-family: monospace; font-size: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 999999; border: 1px solid #334155; width: 320px; user-select: none; overflow: hidden;";
 
     panel.innerHTML = `
       <div id="monitor-header-arrastrable" style="background: #0f172a; padding: 10px 12px; cursor: move; font-weight: bold; color: #38bdf8; font-size: 11px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
