@@ -611,11 +611,17 @@
   const metricasLectura = { local: 0, firebase: 0 };
   let suscriptorTelemetria = null; // Guardará el escuchador en vivo del Admin
 
-  // Función interna para reportar silenciosamente los impactos a la nube
+  // Función interna corregida para reportar detalladamente los impactos a la nube
   async function reportarTelemetriaNube(origen, cantidad) {
     try {
-      // Evitamos bucles: si el admin está leyendo la telemetría, no reportamos esa lectura
-      if (usuario.rol?.toLowerCase().trim() === "administrador" && origen === "firebase" && cantidad === 1) {
+      const origenLimpio = origen ? String(origen).toLowerCase().trim() : "";
+
+      // Evitamos bucles infinitos: si el admin actualiza el monitor, no reportamos esa consulta específica
+      if (
+        usuario.rol?.toLowerCase().trim() === "administrador" &&
+        origenLimpio === "firebase_lectura" &&
+        parseInt(cantidad) === 1
+      ) {
         return;
       }
 
@@ -624,7 +630,7 @@
         dniUsuario: String(usuario.dni || "anonimo").trim(),
         nombreUsuario: usuario.nombre || "Usuario Externo",
         rolUsuario: usuario.rol || "Sin Rol",
-        origen: origen, // "local" o "firebase"
+        origen: origenLimpio, // Registra con precisión: local_lectura, local_escritura, firebase_lectura, firebase_escritura
         cantidad: parseInt(cantidad) || 1,
         fechaImpacto: serverTimestamp()
       });
@@ -634,85 +640,22 @@
   }
 
   function crearMonitorFlotanteMovil() {
-    let panel = document.getElementById("monitor-lecturas-escolar");
-    if (panel) return;
-
-    panel = document.createElement("div");
-    panel.id = "monitor-lecturas-escolar";
-    // SE MODIFICÓ: width de 240px a 320px para soportar cifras de 5 dígitos en una sola línea
-    panel.style.cssText =
-      "position: fixed; top: 100px; left: 20px; background: #1e293b; color: #ffffff; padding: 0; border-radius: 10px; font-family: monospace; font-size: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 999999; border: 1px solid #334155; width: 320px; user-select: none; overflow: hidden;";
-
-    panel.innerHTML = `
-      <div id="monitor-header-arrastrable" style="background: #0f172a; padding: 10px 12px; cursor: move; font-weight: bold; color: #38bdf8; font-size: 11px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
-        <span>📊 MONITOR DE AUDITORÍA</span>
-        <button id="btn-cerrar-monitor-auditoria" style="background: transparent; border: none; color: #64748b; font-size: 14px; cursor: pointer; font-weight: bold; line-height: 1; padding: 2px 6px; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">×</button>
-      </div>
-      <div style="padding: 12px 14px; line-height: 1.6;">
-        <div>💻 LocalStorage (Total): <span id="monitor-val-local" style="color: #4ade80; font-weight: bold;">${metricasLectura.local}</span> reg.</div>
-        <div>🔥 Firebase (Total):     <span id="monitor-val-firebase" style="color: #f87171; font-weight: bold;">${metricasLectura.firebase}</span> reg.</div>
-        <div id="monitor-txt-detalle" style="margin-top: 8px; font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; font-style: italic;">Conectado a la red escolar global...</div>
-      </div>
-    `;
-
-    document.body.appendChild(panel);
-    hacerElementoArrastrable(panel);
-
-    // Conectar acción de cierre real al botón X
-    document.getElementById("btn-cerrar-monitor-auditoria").addEventListener("click", () => {
-      if (suscriptorTelemetria) {
-        suscriptorTelemetria(); // Apaga el escuchador en vivo para no consumir memoria
-        suscriptorTelemetria = null;
-      }
-      panel.remove();
-    });
-
-    // ACTIVACIÓN DE CONSULTA EN VIVO EXCLUSIVA PARA EL ADMINISTRADOR
-    if (usuario.rol?.toLowerCase().trim() === "administrador") {
-      activarEscuchadorGlobalTelemetria();
+    // 1. Si la ventana ya existe y está abierta, la traemos al frente y no hacemos nada más
+    if (window.popupMonitorHaspen && !window.popupMonitorHaspen.closed) {
+      window.popupMonitorHaspen.focus();
+      return;
     }
-  }
 
-  async function activarEscuchadorGlobalTelemetria() {
-    try {
-      const { collection, onSnapshot, query, where } = await import(base + "firebase-firestore.js");
+    // 2. Abrimos la mini-ventana nativa apuntando directamente a nuestro nuevo archivo independiente
+    // Parámetros optimizados: width=360, height=220 para que entren cómodas las 4 variables clave
+    window.popupMonitorHaspen = window.open(
+      "monitor.html",
+      "MonitorHaspen",
+      "width=380,height=260,resizable=no,scrollbars=no,status=no,toolbar=no,menubar=no,location=no"
+    );
 
-      // Calculamos el inicio del día de hoy en hora local de Argentina
-      const ahora = new Date();
-      const inicioHoyLocal = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-
-      // Filtramos la consulta en la nube para traer solo los impactos del día corriente
-      const q = query(collection(db, "telemetria_haspen"), where("fechaImpacto", ">=", inicioHoyLocal));
-
-      suscriptorTelemetria = onSnapshot(q, (snapshot) => {
-        let totalLocal = 0;
-        let totalFirebase = 0;
-        let ultimoOrigen = "ninguno";
-        let ultimaCantidad = 0;
-
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          if (data.origen === "local") totalLocal += data.cantidad || 1;
-          if (data.origen === "firebase") totalFirebase += data.cantidad || 1;
-          ultimoOrigen = data.origen;
-          ultimaCantidad = data.cantidad || 1;
-        });
-
-        metricasLectura.local = totalLocal;
-        metricasLectura.firebase = totalFirebase;
-
-        const elLocal = document.getElementById("monitor-val-local");
-        const elFirebase = document.getElementById("monitor-val-firebase");
-        const elDetalle = document.getElementById("monitor-txt-detalle");
-
-        if (elLocal) elLocal.innerText = totalLocal;
-        if (elFirebase) elFirebase.innerText = totalFirebase;
-        if (elDetalle && ultimoOrigen !== "ninguno") {
-          elDetalle.innerText = `Red Global: +${ultimaCantidad} (${ultimoOrigen})`;
-        }
-      });
-    } catch (err) {
-      console.error("Error al conectar el monitor con el filtro diario:", err);
+    if (!window.popupMonitorHaspen) {
+      alert("Por favor, autorice los pop-ups para abrir el Monitor de Auditoría.");
     }
   }
 
@@ -754,21 +697,41 @@
     }
   }
 
-  // INTERCEPTOR UNIVERSAL: Trabaja en todas las máquinas de forma silenciosa
+  // INTERCEPTOR UNIVERSAL: Trabaja en todas las máquinas clasificando las 4 variables clave
   window.actualizarContadoresMonitor = function (origen, cantidad) {
     const cantVal = parseInt(cantidad) || 1;
+    const origenLimpio = origen ? String(origen).toLowerCase().trim() : "";
 
-    // Suma local inmediata en la memoria del navegador
-    if (origen === "local") metricasLectura.local += cantVal;
-    if (origen === "firebase") metricasLectura.firebase += cantVal;
+    // 1. Clasificación interna y actualización inmediata de la memoria del navegador
+    if (origenLimpio === "local_lectura" || origenLimpio === "local") {
+      metricasLectura.local += cantVal; // Mantiene compatibilidad con variables viejas si existieran
+    } else if (origenLimpio === "firebase_lectura" || origenLimpio === "firebase") {
+      metricasLectura.firebase += cantVal;
+    }
 
-    // Si el monitor está abierto en pantalla (solo admin), actualiza la vista local al instante
-    const elLocal = document.getElementById("monitor-val-local");
-    const elFirebase = document.getElementById("monitor-val-firebase");
-    if (elLocal && origen === "local") elLocal.innerText = metricasLectura.local;
-    if (elFirebase && origen === "firebase") elFirebase.innerText = metricasLectura.firebase;
+    // 2. Si el monitor independiente está abierto en pantalla, le inyectamos el valor al instante
+    if (window.popupMonitorHaspen && !window.popupMonitorHaspen.closed) {
+      const docPopup = window.popupMonitorHaspen.document;
+      const elLocalLecturas = docPopup.getElementById("metrica-local-lecturas");
+      const elLocalEscrituras = docPopup.getElementById("metrica-local-escrituras");
+      const elFirebaseLecturas = docPopup.getElementById("metrica-firebase-lecturas");
+      const elFirebaseEscrituras = docPopup.getElementById("metrica-firebase-escrituras");
 
-    // DESPACHO INVISIBLE: Envía el impacto a la base de datos central sin que el usuario lo note
-    reportarTelemetriaNube(origen, cantVal);
+      if (elLocalLecturas && (origenLimpio === "local_lectura" || origenLimpio === "local")) {
+        elLocalLecturas.innerText = parseInt(elLocalLecturas.innerText || 0) + cantVal;
+      }
+      if (elLocalEscrituras && origenLimpio === "local_escritura") {
+        elLocalEscrituras.innerText = parseInt(elLocalEscrituras.innerText || 0) + cantVal;
+      }
+      if (elFirebaseLecturas && (origenLimpio === "firebase_lectura" || origenLimpio === "firebase")) {
+        elFirebaseLecturas.innerText = parseInt(elFirebaseLecturas.innerText || 0) + cantVal;
+      }
+      if (elFirebaseEscrituras && origenLimpio === "firebase_escritura") {
+        elFirebaseEscrituras.innerText = parseInt(elFirebaseEscrituras.innerText || 0) + cantVal;
+      }
+    }
+
+    // DESPACHO INVISIBLE: Envía el impacto detallado a la base de datos central en la nube
+    reportarTelemetriaNube(origenLimpio, cantVal);
   };
 })();

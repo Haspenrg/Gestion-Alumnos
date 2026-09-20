@@ -280,9 +280,10 @@
             docSnapshot = await getDoc(docRef);
             exitoConexion = true; // Si llegó acá sin fallar, la conexión fue exitosa
 
-            // DISPARADOR: Registramos la lectura exitosa en Firebase
+            // DISPARADOR: Registramos detalladamente el consumo de red y local en la telemetría
             if (typeof window.actualizarContadoresMonitor === "function" && docSnapshot.exists()) {
-              window.actualizarContadoresMonitor("firebase", 1);
+              window.actualizarContadoresMonitor("firebase_lectura", 1);
+              window.actualizarContadoresMonitor("local_escritura", 1);
             }
           } catch (errorConexion) {
             console.warn(`Fallo el intento de conexión ${intentoActual}:`, errorConexion.message);

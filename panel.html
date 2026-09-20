@@ -601,7 +601,7 @@
           if (!datosSesion) return null;
 
           if (typeof window.actualizarContadoresMonitor === "function") {
-            window.actualizarContadoresMonitor("local", 1);
+            window.actualizarContadoresMonitor("local_lectura", 1);
           }
 
           const usuario = JSON.parse(datosSesion);
@@ -730,7 +730,7 @@
 
               onSnapshot(collection(dbAdminBadge, "soporte_incidencias"), (snapshot) => {
                 if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
-                  window.actualizarContadoresMonitor("firebase", snapshot.size);
+                  window.actualizarContadoresMonitor("firebase_lectura", snapshot.size);
                 }
 
                 const badgeVisual = document.getElementById("badgeSoporteAdmin");

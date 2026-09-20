@@ -314,8 +314,9 @@
 
       if (subCadenaBusqueda !== "" || (queryCurso === "todos" && seleccionoFiltroSuperior)) {
         if (typeof window.actualizarContadoresMonitor === "function" && baseDeDatosLocal.length > 0) {
-          window.actualizarContadoresMonitor("local", baseDeDatosLocal.length);
+          window.actualizarContadoresMonitor("local_lectura", baseDeDatosLocal.length);
         }
+
         let localesPermitidos = baseDeDatosLocal.filter((alumno) => {
           if (alumno.cicloLectivo !== queryCiclo) return false;
 
@@ -390,8 +391,9 @@
             );
             const querySnapshot = await getDocs(q);
             if (typeof window.actualizarContadoresMonitor === "function" && !querySnapshot.empty) {
-              window.actualizarContadoresMonitor("firebase", querySnapshot.size);
+              window.actualizarContadoresMonitor("firebase_lectura", querySnapshot.size);
             }
+
             querySnapshot.forEach((docSnap) => {
               const alData = docSnap.data();
               if (!alumnosCargadosDesdeCache[alData.dni]) {
@@ -419,7 +421,7 @@
             const q = query(...restriccionesQuery);
             const querySnapshot = await getDocs(q);
             if (typeof window.actualizarContadoresMonitor === "function" && !querySnapshot.empty) {
-              window.actualizarContadoresMonitor("firebase", querySnapshot.size);
+              window.actualizarContadoresMonitor("firebase_lectura", querySnapshot.size);
             }
             querySnapshot.forEach((docSnap) => alumnosSnapshot.push(docSnap.data()));
           } else {
@@ -1171,6 +1173,11 @@
       const alumnoRef = doc(db, "alumnos", dniVal);
       const alumnoSnap = await getDoc(alumnoRef);
 
+      // Al consultar el duplicado consumimos 1 lectura
+      if (typeof window.actualizarContadoresMonitor === "function") {
+        window.actualizarContadoresMonitor("firebase_lectura", 1);
+      }
+
       if (alumnoSnap.exists() && !window.esEdicion) {
         await window.haspenConfirm(
           `El DNI/Documento "${dniVal}" ya pertenece a un estudiante registrado en el sistema. Verifique los datos ingresados.`,
@@ -1231,6 +1238,14 @@
         fechaUltimoResguardo: new Date().toISOString()
       };
 
+      // 🛠️ ¡OPERACIÓN CRÍTICA INYECTADA!: Persistencia real en la nube de Firebase
+      await setDoc(alumnoRef, nuevoLegajo);
+
+      // DISPARADOR TELEMETRÍA: Reportamos la escritura exitosa a la nube
+      if (typeof window.actualizarContadoresMonitor === "function") {
+        window.actualizarContadoresMonitor("firebase_escritura", 1);
+      }
+
       if (window.esEdicion && cursoIdOriginalLegajo) {
         delete cacheAlumnosPorCurso[cursoIdOriginalLegajo];
         await setDoc(
@@ -1238,6 +1253,9 @@
           { ultimaModificacion: new Date().toISOString() },
           { merge: true }
         );
+        if (typeof window.actualizarContadoresMonitor === "function") {
+          window.actualizarContadoresMonitor("firebase_escritura", 1);
+        }
       }
 
       if (nuevoLegajo.cursoId && nuevoLegajo.estado !== "Baja") {
@@ -1247,6 +1265,9 @@
           { ultimaModificacion: new Date().toISOString() },
           { merge: true }
         );
+        if (typeof window.actualizarContadoresMonitor === "function") {
+          window.actualizarContadoresMonitor("firebase_escritura", 1);
+        }
       }
 
       dniDestacadoSesion = dniVal;
@@ -1263,7 +1284,6 @@
       paginaActual = 1;
 
       // 4. Crear e inyectar el cartel verde estilizado en el centro de la pantalla
-
       const avisoExito = document.createElement("div");
       avisoExito.style.position = "fixed";
       avisoExito.style.top = "30%";
@@ -1966,7 +1986,7 @@
       if (cacheLocalCifrada) {
         cursosLista = descifrarDatos(cacheLocalCifrada) || [];
         if (typeof window.actualizarContadoresMonitor === "function" && cursosLista.length > 0) {
-          window.actualizarContadoresMonitor("local", cursosLista.length);
+          window.actualizarContadoresMonitor("local_lectura", cursosLista.length);
         }
       }
 
@@ -1975,7 +1995,7 @@
         const snapshot = await getDocs(cursosRef);
 
         if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
-          window.actualizarContadoresMonitor("firebase", snapshot.size);
+          window.actualizarContadoresMonitor("firebase_lectura", snapshot.size);
         }
 
         snapshot.forEach((docSnap) => {
