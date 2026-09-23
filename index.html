@@ -279,11 +279,37 @@
             const docRef = doc(db, "usuarios", dniIngresado);
             docSnapshot = await getDoc(docRef);
             exitoConexion = true; // Si llegó acá sin fallar, la conexión fue exitosa
+            if (docSnapshot.exists()) {
+              // === LECTURA REAL DE FIRESTORE: Consumió 1 operación real del plan ===
+              const fbLecturasActuales = parseInt(localStorage.getItem("haspen_monitor_firebase_lectura")) || 0;
+              localStorage.setItem("haspen_monitor_firebase_lectura", String(fbLecturasActuales + 1));
 
-            // DISPARADOR: Registramos detalladamente el consumo de red y local en la telemetría
-            if (typeof window.actualizarContadoresMonitor === "function" && docSnapshot.exists()) {
-              window.actualizarContadoresMonitor("firebase_lectura", 1);
-              window.actualizarContadoresMonitor("local_escritura", 1);
+              // === DESPACHO INVISIBLE AL MONITOR GLOBAL (PLAN FREE COMPATIBLE) ===
+              try {
+                // Importamos las herramientas nativas de Firestore necesarias en el index de forma fragmentada
+                const { collection, addDoc, serverTimestamp } =
+                  await import("https://gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+                // Recuperamos los datos mínimos del usuario para la auditoría diaria del Admin
+                const datosUsuarioLogueado = docSnapshot.data();
+
+                // Guardamos en la base de datos central con el Timestamp oficial de Google (Bypass compatible con monitor.js)
+                await addDoc(collection(db, "telemetria_haspen"), {
+                  dniUsuario: String(dniIngresado).trim(),
+                  nombreUsuario: datosUsuarioLogueado.nombre || "Usuario Autenticado",
+                  rolUsuario: datosUsuarioLogueado.rol || "Sin Rol",
+                  origen: "firebase_lectura", // Registra con precisión la lectura de su DNI
+                  cantidad: 1, // 1 click de login = 1 lectura real
+                  fechaImpacto: serverTimestamp() // Reloj central compatible con el filtro UTC de tu monitor
+                });
+
+                console.log("[Telemetría Index] Inicio de sesión registrado globalmente.");
+              } catch (errTelemetria) {
+                console.warn(
+                  "Reporte de inicio de sesión retenido de forma segura para evitar bloqueos:",
+                  errTelemetria
+                );
+              }
             }
           } catch (errorConexion) {
             console.warn(`Fallo el intento de conexión ${intentoActual}:`, errorConexion.message);

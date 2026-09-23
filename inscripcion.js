@@ -457,6 +457,9 @@
         });
 
         localStorage.setItem(claveMaestraCache, cifrarDatos(baseDeDatosLocal));
+        if (typeof window.actualizarContadoresMonitor === "function") {
+          window.actualizarContadoresMonitor("local_escritura", 1);
+        }
 
         if (queryCurso !== "") {
           localStorage.setItem(`haspen_curso_${queryCurso}_${queryCiclo}`, cifrarDatos(listaAlumnos));

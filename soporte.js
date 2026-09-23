@@ -697,41 +697,59 @@
     }
   }
 
-  // INTERCEPTOR UNIVERSAL: Trabaja en todas las máquinas clasificando las 4 variables clave
+  // INTERCEPTOR UNIVERSAL: Clasifica y reporta el consumo real diario (Gasto Cero en duplicados)
   window.actualizarContadoresMonitor = function (origen, cantidad) {
-    const cantVal = parseInt(cantidad) || 1;
+    // REGLA DE ORO DE FIRESTORE: Enviar .length (ej: 19) no refleja el consumo del plan.
+    // Leer o escribir un paquete de datos en caché es siempre 1 sola operación para el navegador.
+    const cantVal = 1;
     const origenLimpio = origen ? String(origen).toLowerCase().trim() : "";
+    let llaveDestino = "";
 
-    // 1. Clasificación interna y actualización inmediata de la memoria del navegador
+    // Clasificación y normalización de las variables a formato singular uniforme
     if (origenLimpio === "local_lectura" || origenLimpio === "local") {
-      metricasLectura.local += cantVal; // Mantiene compatibilidad con variables viejas si existieran
+      llaveDestino = "local_lectura";
+      metricasLectura.local += cantVal;
+    } else if (origenLimpio === "local_escritura") {
+      llaveDestino = "local_escritura";
     } else if (origenLimpio === "firebase_lectura" || origenLimpio === "firebase") {
+      llaveDestino = "firebase_lectura";
       metricasLectura.firebase += cantVal;
+    } else if (origenLimpio === "firebase_escritura") {
+      llaveDestino = "firebase_escritura";
     }
 
-    // 2. Si el monitor independiente está abierto en pantalla, le inyectamos el valor al instante
+    if (!llaveDestino) return;
+
+    // Guardar el acumulado del día en singular en el LocalStorage de la máquina actual
+    const valorActual = parseInt(localStorage.getItem(`haspen_monitor_${llaveDestino}`)) || 0;
+    const nuevoValor = valorActual + cantVal;
+    localStorage.setItem(`haspen_monitor_${llaveDestino}`, String(nuevoValor));
+
+    // Si la ventana del monitor está abierta en esta misma PC, actualiza el número en vivo en la pantalla
     if (window.popupMonitorHaspen && !window.popupMonitorHaspen.closed) {
-      const docPopup = window.popupMonitorHaspen.document;
-      const elLocalLecturas = docPopup.getElementById("metrica-local-lecturas");
-      const elLocalEscrituras = docPopup.getElementById("metrica-local-escrituras");
-      const elFirebaseLecturas = docPopup.getElementById("metrica-firebase-lecturas");
-      const elFirebaseEscrituras = docPopup.getElementById("metrica-firebase-escrituras");
+      try {
+        const docPopup = window.popupMonitorHaspen.document;
+        let idHtmlElemento = "";
+        if (llaveDestino === "local_lectura") idHtmlElemento = "metrica-local-lecturas";
+        if (llaveDestino === "local_escritura") idHtmlElemento = "metrica-local-escrituras";
+        if (llaveDestino === "firebase_lectura") idHtmlElemento = "metrica-firebase-lecturas";
+        if (llaveDestino === "firebase_escritura") idHtmlElemento = "metrica-firebase-escrituras";
 
-      if (elLocalLecturas && (origenLimpio === "local_lectura" || origenLimpio === "local")) {
-        elLocalLecturas.innerText = parseInt(elLocalLecturas.innerText || 0) + cantVal;
-      }
-      if (elLocalEscrituras && origenLimpio === "local_escritura") {
-        elLocalEscrituras.innerText = parseInt(elLocalEscrituras.innerText || 0) + cantVal;
-      }
-      if (elFirebaseLecturas && (origenLimpio === "firebase_lectura" || origenLimpio === "firebase")) {
-        elFirebaseLecturas.innerText = parseInt(elFirebaseLecturas.innerText || 0) + cantVal;
-      }
-      if (elFirebaseEscrituras && origenLimpio === "firebase_escritura") {
-        elFirebaseEscrituras.innerText = parseInt(elFirebaseEscrituras.innerText || 0) + cantVal;
+        const contenedorVisual = docPopup.getElementById(idHtmlElemento);
+        if (contenedorVisual) {
+          contenedorVisual.innerText = nuevoValor;
+        }
+      } catch (e) {
+        console.warn("[Monitor] Sincronizando interfaz gráfica pasiva...");
       }
     }
 
-    // DESPACHO INVISIBLE: Envía el impacto detallado a la base de datos central en la nube
-    reportarTelemetriaNube(origenLimpio, cantVal);
+    // DESPACHO FIEL A LA NUBE: Registra la operación con un Timestamp compatible con monitor.js
+    // Para no generar un bucle infinito, el Admin no auto-reporta las consultas del monitor
+    if (usuario.rol?.toLowerCase().trim() === "administrador" && llaveDestino === "firebase_lectura") {
+      return;
+    }
+
+    reportarTelemetriaNube(llaveDestino, cantVal);
   };
 })();

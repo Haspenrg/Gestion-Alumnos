@@ -74,8 +74,8 @@
         />
       </header>
 
-            <!-- Barra de Botones Sin el Botón Duplicado -->
-      <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
+      <!-- Barra de Botones Sin el Botón Duplicado -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px">
         <button
           id="btnConsolaAuditoria"
           style="
@@ -107,8 +107,6 @@
           Volver al Panel
         </button>
       </div>
-
-
 
       <!-- Cuadrícula Principal Adaptable -->
       <div class="seccion-soporte-layout" style="margin-bottom: 30px">
@@ -462,5 +460,45 @@
       style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px"
     ></div>
     <script src="seguridad.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        const idsMapeo = {
+          local_lectura: "metrica-local-lecturas",
+          local_escritura: "metrica-local-escrituras",
+          firebase_lectura: "metrica-firebase-lecturas",
+          firebase_escritura: "metrica-firebase-escrituras"
+        };
+
+        function sincronizarMarcadores() {
+          Object.keys(idsMapeo).forEach((key) => {
+            const idHtml = idsMapeo[key];
+            const elementoNode = document.getElementById(idHtml);
+            if (elementoNode) {
+              const valorGuardado = localStorage.getItem(`haspen_monitor_${key}`) || "0";
+              elementoNode.innerText = valorGuardado;
+            }
+          });
+        }
+
+        // Carga inicial: Trae los datos históricos acumulados al abrir la ventana
+        sincronizarMarcadores();
+        document.addEventListener("DOMContentLoaded", sincronizarMarcadores);
+        window.addEventListener("load", sincronizarMarcadores);
+
+        // Conexión reactiva: Escucha en vivo los cambios desde las otras pestañas
+        window.addEventListener("storage", (e) => {
+          if (e.key && e.key.startsWith("haspen_monitor_")) {
+            const metricaEditada = e.key.replace("haspen_monitor_", "");
+            const idHtmlDestino = idsMapeo[metricaEditada];
+            const elementoDestino = document.getElementById(idHtmlDestino);
+            if (elementoDestino && e.newValue !== null) {
+              elementoDestino.innerText = e.newValue;
+            }
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
