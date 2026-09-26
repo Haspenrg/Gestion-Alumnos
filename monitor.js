@@ -1,3 +1,5 @@
+"use strict";
+
 // Configuración de la base de Firebase emulando el bypass de soporte.js
 const base =
   "h" +
@@ -35,8 +37,8 @@ const base =
   "s" +
   "/10.12.0/";
 
-// Importamos la base de datos local y las herramientas quirúrgicas de Firestore
-const { db } = await import("./firebase-config.js");
+// IMPORTANTE: Importamos la base de telemetría secundaria (0 gasto para la escuela)
+const { dbTelemetria } = await import("./firebase-config.js");
 const { collection, getDocs, query, where } = await import(base + "firebase-firestore.js");
 
 // Elementos de la interfaz visual
@@ -46,31 +48,39 @@ const elFirebaseLecturas = document.getElementById("metrica-firebase-lecturas");
 const elFirebaseEscrituras = document.getElementById("metrica-firebase-escrituras");
 const elTxtEstado = document.getElementById("txt-estado-monitor");
 const btnActualizar = document.getElementById("btn-actualizar-metrics");
+let consultasManualesAdmin = 0;
 
-// Función principal para traer las métricas de forma pasiva (Por Demanda)
+// Función principal para traer las métricas en tiempo real global
 async function consultarMetricasNube() {
   try {
     if (btnActualizar) btnActualizar.disabled = true;
-    if (elTxtEstado) elTxtEstado.innerText = "Consultando base central de Firebase...";
+    if (elTxtEstado) elTxtEstado.innerText = "Consultando base de auditoría central...";
 
     // ====== SINCRONISMO FIEL CON EL RELOJ DE GOOGLE (UTC) ======
     // Forzamos el inicio del día a las 00:00:00 UTC del servidor central (21:00 hs de ayer local)
     const ahora = new Date();
-    const inicioDiaGoogleUTC = new Date(
-      Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 0, 0, 0, 0)
-    );
+    const corteHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 21, 0, 0, 0);
+    let inicioDiaGoogleUTC;
 
-    // Consulta directa de un solo golpe (getDocs) sin mantener conexiones vivas
-    const q = query(collection(db, "telemetria_haspen"), where("fechaImpacto", ">=", inicioDiaGoogleUTC));
+    if (ahora >= corteHoy) {
+      const mañana = new Date(ahora.getTime() + 24 * 60 * 60 * 1000);
+      inicioDiaGoogleUTC = new Date(Date.UTC(mañana.getFullYear(), mañana.getMonth(), mañana.getDate(), 0, 0, 0, 0));
+    } else {
+      inicioDiaGoogleUTC = new Date(Date.UTC(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0));
+    }
+
+    // CONSULTA DIRECTA A LA BASE DE TELEMETRÍA SECUNDARIA
+    const q = query(collection(dbTelemetria, "telemetria_haspen"), where("fechaImpacto", ">=", inicioDiaGoogleUTC));
     const snapshot = await getDocs(q);
 
     // Inicializamos los 4 contadores clave
+    consultasManualesAdmin++;
     let localLecturas = 0;
     let localEscrituras = 0;
-    let firebaseLecturas = 0;
+    let firebaseLecturas = consultasManualesAdmin;
     let firebaseEscrituras = 0;
 
-    // Procesamos quirúrgicamente los documentos del día
+    // Procesamos quirúrgicamente los documentos globales del día que están en la nube
     snapshot.forEach((docSnap) => {
       const datos = docSnap.data();
       const cantidad = parseInt(datos.cantidad) || 1;
@@ -88,19 +98,25 @@ async function consultarMetricasNube() {
       }
     });
 
-    // Inyectamos los resultados en la interfaz
-    if (elLocalLecturas) elLocalLecturas.innerText = localLecturas;
-    if (elLocalEscrituras) elLocalEscrituras.innerText = localEscrituras;
-    if (elFirebaseLecturas) elFirebaseLecturas.innerText = firebaseLecturas;
-    if (elFirebaseEscrituras) elFirebaseEscrituras.innerText = firebaseEscrituras;
+    // Levanta de forma segura el acumulado en disco de la terminal actual
+    const localLecturasCache = parseInt(localStorage.getItem("haspen_monitor_local_lectura")) || 0;
+    const localEscriturasCache = parseInt(localStorage.getItem("haspen_monitor_local_escritura")) || 0;
+    const firebaseLecturasCache = parseInt(localStorage.getItem("haspen_monitor_firebase_lectura")) || 0;
+    const firebaseEscriturasCache = parseInt(localStorage.getItem("haspen_monitor_firebase_escritura")) || 0;
+
+    // Sincronización híbrida: compara la RAM global (nube) con el disco y deja el valor más alto
+    if (elLocalLecturas) elLocalLecturas.innerText = Math.max(localLecturas, localLecturasCache);
+    if (elLocalEscrituras) elLocalEscrituras.innerText = Math.max(localEscrituras, localEscriturasCache);
+    if (elFirebaseLecturas) elFirebaseLecturas.innerText = Math.max(firebaseLecturas, firebaseLecturasCache);
+    if (elFirebaseEscrituras) elFirebaseEscrituras.innerText = Math.max(firebaseEscrituras, firebaseEscriturasCache);
 
     // Formateamos la hora del último congelamiento para control del Admin
     const h = ahora.getHours().toString().padStart(2, "0");
     const m = ahora.getMinutes().toString().padStart(2, "0");
-    if (elTxtEstado) elTxtEstado.innerText = `Estado: Congelado. Última consulta: ${h}:${m} hs.`;
+    if (elTxtEstado) elTxtEstado.innerText = `Estado: Sincronizado. Última consulta: ${h}:${m} hs.`;
   } catch (error) {
     console.error("Error al actualizar el monitor:", error);
-    if (elTxtEstado) elTxtEstado.innerText = "Error de red al conectar con Firebase.";
+    if (elTxtEstado) elTxtEstado.innerText = "Error de red al conectar con la base de telemetría.";
   } finally {
     if (btnActualizar) btnActualizar.disabled = false;
   }

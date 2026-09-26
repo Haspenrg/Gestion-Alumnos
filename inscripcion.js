@@ -713,6 +713,9 @@
     try {
       const cursosRef = collection(db, "cursos");
       const snapshot = await getDocs(cursosRef);
+      if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
+        window.actualizarContadoresMonitor("firebase_lectura", snapshot.size);
+      }
 
       let opcionesHtml = '<option value="todos">Todos los Cursos</option>';
       let opcionesFormHtml = '<option value="">Seleccione curso...</option>';
@@ -1244,9 +1247,42 @@
       // 🛠️ ¡OPERACIÓN CRÍTICA INYECTADA!: Persistencia real en la nube de Firebase
       await setDoc(alumnoRef, nuevoLegajo);
 
-      // DISPARADOR TELEMETRÍA: Reportamos la escritura exitosa a la nube
+      // 🛠️ ASPECTO 1: Guardado físico e instantáneo en el Disco Local (LocalStorage)
+      try {
+        const claveMaestraCache = `haspen_indice_central_alumnos`;
+        const datosLocalesCifrados = localStorage.getItem(claveMaestraCache);
+        let baseDeDatosLocal = [];
+
+        if (datosLocalesCifrados) {
+          baseDeDatosLocal = descifrarDatos(datosLocalesCifrados) || [];
+        }
+
+        // Si ya existía por DNI lo actualiza, sino lo agrega al índice central
+        const indiceExistente = baseDeDatosLocal.findIndex((al) => al.dni === nuevoLegajo.dni);
+        if (indiceExistente !== -1) {
+          baseDeDatosLocal[indiceExistente] = nuevoLegajo;
+        } else {
+          baseDeDatosLocal.push(nuevoLegajo);
+        }
+
+        // Guarda inmediatamente en el disco local
+        localStorage.setItem(claveMaestraCache, cifrarDatos(baseDeDatosLocal));
+
+        // Guarda también en la caché específica del curso para evitar desajustes en renderTable
+        if (nuevoLegajo.cursoId) {
+          localStorage.setItem(
+            `haspen_curso_${nuevoLegajo.cursoId}_${nuevoLegajo.cicloLectivo}`,
+            cifrarDatos([nuevoLegajo])
+          );
+        }
+      } catch (errLocal) {
+        console.error("Error al forzar guardado inmediato en localStorage:", errLocal);
+      }
+
+      // 🛠️ ASPECTO 2: Despacho prioritario de la telemetría (Base B y Local)
       if (typeof window.actualizarContadoresMonitor === "function") {
         window.actualizarContadoresMonitor("firebase_escritura", 1);
+        window.actualizarContadoresMonitor("local_escritura", 1);
       }
 
       if (window.esEdicion && cursoIdOriginalLegajo) {
@@ -1671,6 +1707,9 @@
         console.log("[RBAC] Sincronizando escudo de permisos dinámicos para DNI:", dniLimpio);
         const userDocRef = doc(db, "usuarios", dniLimpio);
         const userSnapshot = await getDoc(userDocRef);
+        if (typeof window.actualizarContadoresMonitor === "function") {
+          window.actualizarContadoresMonitor("firebase_lectura", 1);
+        }
 
         if (userSnapshot.exists()) {
           const datosUsuarioDb = userSnapshot.data();
@@ -1685,6 +1724,9 @@
             try {
               const rolDocRef = doc(db, "roles", rolNormalizado);
               const rolSnapshot = await getDoc(rolDocRef);
+              if (typeof window.actualizarContadoresMonitor === "function") {
+                window.actualizarContadoresMonitor("firebase_lectura", 1);
+              }
 
               if (rolSnapshot.exists()) {
                 const matrizPermisos = rolSnapshot.data().permisos || {};
@@ -1775,6 +1817,9 @@
           const anioSeleccionado = domElements.filtroCiclo.value;
           const consultaConteo = query(collection(db, "alumnos"), where("cicloLectivo", "==", anioSeleccionado));
           const respuestaConteo = await getCountFromServer(consultaConteo);
+          if (typeof window.actualizarContadoresMonitor === "function") {
+            window.actualizarContadoresMonitor("firebase_lectura", 1);
+          }
 
           // Se concatena el texto para que no se borre de la interfaz
           domElements.contadorTotal.innerHTML = `Total Matrículas: <strong>${respuestaConteo.data().count.toString()}</strong>`;

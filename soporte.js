@@ -35,7 +35,8 @@
     "s" +
     "/10.12.0/";
 
-  const { db } = await import("./firebase-config.js");
+  // Importamos ambas bases de datos desde la nueva configuración unificada
+  const { db, dbTelemetria } = await import("./firebase-config.js");
   const { collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp, orderBy, getDocs } =
     await import(base + "firebase-firestore.js");
 
@@ -606,17 +607,17 @@
     }, 4000);
   }
   // ==========================================
-  // PASO 1: MOTOR DE TELEMETRÍA GLOBAL INVISIBLE
+  // PASO 1: MOTOR DE TELEMETRÍA GLOBAL INVISIBLE (TIEMPO REAL AL SEGUNDO)
   // ==========================================
   const metricasLectura = { local: 0, firebase: 0 };
   let suscriptorTelemetria = null; // Guardará el escuchador en vivo del Admin
 
-  // Función interna corregida para reportar detalladamente los impactos a la nube
+  // Función interna que despacha inmediatamente a la segunda base de datos (0 gasto para la escuela)
   async function reportarTelemetriaNube(origen, cantidad) {
     try {
       const origenLimpio = origen ? String(origen).toLowerCase().trim() : "";
 
-      // Evitamos bucles infinitos: si el admin actualiza el monitor, no reportamos esa consulta específica
+      // Evitamos bucles si el admin consulta desde la terminal
       if (
         usuario.rol?.toLowerCase().trim() === "administrador" &&
         origenLimpio === "firebase_lectura" &&
@@ -625,12 +626,12 @@
         return;
       }
 
-      const { collection, addDoc, serverTimestamp } = await import(base + "firebase-firestore.js");
-      await addDoc(collection(db, "telemetria_haspen"), {
+      // IMPORTANTE: Se usa 'dbTelemetria' para desviar el tráfico al plan Spark secundario
+      await addDoc(collection(dbTelemetria, "telemetria_haspen"), {
         dniUsuario: String(usuario.dni || "anonimo").trim(),
         nombreUsuario: usuario.nombre || "Usuario Externo",
         rolUsuario: usuario.rol || "Sin Rol",
-        origen: origenLimpio, // Registra con precisión: local_lectura, local_escritura, firebase_lectura, firebase_escritura
+        origen: origenLimpio,
         cantidad: parseInt(cantidad) || 1,
         fechaImpacto: serverTimestamp()
       });
@@ -647,7 +648,6 @@
     }
 
     // 2. Abrimos la mini-ventana nativa apuntando directamente a nuestro nuevo archivo independiente
-    // Parámetros optimizados: width=360, height=220 para que entren cómodas las 4 variables clave
     window.popupMonitorHaspen = window.open(
       "monitor.html",
       "MonitorHaspen",
@@ -680,7 +680,6 @@
       document.onmousemove = elementoArrastrar;
     }
 
-    // Código adaptado para no salirse de la pantalla activa de VS Code
     function elementoArrastrar(e) {
       e.preventDefault();
       pos1 = pos3 - e.clientX;
@@ -697,35 +696,44 @@
     }
   }
 
-  // INTERCEPTOR UNIVERSAL: Clasifica y reporta el consumo real diario (Gasto Cero en duplicados)
   window.actualizarContadoresMonitor = function (origen, cantidad) {
-    // REGLA DE ORO DE FIRESTORE: Enviar .length (ej: 19) no refleja el consumo del plan.
-    // Leer o escribir un paquete de datos en caché es siempre 1 sola operación para el navegador.
-    const cantVal = 1;
+    const cantVal = parseInt(cantidad) || 1;
     const origenLimpio = origen ? String(origen).toLowerCase().trim() : "";
     let llaveDestino = "";
 
-    // Clasificación y normalización de las variables a formato singular uniforme
     if (origenLimpio === "local_lectura" || origenLimpio === "local") {
       llaveDestino = "local_lectura";
-      metricasLectura.local += cantVal;
     } else if (origenLimpio === "local_escritura") {
       llaveDestino = "local_escritura";
     } else if (origenLimpio === "firebase_lectura" || origenLimpio === "firebase") {
       llaveDestino = "firebase_lectura";
-      metricasLectura.firebase += cantVal;
     } else if (origenLimpio === "firebase_escritura") {
       llaveDestino = "firebase_escritura";
     }
 
     if (!llaveDestino) return;
 
-    // Guardar el acumulado del día en singular en el LocalStorage de la máquina actual
+    // Sincronismo del ciclo de reinicio de las 21:00 hs Local (00:00 UTC) para persistencia local de la terminal
+    const ahora = new Date();
+    const corteHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 21, 0, 0, 0);
+    let marcaCiclo =
+      ahora >= corteHoy ? corteHoy.toDateString() : new Date(corteHoy.getTime() - 24 * 60 * 60 * 1000).toDateString();
+
+    const cacheKeyCiclo = `haspen_monitor_ciclo_fecha`;
+    if (localStorage.getItem(cacheKeyCiclo) !== marcaCiclo) {
+      localStorage.setItem(cacheKeyCiclo, marcaCiclo);
+      localStorage.setItem("haspen_monitor_local_lectura", "0");
+      localStorage.setItem("haspen_monitor_local_escritura", "0");
+      localStorage.setItem("haspen_monitor_firebase_lectura", "0");
+      localStorage.setItem("haspen_monitor_firebase_escritura", "0");
+    }
+
+    // Impactamos el disco duro local de la terminal de control inmediato
     const valorActual = parseInt(localStorage.getItem(`haspen_monitor_${llaveDestino}`)) || 0;
     const nuevoValor = valorActual + cantVal;
     localStorage.setItem(`haspen_monitor_${llaveDestino}`, String(nuevoValor));
 
-    // Si la ventana del monitor está abierta en esta misma PC, actualiza el número en vivo en la pantalla
+    // Si el pop-up está abierto, actualizamos su pantalla en vivo
     if (window.popupMonitorHaspen && !window.popupMonitorHaspen.closed) {
       try {
         const docPopup = window.popupMonitorHaspen.document;
@@ -744,12 +752,7 @@
       }
     }
 
-    // DESPACHO FIEL A LA NUBE: Registra la operación con un Timestamp compatible con monitor.js
-    // Para no generar un bucle infinito, el Admin no auto-reporta las consultas del monitor
-    if (usuario.rol?.toLowerCase().trim() === "administrador" && llaveDestino === "firebase_lectura") {
-      return;
-    }
-
+    // ELIMINADO EL FRENO: Ahora TODO viaja al instante a la nube secundaria
     reportarTelemetriaNube(llaveDestino, cantVal);
   };
 })();
