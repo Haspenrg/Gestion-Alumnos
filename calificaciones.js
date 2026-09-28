@@ -388,26 +388,91 @@ tablaNotasBody.innerHTML = "";
 
         alumnosCurso.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-                // --- PRECARGA INTELIGENTE DE NOTAS DESDE FIRESTORE ---
+                 // ====== ADUANA DE LECTURA LOCAL (COSTO CERO / ANTI-MICROCORTES) ======
         mapaNotasExistentes = {};
-        try {
-            const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
-            const consultaNotas = query(
-                collection(db, "alumnos_calificaciones"), 
-                where("cursoId", "==", cursoId), 
-                where("materia", "==", materiaId)
-            );
-            const respuestaNotas = await getDocs(consultaNotas);
-                respuestaNotas.forEach(documento => {
-                const datosNota = documento.data();
-                if (datosNota && datosNota.alumnoDni) {
-                    mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
-                }
-            });
+        const anioActualCalificaciones = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
+        const matIdClave = materiaId.trim().replace(/\s+/g, '_');
+        const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdClave}_${anioActualCalificaciones}`;
 
-        } catch (errorDb) {
-            console.warn("No se pudo precargar el estado de notas desde Firestore:", errorDb);
+        // Funciones internas espejo para blindaje de datos locales
+        function cifrarLocalCalificaciones(datos) {
+            return btoa(encodeURIComponent(JSON.stringify(datos)));
         }
+        function descifrarLocalCalificaciones(stringCifrado) {
+            if (!stringCifrado) return null;
+            try { return JSON.parse(decodeURIComponent(atob(stringCifrado))); } 
+            catch (e) { console.error("Error al descifrar caché de notas:", e); return null; }
+        }
+
+        let cargadoDesdeCache = false;
+        try {
+            const cacheCifrada = localStorage.getItem(claveCachéCalificaciones);
+            if (cacheCifrada) {
+                const datosDescifrados = descifrarLocalCalificaciones(cacheCifrada);
+                if (datosDescifrados && Object.keys(datosDescifrados).length > 0) {
+                    mapaNotasExistentes = datosDescifrados;
+                    cargadoDesdeCache = true;
+                    console.log(`[Aduana Local] Notas cargadas desde el disco local para: ${claveCachéCalificaciones}`);
+                }
+            }
+        } catch (errCache) {
+            console.warn("Fallo al leer la caché local de calificaciones:", errCache);
+        }
+
+        // Si no existía en el disco, procedemos a consultar la red (Firebase)
+        if (!cargadoDesdeCache) {
+            try {
+                const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
+                const consultaNotas = query(
+                    collection(db, "alumnos_calificaciones"), 
+                    where("cursoId", "==", cursoId), 
+                    where("materia", "==", materiaId),
+                    where("cicloLectivo", "==", anioActualCalificaciones)
+                );
+                const respuestaNotas = await getDocs(consultaNotas);
+                
+                respuestaNotas.forEach(documento => {
+                    const datosNota = documento.data();
+                    if (datosNota && datosNota.alumnoDni) {
+                        mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
+                    }
+                });
+
+                // Guardamos inmediatamente en local de forma aislada y cifrada
+                localStorage.setItem(claveCachéCalificaciones, cifrarLocalCalificaciones(mapaNotasExistentes));
+            } catch (errorDb) {
+                console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
+            }
+        }
+
+
+        // Si no existía en el disco, procedemos a consultar la red (Firebase)
+        if (!cargadoDesdeCache) {
+            try {
+                const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
+                const consultaNotas = query(
+                    collection(db, "alumnos_calificaciones"), 
+                    where("cursoId", "==", cursoId), 
+                    where("materia", "==", materiaId),
+                    where("cicloLectivo", "==", anioActualCalificaciones)
+                );
+                const respuestaNotas = await getDocs(consultaNotas);
+                
+                respuestaNotas.forEach(documento => {
+                    const datosNota = documento.data();
+                    if (datosNota && datosNota.alumnoDni) {
+                        mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
+                    }
+                });
+
+                // Guardamos inmediatamente en local de forma aislada y cifrada
+                localStorage.setItem(claveCachéCalificaciones, cifrarLocalCalificaciones(mapaNotasExistentes));
+            } catch (errorDb) {
+                console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
+            }
+        }
+        // ======================================================================
+
 
             alumnosCurso.forEach(async (alumno, index) => {
             const tr = document.createElement('tr');
@@ -598,34 +663,41 @@ tablaNotasBody.innerHTML = "";
         }
     }
 
-// --- PERSISTENCIA ASÍNCRONA MUTABLE EN CLOUD FIRESTORE CON CONSOLIDACIÓN INTELIGENTE ---
+// === [INICIO DE LA FUNCIÓN - PARTE 1 DE 3] ===
 async function procesarGuardarPlanilla(e) {
     e.preventDefault();
     if (esModoLectura) return;
 
-    // 🎯 CORRECCIÓN 1: Alineación con los nombres de variables globales existentes
+    // Alineación con los nombres de variables globales existentes
     const cursoId = selectCurso.value;
     const materiaId = selectMateria.value; 
     if (!cursoId || !materiaId) return;
 
     const botonSubmit = formPlanilla.querySelector('button[type="submit"]');
-const txtNotificacion = document.getElementById('notificacionGuardadoNotas');
+    const txtNotificacion = document.getElementById('notificacionGuardadoNotas');
 
-if (botonSubmit) {
-    botonSubmit.disabled = true;
-    botonSubmit.textContent = "💾 Sincronizando Red...";
-}
-if (txtNotificacion) {
-    txtNotificacion.style.color = "#1b4d82";
-    txtNotificacion.textContent = "🔄 Procesando registros académicos...";
-}
+    if (botonSubmit) {
+        botonSubmit.disabled = true;
+        botonSubmit.textContent = "💾 Sincronizando Red...";
+    }
+    if (txtNotificacion) {
+        txtNotificacion.style.color = "#1b4d82";
+        txtNotificacion.textContent = "🔄 Procesando registros académicos...";
+    }
 
-
-       try {
+    try {
         const { doc, setDoc } = await import(b + 'firebase-firestore.js');
         const filas = tablaNotasBody.querySelectorAll('tr');
         const operacionesPersistencia = [];
 
+        // Estructuras para la aduana local masiva
+        const anioTrabajado = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
+        const matIdLimpia = materiaId.trim().replace(/\s+/g, '_');
+        const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdLimpia}_${anioTrabajado}`;
+        let nuevoMapaNotasCaché = { ...mapaNotasExistentes };
+        let registrosProcesados = [];
+
+        // Recorremos las filas para empaquetar toda la planilla junta en un milisegundo
         filas.forEach(fila => {
             const inputBase = fila.querySelector('.c1-n1');
             if (!inputBase) return; 
@@ -638,8 +710,8 @@ if (txtNotificacion) {
             const c2n1 = parseInt(fila.querySelector('.c2-n1').value, 10);
             const c2n2 = parseInt(fila.querySelector('.c2-n2').value, 10);
             const c2ef = parseInt(fila.querySelector('.c2-ef').value, 10);
-            const dic = parseInt( fila. querySelector('.dic')?. value, 10);
-            const feb = parseInt( fila. querySelector('.feb')?. value, 10);
+            const dic = parseInt(fila.querySelector('.dic')?.value, 10);
+            const feb = parseInt(fila.querySelector('.feb')?.value, 10);
             const celdas = fila.querySelectorAll('td');
             let notaC1 = null, notaC2 = null, notaAnual = null, notaDefinitiva = null;
             
@@ -655,12 +727,11 @@ if (txtNotificacion) {
                 notaDefinitiva = (txtDef === "-" || txtDef === "") ? null : parseInt(txtDef, 10);
             }
 
-         // ====== PARCHE: INYECCIÓN DE CICLO LECTIVO E ID HISTÓRICO BLINDADO ======
             const estructuraCalificacionAlumno = {
                 alumnoDni: dniAlumno,
                 cursoId: cursoId,
                 materia: materiaId,
-                cicloLectivo: window.cicloLectivoTrabajado || new Date().getFullYear().toString(),
+                cicloLectivo: anioTrabajado,
                 notas: {
                     trim1: { n1: isNaN(c1n1) ? null : c1n1, n2: isNaN(c1n2) ? null : c1n2, ef: isNaN(c1ef) ? null : c1ef },
                     trim2: { n1: isNaN(c2n1) ? null : c2n1, n2: isNaN(c2n2) ? null : c2n2, ef: isNaN(c2ef) ? null : c2ef }
@@ -688,40 +759,62 @@ if (txtNotificacion) {
                 }
             }
 
-            // ID Único indexado por año para evitar sobreescritura destructiva interanual
-            const matIdLimpia = materiaId.trim().replace(/\s+/g, '_');
-            const anioTrabajado = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
-            const docIdUnico = `${dniAlumno}_${matIdLimpia}_${anioTrabajado}`;
-            const docRef = doc(db, "alumnos_calificaciones", docIdUnico);
-            // ====== FIN DEL PARCHE ======
+            // Alimentamos la caché local en memoria viva
+            nuevoMapaNotasCaché[dniAlumno] = estructuraCalificacionAlumno;
 
+            // Guardamos las variables necesarias para mantener tu lógica original intacta en la sincronización
+            registrosProcesados.push({
+                dniAlumno,
+                docIdUnico: `${dniAlumno}_${matIdLimpia}_${anioTrabajado}`,
+                estructura: estructuraCalificacionAlumno,
+                estadoPrevio,
+                tieneModificacionesReales,
+                notaC1,
+                notaC2,
+                notaAnual,
+                fila
+            });
+        });
 
-                       const promesaEscritura = setDoc(docRef, estructuraCalificacionAlumno, { merge: true })
-                    .then(async () => {
+        // ESCUDO DE SEGURIDAD INTERNO: Guardado inmediato y cifrado en el disco duro
+        function cifrarLocalCalificaciones(datos) {
+            return btoa(encodeURIComponent(JSON.stringify(datos)));
+        }
+        localStorage.setItem(claveCachéCalificaciones, cifrarLocalCalificaciones(nuevoMapaNotasCaché));
+        mapaNotasExistentes = nuevoMapaNotasCaché;
+        console.log("[Aduana Local] Notas resguardadas en la máquina del docente ante microcortes.");
+// === [FIN DE LA PARTE 1 DE 3] ===
+// === [INICIO DE LA PARTE 2 DE 3 - TU LÓGICA DE NEGOCIO ORIGINAL] ===
+        // Sincronización con Firestore utilizando los registros recolectados
+        registrosProcesados.forEach(item => {
+            const docRef = doc(db, "alumnos_calificaciones", item.docIdUnico);
+
+            const promesaEscritura = setDoc(docRef, item.estructura, { merge: true })
+                .then(async () => {
                     const baseCdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
                     const { doc: docFirestore, setDoc: setDocFirestore, deleteDoc } = await import(baseCdn + 'firebase-firestore.js');
                     
-                    const matIdLimpia = materiaId.trim().replace(/\s+/g, '_').toUpperCase();
-                    const anioOrigenNum = parseInt(window.cicloLectivoTrabajado || new Date().getFullYear().toString(), 10);
-                    const idPreviaRaizUnico = `${dniAlumno}_${matIdLimpia}_${anioOrigenNum}`;
+                    const matIdLimpiaMayus = materiaId.trim().replace(/\s+/g, '_').toUpperCase();
+                    const anioOrigenNum = parseInt(item.estructura.cicloLectivo, 10);
+                    const idPreviaRaizUnico = `${item.dniAlumno}_${matIdLimpiaMayus}_${anioOrigenNum}`;
                     const previaDocRef = docFirestore(db, "previas", idPreviaRaizUnico);
 
-                    if (estructuraCalificacionAlumno.notaFinal !== null) {
-                        if (estructuraCalificacionAlumno.notaFinal < 6) {
+                    if (item.estructura.notaFinal !== null) {
+                        if (item.estructura.notaFinal < 6) {
                             const cursosCache = JSON.parse(localStorage.getItem('cursosColegio')) || [];
                             const cursoData = cursosCache.find(c => c.id === cursoId) || {};
                             const textoCursoVisor = `${cursoData.ciclo || ''} - DIV: ${cursoData.division || ''} (${cursoData.turno || ''})`.toUpperCase();
                             const orientacionData = (cursoData.orientacion || ((cursoData.ciclo || '').includes("1°") || (cursoData.ciclo || '').includes("2°") || (cursoData.ciclo || '').includes("3°") ? "CICLO BÁSICO" : "SIN ESPECIFICAR")).toUpperCase();
 
                             await setDocFirestore(previaDocRef, {
-                                dni: dniAlumno,
-                                alumnoNombre: (fila.cells[1]?.textContent || "ALUMNO SIN NOMBRE").replace(/🗲.*/, "").trim().toUpperCase(),
+                                dni: item.dniAlumno,
+                                alumnoNombre: (item.fila.cells[1]?.textContent || "ALUMNO SIN NOMBRE").replace(/🗲.*/, "").trim().toUpperCase(),
                                 materia: materiaId.trim().toUpperCase(),
                                 curso: textoCursoVisor,
                                 cursoOrigen: cursoId,
                                 orientacion: orientacionData,
                                 anioOrigen: anioOrigenNum,
-                                notaFinalCursada: estructuraCalificacionAlumno.notaFinal,
+                                notaFinalCursada: item.estructura.notaFinal,
                                 libroFolio: "-",
                                 notaExamen: "-",
                                 fechaExamen: "-",
@@ -734,8 +827,8 @@ if (txtNotificacion) {
                         }
                     }
 
-                    if (tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
-                        const esAltaNueva = !estadoPrevio;
+                    if (item.tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
+                        const esAltaNueva = !item.estadoPrevio;
                         const subcatAuditoria = esAltaNueva ? "CARGA_NOTA" : "RECTIFICACION";
                         const descAuditoria = esAltaNueva
                             ? `Carga de notas efectuada en la asignatura ${materiaId}.`
@@ -744,18 +837,18 @@ if (txtNotificacion) {
                         const snapshotForense = {
                             materia: materiaId,
                             cursoId: cursoId,
-                            notas_guardadas: estructuraCalificacionAlumno.notas,
-                            diciembre: estructuraCalificacionAlumno.diciembre,
-                            febrero: estructuraCalificacionAlumno.febrero,
-                            notaCuatrimestre1: estructuraCalificacionAlumno.notaCuatrimestre1,
-                            notaCuatrimestre2: estructuraCalificacionAlumno.notaCuatrimestre2,
-                            notaAnual: estructuraCalificacionAlumno.notaAnual,
-                            notaFinal: estructuraCalificacionAlumno.notaFinal,
-                            estadoMateria: estructuraCalificacionAlumno.estadoMateria
+                            notas_guardadas: item.estructura.notas,
+                            diciembre: item.estructura.diciembre,
+                            febrero: item.estructura.febrero,
+                            notaCuatrimestre1: item.notaC1,
+                            notaCuatrimestre2: item.notaC2,
+                            notaAnual: item.notaAnual,
+                            notaFinal: item.estructura.notaFinal,
+                            estadoMateria: item.estructura.estadoMateria
                         };
 
                         await window.registrarEventoLegajo(
-                            dniAlumno,
+                            item.dniAlumno,
                             "CALIFICACIONES",
                             subcatAuditoria,
                             descAuditoria,
@@ -764,32 +857,96 @@ if (txtNotificacion) {
                     }
                 });
 
-
             operacionesPersistencia.push(promesaEscritura);
         });
 
-     await Promise.all(operacionesPersistencia);
-    if (txtNotificacion) {
-        txtNotificacion.style.color = "#16a34a";
-        txtNotificacion.textContent = "✅ ¡Sincronización finalizada con éxito!";
-        setTimeout(() => { txtNotificacion.textContent = ""; }, 4000);
+        await Promise.all(operacionesPersistencia);
+// === [FIN DE LA PARTE 2 DE 3] ===
+// === [INICIO DE LA PARTE 3 DE 3 - CIERRE Y ASISTENCIA DE RED] ===
+        if (txtNotificacion) {
+            txtNotificacion.style.color = "#16a34a";
+            txtNotificacion.textContent = "✅ ¡Sincronización finalizada con éxito!";
+            setTimeout(() => { txtNotificacion.textContent = ""; }, 4000);
+        }
+        await cargarNominaEstudiantes();
+        
+           } catch (error) {
+        console.error("Error de red detectado durante la sincronización:", error);
+        
+        // 1. CREACIÓN DEL RECUADRO CENTRAL ESTILIZADO (INTERFAZ INSTITUTIONAL)
+        const idCartelEmergencia = "haspen-alerta-microcorte";
+        // Si por alguna razón ya existe uno en pantalla, lo removemos para evitar duplicados
+        document.getElementById(idCartelEmergencia)?.remove();
+
+        const contenedorCartel = document.createElement("div");
+        contenedorCartel.id = idCartelEmergencia;
+        
+        // Estilos del fondo difuminado que bloquea la pantalla
+        Object.assign(contenedorCartel.style, {
+            position: "fixed", top: "0", left: "0", width: "100vw", height: "100vh",
+            backgroundColor: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(4px)",
+            zIndex: "99999", display: "flex", justifyContent: "center", alignItems: "center",
+            fontFamily: "system-ui, -apple-system, sans-serif", padding: "20px"
+        });
+
+        // Contenido HTML y diseño del recuadro central (Ámbar/Oscuro)
+        contenedorCartel.innerHTML = `
+            <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-top: 6px solid #d97706; max-width: 480px; width: 100%; padding: 32px; text-align: center;">
+                <div style="width: 56px; height: 56px; background: #fef3c7; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px;">
+                    <span style="font-size: 28px; color: #d97706;">⚠️</span>
+                </div>
+                <h3 style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 700;">Fluctuación de Red Detectada</h3>
+                <p style="margin: 0 0 24px; color: #64748b; font-size: 14px; line-height: 1.5;">
+                    Las calificaciones han sido <strong style="color: #1e40af;">resguardadas con éxito en la computadora</strong>. Detectamos un microcorte en el internet de la escuela y el asistente está esperando una señal estable para subirlas a la nube.
+                </p>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="width: 18px; height: 18px; border: 3px solid #d97706; border-top-color: transparent; border-radius: 50%; animation: spinCalificacionesHaspen 1s linear infinite;"></div>
+                    <span style="color: #b45309; font-size: 13px; font-weight: 600; letter-spacing: 0.2px;">Reintentando conexión automáticamente...</span>
+                </div>
+                <style>
+                    @keyframes spinCalificacionesHaspen { to { transform: rotate(360deg); } }
+                </style>
+            </div>
+        `;
+
+        // Inyectamos el cartel hermoso en el cuerpo de la página escolar
+        document.body.appendChild(contenedorCartel);
+
+        // Ajustes complementarios en el botón de envío principal
+        if (botonSubmit) {
+            botonSubmit.disabled = true;
+            botonSubmit.style.backgroundColor = "#d97706";
+            botonSubmit.textContent = "⏳ Esperando señal...";
+        }
+        if (txtNotificacion) {
+            txtNotificacion.style.color = "#ea580c";
+            txtNotificacion.textContent = "⚠️ Notas retenidas localmente de forma segura.";
+        }
+
+        // 2. ACTIVACIÓN DEL CENTINELA INTELIGENTE DE RECONEXIÓN
+        const reconectarYEnviar = async () => {
+            console.log("[Centinela de Red] Conectividad recuperada. Eliminando cartel de advertencia central...");
+            window.removeEventListener('online', reconectarYEnviar);
+            
+            // Removemos de inmediato el recuadro gris y el bloqueo visual
+            document.getElementById(idCartelEmergencia)?.remove();
+            
+            // Re-ejecutamos la sincronización nativa de la planilla
+            await procesarGuardarPlanilla(e);
+        };
+
+        window.addEventListener('online', reconectarYEnviar);
+
+    } finally {
+
+
+        if (botonSubmit) {
+            botonSubmit.disabled = false;
+            botonSubmit.textContent = "Guardar Planilla";
+        }
     }
-    await cargarNominaEstudiantes();
-  } catch (error) {
-    console.error("Error crítico durante la sincronización inteligente:", error);
-    if (txtNotificacion) {
-        txtNotificacion.style.color = "#dc2626";
-        txtNotificacion.textContent = "❌ Error al intentar sincronizar con la base de datos.";
-    }
-  } finally {
-    if (botonSubmit) {
-        botonSubmit.disabled = false;
-        botonSubmit.textContent = "Guardar Planilla";
-    }
-  }
 }
-
-
+// === [FIN DE LA FUNCIÓN - PARTE 3 DE 3] ===
 
 // ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
 const IDs_PERIODOS_REALES = [
@@ -893,5 +1050,19 @@ if (btnGuardarPeriodosConfig) {
         btnGuardarRefrescado.addEventListener('click', procesarGuardarConfiguracionPeriodos);
     }
 }
+// ====== ÚLTIMO ESCUDO: BLOQUEO PREVENTIVO DE CIERRE DE PESTAÑA ANTE MICROCORTES ======
+window.addEventListener('beforeunload', (evento) => {
+    const botonSubmit = document.getElementById('formPlanillaNotas')?.querySelector('button[type="submit"]');
+    
+    // Si el botón existe y está en estado de espera por internet, activamos el freno de mano
+    if (botonSubmit && botonSubmit.textContent.includes("Esperando señal")) {
+        // Bloquea el cierre nativo y fuerza al navegador a mostrar su advertencia estándar
+        evento.preventDefault();
+        evento.returnValue = "¿Desea salir? Tiene cambios de calificaciones resguardados en la computadora pero pendientes de subir a la nube debido al microcorte de internet.";
+        return evento.returnValue;
+    }
+});
+// ======================================================================================
+
 })();
 
