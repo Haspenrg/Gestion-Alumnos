@@ -46,7 +46,7 @@
     return;
   }
 
-  const usuario = JSON.parse(datosSesion);
+  const usuario = JSON.parse(decodeURIComponent(atob(datosSesion)));
   const rol = usuario.rol ? usuario.rol.toLowerCase().trim() : "";
 
   // Credenciales de conexión directa con tu plataforma de EmailJS
