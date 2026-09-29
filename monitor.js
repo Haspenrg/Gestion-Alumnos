@@ -57,11 +57,15 @@ async function consultarMetricasNube() {
     if (elTxtEstado) elTxtEstado.innerText = "Consultando base de auditoría central...";
 
     // ====== SINCRONISMO FIEL CON EL RELOJ DE GOOGLE (UTC) ======
-    // Forzamos el inicio del día a las 00:00:00 UTC del servidor central (21:00 hs de ayer local)
     const ahora = new Date();
     const corteHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 21, 0, 0, 0);
-    let inicioDiaGoogleUTC;
 
+    // Determinamos la marca del ciclo actual idéntica a soporte.js
+    let marcaCicloActual =
+      ahora >= corteHoy ? corteHoy.toDateString() : new Date(corteHoy.getTime() - 24 * 60 * 60 * 1000).toDateString();
+
+    // Forzamos el inicio del día técnico en UTC de Google para la consulta de red
+    let inicioDiaGoogleUTC;
     if (ahora >= corteHoy) {
       const mañana = new Date(ahora.getTime() + 24 * 60 * 60 * 1000);
       inicioDiaGoogleUTC = new Date(Date.UTC(mañana.getFullYear(), mañana.getMonth(), mañana.getDate(), 0, 0, 0, 0));
@@ -73,44 +77,54 @@ async function consultarMetricasNube() {
     const q = query(collection(dbTelemetria, "telemetria_haspen"), where("fechaImpacto", ">=", inicioDiaGoogleUTC));
     const snapshot = await getDocs(q);
 
-    // Inicializamos los 4 contadores clave
     consultasManualesAdmin++;
-    let localLecturas = 0;
-    let localEscrituras = 0;
-    let firebaseLecturas = consultasManualesAdmin;
-    let firebaseEscrituras = 0;
+    let localLecturasNube = 0;
+    let localEscriturasNube = 0;
+    let firebaseLecturasNube = consultasManualesAdmin;
+    let firebaseEscriturasNube = 0;
 
-    // Procesamos quirúrgicamente los documentos globales del día que están en la nube
+    // Procesamos quirúrgicamente los documentos globales del día que están en la nube espejo
     snapshot.forEach((docSnap) => {
       const datos = docSnap.data();
       const cantidad = parseInt(datos.cantidad) || 1;
       const origen = datos.origen ? datos.origen.toLowerCase().trim() : "";
 
-      // Clasificación exacta basada en la telemetría institucional extendida
       if (origen === "local_lectura" || origen === "local") {
-        localLecturas += cantidad;
+        localLecturasNube += cantidad;
       } else if (origen === "local_escritura") {
-        localEscrituras += cantidad;
+        localEscriturasNube += cantidad;
       } else if (origen === "firebase_lectura" || origen === "firebase") {
-        firebaseLecturas += cantidad;
+        firebaseLecturasNube += cantidad;
       } else if (origen === "firebase_escritura") {
-        firebaseEscrituras += cantidad;
+        firebaseEscriturasNube += cantidad;
       }
     });
 
-    // Levanta de forma segura el acumulado en disco de la terminal actual
+    // ====== CONTROL DE REINICIO DE ADUANA LOCAL ======
+    // Si la terminal cambió de ciclo, forzamos el reset local inmediato en el monitor
+    const cacheKeyCiclo = `haspen_monitor_ciclo_fecha`;
+    if (localStorage.getItem(cacheKeyCiclo) !== marcaCicloActual) {
+      localStorage.setItem(cacheKeyCiclo, marcaCicloActual);
+      localStorage.setItem("haspen_monitor_local_lectura", "0");
+      localStorage.setItem("haspen_monitor_local_escritura", "0");
+      localStorage.setItem("haspen_monitor_firebase_lectura", "0");
+      localStorage.setItem("haspen_monitor_firebase_escritura", "0");
+    }
+
+    // Levantamos los acumulados en disco de la terminal actual
     const localLecturasCache = parseInt(localStorage.getItem("haspen_monitor_local_lectura")) || 0;
     const localEscriturasCache = parseInt(localStorage.getItem("haspen_monitor_local_escritura")) || 0;
     const firebaseLecturasCache = parseInt(localStorage.getItem("haspen_monitor_firebase_lectura")) || 0;
     const firebaseEscriturasCache = parseInt(localStorage.getItem("haspen_monitor_firebase_escritura")) || 0;
 
-    // Sincronización híbrida: compara la RAM global (nube) con el disco y deja el valor más alto
-    if (elLocalLecturas) elLocalLecturas.innerText = Math.max(localLecturas, localLecturasCache);
-    if (elLocalEscrituras) elLocalEscrituras.innerText = Math.max(localEscrituras, localEscriturasCache);
-    if (elFirebaseLecturas) elFirebaseLecturas.innerText = Math.max(firebaseLecturas, firebaseLecturasCache);
-    if (elFirebaseEscrituras) elFirebaseEscrituras.innerText = Math.max(firebaseEscrituras, firebaseEscriturasCache);
+    // ====== BALANCEADOR HÍBRIDO ADUANA LOCAL (EVITA CONGELAMIENTO HISTÓRICO) ======
+    // Prioridad absoluta al contador vivo local de la sesión activa del día
+    if (elLocalLecturas) elLocalLecturas.innerText = Math.max(localLecturasNube, localLecturasCache);
+    if (elLocalEscrituras) elLocalEscrituras.innerText = Math.max(localEscriturasNube, localEscriturasCache);
+    if (elFirebaseLecturas) elFirebaseLecturas.innerText = Math.max(firebaseLecturasNube, firebaseLecturasCache);
+    if (elFirebaseEscrituras)
+      elFirebaseEscrituras.innerText = Math.max(firebaseEscriturasNube, firebaseEscriturasCache);
 
-    // Formateamos la hora del último congelamiento para control del Admin
     const h = ahora.getHours().toString().padStart(2, "0");
     const m = ahora.getMinutes().toString().padStart(2, "0");
     if (elTxtEstado) elTxtEstado.innerText = `Estado: Sincronizado. Última consulta: ${h}:${m} hs.`;

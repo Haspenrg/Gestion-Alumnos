@@ -21,7 +21,7 @@ async function obtenerSesionLocal() {
       window.actualizarContadoresMonitor("local_lectura", 1);
     }
 
-    const usuario = JSON.parse(datosSesion);
+    const usuario = JSON.parse(decodeURIComponent(atob(datosSesion)));
     const cdn = "https://www.gstatic.com/firebasejs/10.12.0/";
     const { getAuth, onAuthStateChanged } = await import(`${cdn}firebase-auth.js`);
     const { firebaseApp } = await import("./firebase-config.js");
@@ -78,12 +78,26 @@ async function verificarYConfigurarPanel() {
         const { firebaseApp } = await import("./firebase-config.js");
         const dbAdminBadge = getFirestore(firebaseApp);
 
-        onSnapshot(collection(dbAdminBadge, "soporte_incidencias"), (snapshot) => {
-          if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
-            window.actualizarContadoresMonitor("firebase_lectura", snapshot.size);
+        // PARCHE QUIRÚRGICO: Consulta filtrada para no bajar históricos
+        const { query, where } = await import(`${cdnF}firebase-firestore.js`);
+        const qAbiertos = query(collection(dbAdminBadge, "soporte_incidencias"), where("estado", "==", "Abierto"));
+        let cargaInicial = false;
+
+        onSnapshot(qAbiertos, (snapshot) => {
+          // PARCHE TERMÓMETRO: Cuenta la realidad cobrada por Firebase
+          if (typeof window.actualizarContadoresMonitor === "function") {
+            if (!cargaInicial) {
+              window.actualizarContadoresMonitor("firebase_lectura", Math.max(1, snapshot.size));
+              cargaInicial = true;
+            } else {
+              snapshot.docChanges().forEach((c) => {
+                if (c.type === "added") window.actualizarContadoresMonitor("firebase_lectura", 1);
+              });
+            }
           }
 
           const badgeVisual = document.getElementById("badgeSoporteAdmin");
+
           if (badgeVisual) {
             let ticketsAbiertos = 0;
             snapshot.forEach((docSnap) => {
@@ -178,14 +192,37 @@ async function verificarYConfigurarPanel() {
       }
 
       if (consultaTickets) {
+        let cargaInicialUser = false;
+
         onSnapshot(
           consultaTickets,
           (snapshot) => {
-            if (typeof window.actualizarContadoresMonitor === "function" && !snapshot.empty) {
-              window.actualizarContadoresMonitor("firebase_lectura", snapshot.size);
-            } else if (!snapshot.empty) {
+            // PARCHE TERMÓMETRO: Registra +1 base obligatoria aun si la query viene vacía
+            if (typeof window.actualizarContadoresMonitor === "function") {
+              if (!cargaInicialUser) {
+                window.actualizarContadoresMonitor("firebase_lectura", Math.max(1, snapshot.size));
+                cargaInicialUser = true;
+              } else {
+                snapshot.docChanges().forEach((c) => {
+                  if (c.type === "added") window.actualizarContadoresMonitor("firebase_lectura", 1);
+                });
+              }
+            } else {
               const fbLecturasActuales = parseInt(localStorage.getItem("haspen_monitor_firebase_lectura")) || 0;
-              localStorage.setItem("haspen_monitor_firebase_lectura", String(fbLecturasActuales + snapshot.size));
+              if (!cargaInicialUser) {
+                localStorage.setItem(
+                  "haspen_monitor_firebase_lectura",
+                  String(fbLecturasActuales + Math.max(1, snapshot.size))
+                );
+                cargaInicialUser = true;
+              } else {
+                let nuevosTickets = 0;
+                snapshot.docChanges().forEach((c) => {
+                  if (c.type === "added") nuevosTickets++;
+                });
+                if (nuevosTickets > 0)
+                  localStorage.setItem("haspen_monitor_firebase_lectura", String(fbLecturasActuales + nuevosTickets));
+              }
             }
 
             const cantidadTickets = snapshot.size;

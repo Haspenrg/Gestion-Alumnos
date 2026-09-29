@@ -116,6 +116,10 @@ async function procesarAutenticacion(e) {
       docSnapshot = await getDoc(docRef);
       exitoConexion = true;
 
+      // PARCHE LECTURA REAL: Registra el impacto técnico en el disco duro de la terminal
+      const fbLecturasActuales = parseInt(localStorage.getItem("haspen_monitor_firebase_lectura")) || 0;
+      localStorage.setItem("haspen_monitor_firebase_lectura", String(fbLecturasActuales + 1));
+
       if (docSnapshot.exists()) {
         if (typeof window.actualizarContadoresMonitor === "function") {
           window.actualizarContadoresMonitor("firebase_lectura", 1);
@@ -125,8 +129,7 @@ async function procesarAutenticacion(e) {
 
           try {
             const { dbTelemetria } = await import("./firebase-config.js");
-            const { collection, addDoc, serverTimestamp } = await import("https://gstatic.com");
-
+            const { collection, addDoc, serverTimestamp } = await import(b + "firebase-firestore.js");
             const datosUsuarioLogueado = docSnapshot.data();
 
             await addDoc(collection(dbTelemetria, "telemetria_haspen"), {
@@ -246,7 +249,7 @@ async function procesarAutenticacion(e) {
       permisosDelRol: matrizPermisosRol
     };
 
-    sessionStorage.setItem("usuarioActivo", JSON.stringify(perfilUsuario));
+    sessionStorage.setItem("usuarioActivo", btoa(encodeURIComponent(JSON.stringify(perfilUsuario))));
 
     mostrarAlertaUI(txtMensaje, "Acceso concedido. Redireccionando...", "#0d9488");
     setTimeout(() => {
