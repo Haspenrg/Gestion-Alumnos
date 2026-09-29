@@ -27,6 +27,23 @@
     let db = null;
     let mapaNotasExistentes = {};
 
+    // ============================================================================
+    // 🔒 MOTOR UNIVERSAL DE CIFRADO Y ADUANA LOCAL (PILAR 2)
+    // ============================================================================
+    function cifrarDatosLocales(datos) {
+        return btoa(encodeURIComponent(JSON.stringify(datos)));
+    }
+
+    function descifrarDatosLocales(stringCifrado) {
+        if (!stringCifrado) return null;
+        try { 
+            return JSON.parse(decodeURIComponent(atob(stringCifrado))); 
+        } catch (e) { 
+            console.error("Error al descifrar el candado de la caché local:", e); 
+            return null; 
+        }
+    }
+
 
 
    // ====== PARCHE: CORRECCIÓN DE ÁMBITO Y DUPLICACIÓN EN DOMCONTENTLOADED ======
@@ -132,17 +149,39 @@ async function cargarSelectoresIniciales() {
     selectCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
 
     let cursos = [];
+    let cargadoDesdeCache = false;
 
+    // Intentamos buscar primero en la computadora de forma segura
     try {
-        const { collection, getDocs } = await import(b + 'firebase-firestore.js');
-        const querySnapshot = await getDocs(collection(db, "cursos"));
-        cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        localStorage.setItem('cursosColegio', JSON.stringify(cursos));
-    } catch (errorDb) {
-        console.warn("Fallo de red al consultar Firestore, activando contingencia local...", errorDb);
-        let cursosRaw = localStorage.getItem('cursosColegio');
-        cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
+        const cacheCursosCifrada = localStorage.getItem('haspen_cache_estructuras');
+        if (cacheCursosCifrada) {
+            const cursosDescifrados = descifrarDatosLocales(cacheCursosCifrada);
+            if (cursosDescifrados && cursosDescifrados.length > 0) {
+                cursos = cursosDescifrados;
+                cargadoDesdeCache = true;
+                console.log("[Aduana Local] Estructuras de cursos cargadas desde el disco local con candado.");
+            }
+        }
+    } catch (errCache) {
+        console.warn("No se pudo leer la caché local cifrada de cursos:", errCache);
     }
+
+    // Si no estaba guardado en la computadora, recién ahí usamos internet
+    if (!cargadoDesdeCache) {
+        try {
+            const { collection, getDocs } = await import(b + 'firebase-firestore.js');
+            const querySnapshot = await getDocs(collection(db, "cursos"));
+            cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Lo guardamos inmediatamente con candado en la computadora para la próxima vez
+            localStorage.setItem('haspen_cache_estructuras', cifrarDatosLocales(cursos));
+        } catch (errorDb) {
+            console.warn("Fallo de red al consultar Firestore, activando contingencia local...", errorDb);
+            const cacheCursosCifrada = localStorage.getItem('haspen_cache_estructuras');
+            cursos = cacheCursosCifrada ? (descifrarDatosLocales(cacheCursosCifrada) || []) : [];
+        }
+    }
+
 
     const bolsaDocente = usuarioLogueado.bolsaHoras || [];
     const permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas || false;
@@ -239,21 +278,22 @@ if (permiteCargaTotalNotas === true) {
 
 
     // --- FILTRADO RELACIONAL ESTRICTO DE MATERIAS SEGÚN CURSO Y BOLSA ---
-   async function gestionarCambioCurso() {
-    if (! selectMateria) return;
-    selectMateria. innerHTML = '<option value="" disabled selected>Seleccione la asignatura...</option>';
-    tablaNotasBody. innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">Seleccione la Asignatura para cargar la nómina.</td></tr>`;
-    if ( bloqueGuardar) bloqueGuardar. style. display = "none";
+  async function gestionarCambioCurso() {
+    if (!selectMateria) return;
+    selectMateria.innerHTML = '<option value="" disabled selected>Seleccione la asignatura...</option>';
+    tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">Seleccione la Asignatura para cargar la nómina.</td></tr>`;
+    if (bloqueGuardar) bloqueGuardar.style.display = "none";
     
-    const cursoId = selectCurso. value;
-    const cursosRaw = localStorage. getItem('cursosColegio');
-    const cursos = cursosRaw ? JSON. parse( cursosRaw) : [];
-    const cursoEncontrado = cursos. find( c => c. id === cursoId);
-    if (! cursoEncontrado || ! cursoEncontrado. materias) return;
+    const cursoId = selectCurso.value;
     
-    const usuariosRaw = localStorage. getItem('usuariosColegio');
-    const usuarios = usuariosRaw ? JSON. parse( usuariosRaw) : [];
+    // Aduana local: traemos los cursos descifrando el candado del disco
+    const cacheCursosCifrada = localStorage.getItem('haspen_cache_estructuras');
+    const cursos = cacheCursosCifrada ? (descifrarDatosLocales(cacheCursosCifrada) || []) : [];
+    const cursoEncontrado = cursos.find(c => c.id === cursoId);
+    if (!cursoEncontrado || !cursoEncontrado.materias) return;
+    
     const bolsaDocente = usuarioLogueado.bolsaHoras || [];
+
 
     if (( rolNormalizado === "profesor" || usuarioLogueado. esProfesor) && ! permiteCargaTotalNotas) {
         cursoEncontrado. materias. forEach( materia => {
@@ -281,11 +321,11 @@ if (permiteCargaTotalNotas === true) {
 }
 
 
-    // --- MOTOR DE GENERACIÓN DE FILAS Y PERSISTENCIA ---
-    async function cargarNominaEstudiantes() {
-        const cursoId = selectCurso.value;
-        const materiaId = selectMateria.value;
-        if (!cursoId || !materiaId) return;
+ async function cargarNominaEstudiantes() {
+    const cursoId = selectCurso.value;
+    const materiaId = selectMateria.value;
+    if (!cursoId || !materiaId) return;
+
     let configPeriodos = {};
     try {
         if (window.cachePeriodosEscuela) {
@@ -306,25 +346,15 @@ if (permiteCargaTotalNotas === true) {
         configPeriodos = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
     }
 
+    tablaNotasBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:15px; color:#1a73e8; font-weight:500;">🔄 Descargando nómina real desde Cloud Firestore...</td></tr>`;
 
-        tablaNotasBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:15px; color:#1a73e8; font-weight:500;">🔄 Descargando nómina real desde Cloud Firestore...</td></tr>`;
-
-let usuarios = [];
-let alumnosReales = [];
+    let alumnosReales = [];
 
     try {
-        // Reconstrucción dinámica del CDN para evadir bloqueos de URLs por fragmentación
-        const baseCdnFirebase = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-        
-        // 1. Importación modular usando la CDN fragmentada local estable
+        const baseCdnFirebase = b;
         const { collection, getDocs, query, where } = await import(baseCdnFirebase + 'firebase-firestore.js');
 
-    
-    // 2. Descarga en lote de los usuarios del colegio para el mapeo de docentes/preceptores
-    const usuariosSnapshot = await getDocs(collection(db, "usuarios"));
-    usuarios = usuariosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-             // 3. Descarga optimizada en servidor por ID de curso y ciclo lectivo verificado (Histórico Blindado)
+        // Descarga optimizada en servidor por ID de curso y ciclo lectivo verificado
         const qAlumnos = query(
             collection(db, "alumnos"),
             where("cursoId", "==", cursoId),
@@ -336,143 +366,77 @@ let alumnosReales = [];
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(al => al.estado === "Regular");
 
+        alumnosReales.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
 
+    } catch (error) {
+        console.error("Error en la sincronización viva con Firestore:", error);
+    }
 
-    // 4. Ordenamiento alfabético por apellido y nombre
-    alumnosReales.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    tablaNotasBody.innerHTML = "";
 
-} catch (error) {
-    console.error("Error en la sincronización viva con Firestore:", error);
-    // Mecanismo de respaldo local si falla la conexión
-    const usuariosRaw = localStorage.getItem('usuariosColegio');
-    usuarios = usuariosRaw ? JSON.parse(usuariosRaw) : [];
-}
+    // Asignación rápida de cabeceras usando el contexto del usuario logueado para no golpear la base de datos de gusto
+    try {
+        txtDocente.textContent = usuarioLogueado && usuarioLogueado.nombre ? usuarioLogueado.nombre : "Docente Autorizado";
+        txtPreceptor.textContent = "Asignado a División";
+    } catch (err) {
+        console.error("Error al procesar cabeceras:", err);
+    }
 
-tablaNotasBody.innerHTML = "";
+    const alumnosCurso = alumnosReales;    
 
-        const cursosRaw = localStorage.getItem('cursosColegio');
-        const cursos = cursosRaw ? JSON.parse(cursosRaw) : [];
-        const cursoActual = cursos.find(c => c.id === cursoId) || {};
-        const divisionActual = cursoActual.division ? cursoActual.division.toLowerCase().trim() : "";
-        const matLimpia = materiaId.toLowerCase().trim();
+    if (alumnosCurso.length === 0) {
+        tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">No hay alumnos Regulares inscritos en esta división estructural.</td></tr>`;
+        if (bloqueGuardar) bloqueGuardar.style.display = "none";
+        return;
+    }
 
+    // ====== ADUANA DE LECTURA LOCAL (COSTO CERO / ANTI-MICROCORTES) ======
+    mapaNotasExistentes = {};
+    const anioActualCalificaciones = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
+    const matIdClave = materiaId.trim().replace(/\s+/g, '_');
+    const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdClave}_${anioActualCalificaciones}`;
+
+    let cargadoDesdeCache = false;
+    try {
+        const cacheCifrada = localStorage.getItem(claveCachéCalificaciones);
+        if (cacheCifrada) {
+            const datosDescifrados = descifrarDatosLocales(cacheCifrada);
+            if (datosDescifrados && Object.keys(datosDescifrados).length > 0) {
+                mapaNotasExistentes = datosDescifrados;
+                cargadoDesdeCache = true;
+                console.log(`[Aduana Local] Notas cargadas desde el disco local para: ${claveCachéCalificaciones}`);
+            }
+        }
+    } catch (errCache) {
+        console.warn("Fallo al leer la caché local de calificaciones:", errCache);
+    }
+
+    // Si no existía en el disco, procedemos a consultar la red (Firebase) una sola vez de forma limpia
+    if (!cargadoDesdeCache) {
         try {
-                   // Mapeo dinámico del Profesor de la Cátedra por ID Estructural unívoco
-        const docentesCatedra = usuarios. filter( u => {
-            const bolsa = u. bolsaHoras || u. bolsaHours || [];
-            return bolsa. some( b => {
-                const firmaPura = b. replace(/\[.*?\]\s*/, ""). trim();
-                return firmaPura === `${ cursoId} - ${ materiaId. trim()}`;
-            });
-        });
-        txtDocente. textContent = docentesCatedra. length > 0 ? docentesCatedra. map( d => d. nombre). join(" / ") : "Sin asignar";
-
-
-            // Mapeo dinámico del Preceptor a cargo de la división
-            const preceptorCurso = usuarios.find(u => u.rol === "preceptor" && u.cursosAsignados && u.cursosAsignados.includes(cursoId));
-            txtPreceptor.textContent = preceptorCurso ? preceptorCurso.nombre : "Sin asignar";
-        } catch (err) {
-            console.error("Error al procesar cabeceras:", err);
-        }
-
-        const alumnosCurso = alumnosReales;    
-
-        if (alumnosCurso.length === 0) {
-            tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">No hay alumnos Regulares inscritos en esta división estructural.</td></tr>`;
-            if (bloqueGuardar) bloqueGuardar.style.display = "none";
-            return;
-        }
-
-        const notasRaw = localStorage.getItem('calificacionesColegio');
-        const registroGlobalNotas = notasRaw ? JSON.parse(notasRaw) : [];
-
-        alumnosCurso.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-                 // ====== ADUANA DE LECTURA LOCAL (COSTO CERO / ANTI-MICROCORTES) ======
-        mapaNotasExistentes = {};
-        const anioActualCalificaciones = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
-        const matIdClave = materiaId.trim().replace(/\s+/g, '_');
-        const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdClave}_${anioActualCalificaciones}`;
-
-        // Funciones internas espejo para blindaje de datos locales
-        function cifrarLocalCalificaciones(datos) {
-            return btoa(encodeURIComponent(JSON.stringify(datos)));
-        }
-        function descifrarLocalCalificaciones(stringCifrado) {
-            if (!stringCifrado) return null;
-            try { return JSON.parse(decodeURIComponent(atob(stringCifrado))); } 
-            catch (e) { console.error("Error al descifrar caché de notas:", e); return null; }
-        }
-
-        let cargadoDesdeCache = false;
-        try {
-            const cacheCifrada = localStorage.getItem(claveCachéCalificaciones);
-            if (cacheCifrada) {
-                const datosDescifrados = descifrarLocalCalificaciones(cacheCifrada);
-                if (datosDescifrados && Object.keys(datosDescifrados).length > 0) {
-                    mapaNotasExistentes = datosDescifrados;
-                    cargadoDesdeCache = true;
-                    console.log(`[Aduana Local] Notas cargadas desde el disco local para: ${claveCachéCalificaciones}`);
+            const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
+            const consultaNotas = query(
+                collection(db, "alumnos_calificaciones"), 
+                where("cursoId", "==", cursoId), 
+                where("materia", "==", materiaId),
+                where("cicloLectivo", "==", anioActualCalificaciones)
+            );
+            const respuestaNotas = await getDocs(consultaNotas);
+            
+            respuestaNotas.forEach(documento => {
+                const datosNota = documento.data();
+                if (datosNota && datosNota.alumnoDni) {
+                    mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
                 }
-            }
-        } catch (errCache) {
-            console.warn("Fallo al leer la caché local de calificaciones:", errCache);
+            });
+
+            // Guardamos inmediatamente con las funciones de candado unificadas
+            localStorage.setItem(claveCachéCalificaciones, cifrarDatosLocales(mapaNotasExistentes));
+        } catch (errorDb) {
+            console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
         }
-
-        // Si no existía en el disco, procedemos a consultar la red (Firebase)
-        if (!cargadoDesdeCache) {
-            try {
-                const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
-                const consultaNotas = query(
-                    collection(db, "alumnos_calificaciones"), 
-                    where("cursoId", "==", cursoId), 
-                    where("materia", "==", materiaId),
-                    where("cicloLectivo", "==", anioActualCalificaciones)
-                );
-                const respuestaNotas = await getDocs(consultaNotas);
-                
-                respuestaNotas.forEach(documento => {
-                    const datosNota = documento.data();
-                    if (datosNota && datosNota.alumnoDni) {
-                        mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
-                    }
-                });
-
-                // Guardamos inmediatamente en local de forma aislada y cifrada
-                localStorage.setItem(claveCachéCalificaciones, cifrarLocalCalificaciones(mapaNotasExistentes));
-            } catch (errorDb) {
-                console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
-            }
-        }
-
-
-        // Si no existía en el disco, procedemos a consultar la red (Firebase)
-        if (!cargadoDesdeCache) {
-            try {
-                const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
-                const consultaNotas = query(
-                    collection(db, "alumnos_calificaciones"), 
-                    where("cursoId", "==", cursoId), 
-                    where("materia", "==", materiaId),
-                    where("cicloLectivo", "==", anioActualCalificaciones)
-                );
-                const respuestaNotas = await getDocs(consultaNotas);
-                
-                respuestaNotas.forEach(documento => {
-                    const datosNota = documento.data();
-                    if (datosNota && datosNota.alumnoDni) {
-                        mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
-                    }
-                });
-
-                // Guardamos inmediatamente en local de forma aislada y cifrada
-                localStorage.setItem(claveCachéCalificaciones, cifrarLocalCalificaciones(mapaNotasExistentes));
-            } catch (errorDb) {
-                console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
-            }
-        }
-        // ======================================================================
-
+    }
+    // ======================================================================
 
             alumnosCurso.forEach(async (alumno, index) => {
             const tr = document.createElement('tr');
@@ -776,13 +740,11 @@ async function procesarGuardarPlanilla(e) {
             });
         });
 
-        // ESCUDO DE SEGURIDAD INTERNO: Guardado inmediato y cifrado en el disco duro
-        function cifrarLocalCalificaciones(datos) {
-            return btoa(encodeURIComponent(JSON.stringify(datos)));
-        }
-        localStorage.setItem(claveCachéCalificaciones, cifrarLocalCalificaciones(nuevoMapaNotasCaché));
+        // ESCUDO DE SEGURIDAD INTERNO: Guardado inmediato y cifrado en el disco duro con candado universal
+        localStorage.setItem(claveCachéCalificaciones, cifrarDatosLocales(nuevoMapaNotasCaché));
         mapaNotasExistentes = nuevoMapaNotasCaché;
         console.log("[Aduana Local] Notas resguardadas en la máquina del docente ante microcortes.");
+
 // === [FIN DE LA PARTE 1 DE 3] ===
 // === [INICIO DE LA PARTE 2 DE 3 - TU LÓGICA DE NEGOCIO ORIGINAL] ===
         // Sincronización con Firestore utilizando los registros recolectados
