@@ -279,7 +279,14 @@
 
     // 2. Extraer y normalizar los permisos de territorio del usuario activo
     const datosSesionActual = sessionStorage.getItem("usuarioActivo");
-    const usuarioActivoObj = datosSesionActual ? JSON.parse(datosSesionActual) : {};
+    let usuarioActivoObj = {};
+    if (datosSesionActual) {
+      try {
+        usuarioActivoObj = JSON.parse(decodeURIComponent(atob(datosSesionActual)));
+      } catch (e) {
+        console.error("Error al descifrar la sesión en renderTable:", e);
+      }
+    }
     const esEscrituraGlobal =
       rolNormalizado === "administrador" || rolNormalizado === "admin" || window.permisoLegajo === "escritura";
 
@@ -1693,7 +1700,14 @@
     }
 
     // 3. Procesar datos del usuario activo legítimo (Soporte universal multitarea)
-    usuarioLogueado = JSON.parse(datosSesionRaw);
+    try {
+      usuarioLogueado = JSON.parse(decodeURIComponent(atob(datosSesionRaw)));
+    } catch (e) {
+      console.error("Error crítico al descifrar usuarioLogueado en inicializarSistemaCompleto:", e);
+      window.location.href = "index.html";
+      return;
+    }
+
     try {
       const dniLimpio = String(usuarioLogueado.dni || "11111111").trim();
       rolNormalizado = usuarioLogueado.rol ? String(usuarioLogueado.rol).toLowerCase().trim() : "sin-rol";
