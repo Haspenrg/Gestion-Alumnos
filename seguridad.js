@@ -4,8 +4,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const datosSesionRaw = sessionStorage.getItem("usuarioActivo");
   let tiempoInactividad = 30 * 60 * 1000; // 30 minutos por defecto (Lectura / Preceptores)
 
-  if (datosSesionRaw) {
-    const usuario = JSON.parse(datosSesionRaw);
+    if (datosSesionRaw) {
+    let usuario;
+    try {
+      usuario = JSON.parse(decodeURIComponent(atob(datosSesionRaw)));
+    } catch (e) {
+      try {
+        usuario = JSON.parse(datosSesionRaw);
+      } catch (errDirecto) {
+        console.error(errDirecto);
+        window.location.href = "index.html";
+        return;
+      }
+    }
+
     // Buscamos si es administrador o si tiene permisos de escritura explícitos
     const esEscritura =
       usuario.role === "admin" || usuario.role === "administrador" || usuario.permisoLegajoReal === "escritura";
