@@ -43,7 +43,7 @@ const mAuth = await import(b + "firebase-auth.js");
 // 1. CONFIGURACIÓN PRINCIPAL DE LA ESCUELA (BASE A)
 const firebaseConfig = {
   apiKey: "AIzaSyBP3iHdEsCnQSABsxEDDR4RNZ1M06MJyvo",
-  authDomain: "://firebaseapp.com",
+  authDomain: "gestion-alumnos-eeb24.firebaseapp.com",
   projectId: "gestion-alumnos-eeb24",
   storageBucket: "gestion-alumnos-eeb24.firebasestorage.app",
   messagingSenderId: "824391106851",

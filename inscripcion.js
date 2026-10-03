@@ -2,41 +2,7 @@
   "use strict";
 
   // Sistema de importación fragmentada directa
-  const b =
-    "h" +
-    "t" +
-    "t" +
-    "p" +
-    "s" +
-    ":" +
-    "/" +
-    "/" +
-    "w" +
-    "w" +
-    "w" +
-    "." +
-    "g" +
-    "s" +
-    "t" +
-    "a" +
-    "t" +
-    "i" +
-    "c" +
-    "." +
-    "c" +
-    "o" +
-    "m" +
-    "/f" +
-    "i" +
-    "r" +
-    "e" +
-    "b" +
-    "a" +
-    "s" +
-    "e" +
-    "j" +
-    "s" +
-    "/10.12.0/";
+    const b = "https://www.gstatic.com/firebasejs/10.12.0/";
 
   const { initializeApp } = await import(b + "firebase-app.js");
   const {
@@ -57,7 +23,7 @@
   const pId = "gestion-alumnos-eeb24";
   const firebaseConfig = {
     apiKey: "AIzaSyBP3iHdEsCnQSABsxEDDR4RNZ1M06MJyvo",
-    authDomain: pId + "." + "f" + "i" + "r" + "e" + "b" + "a" + "s" + "e" + "a" + "p" + "p" + "." + "c" + "o" + "m", // 🛠️ Corregido con concatenación fragmentada
+    authDomain: pId + ".firebaseapp.com",
     projectId: pId,
     storageBucket: pId + ".firebasestorage.app",
     messagingSenderId: "824391106851",
@@ -843,11 +809,12 @@
       input.addEventListener("change", procesarDocumentoDigital);
     });
 
-    // Interceptor dinámico para acciones de la grilla de alumnos
+       // Interceptor dinámico para acciones de la grilla de alumnos
     if (domElements.tablaAlumnos) {
       domElements.tablaAlumnos.addEventListener("click", async (e) => {
         const botonFicha = e.target.closest(".btn-fila-ficha");
         if (botonFicha) {
+          e.stopPropagation();
           const nombre = botonFicha.getAttribute("data-nombre");
           const dni = botonFicha.getAttribute("data-dni");
           const direccion = botonFicha.getAttribute("data-direccion");
@@ -856,42 +823,51 @@
           const tutor = botonFicha.getAttribute("data-tutor");
           const tutorDni = botonFicha.getAttribute("data-tutordni");
 
-          const contenedorModal = domElements.modalImpresion || document.getElementById("modalImpresionContenedor");
-          const cuerpoModal = document.getElementById("modalImpresionCuerpo");
+          const contenedorModal = document.getElementById("modalContactoContenedor");
+          const cuerpoModal = document.getElementById("modalContactoCuerpo");
+          const btnCerrar = document.getElementById("btnCerrarContacto");
 
           if (contenedorModal && cuerpoModal) {
             cuerpoModal.innerHTML = `
-              <div style="padding: 20px; background: white; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; text-align: left; max-width: 550px; margin: 30px auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                  <h2 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-top: 0; font-size: 18px;">Ficha de Contacto Institucional</h2>
-                  <p style="font-size: 15px; margin: 12px 0;"><strong>Estudiante:</strong> ${nombre}</p>
-                  <p style="font-size: 13px; margin: 8px 0; color: #475569;"><strong>DNI Alumno:</strong> ${dni}</p>
-                  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-                  <div style="display: flex; flex-direction: column; gap: 10px; color: #334155; font-size: 14px;">
-                      <div><strong>📍 Dirección de Residencia:</strong> ${direccion}</div>
-                      <div><strong>📞 Teléfono de Contacto 1:</strong> <span style="color: #2563eb; font-weight: bold;">${tel1}</span></div>
-                      <div><strong>📱 Teléfono Alternativo 2:</strong> ${tel2}</div>
-                      <div style="background: #f8fafc; padding: 12px; border-left: 4px solid #10b981; margin-top: 5px; border-radius: 0 4px 4px 0;">
-                          <strong style="color: #065f46;">👤 Adulto Responsable / Tutor:</strong> ${tutor}<br>
-                          <span style="font-size: 12px; color: #64748b;">DNI Tutor: ${tutorDni}</span>
-                      </div>
+              <h2 style="color:#1e3a8a; border-bottom:2px solid #3b82f6; padding-bottom:8px; margin-top:0; font-size:18px;">Ficha de Contacto Institucional</h2>
+              <p style="font-size:15px; margin:12px 0;"><strong>Estudiante:</strong> ${nombre}</p>
+              <p style="font-size:13px; margin:8px 0; color:#475569;"><strong>DNI Alumno:</strong> ${dni}</p>
+              <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
+              <div style="display:flex; flex-direction:column; gap:10px; color:#334155; font-size:14px;">
+                  <div><strong>📍 Dirección de Residencia:</strong> ${direccion}</div>
+                  <div><strong>📞 Teléfono de Contacto 1:</strong> <span style="color:#2563eb; font-weight:bold;">${tel1}</span></div>
+                  <div><strong>📱 Teléfono Alternativo 2:</strong> ${tel2}</div>
+                  <div style="background:#f8fafc; padding:12px; border-left:4px solid #10b981; margin-top:5px; border-radius:0 4px 4px 0;">
+                      <strong style="color:#065f46;">👤 Adulto Responsable / Tutor:</strong> ${tutor}<br>
+                      <span style="font-size:12px; color:#64748b;">DNI Tutor: ${tutorDni}</span>
                   </div>
               </div>
             `;
-            contenedorModal.style.display = "block";
+            contenedorModal.style.display = "flex";
+
+            if (btnCerrar) {
+              btnCerrar.onclick = () => {
+                contenedorModal.style.display = "none";
+                cuerpoModal.innerHTML = "";
+              };
+            }
           }
           return;
         }
 
-        const botonEditar = e.target.closest(".btn-fila-editar");
+               const botonEditar = e.target.closest(".btn-fila-editar");
         if (botonEditar) {
+          e.stopPropagation();
           const dniAlumno = botonEditar.getAttribute("data-dni");
           const cursoOrigen = botonEditar.getAttribute("data-curso-origen") || "";
-          window.esEdicion = true;
           cursoIdOriginalLegajo = cursoOrigen;
-          console.log(`[Modo Edición] Activado para DNI: ${dniAlumno}. Curso origen: ${cursoOrigen}`);
+          await cargarLegajoEnFormulario(dniAlumno);
+          return;
         }
+
       });
     }
+
 
     // VÍA A: Disparador por botón Lupa
     if (domElements.btnLupaBusqueda) {
@@ -1104,6 +1080,63 @@
     }
     cambiarPasoFormulario(1);
   }
+    async function cargarLegajoEnFormulario(dniAlumno) {
+    try {
+      const docSnap = await getDoc(doc(db, "alumnos", dniAlumno));
+      if (!docSnap.exists()) return;
+      const alumno = docSnap.data();
+      window.esEdicion = true;
+      if (domElements.inputNombre) domElements.inputNombre.value = alumno.nombre || "";
+      if (domElements.inputDni) {
+        domElements.inputDni.value = alumno.dni || "";
+        domElements.inputDni.disabled = true;
+      }
+      if (domElements.inputCuil) domElements.inputCuil.value = alumno.cuil || "";
+      if (domElements.inputFechaNac) domElements.inputFechaNac.value = alumno.fechaNacimiento || "";
+      if (domElements.inputEdad) domElements.inputEdad.value = alumno.edad || "";
+      if (domElements.inputLugarNac) domElements.inputLugarNac.value = alumno.lugarNacimiento || "";
+      if (domElements.inputNacionalidad) domElements.inputNacionalidad.value = alumno.nacionalidad || "Argentina";
+      if (domElements.inputDireccion) domElements.inputDireccion.value = alumno.direccion || "";
+      if (domElements.inputTelefono1) domElements.inputTelefono1.value = alumno.telefono1 || "";
+      if (domElements.inputTelefono2) domElements.inputTelefono2.value = alumno.telefono2 || "";
+      if (domElements.selectGenero) domElements.selectGenero.value = alumno.genero || "Masculino";
+      if (domElements.inputNombreTutor) domElements.inputNombreTutor.value = alumno.nombreTutor || "";
+      if (domElements.inputDniTutor) domElements.inputDniTutor.value = alumno.dniTutor || "";
+      if (domElements.selectGeneroTutor) domElements.selectGeneroTutor.value = alumno.generoTutor || "Masculino";
+      if (domElements.inputCuilTutor) domElements.inputCuilTutor.value = alumno.cuilTutor || "";
+      if (domElements.inputEmailTutor) domElements.inputEmailTutor.value = alumno.emailTutor || "";
+      if (domElements.selectEstadoMatricula) domElements.selectEstadoMatricula.value = alumno.estado || "Regular";
+      if (domElements.selectTramiteIngreso) domElements.selectTramiteIngreso.value = alumno.tramiteIngreso || "Inscripción Estándar";
+      if (domElements.selectCursoAsignado) domElements.selectCursoAsignado.value = alumno.cursoId || "";
+      if (domElements.chkTrayectorias) domElements.chkTrayectorias.checked = !!alumno.trayectoriasFlexibles;
+      if (domElements.chkPPI) {
+        domElements.chkPPI.checked = !!alumno.tienePPI;
+        if (typeof alternarPanelPPI === "function") alternarPanelPPI();
+      }
+      if (domElements.inputPpiResolucion) domElements.inputPpiResolucion.value = alumno.ppiResolucion || "";
+      if (domElements.observacionesPPI) domElements.observacionesPPI.value = alumno.observacionesPPI || "";
+      if (domElements.chkCUD) {
+        domElements.chkCUD.checked = !!alumno.tieneCUD;
+        if (typeof alternarPanelCUD === "function") alternarPanelCUD();
+      }
+      if (domElements.txtObservaciones) domElements.txtObservaciones.value = alumno.observacionesGenerales || "";
+      base64DocumentosTemporales = alumno.documentosDigitales ? { ...alumno.documentosDigitales } : {
+        dni_alumno: null, partida_nac: null, cert_primaria: null, buena_salud: null,
+        carnet_vacunas: null, dni_tutor: null, acta_ppi: null, acta_cud: null
+      };
+      Object.keys(base64DocumentosTemporales).forEach((key) => {
+        const chk = document.getElementById(`chk-${key}`);
+        const viewBtn = document.getElementById(`view-${key}`);
+        if (chk) chk.checked = !!base64DocumentosTemporales[key];
+        if (viewBtn) viewBtn.disabled = !base64DocumentosTemporales[key];
+      });
+      if (domElements.modalFormulario) domElements.modalFormulario.style.display = "block";
+      if (typeof cambiarPasoFormulario === "function") cambiarPasoFormulario(1);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 
   function cerrarFormularioInscripcion() {
     mostrarConfirmacionHaspen(
@@ -1117,6 +1150,7 @@
         if (domElements.filaDocPPI) domElements.filaDocPPI.style.display = "none";
         if (domElements.panelCUD) domElements.panelCUD.style.display = "none";
         if (domElements.filaDocCUD) domElements.filaDocCUD.style.display = "none";
+        if (domElements.inputDni) domElements.inputDni.disabled = false;
 
         domElements.archivosOcultos.forEach((input) => {
           const key = input.getAttribute("data-key");
@@ -1699,13 +1733,17 @@
       return;
     }
 
-    // 3. Procesar datos del usuario activo legítimo (Soporte universal multitarea)
+       // 3. Procesar datos del usuario activo legítimo (Soporte universal multitarea)
     try {
       usuarioLogueado = JSON.parse(decodeURIComponent(atob(datosSesionRaw)));
     } catch (e) {
-      console.error("Error crítico al descifrar usuarioLogueado en inicializarSistemaCompleto:", e);
-      window.location.href = "index.html";
-      return;
+      try {
+        usuarioLogueado = JSON.parse(datosSesionRaw);
+      } catch (errDirecto) {
+        console.error("Error crítico al descifrar usuarioLogueado en inicializarSistemaCompleto:", errDirecto);
+        window.location.href = "index.html";
+        return;
+      }
     }
 
     try {
