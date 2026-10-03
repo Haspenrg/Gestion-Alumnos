@@ -1,150 +1,188 @@
-(function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    // Elementos de la interfaz widescreen
-    const selectCurso = document.getElementById('selectCursoNotas');
-    const selectMateria = document.getElementById('selectMateriaNotas');
-    const tablaNotasBody = document.getElementById('tablaNotasBody');
-    const formPlanilla = document.getElementById('formPlanillaNotas');
-    const bloqueGuardar = document.getElementById('bloqueGuardarNotas');
-    const bannerLectura = document.getElementById('bannerModoLecturaCalificaciones');
-    const txtDocente = document.getElementById('txtDocentePlanilla');
-    const txtPreceptor = document.getElementById('txtPreceptorPlanilla');
+  // Elementos de la interfaz widescreen
+  const selectCurso = document.getElementById("selectCursoNotas");
+  const selectMateria = document.getElementById("selectMateriaNotas");
+  const tablaNotasBody = document.getElementById("tablaNotasBody");
+  const formPlanilla = document.getElementById("formPlanillaNotas");
+  const bloqueGuardar = document.getElementById("bloqueGuardarNotas");
+  const bannerLectura = document.getElementById("bannerModoLecturaCalificaciones");
+  const txtDocente = document.getElementById("txtDocentePlanilla");
+  const txtPreceptor = document.getElementById("txtPreceptorPlanilla");
 
-    // Referencias para el control atómico del modal de periodos
-    const modalPeriodos = document.getElementById('modalGestionPeriodos');
-    const btnAbrirModalPeriodos = document.getElementById('btnAbrirModalPeriodos');
-    const btnCerrarModalPeriodos = document.getElementById('btnCerrarModalPeriodos');
-    const btnGuardarPeriodosConfig = document.getElementById('btnGuardarPeriodosConfig');
+  // Referencias para el control atómico del modal de periodos
+  const modalPeriodos = document.getElementById("modalGestionPeriodos");
+  const btnAbrirModalPeriodos = document.getElementById("btnAbrirModalPeriodos");
+  const btnCerrarModalPeriodos = document.getElementById("btnCerrarModalPeriodos");
+  const btnGuardarPeriodosConfig = document.getElementById("btnGuardarPeriodosConfig");
 
+  // Variables de contexto operativo
+  let usuarioLogueado = null;
+  let rolNormalizado = "";
+  let esModoLectura = false;
+  let permiteCargaTotalNotas = false;
+  const b =
+    "h" +
+    "t" +
+    "t" +
+    "p" +
+    "s" +
+    ":" +
+    "/" +
+    "/" +
+    "w" +
+    "w" +
+    "w" +
+    "." +
+    "g" +
+    "s" +
+    "t" +
+    "a" +
+    "t" +
+    "i" +
+    "c" +
+    "." +
+    "c" +
+    "o" +
+    "m" +
+    "/f" +
+    "i" +
+    "r" +
+    "e" +
+    "b" +
+    "a" +
+    "s" +
+    "e" +
+    "j" +
+    "s" +
+    "/10.12.0/";
+  let db = null;
+  let mapaNotasExistentes = {};
 
-    // Variables de contexto operativo
-    let usuarioLogueado = null;
-    let rolNormalizado = "";
-    let esModoLectura = false;
-    let permiteCargaTotalNotas = false;
-    const b = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-    let db = null;
-    let mapaNotasExistentes = {};
+  // ============================================================================
+  // 🔒 MOTOR UNIVERSAL DE CIFRADO Y ADUANA LOCAL (PILAR 2)
+  // ============================================================================
+  function cifrarDatosLocales(datos) {
+    return btoa(encodeURIComponent(JSON.stringify(datos)));
+  }
 
-    // ============================================================================
-    // 🔒 MOTOR UNIVERSAL DE CIFRADO Y ADUANA LOCAL (PILAR 2)
-    // ============================================================================
-    function cifrarDatosLocales(datos) {
-        return btoa(encodeURIComponent(JSON.stringify(datos)));
+  function descifrarDatosLocales(stringCifrado) {
+    if (!stringCifrado) return null;
+    try {
+      return JSON.parse(decodeURIComponent(atob(stringCifrado)));
+    } catch (e) {
+      console.error("Error al descifrar el candado de la caché local:", e);
+      return null;
     }
+  }
 
-    function descifrarDatosLocales(stringCifrado) {
-        if (!stringCifrado) return null;
-        try { 
-            return JSON.parse(decodeURIComponent(atob(stringCifrado))); 
-        } catch (e) { 
-            console.error("Error al descifrar el candado de la caché local:", e); 
-            return null; 
-        }
-    }
-
-
-
-   // ====== PARCHE: CORRECCIÓN DE ÁMBITO Y DUPLICACIÓN EN DOMCONTENTLOADED ======
-document.addEventListener("DOMContentLoaded", async () => {
+  // ====== PARCHE: CORRECCIÓN DE ÁMBITO Y DUPLICACIÓN EN DOMCONTENTLOADED ======
+  document.addEventListener("DOMContentLoaded", async () => {
     // SE ELIMINAN LAS REDECLARACIONES CON 'CONST' QUE HACÍAN SOMBRA A LAS VARIABLES GLOBALES
-    db = (await import('./firebase-config.js')).db;
-    
+    db = (await import("./firebase-config.js")).db;
+
     await verificarAutenticacion();
     await cargarSelectoresIniciales();
 
     // Escuchadores reactivos en cascada
-    if (selectCurso) selectCurso.addEventListener('change', gestionarCambioCurso);
-    if (selectMateria) selectMateria.addEventListener('change', cargarNominaEstudiantes);
-    if (formPlanilla) formPlanilla.addEventListener('submit', procesarGuardarPlanilla);
+    if (selectCurso) selectCurso.addEventListener("change", gestionarCambioCurso);
+    if (selectMateria) selectMateria.addEventListener("change", cargarNominaEstudiantes);
+    if (formPlanilla) formPlanilla.addEventListener("submit", procesarGuardarPlanilla);
 
     // Manejo de eventos del modal utilizando directamente las referencias globales ya declaradas
     if (btnAbrirModalPeriodos) {
-    btnAbrirModalPeriodos.addEventListener('click', async () => {
+      btnAbrirModalPeriodos.addEventListener("click", async () => {
         try {
-            // Importación y consulta express a Firestore para validar en caliente
-            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
-            const userSnap = await getDoc(doc(db, "usuarios", usuarioLogueado.dni));
-            
-            if (userSnap.exists()) {
-                const datosActuales = userSnap.data();
-                const rolLimpio = datosActuales.rol?.toLowerCase().trim();
-                
-                // Si el permiso fue revocado en la nube, cancelamos la acción inmediatamente
-                if (rolLimpio !== "administrador" && !datosActuales.permisoGestionPeriodos) {
-                    alert("Acceso denegado: Su permiso para gestionar períodos ha sido revocado.");
-                    btnAbrirModalPeriodos.style.display = "none";
-                    return;
-                }
+          // Importación y consulta express a Firestore para validar en caliente
+          const { doc, getDoc } = await import(b + "firebase-firestore.js");
+          const userSnap = await getDoc(doc(db, "usuarios", usuarioLogueado.dni));
+
+          if (userSnap.exists()) {
+            const datosActuales = userSnap.data();
+            const rolLimpio = datosActuales.rol?.toLowerCase().trim();
+
+            // Si el permiso fue revocado en la nube, cancelamos la acción inmediatamente
+            if (rolLimpio !== "administrador" && !datosActuales.permisoGestionPeriodos) {
+              alert("Acceso denegado: Su permiso para gestionar períodos ha sido revocado.");
+              btnAbrirModalPeriodos.style.display = "none";
+              return;
             }
+          }
         } catch (error) {
-            console.error("Error al validar permisos en tiempo real:", error);
+          console.error("Error al validar permisos en tiempo real:", error);
         }
 
         // Si la validación pasa, ejecuta la apertura del modal original
         if (typeof modalPeriodos !== "undefined" && modalPeriodos) {
-            modalPeriodos.style.display = "block";
+          modalPeriodos.style.display = "block";
         }
-    });
-}
-
-    if (btnCerrarModalPeriodos) btnCerrarModalPeriodos.addEventListener('click', () => { if (modalPeriodos) modalPeriodos.style.display = 'none'; });
-    if (btnGuardarPeriodosConfig) btnGuardarPeriodosConfig.addEventListener('click', procesarGuardarConfiguracionPeriodos);
-});
-// ============================================================================
-
-    // --- CONTROL DE ACCESO INSTITUCIONAL RBAC ---
-    async function verificarAutenticacion() {
-        // AGREGAR EN calificaciones.js (Al inicio de verificarAutenticacion)
-        localStorage.removeItem('usuariosColegio'); 
-        localStorage.removeItem('cursosColegio');
-
-        const datosSesion = localStorage.getItem('usuarioActivo');
-        if (!datosSesion) {
-            window.location.href = "index.html";
-            return;
-        }
-        usuarioLogueado = JSON.parse(datosSesion);
-rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
-permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
-       // --- BLINDAJE VISUAL: CONTROL DE PERÍODOS SEGÚN PRIVILEGIOS ---
-    const btnControlPeriodos = document.getElementById('btnAbrirModalPeriodos');
-    if (btnControlPeriodos) {
-        if (rolNormalizado === "administrador" || usuarioLogueado.permisoGestionPeriodos) {
-            btnControlPeriodos.style.display = "inline-flex"; // O "block" según diseño, para mostrarlo
-        } else {
-            btnControlPeriodos.style.display = "none"; // Asegura que quede oculto
-        }
+      });
     }
 
+    if (btnCerrarModalPeriodos)
+      btnCerrarModalPeriodos.addEventListener("click", () => {
+        if (modalPeriodos) modalPeriodos.style.display = "none";
+      });
+    if (btnGuardarPeriodosConfig)
+      btnGuardarPeriodosConfig.addEventListener("click", procesarGuardarConfiguracionPeriodos);
+  });
+  // ============================================================================
 
-// 1. Extraemos las capacidades y definimos el Modo Monitor si el permiso NO es "escritura"
-const capacidadesRol = usuarioLogueado.permisosDelRol || {};
-const nivelPermisoNotas = capacidadesRol.libroCalificaciones ? capacidadesRol.libroCalificaciones.toLowerCase().trim() : "ninguno";
+  // --- CONTROL DE ACCESO INSTITUCIONAL RBAC ---
+  async function verificarAutenticacion() {
+    // AGREGAR EN calificaciones.js (Al inicio de verificarAutenticacion)
+    localStorage.removeItem("usuariosColegio");
+    localStorage.removeItem("cursosColegio");
 
-// 2. Evaluación de doble función: Si tiene permiso de escritura OR posee función docente, edita
-if (nivelPermisoNotas === "escritura" || usuarioLogueado.esProfesor === true) {
-    esModoLectura = false;
-} else {
-    esModoLectura = true;
-}
+    const datosSesionCifrados = sessionStorage.getItem("usuarioActivo");
+    if (!datosSesionCifrados) {
+      window.location.href = "index.html";
+      return;
+    }
+    usuarioLogueado = descifrarDatosLocales(datosSesionCifrados);
+    if (!usuarioLogueado) {
+      window.location.href = "index.html";
+      return;
+    }
+    rolNormalizado = usuarioLogueado.rol ? usuarioLogueado.rol.toLowerCase().trim() : "";
+    permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
+    // --- BLINDAJE VISUAL: CONTROL DE PERÍODOS SEGÚN PRIVILEGIOS ---
+    const btnControlPeriodos = document.getElementById("btnAbrirModalPeriodos");
+    if (btnControlPeriodos) {
+      if (rolNormalizado === "administrador" || usuarioLogueado.permisoGestionPeriodos) {
+        btnControlPeriodos.style.display = "inline-flex"; // O "block" según diseño, para mostrarlo
+      } else {
+        btnControlPeriodos.style.display = "none"; // Asegura que quede oculto
+      }
+    }
 
-// 3. Activación del banner estético de advertencia si quedó en Solo Lectura
-if (esModoLectura && bannerLectura) {
-    bannerLectura.style.display = "block";
-}
+    // 1. Extraemos las capacidades y definimos el Modo Monitor si el permiso NO es "escritura"
+    const capacidadesRol = usuarioLogueado.permisosDelRol || {};
+    const nivelPermisoNotas = capacidadesRol.libroCalificaciones
+      ? capacidadesRol.libroCalificaciones.toLowerCase().trim()
+      : "ninguno";
 
+    // 2. Evaluación de doble función: Si tiene permiso de escritura OR posee función docente, edita
+    if (nivelPermisoNotas === "escritura" || usuarioLogueado.esProfesor === true) {
+      esModoLectura = false;
+    } else {
+      esModoLectura = true;
+    }
+
+    // 3. Activación del banner estético de advertencia si quedó en Solo Lectura
+    if (esModoLectura && bannerLectura) {
+      bannerLectura.style.display = "block";
+    }
 
     // Habilitación universal del botón de períodos por atributo de usuario
     if (usuarioLogueado && usuarioLogueado.permisoGestionPeriodos === true) {
-        const btnControlReal = document.getElementById('btnAbrirModalPeriodos');
-        if (btnControlReal) btnControlReal.style.display = 'inline-flex';
+      const btnControlReal = document.getElementById("btnAbrirModalPeriodos");
+      if (btnControlReal) btnControlReal.style.display = "inline-flex";
     }
-}
+  }
 
-
-async function cargarSelectoresIniciales() {
+  async function cargarSelectoresIniciales() {
     if (!selectCurso) return;
     selectCurso.innerHTML = '<option value="" disabled selected>Seleccione estructura...</option>';
 
@@ -153,197 +191,195 @@ async function cargarSelectoresIniciales() {
 
     // Intentamos buscar primero en la computadora de forma segura
     try {
-        const cacheCursosCifrada = localStorage.getItem('haspen_cache_estructuras');
-        if (cacheCursosCifrada) {
-            const cursosDescifrados = descifrarDatosLocales(cacheCursosCifrada);
-            if (cursosDescifrados && cursosDescifrados.length > 0) {
-                cursos = cursosDescifrados;
-                cargadoDesdeCache = true;
-                console.log("[Aduana Local] Estructuras de cursos cargadas desde el disco local con candado.");
-            }
+      const cacheCursosCifrada = localStorage.getItem("haspen_cache_estructuras");
+      if (cacheCursosCifrada) {
+        const cursosDescifrados = descifrarDatosLocales(cacheCursosCifrada);
+        if (cursosDescifrados && cursosDescifrados.length > 0) {
+          cursos = cursosDescifrados;
+          cargadoDesdeCache = true;
+          console.log("[Aduana Local] Estructuras de cursos cargadas desde el disco local con candado.");
         }
+      }
     } catch (errCache) {
-        console.warn("No se pudo leer la caché local cifrada de cursos:", errCache);
+      console.warn("No se pudo leer la caché local cifrada de cursos:", errCache);
     }
 
     // Si no estaba guardado en la computadora, recién ahí usamos internet
     if (!cargadoDesdeCache) {
-        try {
-            const { collection, getDocs } = await import(b + 'firebase-firestore.js');
-            const querySnapshot = await getDocs(collection(db, "cursos"));
-            cursos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Lo guardamos inmediatamente con candado en la computadora para la próxima vez
-            localStorage.setItem('haspen_cache_estructuras', cifrarDatosLocales(cursos));
-        } catch (errorDb) {
-            console.warn("Fallo de red al consultar Firestore, activando contingencia local...", errorDb);
-            const cacheCursosCifrada = localStorage.getItem('haspen_cache_estructuras');
-            cursos = cacheCursosCifrada ? (descifrarDatosLocales(cacheCursosCifrada) || []) : [];
-        }
+      try {
+        const { collection, getDocs } = await import(b + "firebase-firestore.js");
+        const querySnapshot = await getDocs(collection(db, "cursos"));
+        cursos = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+        // Lo guardamos inmediatamente con candado en la computadora para la próxima vez
+        localStorage.setItem("haspen_cache_estructuras", cifrarDatosLocales(cursos));
+      } catch (errorDb) {
+        console.warn("Fallo de red al consultar Firestore, activando contingencia local...", errorDb);
+        const cacheCursosCifrada = localStorage.getItem("haspen_cache_estructuras");
+        cursos = cacheCursosCifrada ? descifrarDatosLocales(cacheCursosCifrada) || [] : [];
+      }
     }
 
-
     const bolsaDocente = usuarioLogueado.bolsaHoras || [];
-    const permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas || false;
-// --- PARCHE SENIOR: CONTROL DE CICLOS LECTIVOS HISTÓRICOS ---
-window.cicloLectivoTrabajado = "2026"; 
+    permiteCargaTotalNotas = usuarioLogueado.permiteCargaTotalNotas === true;
+    // --- PARCHE SENIOR: CONTROL DE CICLOS LECTIVOS HISTÓRICOS ---
+    window.cicloLectivoTrabajado = new Date().getFullYear().toString();
 
-if (permiteCargaTotalNotas === true) {
-    const contenedorCiclo = document.getElementById('grupoCicloLectivoPlanilla');
-    const selectorCiclo = document.getElementById('filtroCicloLectivo');
-    
-    if (contenedorCiclo && selectorCiclo) {
+    if (permiteCargaTotalNotas === true) {
+      const contenedorCiclo = document.getElementById("grupoCicloLectivoPlanilla");
+      const selectorCiclo = document.getElementById("filtroCicloLectivo");
+
+      if (contenedorCiclo && selectorCiclo) {
         // Hacer visible el selector en la interfaz
         contenedorCiclo.style.display = "block";
-        
+
         // Poblar dinámicamente desde el año actual (2026) descendiendo hasta 2021
         selectorCiclo.innerHTML = "";
         for (let anio = 2026; anio >= 2021; anio--) {
-            selectorCiclo.add(new Option(`Ciclo Lectivo ${anio}`, `${anio}`));
+          selectorCiclo.add(new Option(`Ciclo Lectivo ${anio}`, `${anio}`));
         }
-        
+
         // Escuchar los cambios de año para actualizar la variable global
-        selectorCiclo.addEventListener('change', function() {
-            window.cicloLectivoTrabajado = this.value;
-            // Forzar la recarga de la nómina cuando cambie el año
-            if (typeof cargarNominaEstudiantes === 'function') {
-                cargarNominaEstudiantes();
-            }
+        selectorCiclo.addEventListener("change", function () {
+          window.cicloLectivoTrabajado = this.value;
+          // Forzar la recarga de la nómina cuando cambie el año
+          if (typeof cargarNominaEstudiantes === "function") {
+            cargarNominaEstudiantes();
+          }
         });
+      }
     }
-}
 
     if (cursos.length === 0 && bolsaDocente.length > 0) {
-        console.warn("Aviso: Inicializando auto-hidratación de estructuras académicas locales...");
-        bolsaDocente.forEach(catedra => {
-            const partes = catedra.replace(/\[.*?\]\s*/, "").trim().split(" - ");
-            if (partes.length >= 2) {
-                const cId = partes[0];
-                const mNombre = partes[1];
-                const subPartes = cId.split("-");
-                const cicloExtraido = subPartes[0] || "1";
-                const divExtraida = subPartes[1] || "A";
-                let turnoExtraido = "Mañana";
-                if (subPartes[2] === "T") turnoExtraido = "Tarde";
-                if (subPartes[2] === "V" || subPartes[2] === "N") turnoExtraido = "Vespertino";
+      console.warn("Aviso: Inicializando auto-hidratación de estructuras académicas locales...");
+      bolsaDocente.forEach((catedra) => {
+        const partes = catedra
+          .replace(/\[.*?\]\s*/, "")
+          .trim()
+          .split(" - ");
+        if (partes.length >= 2) {
+          const cId = partes[0];
+          const mNombre = partes[1];
+          const subPartes = cId.split("-");
+          const cicloExtraido = subPartes[0] || "1";
+          const divExtraida = subPartes[1] || "A";
+          let turnoExtraido = "Mañana";
+          if (subPartes[2] === "T") turnoExtraido = "Tarde";
+          if (subPartes[2] === "V" || subPartes[2] === "N") turnoExtraido = "Vespertino";
 
-                if (!cursos.some(c => c.id === cId)) {
-                    cursos.push({
-                        id: cId,
-                        ciclo: cicloExtraido,
-                        division: divExtraida,
-                        turno: turnoExtraido,
-                        materias: [mNombre]
-                    });
-                } else {
-                    const cursoExistente = cursos.find(c => c.id === cId);
-                    if (!cursoExistente.materias.includes(mNombre)) {
-                        cursoExistente.materias.push(mNombre);
-                    }
-                }
+          if (!cursos.some((c) => c.id === cId)) {
+            cursos.push({
+              id: cId,
+              ciclo: cicloExtraido,
+              division: divExtraida,
+              turno: turnoExtraido,
+              materias: [mNombre]
+            });
+          } else {
+            const cursoExistente = cursos.find((c) => c.id === cId);
+            if (!cursoExistente.materias.includes(mNombre)) {
+              cursoExistente.materias.push(mNombre);
             }
-        });
-        localStorage.setItem('cursosColegio', JSON.stringify(cursos));
+          }
+        }
+      });
+      localStorage.setItem("cursosColegio", JSON.stringify(cursos));
     }
 
-      cursos.forEach(curso => {
-        let esVisible = (permiteCargaTotalNotas === true);
-        
-        if (!esVisible) {
-            esVisible = bolsaDocente.some(catedra => {
-                const firmaPura = catedra.replace(/\[.*?\]\s*/, "").trim();
-                return firmaPura.startsWith(curso.id + " - ");
-            });
-        }
+    cursos.forEach((curso) => {
+      let esVisible = permiteCargaTotalNotas === true;
 
-        if (esVisible) {
-            // Control perimetral por capacidades y períodos académicos
-            if (!permiteCargaTotalNotas) {
-                const esDocenteAqui = bolsaDocente.some(catedra => {
-                    const cText = catedra.trim();
-                    const firmaSinRevista = cText.replace(/\[.*?\]\s*/, "").trim();
-                    return firmaSinRevista.startsWith(curso.id + " - ");
-                });
-                if (!esDocenteAqui) return;
-            }
-            selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
+      if (!esVisible) {
+        esVisible = bolsaDocente.some((catedra) => {
+          const firmaPura = catedra.replace(/\[.*?\]\s*/, "").trim();
+          return firmaPura.startsWith(curso.id + " - ");
+        });
+      }
+
+      if (esVisible) {
+        // Control perimetral por capacidades y períodos académicos
+        if (!permiteCargaTotalNotas) {
+          const esDocenteAqui = bolsaDocente.some((catedra) => {
+            const cText = catedra.trim();
+            const firmaSinRevista = cText.replace(/\[.*?\]\s*/, "").trim();
+            return firmaSinRevista.startsWith(curso.id + " - ");
+          });
+          if (!esDocenteAqui) return;
         }
+        selectCurso.add(new Option(`${curso.ciclo} - Div: ${curso.division} (${curso.turno})`, curso.id));
+      }
     });
 
     if (selectCurso.options.length === 1) {
-        selectCurso.add(new Option("Sin cursos autorizados en su perfil o Bolsa de Horas", ""));
+      selectCurso.add(new Option("Sin cursos autorizados en su perfil o Bolsa de Horas", ""));
     }
-}
+  }
 
-
-
-    // --- FILTRADO RELACIONAL ESTRICTO DE MATERIAS SEGÚN CURSO Y BOLSA ---
+  // --- FILTRADO RELACIONAL ESTRICTO DE MATERIAS SEGÚN CURSO Y BOLSA ---
   async function gestionarCambioCurso() {
     if (!selectMateria) return;
     selectMateria.innerHTML = '<option value="" disabled selected>Seleccione la asignatura...</option>';
     tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">Seleccione la Asignatura para cargar la nómina.</td></tr>`;
     if (bloqueGuardar) bloqueGuardar.style.display = "none";
-    
+
     const cursoId = selectCurso.value;
-    
+
     // Aduana local: traemos los cursos descifrando el candado del disco
-    const cacheCursosCifrada = localStorage.getItem('haspen_cache_estructuras');
-    const cursos = cacheCursosCifrada ? (descifrarDatosLocales(cacheCursosCifrada) || []) : [];
-    const cursoEncontrado = cursos.find(c => c.id === cursoId);
+    const cacheCursosCifrada = localStorage.getItem("haspen_cache_estructuras");
+    const cursos = cacheCursosCifrada ? descifrarDatosLocales(cacheCursosCifrada) || [] : [];
+    const cursoEncontrado = cursos.find((c) => c.id === cursoId);
     if (!cursoEncontrado || !cursoEncontrado.materias) return;
-    
+
     const bolsaDocente = usuarioLogueado.bolsaHoras || [];
 
-
-    if (( rolNormalizado === "profesor" || usuarioLogueado. esProfesor) && ! permiteCargaTotalNotas) {
-        cursoEncontrado. materias. forEach( materia => {
-            // La asignatura debe figurar en su bolsa emparejada exactamente con el ID del curso
-            const matchBolsa = bolsaDocente. some( b => {
-                const firmaPura = b. replace(/\[.*?\]\s*/, ""). trim(); // Quita [TITULAR], etc.
-                const firmaEsperada = `${ cursoId} - ${ materia. trim()}`;
-                return firmaPura === firmaEsperada;
-            });
-
-            if ( matchBolsa || rolNormalizado === "administrador") {
-                selectMateria. add( new Option( materia, materia));
-            }
+    if ((rolNormalizado === "profesor" || usuarioLogueado.esProfesor) && !permiteCargaTotalNotas) {
+      cursoEncontrado.materias.forEach((materia) => {
+        // La asignatura debe figurar en su bolsa emparejada exactamente con el ID del curso
+        const matchBolsa = bolsaDocente.some((b) => {
+          const firmaPura = b.replace(/\[.*?\]\s*/, "").trim(); // Quita [TITULAR], etc.
+          const firmaEsperada = `${cursoId} - ${materia.trim()}`;
+          return firmaPura === firmaEsperada;
         });
 
-        if ( selectMateria. options. length === 1) {
-            selectMateria. add( new Option("Sin asignaturas autorizadas en este curso", ""));
+        if (matchBolsa || rolNormalizado === "administrador") {
+          selectMateria.add(new Option(materia, materia));
         }
+      });
+
+      if (selectMateria.options.length === 1) {
+        selectMateria.add(new Option("Sin asignaturas autorizadas en este curso", ""));
+      }
     } else {
-        // Administradores y Directivos listan todas las materias del plan libremente
-        cursoEncontrado. materias. forEach( materia => {
-            selectMateria. add( new Option( materia, materia));
-        });
+      // Administradores y Directivos listan todas las materias del plan libremente
+      cursoEncontrado.materias.forEach((materia) => {
+        selectMateria.add(new Option(materia, materia));
+      });
     }
-}
+  }
 
-
- async function cargarNominaEstudiantes() {
+  async function cargarNominaEstudiantes() {
     const cursoId = selectCurso.value;
     const materiaId = selectMateria.value;
     if (!cursoId || !materiaId) return;
 
     let configPeriodos = {};
     try {
-        if (window.cachePeriodosEscuela) {
-            configPeriodos = window.cachePeriodosEscuela;
+      if (window.cachePeriodosEscuela) {
+        configPeriodos = window.cachePeriodosEscuela;
+      } else {
+        const { doc, getDoc } = await import(b + "firebase-firestore.js");
+        const docRef = doc(db, "configuraciones", "periodos_academicos");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          configPeriodos = docSnap.data();
+          window.cachePeriodosEscuela = configPeriodos;
         } else {
-            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
-            const docRef = doc(db, "configuraciones", "periodos_academicos");
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                configPeriodos = docSnap.data();
-                window.cachePeriodosEscuela = configPeriodos;
-            } else {
-                configPeriodos = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
-            }
+          configPeriodos = JSON.parse(localStorage.getItem("estadoPeriodosColegio")) || {};
         }
+      }
     } catch (e) {
-        console.warn("Error leyendo períodos en red, usando copia local:", e);
-        configPeriodos = JSON.parse(localStorage.getItem('estadoPeriodosColegio')) || {};
+      console.warn("Error leyendo períodos en red, usando copia local:", e);
+      configPeriodos = JSON.parse(localStorage.getItem("estadoPeriodosColegio")) || {};
     }
 
     tablaNotasBody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:15px; color:#1a73e8; font-weight:500;">🔄 Descargando nómina real desde Cloud Firestore...</td></tr>`;
@@ -351,508 +387,590 @@ if (permiteCargaTotalNotas === true) {
     let alumnosReales = [];
 
     try {
-        const baseCdnFirebase = b;
-        const { collection, getDocs, query, where } = await import(baseCdnFirebase + 'firebase-firestore.js');
+      const baseCdnFirebase = b;
+      const { collection, getDocs, query, where } = await import(baseCdnFirebase + "firebase-firestore.js");
 
-        // Descarga optimizada en servidor por ID de curso y ciclo lectivo verificado
-        const qAlumnos = query(
-            collection(db, "alumnos"),
-            where("cursoId", "==", cursoId),
-            where("cicloLectivo", "==", window.cicloLectivoTrabajado)
-        );
-        
-        const alumnosSnapshot = await getDocs(qAlumnos);
-        alumnosReales = alumnosSnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(al => al.estado === "Regular");
+      // Descarga optimizada en servidor por ID de curso y ciclo lectivo verificado
+      const qAlumnos = query(
+        collection(db, "alumnos"),
+        where("cursoId", "==", cursoId),
+        where("cicloLectivo", "==", window.cicloLectivoTrabajado)
+      );
 
-        alumnosReales.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+      const alumnosSnapshot = await getDocs(qAlumnos);
+      alumnosReales = alumnosSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((al) => al.estado === "Regular");
 
+      alumnosReales.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     } catch (error) {
-        console.error("Error en la sincronización viva con Firestore:", error);
+      console.error("Error en la sincronización viva con Firestore:", error);
     }
 
     tablaNotasBody.innerHTML = "";
 
     // Asignación rápida de cabeceras usando el contexto del usuario logueado para no golpear la base de datos de gusto
     try {
-        txtDocente.textContent = usuarioLogueado && usuarioLogueado.nombre ? usuarioLogueado.nombre : "Docente Autorizado";
-        txtPreceptor.textContent = "Asignado a División";
+      txtDocente.textContent =
+        usuarioLogueado && usuarioLogueado.nombre ? usuarioLogueado.nombre : "Docente Autorizado";
+      txtPreceptor.textContent = "Asignado a División";
     } catch (err) {
-        console.error("Error al procesar cabeceras:", err);
+      console.error("Error al procesar cabeceras:", err);
     }
 
-    const alumnosCurso = alumnosReales;    
+    const alumnosCurso = alumnosReales;
 
     if (alumnosCurso.length === 0) {
-        tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">No hay alumnos Regulares inscritos en esta división estructural.</td></tr>`;
-        if (bloqueGuardar) bloqueGuardar.style.display = "none";
-        return;
+      tablaNotasBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: #94a3b8; padding: 30px;">No hay alumnos Regulares inscritos en esta división estructural.</td></tr>`;
+      if (bloqueGuardar) bloqueGuardar.style.display = "none";
+      return;
     }
 
     // ====== ADUANA DE LECTURA LOCAL (COSTO CERO / ANTI-MICROCORTES) ======
     mapaNotasExistentes = {};
     const anioActualCalificaciones = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
-    const matIdClave = materiaId.trim().replace(/\s+/g, '_');
+    const matIdClave = materiaId.trim().replace(/\s+/g, "_");
     const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdClave}_${anioActualCalificaciones}`;
 
     let cargadoDesdeCache = false;
     try {
-        const cacheCifrada = localStorage.getItem(claveCachéCalificaciones);
-        if (cacheCifrada) {
-            const datosDescifrados = descifrarDatosLocales(cacheCifrada);
-            if (datosDescifrados && Object.keys(datosDescifrados).length > 0) {
-                mapaNotasExistentes = datosDescifrados;
-                cargadoDesdeCache = true;
-                console.log(`[Aduana Local] Notas cargadas desde el disco local para: ${claveCachéCalificaciones}`);
-            }
+      const cacheCifrada = localStorage.getItem(claveCachéCalificaciones);
+      if (cacheCifrada) {
+        const datosDescifrados = descifrarDatosLocales(cacheCifrada);
+        if (datosDescifrados && Object.keys(datosDescifrados).length > 0) {
+          mapaNotasExistentes = datosDescifrados;
+          cargadoDesdeCache = true;
+          console.log(`[Aduana Local] Notas cargadas desde el disco local para: ${claveCachéCalificaciones}`);
         }
+      }
     } catch (errCache) {
-        console.warn("Fallo al leer la caché local de calificaciones:", errCache);
+      console.warn("Fallo al leer la caché local de calificaciones:", errCache);
     }
 
     // Si no existía en el disco, procedemos a consultar la red (Firebase) una sola vez de forma limpia
     if (!cargadoDesdeCache) {
-        try {
-            const { collection, query, where, getDocs } = await import(b + 'firebase-firestore.js');
-            const consultaNotas = query(
-                collection(db, "alumnos_calificaciones"), 
-                where("cursoId", "==", cursoId), 
-                where("materia", "==", materiaId),
-                where("cicloLectivo", "==", anioActualCalificaciones)
-            );
-            const respuestaNotas = await getDocs(consultaNotas);
-            
-            respuestaNotas.forEach(documento => {
-                const datosNota = documento.data();
-                if (datosNota && datosNota.alumnoDni) {
-                    mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
-                }
-            });
+      try {
+        const { collection, query, where, getDocs } = await import(b + "firebase-firestore.js");
+        const consultaNotas = query(
+          collection(db, "alumnos_calificaciones"),
+          where("cursoId", "==", cursoId),
+          where("materia", "==", materiaId),
+          where("cicloLectivo", "==", anioActualCalificaciones)
+        );
+        const respuestaNotas = await getDocs(consultaNotas);
 
-            // Guardamos inmediatamente con las funciones de candado unificadas
-            localStorage.setItem(claveCachéCalificaciones, cifrarDatosLocales(mapaNotasExistentes));
-        } catch (errorDb) {
-            console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
-        }
+        respuestaNotas.forEach((documento) => {
+          const datosNota = documento.data();
+          if (datosNota && datosNota.alumnoDni) {
+            mapaNotasExistentes[datosNota.alumnoDni] = datosNota;
+          }
+        });
+
+        // Guardamos inmediatamente con las funciones de candado unificadas
+        localStorage.setItem(claveCachéCalificaciones, cifrarDatosLocales(mapaNotasExistentes));
+      } catch (errorDb) {
+        console.warn("No se pudo conectar a Firestore, usando contingencia de emergencia local:", errorDb);
+      }
     }
     // ======================================================================
 
-            alumnosCurso.forEach(async (alumno, index) => {
-            const tr = document.createElement('tr');
-            const persistenciaNota = mapaNotasExistentes[alumno.dni];
-            const d = persistenciaNota ? (persistenciaNota.notas || { trim1: {}, trim2: {} }) : { trim1: {}, trim2: {} };
+    alumnosCurso.forEach(async (alumno, index) => {
+      const tr = document.createElement("tr");
+      const persistenciaNota = mapaNotasExistentes[alumno.dni];
+      const d = persistenciaNota ? persistenciaNota.notas || { trim1: {}, trim2: {} } : { trim1: {}, trim2: {} };
 
-            // Captura segura de instancias de examen para el renderizador
-            const notaDicExistente = persistenciaNota ? (persistenciaNota.diciembre ?? "") : "";
-            const notaFebExistente = persistenciaNota ? (persistenciaNota.febrero ?? "") : "";
+      // Captura segura de instancias de examen para el renderizador
+      const notaDicExistente = persistenciaNota ? (persistenciaNota.diciembre ?? "") : "";
+      const notaFebExistente = persistenciaNota ? (persistenciaNota.febrero ?? "") : "";
 
+      let badgePPI = "";
+      if (alumno.tienePPI === true || alumno.trayectoriaPPI === true || alumno.nombre.toUpperCase().includes("PPI")) {
+        badgePPI = ` <span style="display:inline-block; background-color:#fae8ff; color:#a21caf; border:1px solid #f0abfc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 PPI</span>`;
+      } else if (alumno.trayectoriaFlexible === true) {
+        badgePPI = ` <span style="display:inline-block; background-color:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 Flex</span>`;
+      }
+      const p1 = configPeriodos["p_c1-n1"] === true ? "" : "disabled";
+      const p2 = configPeriodos["p_c1-n2"] === true ? "" : "disabled";
+      const p3 = configPeriodos["p_c1-ef"] === true ? "" : "disabled";
+      const p4 = configPeriodos["p_c2-n1"] === true ? "" : "disabled";
+      const p5 = configPeriodos["p_c2-n2"] === true ? "" : "disabled";
+      const p6 = configPeriodos["p_c2-ef"] === true ? "" : "disabled";
+      const p7 = configPeriodos["p_dic"] === true ? "" : "disabled";
+      const p8 = configPeriodos["p_feb"] === true ? "" : "disabled";
 
-
-            let badgePPI = "";
-        if (alumno.tienePPI === true || alumno.trayectoriaPPI === true || alumno.nombre.toUpperCase().includes("PPI")) {
-            badgePPI = ` <span style="display:inline-block; background-color:#fae8ff; color:#a21caf; border:1px solid #f0abfc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 PPI</span>`;
-        } else if (alumno.trayectoriaFlexible === true) {
-            badgePPI = ` <span style="display:inline-block; background-color:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; padding:1px 4px; border-radius:4px; font-weight:bold; font-size:10px; vertical-align:middle; margin-left:4px;">🗲 Flex</span>`;
-        }
-        const p1 = configPeriodos["p_c1-n1"] === true ? "" : "disabled";
-        const p2 = configPeriodos["p_c1-n2"] === true ? "" : "disabled";
-        const p3 = configPeriodos["p_c1-ef"] === true ? "" : "disabled";
-        const p4 = configPeriodos["p_c2-n1"] === true ? "" : "disabled";
-        const p5 = configPeriodos["p_c2-n2"] === true ? "" : "disabled";
-        const p6 = configPeriodos["p_c2-ef"] === true ? "" : "disabled";
-        const p7 = configPeriodos["p_dic"] === true ? "" : "disabled";
-        const p8 = configPeriodos["p_feb"] === true ? "" : "disabled";
-
-
-                       tr.innerHTML = `
+      tr.innerHTML = `
             <td style="text-align: center; font-weight: bold; color: #64748b; padding: 2px 4px;">${index + 1}</td>
             <td style="font-weight: 500; padding: 2px 4px;">${alumno.nombre} ${badgePPI}</td>
             
             <!-- 1ER CUATRIMESTRE -->
-            <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p1} class="input-nota c1-n1" min="1" max="10" value="${d?.trim1?.n1 || ""}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p2} class="input-nota c1-n2" min="1" max="10" value="${d?.trim1?.n2 || ""}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p3} class="input-nota c1-ef" min="1" max="10" value="${d?.trim1?.ef || ""}" data-dni="${alumno.dni}"></td>
             <td data-tipo="prom-c1" class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
             
             <!-- 2DO CUATRIMESTRE -->
-            <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p4} class="input-nota c2-n1" min="1" max="10" value="${d?.trim2?.n1 || ""}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p5} class="input-nota c2-n2" min="1" max="10" value="${d?.trim2?.n2 || ""}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p6} class="input-nota c2-ef" min="1" max="10" value="${d?.trim2?.ef || ""}" data-dni="${alumno.dni}"></td>
             <td data-tipo="prom-c2" class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
             
             <!-- INSTANCIAS ANUALES DE EXAMEN -->
             <td data-tipo="anual" class="col-calculada" style="padding: 2px 4px; font-size: 13px;"></td>
-            <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDicExistente || ''}" data-dni="${alumno.dni}"></td>
-            <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebExistente || ''}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p7} class="input-nota dic" min="1" max="10" value="${notaDicExistente || ""}" data-dni="${alumno.dni}"></td>
+            <td><input type="number" ${p8} class="input-nota feb" min="1" max="10" value="${notaFebExistente || ""}" data-dni="${alumno.dni}"></td>
             <td data-tipo="definitiva" class="col-calculada" style="padding: 2px 4px; font-size: 13px; background: #e2f0d9;"></td>
         `;
 
+      tablaNotasBody.appendChild(tr);
 
-            tablaNotasBody.appendChild(tr);
-
-        tr.querySelectorAll('.input-nota').forEach(input => {
-            input.addEventListener('input', (e) => {
-                sanitizarEntradaNotaEntera(e.target);
-                calcularMatrizFilaCalificaciones(tr);
-            });
+      tr.querySelectorAll(".input-nota").forEach((input) => {
+        input.addEventListener("input", (e) => {
+          sanitizarEntradaNotaEntera(e.target);
+          calcularMatrizFilaCalificaciones(tr);
         });
+      });
 
-        calcularMatrizFilaCalificaciones(tr);
-        });
+      calcularMatrizFilaCalificaciones(tr);
+    });
 
-
-        if (bloqueGuardar) {
-            bloqueGuardar.style.display = esModoLectura ? "none" : "block";
-        }
-     }
- 
-
-    function sanitizarEntradaNotaEntera(input) {
-        let valor = input.value.replace(/[^0-9]/g, '');
-        if (valor !== '') {
-            let num = parseInt(valor, 10);
-            if (num < 1) num = 1;
-            if (num > 10) num = 10;
-            input.value = num;
-        } else {
-            input.value = '';
-        }
+    if (bloqueGuardar) {
+      bloqueGuardar.style.display = esModoLectura ? "none" : "block";
     }
+  }
 
-   function calcularMatrizFilaCalificaciones(filaTr) {
+  function sanitizarEntradaNotaEntera(input) {
+    let valor = input.value.replace(/[^0-9]/g, "");
+    if (valor !== "") {
+      let num = parseInt(valor, 10);
+      if (num < 1) num = 1;
+      if (num > 10) num = 10;
+      input.value = num;
+    } else {
+      input.value = "";
+    }
+  }
+
+  function calcularMatrizFilaCalificaciones(filaTr) {
     // 1. Captura segura con clases DOM reales (.c1-n2, .c1-ef, .c2-n2, .c2-ef, .dic, .feb)
-    const c1n2 = parseInt(filaTr.querySelector('.c1-n2')?.value, 10);
-    const c1ef = parseInt(filaTr.querySelector('.c1-ef')?.value, 10);
-    const c2n2 = parseInt(filaTr.querySelector('.c2-n2')?.value, 10);
-    const c2ef = parseInt(filaTr.querySelector('.c2-ef')?.value, 10);
-    const dic = parseInt(filaTr.querySelector('.dic')?.value, 10);
-    const feb = parseInt(filaTr.querySelector('.feb')?.value, 10);
+    const c1n2 = parseInt(filaTr.querySelector(".c1-n2")?.value, 10);
+    const c1ef = parseInt(filaTr.querySelector(".c1-ef")?.value, 10);
+    const c2n2 = parseInt(filaTr.querySelector(".c2-n2")?.value, 10);
+    const c2ef = parseInt(filaTr.querySelector(".c2-ef")?.value, 10);
+    const dic = parseInt(filaTr.querySelector(".dic")?.value, 10);
+    const feb = parseInt(filaTr.querySelector(".feb")?.value, 10);
     const celdaC1Prom = filaTr.querySelector('[data-tipo="prom-c1"]');
     const celdaC2Prom = filaTr.querySelector('[data-tipo="prom-c2"]');
     const celdaAnual = filaTr.querySelector('[data-tipo="anual"]');
     const celdaDef = filaTr.querySelector('[data-tipo="definitiva"]');
-    const inputDic = filaTr.querySelector('.dic');
-    const inputFeb = filaTr.querySelector('.feb');
+    const inputDic = filaTr.querySelector(".dic");
+    const inputFeb = filaTr.querySelector(".feb");
 
     if (!celdaC1Prom || !celdaC2Prom || !celdaAnual || !celdaDef) return;
-
 
     // 2. PROCESAMIENTO REACTIVO DEL 1ER CUATRIMESTRE
     let notaFinalC1 = null;
     if (!isNaN(c1n2)) {
-        notaFinalC1 = (c1n2 >= 6) ? c1n2 : (!isNaN(c1ef) ? c1ef : null);
+      notaFinalC1 = c1n2 >= 6 ? c1n2 : !isNaN(c1ef) ? c1ef : null;
     }
     if (notaFinalC1 !== null) {
-        celdaC1Prom.textContent = notaFinalC1;
-        aplicarColorFormatoPedagógico(celdaC1Prom, notaFinalC1);
+      celdaC1Prom.textContent = notaFinalC1;
+      aplicarColorFormatoPedagógico(celdaC1Prom, notaFinalC1);
     } else {
-        celdaC1Prom.textContent = "-";
-        celdaC1Prom.className = "col-calculada";
+      celdaC1Prom.textContent = "-";
+      celdaC1Prom.className = "col-calculada";
     }
 
     // 3. PROCESAMIENTO REACTIVO DEL 2DO CUATRIMESTRE
     let notaFinalC2 = null;
     if (!isNaN(c2n2)) {
-        notaFinalC2 = (c2n2 >= 6) ? c2n2 : (!isNaN(c2ef) ? c2ef : null);
+      notaFinalC2 = c2n2 >= 6 ? c2n2 : !isNaN(c2ef) ? c2ef : null;
     }
     if (notaFinalC2 !== null) {
-        celdaC2Prom.textContent = notaFinalC2;
-        aplicarColorFormatoPedagógico(celdaC2Prom, notaFinalC2);
+      celdaC2Prom.textContent = notaFinalC2;
+      aplicarColorFormatoPedagógico(celdaC2Prom, notaFinalC2);
     } else {
-        celdaC2Prom.textContent = "-";
-        celdaC2Prom.className = "col-calculada";
+      celdaC2Prom.textContent = "-";
+      celdaC2Prom.className = "col-calculada";
     }
 
-       // 4. DETERMINACIÓN DIRECTA DE LA COLUMNA ANUAL Y NOTA DEFINITIVA FINAL
+    // 4. DETERMINACIÓN DIRECTA DE LA COLUMNA ANUAL Y NOTA DEFINITIVA FINAL
     if (notaFinalC2 !== null) {
-        // La columna Anual es un espejo directo del 2do Cuatrimestre
-        celdaAnual.textContent = notaFinalC2;
-        aplicarColorFormatoPedagógico(celdaAnual, notaFinalC2);
+      // La columna Anual es un espejo directo del 2do Cuatrimestre
+      celdaAnual.textContent = notaFinalC2;
+      aplicarColorFormatoPedagógico(celdaAnual, notaFinalC2);
 
-        if (notaFinalC2 >= 6) {
-            // Aprobación directa por segundo cuatrimestre
-            celdaDef.textContent = notaFinalC2;
-            aplicarColorFormatoPedagógico(celdaDef, notaFinalC2);
-            if (!esModoLectura) {
-                if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
-                if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
-            }
-        } else {
-            // Habilitación de periodos finales de examen por desaprobación de Q2
-            if (!esModoLectura && inputDic) inputDic.disabled = false;
-
-            let notaCierreFinal = null;
-            if (!isNaN(dic)) {
-                if (dic >= 6) {
-                    notaCierreFinal = dic;
-                    if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
-                } else {
-                    if (!esModoLectura && inputFeb) inputFeb.disabled = false;
-                    if (!isNaN(feb)) notaCierreFinal = feb;
-                }
-            } else {
-                if (!esModoLectura && inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
-            }
-
-            if (notaCierreFinal !== null) {
-                celdaDef.textContent = notaCierreFinal;
-                aplicarColorFormatoPedagógico(celdaDef, notaCierreFinal);
-            } else {
-                celdaDef.textContent = "-";
-                celdaDef.className = "col-calculada";
-            }
-        }
-    } else {
-        // Si aún no hay notas en Q2, todo se mantiene limpio y bloqueado
-        celdaAnual.textContent = "-";
-        celdaAnual.className = "col-calculada";
-        celdaDef.textContent = "-";
-        celdaDef.className = "col-calculada";
+      if (notaFinalC2 >= 6) {
+        // Aprobación directa por segundo cuatrimestre
+        celdaDef.textContent = notaFinalC2;
+        aplicarColorFormatoPedagógico(celdaDef, notaFinalC2);
         if (!esModoLectura) {
-            if (inputDic) { inputDic.disabled = true; inputDic.value = ""; }
-            if (inputFeb) { inputFeb.disabled = true; inputFeb.value = ""; }
+          if (inputDic) {
+            inputDic.disabled = true;
+            inputDic.value = "";
+          }
+          if (inputFeb) {
+            inputFeb.disabled = true;
+            inputFeb.value = "";
+          }
         }
-    }
+      } else {
+        // Habilitación de periodos finales de examen por desaprobación de Q2
+        if (!esModoLectura && inputDic) inputDic.disabled = false;
 
-}
-
-
-    function aplicarColorFormatoPedagógico(celda, nota) {
-        celda.className = "col-calculada";
-        if (nota >= 6) {
-            celda.classList.add("nota-aprobada");
+        let notaCierreFinal = null;
+        if (!isNaN(dic)) {
+          if (dic >= 6) {
+            notaCierreFinal = dic;
+            if (!esModoLectura && inputFeb) {
+              inputFeb.disabled = true;
+              inputFeb.value = "";
+            }
+          } else {
+            if (!esModoLectura && inputFeb) inputFeb.disabled = false;
+            if (!isNaN(feb)) notaCierreFinal = feb;
+          }
         } else {
-            celda.classList.add("nota-desaprobada");
+          if (!esModoLectura && inputFeb) {
+            inputFeb.disabled = true;
+            inputFeb.value = "";
+          }
         }
-    }
 
-// === [INICIO DE LA FUNCIÓN - PARTE 1 DE 3] ===
-async function procesarGuardarPlanilla(e) {
+        if (notaCierreFinal !== null) {
+          celdaDef.textContent = notaCierreFinal;
+          aplicarColorFormatoPedagógico(celdaDef, notaCierreFinal);
+        } else {
+          celdaDef.textContent = "-";
+          celdaDef.className = "col-calculada";
+        }
+      }
+    } else {
+      // Si aún no hay notas en Q2, todo se mantiene limpio y bloqueado
+      celdaAnual.textContent = "-";
+      celdaAnual.className = "col-calculada";
+      celdaDef.textContent = "-";
+      celdaDef.className = "col-calculada";
+      if (!esModoLectura) {
+        if (inputDic) {
+          inputDic.disabled = true;
+          inputDic.value = "";
+        }
+        if (inputFeb) {
+          inputFeb.disabled = true;
+          inputFeb.value = "";
+        }
+      }
+    }
+  }
+
+  function aplicarColorFormatoPedagógico(celda, nota) {
+    celda.className = "col-calculada";
+    if (nota >= 6) {
+      celda.classList.add("nota-aprobada");
+    } else {
+      celda.classList.add("nota-desaprobada");
+    }
+  }
+
+  // === [INICIO DE LA FUNCIÓN - PARTE 1 DE 3] ===
+  async function procesarGuardarPlanilla(e) {
     e.preventDefault();
     if (esModoLectura) return;
 
     // Alineación con los nombres de variables globales existentes
     const cursoId = selectCurso.value;
-    const materiaId = selectMateria.value; 
+    const materiaId = selectMateria.value;
     if (!cursoId || !materiaId) return;
 
     const botonSubmit = formPlanilla.querySelector('button[type="submit"]');
-    const txtNotificacion = document.getElementById('notificacionGuardadoNotas');
+    const txtNotificacion = document.getElementById("notificacionGuardadoNotas");
 
     if (botonSubmit) {
-        botonSubmit.disabled = true;
-        botonSubmit.textContent = "💾 Sincronizando Red...";
+      botonSubmit.disabled = true;
+      botonSubmit.textContent = "💾 Sincronizando Red...";
     }
     if (txtNotificacion) {
-        txtNotificacion.style.color = "#1b4d82";
-        txtNotificacion.textContent = "🔄 Procesando registros académicos...";
+      txtNotificacion.style.color = "#1b4d82";
+      txtNotificacion.textContent = "🔄 Procesando registros académicos...";
     }
 
     try {
-        const { doc, setDoc } = await import(b + 'firebase-firestore.js');
-        const filas = tablaNotasBody.querySelectorAll('tr');
-        const operacionesPersistencia = [];
+      const { doc, setDoc } = await import(b + "firebase-firestore.js");
+      const filas = tablaNotasBody.querySelectorAll("tr");
+      const operacionesPersistencia = [];
 
-        // Estructuras para la aduana local masiva
-        const anioTrabajado = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
-        const matIdLimpia = materiaId.trim().replace(/\s+/g, '_');
-        const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdLimpia}_${anioTrabajado}`;
-        let nuevoMapaNotasCaché = { ...mapaNotasExistentes };
-        let registrosProcesados = [];
+      // Estructuras para la aduana local masiva
+      const anioTrabajado = window.cicloLectivoTrabajado || new Date().getFullYear().toString();
+      const matIdLimpia = materiaId.trim().replace(/\s+/g, "_");
+      const claveCachéCalificaciones = `haspen_calif_${cursoId}_${matIdLimpia}_${anioTrabajado}`;
+      let nuevoMapaNotasCaché = { ...mapaNotasExistentes };
+      let registrosProcesados = [];
 
-        // Recorremos las filas para empaquetar toda la planilla junta en un milisegundo
-        filas.forEach(fila => {
-            const inputBase = fila.querySelector('.c1-n1');
-            if (!inputBase) return; 
+      // Recorremos las filas para empaquetar toda la planilla junta en un milisegundo
+      filas.forEach((fila) => {
+        const inputBase = fila.querySelector(".c1-n1");
+        if (!inputBase) return;
 
-            const dniAlumno = inputBase.getAttribute('data-dni');
-            
-            const c1n1 = parseInt(fila.querySelector('.c1-n1').value, 10);
-            const c1n2 = parseInt(fila.querySelector('.c1-n2').value, 10);
-            const c1ef = parseInt(fila.querySelector('.c1-ef').value, 10);
-            const c2n1 = parseInt(fila.querySelector('.c2-n1').value, 10);
-            const c2n2 = parseInt(fila.querySelector('.c2-n2').value, 10);
-            const c2ef = parseInt(fila.querySelector('.c2-ef').value, 10);
-            const dic = parseInt(fila.querySelector('.dic')?.value, 10);
-            const feb = parseInt(fila.querySelector('.feb')?.value, 10);
-            const celdas = fila.querySelectorAll('td');
-            let notaC1 = null, notaC2 = null, notaAnual = null, notaDefinitiva = null;
-            
-            if (celdas.length >= 14) {
-                const txtC1 = celdas[5].textContent.trim();
-                const txtC2 = celdas[9].textContent.trim();
-                const txtAnual = celdas[10].textContent.trim();
-                const txtDef = celdas[13].textContent.trim();
+        const dniAlumno = inputBase.getAttribute("data-dni");
 
-                notaC1 = (txtC1 === "-" || txtC1 === "") ? null : parseInt(txtC1, 10);
-                notaC2 = (txtC2 === "-" || txtC2 === "") ? null : parseInt(txtC2, 10);
-                notaAnual = (txtAnual === "-" || txtAnual === "") ? null : parseInt(txtAnual, 10);
-                notaDefinitiva = (txtDef === "-" || txtDef === "") ? null : parseInt(txtDef, 10);
-            }
+        const c1n1 = parseInt(fila.querySelector(".c1-n1").value, 10);
+        const c1n2 = parseInt(fila.querySelector(".c1-n2").value, 10);
+        const c1ef = parseInt(fila.querySelector(".c1-ef").value, 10);
+        const c2n1 = parseInt(fila.querySelector(".c2-n1").value, 10);
+        const c2n2 = parseInt(fila.querySelector(".c2-n2").value, 10);
+        const c2ef = parseInt(fila.querySelector(".c2-ef").value, 10);
+        const dic = parseInt(fila.querySelector(".dic")?.value, 10);
+        const feb = parseInt(fila.querySelector(".feb")?.value, 10);
+        const celdas = fila.querySelectorAll("td");
+        let notaC1 = null,
+          notaC2 = null,
+          notaAnual = null,
+          notaDefinitiva = null;
 
-            const estructuraCalificacionAlumno = {
-                alumnoDni: dniAlumno,
-                cursoId: cursoId,
-                materia: materiaId,
-                cicloLectivo: anioTrabajado,
-                notas: {
-                    trim1: { n1: isNaN(c1n1) ? null : c1n1, n2: isNaN(c1n2) ? null : c1n2, ef: isNaN(c1ef) ? null : c1ef },
-                    trim2: { n1: isNaN(c2n1) ? null : c2n1, n2: isNaN(c2n2) ? null : c2n2, ef: isNaN(c2ef) ? null : c2ef }
+        if (celdas.length >= 14) {
+          const txtC1 = celdas[5].textContent.trim();
+          const txtC2 = celdas[9].textContent.trim();
+          const txtAnual = celdas[10].textContent.trim();
+          const txtDef = celdas[13].textContent.trim();
+
+          notaC1 = txtC1 === "-" || txtC1 === "" ? null : parseInt(txtC1, 10);
+          notaC2 = txtC2 === "-" || txtC2 === "" ? null : parseInt(txtC2, 10);
+          notaAnual = txtAnual === "-" || txtAnual === "" ? null : parseInt(txtAnual, 10);
+          notaDefinitiva = txtDef === "-" || txtDef === "" ? null : parseInt(txtDef, 10);
+        }
+
+        const estructuraCalificacionAlumno = {
+          alumnoDni: dniAlumno,
+          cursoId: cursoId,
+          materia: materiaId,
+          cicloLectivo: anioTrabajado,
+          notas: {
+            trim1: { n1: isNaN(c1n1) ? null : c1n1, n2: isNaN(c1n2) ? null : c1n2, ef: isNaN(c1ef) ? null : c1ef },
+            trim2: { n1: isNaN(c2n1) ? null : c2n1, n2: isNaN(c2n2) ? null : c2n2, ef: isNaN(c2ef) ? null : c2ef }
+          },
+          diciembre: isNaN(dic) ? null : dic,
+          febrero: isNaN(feb) ? null : feb,
+          notaCuatrimestre1: notaC1,
+          notaCuatrimestre2: notaC2,
+          notaAnual: notaAnual,
+          notaFinal: notaDefinitiva,
+          estadoMateria: notaDefinitiva !== null && notaDefinitiva >= 6 ? "Aprobada" : "Previa",
+          ultimaModificacion: new Date().toISOString()
+        };
+
+        const estadoPrevio = mapaNotasExistentes[dniAlumno];
+        let tieneModificacionesReales = false;
+
+        if (!estadoPrevio) {
+          tieneModificacionesReales = true;
+        } else {
+          const notasNuevasSt = JSON.stringify({
+            n: estructuraCalificacionAlumno.notas,
+            d: estructuraCalificacionAlumno.diciembre,
+            f: estructuraCalificacionAlumno.febrero
+          });
+          const notasPreviasSt = JSON.stringify({
+            n: estadoPrevio.notas,
+            d: estadoPrevio.diciembre,
+            f: estadoPrevio.febrero
+          });
+          if (notasNuevasSt !== notasPreviasSt) {
+            tieneModificacionesReales = true;
+          }
+        }
+
+        // Alimentamos la caché local en memoria viva
+        nuevoMapaNotasCaché[dniAlumno] = estructuraCalificacionAlumno;
+
+        // Guardamos las variables necesarias para mantener tu lógica original intacta en la sincronización
+        registrosProcesados.push({
+          dniAlumno,
+          docIdUnico: `${dniAlumno}_${matIdLimpia}_${anioTrabajado}`,
+          estructura: estructuraCalificacionAlumno,
+          estadoPrevio,
+          tieneModificacionesReales,
+          notaC1,
+          notaC2,
+          notaAnual,
+          fila
+        });
+      });
+
+      // ESCUDO DE SEGURIDAD INTERNO: Guardado inmediato y cifrado en el disco duro con candado universal
+      localStorage.setItem(claveCachéCalificaciones, cifrarDatosLocales(nuevoMapaNotasCaché));
+      mapaNotasExistentes = nuevoMapaNotasCaché;
+      console.log("[Aduana Local] Notas resguardadas en la máquina del docente ante microcortes.");
+
+      // === [FIN DE LA PARTE 1 DE 3] ===
+      // === [INICIO DE LA PARTE 2 DE 3 - TU LÓGICA DE NEGOCIO ORIGINAL] ===
+      // Sincronización con Firestore utilizando los registros recolectados
+      registrosProcesados.forEach((item) => {
+        const docRef = doc(db, "alumnos_calificaciones", item.docIdUnico);
+
+        const promesaEscritura = setDoc(docRef, item.estructura, { merge: true }).then(async () => {
+          const baseCdn =
+            "h" +
+            "t" +
+            "t" +
+            "p" +
+            "s" +
+            ":" +
+            "/" +
+            "/" +
+            "w" +
+            "w" +
+            "w" +
+            "." +
+            "g" +
+            "s" +
+            "t" +
+            "a" +
+            "t" +
+            "i" +
+            "c" +
+            "." +
+            "c" +
+            "o" +
+            "m" +
+            "/f" +
+            "i" +
+            "r" +
+            "e" +
+            "b" +
+            "a" +
+            "s" +
+            "e" +
+            "j" +
+            "s" +
+            "/10.12.0/";
+          const {
+            doc: docFirestore,
+            setDoc: setDocFirestore,
+            deleteDoc
+          } = await import(baseCdn + "firebase-firestore.js");
+
+          const matIdLimpiaMayus = materiaId.trim().replace(/\s+/g, "_").toUpperCase();
+          const anioOrigenNum = parseInt(item.estructura.cicloLectivo, 10);
+          const idPreviaRaizUnico = `${item.dniAlumno}_${matIdLimpiaMayus}_${anioOrigenNum}`;
+          const previaDocRef = docFirestore(db, "previas", idPreviaRaizUnico);
+
+          if (item.estructura.notaFinal !== null) {
+            if (item.estructura.notaFinal < 6) {
+              const cursosCache = JSON.parse(localStorage.getItem("cursosColegio")) || [];
+              const cursoData = cursosCache.find((c) => c.id === cursoId) || {};
+              const textoCursoVisor =
+                `${cursoData.ciclo || ""} - DIV: ${cursoData.division || ""} (${cursoData.turno || ""})`.toUpperCase();
+              const orientacionData = (
+                cursoData.orientacion ||
+                ((cursoData.ciclo || "").includes("1°") ||
+                (cursoData.ciclo || "").includes("2°") ||
+                (cursoData.ciclo || "").includes("3°")
+                  ? "CICLO BÁSICO"
+                  : "SIN ESPECIFICAR")
+              ).toUpperCase();
+
+              await setDocFirestore(
+                previaDocRef,
+                {
+                  dni: item.dniAlumno,
+                  alumnoNombre: (item.fila.cells[1]?.textContent || "ALUMNO SIN NOMBRE")
+                    .replace(/🗲.*/, "")
+                    .trim()
+                    .toUpperCase(),
+                  materia: materiaId.trim().toUpperCase(),
+                  curso: textoCursoVisor,
+                  cursoOrigen: cursoId,
+                  orientacion: orientacionData,
+                  anioOrigen: anioOrigenNum,
+                  notaFinalCursada: item.estructura.notaFinal,
+                  libroFolio: "-",
+                  notaExamen: "-",
+                  fechaExamen: "-",
+                  estado: "Pendiente",
+                  origen: "AUTOMATICO_FEBRERO_CALIFICACIONES",
+                  ultimaModificacion: new Date()
                 },
-                diciembre: isNaN(dic) ? null : dic,
-                febrero: isNaN(feb) ? null : feb,
-                notaCuatrimestre1: notaC1,
-                notaCuatrimestre2: notaC2,
-                notaAnual: notaAnual,
-                notaFinal: notaDefinitiva,
-                estadoMateria: (notaDefinitiva !== null && notaDefinitiva >= 6) ? "Aprobada" : "Previa",
-                ultimaModificacion: new Date().toISOString()
+                { merge: true }
+              );
+            } else {
+              await deleteDoc(previaDocRef);
+            }
+          }
+
+          if (item.tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
+            const esAltaNueva = !item.estadoPrevio;
+            const subcatAuditoria = esAltaNueva ? "CARGA_NOTA" : "RECTIFICACION";
+            const descAuditoria = esAltaNueva
+              ? `Carga de notas efectuada en la asignatura ${materiaId}.`
+              : `Rectificación de notas efectuada en la asignatura ${materiaId}.`;
+
+            const snapshotForense = {
+              materia: materiaId,
+              cursoId: cursoId,
+              notas_guardadas: item.estructura.notas,
+              diciembre: item.estructura.diciembre,
+              febrero: item.estructura.febrero,
+              notaCuatrimestre1: item.notaC1,
+              notaCuatrimestre2: item.notaC2,
+              notaAnual: item.notaAnual,
+              notaFinal: item.estructura.notaFinal,
+              estadoMateria: item.estructura.estadoMateria
             };
 
-            const estadoPrevio = mapaNotasExistentes[dniAlumno];
-            let tieneModificacionesReales = false;
-
-            if (!estadoPrevio) {
-                tieneModificacionesReales = true;
-            } else {
-                const notasNuevasSt = JSON.stringify({ n: estructuraCalificacionAlumno.notas, d: estructuraCalificacionAlumno.diciembre, f: estructuraCalificacionAlumno.febrero });
-                const notasPreviasSt = JSON.stringify({ n: estadoPrevio.notas, d: estadoPrevio.diciembre, f: estadoPrevio.febrero });
-                if (notasNuevasSt !== notasPreviasSt) {
-                    tieneModificacionesReales = true;
-                }
-            }
-
-            // Alimentamos la caché local en memoria viva
-            nuevoMapaNotasCaché[dniAlumno] = estructuraCalificacionAlumno;
-
-            // Guardamos las variables necesarias para mantener tu lógica original intacta en la sincronización
-            registrosProcesados.push({
-                dniAlumno,
-                docIdUnico: `${dniAlumno}_${matIdLimpia}_${anioTrabajado}`,
-                estructura: estructuraCalificacionAlumno,
-                estadoPrevio,
-                tieneModificacionesReales,
-                notaC1,
-                notaC2,
-                notaAnual,
-                fila
-            });
+            await window.registrarEventoLegajo(
+              item.dniAlumno,
+              "CALIFICACIONES",
+              subcatAuditoria,
+              descAuditoria,
+              snapshotForense
+            );
+          }
         });
 
-        // ESCUDO DE SEGURIDAD INTERNO: Guardado inmediato y cifrado en el disco duro con candado universal
-        localStorage.setItem(claveCachéCalificaciones, cifrarDatosLocales(nuevoMapaNotasCaché));
-        mapaNotasExistentes = nuevoMapaNotasCaché;
-        console.log("[Aduana Local] Notas resguardadas en la máquina del docente ante microcortes.");
+        operacionesPersistencia.push(promesaEscritura);
+      });
 
-// === [FIN DE LA PARTE 1 DE 3] ===
-// === [INICIO DE LA PARTE 2 DE 3 - TU LÓGICA DE NEGOCIO ORIGINAL] ===
-        // Sincronización con Firestore utilizando los registros recolectados
-        registrosProcesados.forEach(item => {
-            const docRef = doc(db, "alumnos_calificaciones", item.docIdUnico);
+      await Promise.all(operacionesPersistencia);
+      // === [FIN DE LA PARTE 2 DE 3] ===
+      // === [INICIO DE LA PARTE 3 DE 3 - CIERRE Y ASISTENCIA DE RED] ===
+      if (txtNotificacion) {
+        txtNotificacion.style.color = "#16a34a";
+        txtNotificacion.textContent = "✅ ¡Sincronización finalizada con éxito!";
+        setTimeout(() => {
+          txtNotificacion.textContent = "";
+        }, 4000);
+      }
+      await cargarNominaEstudiantes();
+    } catch (error) {
+      console.error("Error de red detectado durante la sincronización:", error);
 
-            const promesaEscritura = setDoc(docRef, item.estructura, { merge: true })
-                .then(async () => {
-                    const baseCdn = 'h' + 't' + 't' + 'p' + 's' + ':' + '/' + '/' + 'w' + 'w' + 'w' + '.' + 'g' + 's' + 't' + 'a' + 't' + 'i' + 'c' + '.' + 'c' + 'o' + 'm' + '/f' + 'i' + 'r' + 'e' + 'b' + 'a' + 's' + 'e' + 'j' + 's' + '/10.12.0/';
-                    const { doc: docFirestore, setDoc: setDocFirestore, deleteDoc } = await import(baseCdn + 'firebase-firestore.js');
-                    
-                    const matIdLimpiaMayus = materiaId.trim().replace(/\s+/g, '_').toUpperCase();
-                    const anioOrigenNum = parseInt(item.estructura.cicloLectivo, 10);
-                    const idPreviaRaizUnico = `${item.dniAlumno}_${matIdLimpiaMayus}_${anioOrigenNum}`;
-                    const previaDocRef = docFirestore(db, "previas", idPreviaRaizUnico);
+      // 1. CREACIÓN DEL RECUADRO CENTRAL ESTILIZADO (INTERFAZ INSTITUTIONAL)
+      const idCartelEmergencia = "haspen-alerta-microcorte";
+      // Si por alguna razón ya existe uno en pantalla, lo removemos para evitar duplicados
+      document.getElementById(idCartelEmergencia)?.remove();
 
-                    if (item.estructura.notaFinal !== null) {
-                        if (item.estructura.notaFinal < 6) {
-                            const cursosCache = JSON.parse(localStorage.getItem('cursosColegio')) || [];
-                            const cursoData = cursosCache.find(c => c.id === cursoId) || {};
-                            const textoCursoVisor = `${cursoData.ciclo || ''} - DIV: ${cursoData.division || ''} (${cursoData.turno || ''})`.toUpperCase();
-                            const orientacionData = (cursoData.orientacion || ((cursoData.ciclo || '').includes("1°") || (cursoData.ciclo || '').includes("2°") || (cursoData.ciclo || '').includes("3°") ? "CICLO BÁSICO" : "SIN ESPECIFICAR")).toUpperCase();
+      const contenedorCartel = document.createElement("div");
+      contenedorCartel.id = idCartelEmergencia;
 
-                            await setDocFirestore(previaDocRef, {
-                                dni: item.dniAlumno,
-                                alumnoNombre: (item.fila.cells[1]?.textContent || "ALUMNO SIN NOMBRE").replace(/🗲.*/, "").trim().toUpperCase(),
-                                materia: materiaId.trim().toUpperCase(),
-                                curso: textoCursoVisor,
-                                cursoOrigen: cursoId,
-                                orientacion: orientacionData,
-                                anioOrigen: anioOrigenNum,
-                                notaFinalCursada: item.estructura.notaFinal,
-                                libroFolio: "-",
-                                notaExamen: "-",
-                                fechaExamen: "-",
-                                estado: "Pendiente",
-                                origen: "AUTOMATICO_FEBRERO_CALIFICACIONES",
-                                ultimaModificacion: new Date()
-                            }, { merge: true });
-                        } else {
-                            await deleteDoc(previaDocRef);
-                        }
-                    }
+      // Estilos del fondo difuminado que bloquea la pantalla
+      Object.assign(contenedorCartel.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgba(15, 23, 42, 0.75)",
+        backdropFilter: "blur(4px)",
+        zIndex: "99999",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        padding: "20px"
+      });
 
-                    if (item.tieneModificacionesReales && typeof window.registrarEventoLegajo === "function") {
-                        const esAltaNueva = !item.estadoPrevio;
-                        const subcatAuditoria = esAltaNueva ? "CARGA_NOTA" : "RECTIFICACION";
-                        const descAuditoria = esAltaNueva
-                            ? `Carga de notas efectuada en la asignatura ${materiaId}.`
-                            : `Rectificación de notas efectuada en la asignatura ${materiaId}.`;
-                        
-                        const snapshotForense = {
-                            materia: materiaId,
-                            cursoId: cursoId,
-                            notas_guardadas: item.estructura.notas,
-                            diciembre: item.estructura.diciembre,
-                            febrero: item.estructura.febrero,
-                            notaCuatrimestre1: item.notaC1,
-                            notaCuatrimestre2: item.notaC2,
-                            notaAnual: item.notaAnual,
-                            notaFinal: item.estructura.notaFinal,
-                            estadoMateria: item.estructura.estadoMateria
-                        };
-
-                        await window.registrarEventoLegajo(
-                            item.dniAlumno,
-                            "CALIFICACIONES",
-                            subcatAuditoria,
-                            descAuditoria,
-                            snapshotForense
-                        );
-                    }
-                });
-
-            operacionesPersistencia.push(promesaEscritura);
-        });
-
-        await Promise.all(operacionesPersistencia);
-// === [FIN DE LA PARTE 2 DE 3] ===
-// === [INICIO DE LA PARTE 3 DE 3 - CIERRE Y ASISTENCIA DE RED] ===
-        if (txtNotificacion) {
-            txtNotificacion.style.color = "#16a34a";
-            txtNotificacion.textContent = "✅ ¡Sincronización finalizada con éxito!";
-            setTimeout(() => { txtNotificacion.textContent = ""; }, 4000);
-        }
-        await cargarNominaEstudiantes();
-        
-           } catch (error) {
-        console.error("Error de red detectado durante la sincronización:", error);
-        
-        // 1. CREACIÓN DEL RECUADRO CENTRAL ESTILIZADO (INTERFAZ INSTITUTIONAL)
-        const idCartelEmergencia = "haspen-alerta-microcorte";
-        // Si por alguna razón ya existe uno en pantalla, lo removemos para evitar duplicados
-        document.getElementById(idCartelEmergencia)?.remove();
-
-        const contenedorCartel = document.createElement("div");
-        contenedorCartel.id = idCartelEmergencia;
-        
-        // Estilos del fondo difuminado que bloquea la pantalla
-        Object.assign(contenedorCartel.style, {
-            position: "fixed", top: "0", left: "0", width: "100vw", height: "100vh",
-            backgroundColor: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(4px)",
-            zIndex: "99999", display: "flex", justifyContent: "center", alignItems: "center",
-            fontFamily: "system-ui, -apple-system, sans-serif", padding: "20px"
-        });
-
-        // Contenido HTML y diseño del recuadro central (Ámbar/Oscuro)
-        contenedorCartel.innerHTML = `
+      // Contenido HTML y diseño del recuadro central (Ámbar/Oscuro)
+      contenedorCartel.innerHTML = `
             <div style="background: #ffffff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-top: 6px solid #d97706; max-width: 480px; width: 100%; padding: 32px; text-align: center;">
                 <div style="width: 56px; height: 56px; background: #fef3c7; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px;">
                     <span style="font-size: 28px; color: #d97706;">⚠️</span>
@@ -871,161 +989,156 @@ async function procesarGuardarPlanilla(e) {
             </div>
         `;
 
-        // Inyectamos el cartel hermoso en el cuerpo de la página escolar
-        document.body.appendChild(contenedorCartel);
+      // Inyectamos el cartel hermoso en el cuerpo de la página escolar
+      document.body.appendChild(contenedorCartel);
 
-        // Ajustes complementarios en el botón de envío principal
-        if (botonSubmit) {
-            botonSubmit.disabled = true;
-            botonSubmit.style.backgroundColor = "#d97706";
-            botonSubmit.textContent = "⏳ Esperando señal...";
-        }
-        if (txtNotificacion) {
-            txtNotificacion.style.color = "#ea580c";
-            txtNotificacion.textContent = "⚠️ Notas retenidas localmente de forma segura.";
-        }
+      // Ajustes complementarios en el botón de envío principal
+      if (botonSubmit) {
+        botonSubmit.disabled = true;
+        botonSubmit.style.backgroundColor = "#d97706";
+        botonSubmit.textContent = "⏳ Esperando señal...";
+      }
+      if (txtNotificacion) {
+        txtNotificacion.style.color = "#ea580c";
+        txtNotificacion.textContent = "⚠️ Notas retenidas localmente de forma segura.";
+      }
 
-        // 2. ACTIVACIÓN DEL CENTINELA INTELIGENTE DE RECONEXIÓN
-        const reconectarYEnviar = async () => {
-            console.log("[Centinela de Red] Conectividad recuperada. Eliminando cartel de advertencia central...");
-            window.removeEventListener('online', reconectarYEnviar);
-            
-            // Removemos de inmediato el recuadro gris y el bloqueo visual
-            document.getElementById(idCartelEmergencia)?.remove();
-            
-            // Re-ejecutamos la sincronización nativa de la planilla
-            await procesarGuardarPlanilla(e);
-        };
+      // 2. ACTIVACIÓN DEL CENTINELA INTELIGENTE DE RECONEXIÓN
+      const reconectarYEnviar = async () => {
+        console.log("[Centinela de Red] Conectividad recuperada. Eliminando cartel de advertencia central...");
+        window.removeEventListener("online", reconectarYEnviar);
 
-        window.addEventListener('online', reconectarYEnviar);
+        // Removemos de inmediato el recuadro gris y el bloqueo visual
+        document.getElementById(idCartelEmergencia)?.remove();
 
+        // Re-ejecutamos la sincronización nativa de la planilla
+        await procesarGuardarPlanilla(e);
+      };
+
+      window.addEventListener("online", reconectarYEnviar);
     } finally {
-
-
-        if (botonSubmit) {
-            botonSubmit.disabled = false;
-            botonSubmit.textContent = "Guardar Planilla";
-        }
+      if (botonSubmit) {
+        botonSubmit.disabled = false;
+        botonSubmit.textContent = "Guardar Planilla";
+      }
     }
-}
-// === [FIN DE LA FUNCIÓN - PARTE 3 DE 3] ===
-
-// ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
-const IDs_PERIODOS_REALES = [
-    'p_c1-n1', 'p_c1-n2', 'p_c1-ef',
-    'p_c2-n1', 'p_c2-n2', 'p_c2-ef',
-    'p_dic', 'p_feb'
-];
-
-// REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 650)
-async function procesarGuardarConfiguracionPeriodos() {
-  const configuracionPeriodos = {};
-  IDs_PERIODOS_REALES.forEach(id => {
-    const elemento = document.getElementById(id);
-    if (elemento) configuracionPeriodos[id] = elemento.checked;
-  });
-
-  const btnGuardar = document.getElementById('btnGuardarPeriodosConfig');
-  if (btnGuardar) {
-    btnGuardar.disabled = true;
-    btnGuardar.textContent = "💾 Guardando en Red...";
   }
+  // === [FIN DE LA FUNCIÓN - PARTE 3 DE 3] ===
 
-  try {
-    const { doc, setDoc } = await import(b + 'firebase-firestore.js');
-    const docRef = doc(db, "configuraciones", "periodos_academicos");
-    
-    // Impactamos la base de datos centralizada del Colegio HASPEN
-    await setDoc(docRef, { ...configuracionPeriodos, ultimaActualizacion: new Date().toISOString() }, { merge: true });
-    
-    // Respaldamos localmente como cache de contingencia pasiva
-    localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
-    window.cachePeriodosEscuela = configuracionPeriodos;
+  // ====== PARCHE: ACTUALIZACIÓN DE GUARDADO DE PERÍODOS REALES ======
+  const IDs_PERIODOS_REALES = ["p_c1-n1", "p_c1-n2", "p_c1-ef", "p_c2-n1", "p_c2-n2", "p_c2-ef", "p_dic", "p_feb"];
 
-    alert('Configuración de períodos sincronizada globalmente en Cloud Firestore.');
-    const modal = document.getElementById('modalGestionPeriodos');
-    if (modal) modal.style.display = 'none';
+  // REEMPLAZAR FUNCIÓN COMPLETA EN calificaciones.js (Cerca de la línea 650)
+  async function procesarGuardarConfiguracionPeriodos() {
+    const configuracionPeriodos = {};
+    IDs_PERIODOS_REALES.forEach((id) => {
+      const elemento = document.getElementById(id);
+      if (elemento) configuracionPeriodos[id] = elemento.checked;
+    });
 
-    if (typeof cargarNominaEstudiantes === 'function' && document.getElementById('selectMateriaNotas')?.value) {
-      await cargarNominaEstudiantes();
-    }
-  } catch (error) {
-    console.error("Error crítico de persistencia en red de períodos:", error);
-    alert("Error al guardar en la nube. Se retuvo una copia local de emergencia.");
-    localStorage.setItem('estadoPeriodosColegio', JSON.stringify(configuracionPeriodos));
-  } finally {
+    const btnGuardar = document.getElementById("btnGuardarPeriodosConfig");
     if (btnGuardar) {
-      btnGuardar.disabled = false;
-      btnGuardar.textContent = "Guardar Habilitaciones";
+      btnGuardar.disabled = true;
+      btnGuardar.textContent = "💾 Guardando en Red...";
+    }
+
+    try {
+      const { doc, setDoc } = await import(b + "firebase-firestore.js");
+      const docRef = doc(db, "configuraciones", "periodos_academicos");
+
+      // Impactamos la base de datos centralizada del Colegio HASPEN
+      await setDoc(
+        docRef,
+        { ...configuracionPeriodos, ultimaActualizacion: new Date().toISOString() },
+        { merge: true }
+      );
+
+      // Respaldamos localmente como cache de contingencia pasiva
+      localStorage.setItem("estadoPeriodosColegio", JSON.stringify(configuracionPeriodos));
+      window.cachePeriodosEscuela = configuracionPeriodos;
+
+      alert("Configuración de períodos sincronizada globalmente en Cloud Firestore.");
+      const modal = document.getElementById("modalGestionPeriodos");
+      if (modal) modal.style.display = "none";
+
+      if (typeof cargarNominaEstudiantes === "function" && document.getElementById("selectMateriaNotas")?.value) {
+        await cargarNominaEstudiantes();
+      }
+    } catch (error) {
+      console.error("Error crítico de persistencia en red de períodos:", error);
+      alert("Error al guardar en la nube. Se retuvo una copia local de emergencia.");
+      localStorage.setItem("estadoPeriodosColegio", JSON.stringify(configuracionPeriodos));
+    } finally {
+      if (btnGuardar) {
+        btnGuardar.disabled = false;
+        btnGuardar.textContent = "Guardar Habilitaciones";
+      }
     }
   }
-}
-// Inyección forense para restaurar visualmente los checkboxes guardados al presionar el botón de apertura
-if (btnAbrirModalPeriodos) {
+  // Inyección forense para restaurar visualmente los checkboxes guardados al presionar el botón de apertura
+  if (btnAbrirModalPeriodos) {
     btnAbrirModalPeriodos.replaceWith(btnAbrirModalPeriodos.cloneNode(true));
-    const btnRefrescado = document.getElementById('btnAbrirModalPeriodos');
-    
+    const btnRefrescado = document.getElementById("btnAbrirModalPeriodos");
+
     // Si verificarAutenticacion ya se ejecutó y le otorgó el permiso, mantenemos su visibilidad activa
     if (usuarioLogueado && usuarioLogueado.permisoGestionPeriodos === true && btnRefrescado) {
-        btnRefrescado.style.display = 'inline-flex';
+      btnRefrescado.style.display = "inline-flex";
     }
-    
-    btnRefrescado.addEventListener('click', async () => {
-        let configPeriodos = {};
-        try {
-            const { doc, getDoc } = await import(b + 'firebase-firestore.js');
-            const docSnap = await getDoc(doc(db, "configuraciones", "periodos_academicos"));
-            if (docSnap.exists()) {
-                configPeriodos = docSnap.data();
-                window.cachePeriodosEscuela = configPeriodos;
-            } else {
-                const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
-                configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
-            }
-        } catch (e) {
-            console.warn("Error consultando períodos para modal, usando local:", e);
-            const periodosRaw = localStorage.getItem('estadoPeriodosColegio');
-            configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+
+    btnRefrescado.addEventListener("click", async () => {
+      let configPeriodos = {};
+      try {
+        const { doc, getDoc } = await import(b + "firebase-firestore.js");
+        const docSnap = await getDoc(doc(db, "configuraciones", "periodos_academicos"));
+        if (docSnap.exists()) {
+          configPeriodos = docSnap.data();
+          window.cachePeriodosEscuela = configPeriodos;
+        } else {
+          const periodosRaw = localStorage.getItem("estadoPeriodosColegio");
+          configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
         }
-        
-        IDs_PERIODOS_REALES.forEach(id => {
-            const elemento = document.getElementById(id);
-            if (elemento) {
-                elemento.checked = configPeriodos[id] === true;
-            }
-        });
-        if (modalPeriodos) modalPeriodos.style.display = 'flex';
-    });
-}
+      } catch (e) {
+        console.warn("Error consultando períodos para modal, usando local:", e);
+        const periodosRaw = localStorage.getItem("estadoPeriodosColegio");
+        configPeriodos = periodosRaw ? JSON.parse(periodosRaw) : {};
+      }
 
-// Escuchador para cerrar el modal de forma segura
-if (btnCerrarModalPeriodos) {
-    btnCerrarModalPeriodos.addEventListener('click', () => {
-        if (modalPeriodos) modalPeriodos.style.display = 'none';
+      IDs_PERIODOS_REALES.forEach((id) => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+          elemento.checked = configPeriodos[id] === true;
+        }
+      });
+      if (modalPeriodos) modalPeriodos.style.display = "flex";
     });
-}
+  }
 
-if (btnGuardarPeriodosConfig) {
+  // Escuchador para cerrar el modal de forma segura
+  if (btnCerrarModalPeriodos) {
+    btnCerrarModalPeriodos.addEventListener("click", () => {
+      if (modalPeriodos) modalPeriodos.style.display = "none";
+    });
+  }
+
+  if (btnGuardarPeriodosConfig) {
     btnGuardarPeriodosConfig.replaceWith(btnGuardarPeriodosConfig.cloneNode(true));
-    const btnGuardarRefrescado = document.getElementById('btnGuardarPeriodosConfig');
+    const btnGuardarRefrescado = document.getElementById("btnGuardarPeriodosConfig");
     if (btnGuardarRefrescado) {
-        btnGuardarRefrescado.addEventListener('click', procesarGuardarConfiguracionPeriodos);
+      btnGuardarRefrescado.addEventListener("click", procesarGuardarConfiguracionPeriodos);
     }
-}
-// ====== ÚLTIMO ESCUDO: BLOQUEO PREVENTIVO DE CIERRE DE PESTAÑA ANTE MICROCORTES ======
-window.addEventListener('beforeunload', (evento) => {
-    const botonSubmit = document.getElementById('formPlanillaNotas')?.querySelector('button[type="submit"]');
-    
+  }
+  // ====== ÚLTIMO ESCUDO: BLOQUEO PREVENTIVO DE CIERRE DE PESTAÑA ANTE MICROCORTES ======
+  window.addEventListener("beforeunload", (evento) => {
+    const botonSubmit = document.getElementById("formPlanillaNotas")?.querySelector('button[type="submit"]');
+
     // Si el botón existe y está en estado de espera por internet, activamos el freno de mano
     if (botonSubmit && botonSubmit.textContent.includes("Esperando señal")) {
-        // Bloquea el cierre nativo y fuerza al navegador a mostrar su advertencia estándar
-        evento.preventDefault();
-        evento.returnValue = "¿Desea salir? Tiene cambios de calificaciones resguardados en la computadora pero pendientes de subir a la nube debido al microcorte de internet.";
-        return evento.returnValue;
+      // Bloquea el cierre nativo y fuerza al navegador a mostrar su advertencia estándar
+      evento.preventDefault();
+      evento.returnValue =
+        "¿Desea salir? Tiene cambios de calificaciones resguardados en la computadora pero pendientes de subir a la nube debido al microcorte de internet.";
+      return evento.returnValue;
     }
-});
-// ======================================================================================
-// ======================================================================================
-
+  });
+  // ======================================================================================
 })();
-
